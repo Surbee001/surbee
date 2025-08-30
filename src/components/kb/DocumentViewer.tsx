@@ -38,7 +38,8 @@ interface DocumentViewerProps {
   onClose: () => void;
 }
 
-export default function DocumentViewer({ document, onClose }: DocumentViewerProps) {
+// Avoid shadowing the global `document` object
+export default function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   const [zoom, setZoom] = useState(100);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages] = useState(10); // Mock total pages
@@ -58,11 +59,22 @@ export default function DocumentViewer({ document, onClose }: DocumentViewerProp
   };
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
+    if (typeof window === 'undefined') return;
+    const d = window.document as Document & {
+      webkitFullscreenElement?: Element | null;
+      webkitExitFullscreen?: () => Promise<void>;
+    };
+    const root = d.documentElement as HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void>;
+    };
+    const isFs = d.fullscreenElement || (d as any).webkitFullscreenElement;
+    if (!isFs) {
+      if (root.requestFullscreen) root.requestFullscreen();
+      else if (root.webkitRequestFullscreen) root.webkitRequestFullscreen();
       setIsFullscreen(true);
     } else {
-      document.exitFullscreen();
+      if (d.exitFullscreen) d.exitFullscreen();
+      else if ((d as any).webkitExitFullscreen) (d as any).webkitExitFullscreen();
       setIsFullscreen(false);
     }
   };
@@ -90,19 +102,19 @@ export default function DocumentViewer({ document, onClose }: DocumentViewerProp
           </button>
           
           <div className="flex items-center gap-3">
-            {document.type === 'pdf' && <FileText className="w-5 h-5 text-theme-muted" />}
-            {document.type === 'image' && <ImageIcon className="w-5 h-5 text-theme-muted" />}
+            {doc.type === 'pdf' && <FileText className="w-5 h-5 text-theme-muted" />}
+            {doc.type === 'image' && <ImageIcon className="w-5 h-5 text-theme-muted" />}
             <div>
-              <h2 className="text-[16px] font-medium text-theme-primary">{document.title}</h2>
+              <h2 className="text-[16px] font-medium text-theme-primary">{doc.title}</h2>
+
               <p className="text-[12px] text-theme-muted">
-                {formatDate(document.date)} • {document.size}
+                {formatDate(doc.date)} <span className="mx-2">&middot;</span> {doc.size}
               </p>
-            </div>
           </div>
 
           {/* Tags */}
           <div className="flex items-center gap-2">
-            {document.tags.map((tag) => (
+            {doc.tags.map((tag) => (
               <span
                 key={tag.id}
                 className="px-2 py-1 rounded-full text-[11px] font-medium text-theme-primary"
@@ -136,7 +148,7 @@ export default function DocumentViewer({ document, onClose }: DocumentViewerProp
           </div>
 
           {/* Page Navigation (for PDFs) */}
-          {document.type === 'pdf' && (
+          {doc.type === 'pdf' && (
             <div className="flex items-center gap-2 theme-button-secondary rounded-lg p-1">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -202,7 +214,7 @@ export default function DocumentViewer({ document, onClose }: DocumentViewerProp
           }}
         >
           {/* Mock Document Content */}
-          {document.type === 'pdf' && (
+          {doc.type === 'pdf' && (
             <div className="w-[816px] h-[1056px] p-16 bg-white">
               <div className="space-y-4">
                 <h1 className="text-3xl font-bold text-gray-900">Document Title</h1>
@@ -233,17 +245,17 @@ export default function DocumentViewer({ document, onClose }: DocumentViewerProp
             </div>
           )}
 
-          {document.type === 'image' && (
+          {doc.type === 'image' && (
             <div className="p-8">
               <img
-                src="/api/placeholder/800/600"
-                alt={document.title}
+                src={doc.url || "/api/placeholder/800/600"}
+                alt={doc.title}
                 className="max-w-full max-h-full object-contain"
               />
             </div>
           )}
 
-          {document.type === 'doc' && (
+          {doc.type === 'doc' && (
             <div className="w-[816px] h-[1056px] p-16 bg-white">
               <div className="space-y-4">
                 <h1 className="text-3xl font-bold text-gray-900">Word Document</h1>
@@ -261,7 +273,7 @@ export default function DocumentViewer({ document, onClose }: DocumentViewerProp
             </div>
           )}
 
-          {document.type === 'spreadsheet' && (
+          {doc.type === 'spreadsheet' && (
             <div className="w-[1200px] h-[800px] p-8 bg-white overflow-auto">
               <table className="w-full border-collapse">
                 <thead>
@@ -291,15 +303,15 @@ export default function DocumentViewer({ document, onClose }: DocumentViewerProp
       {/* Footer Status Bar */}
       <div className="h-10 theme-card border-t border-theme-primary flex items-center justify-between px-6">
         <div className="flex items-center gap-4 text-[11px] text-theme-muted">
-          <span>Type: {document.type.toUpperCase()}</span>
-          <span>•</span>
-          <span>Size: {document.size}</span>
-          <span>•</span>
-          <span>Modified: {formatDate(document.date)}</span>
+          <span>Type: {doc.type.toUpperCase()}</span>
+          <span className="mx-2">&middot;</span>
+          <span>Size: {doc.size}</span>
+          <span className="mx-2">&middot;</span>
+          <span>Modified: {formatDate(doc.date)}</span>
         </div>
         <div className="text-[11px] text-theme-muted">
-          {document.type === 'pdf' && `Page ${currentPage} of ${totalPages}`}
-          {document.type === 'image' && `Zoom: ${zoom}%`}
+          {doc.type === 'pdf' && `Page ${currentPage} of ${totalPages}`}
+          {doc.type === 'image' && `Zoom: ${zoom}%`}
         </div>
       </div>
     </div>

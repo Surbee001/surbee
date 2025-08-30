@@ -14,7 +14,9 @@ import {
   Archive,
   ChevronLeft,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  Users,
+  Pin
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -41,6 +43,8 @@ interface ProjectCardProps {
   onDelete?: () => void;
   onShare?: () => void;
   onArchive?: () => void;
+  isPinned?: boolean;
+  onTogglePin?: () => void;
 }
 
 // Filter Dropdown Component using Shadcn
@@ -119,7 +123,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   onDuplicate, 
   onDelete, 
   onShare, 
-  onArchive 
+  onArchive,
+  isPinned,
+  onTogglePin,
 }) => {
   const [liked, setLiked] = useState(false);
   const router = useRouter();
@@ -133,14 +139,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     router.push(`/project/${project.id}`);
   };
 
-  const getProjectGradient = (type: string) => {
-    const gradients = {
-      Survey: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      Study: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', 
-      Feedback: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-      default: 'linear-gradient(135deg, var(--surbee-bg-secondary) 0%, var(--surbee-bg-tertiary) 100%)'
-    };
-    return gradients[type as keyof typeof gradients] || gradients.default;
+  const getTypeColor = (type: string) => {
+    const colors = {
+      Survey: '#6366f1',
+      Study: '#f59e0b',
+      Feedback: '#10b981',
+      default: 'var(--surbee-accent-primary)'
+    } as const;
+    return (colors as any)[type] || colors.default;
   };
 
   const formatDate = (dateString: string) => {
@@ -159,12 +165,42 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   return (
     <>
       <div className="relative">
-        <div className="project-card">
+        <div
+          className="project-card"
+          role="button"
+          tabIndex={0}
+          onClick={handleCardClick}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleCardClick();
+            }
+          }}
+        >
           <div className="project-card-image" onClick={handleCardClick}>
-            <div 
-              className="absolute inset-0"
-              style={{ background: getProjectGradient(project.type) }}
-            />
+            <div className="absolute inset-0" style={{ background: 'var(--surbee-bg-primary)' }} />
+            <div className="absolute bottom-2 left-2 flex items-center gap-2">
+              <div
+                className="flex items-center gap-2 px-2 py-1 rounded-md border text-xs"
+                style={{ background: 'var(--surbee-bg-secondary)', borderColor: 'var(--surbee-border-primary)', color: 'var(--surbee-fg-primary)' }}
+              >
+                <span>{project.type}</span>
+              </div>
+              <div
+                className="flex items-center gap-1 px-2 py-1 rounded-md border text-xs"
+                style={{ background: 'var(--surbee-bg-secondary)', borderColor: 'var(--surbee-border-primary)', color: 'var(--surbee-fg-primary)' }}
+                title="Responses"
+              >
+                <Users className="w-3 h-3" />
+                {project.responseCount || 0}
+              </div>
+            </div>
+            {isPinned ? (
+              <div className="absolute top-2 right-2 p-1 rounded-md border"
+                   style={{ background: 'var(--surbee-bg-secondary)', borderColor: 'var(--surbee-border-primary)' }}>
+                <Pin size={14} />
+              </div>
+            ) : null}
           </div>
 
           <div className="project-card-bottom">
@@ -179,7 +215,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             </div>
             
             <div className="project-card-actions">
-              <div className="project-card-indicators">
+              <div className="project-card-indicators flex-1 min-w-0 flex flex-wrap">
                 <div className="project-card-indicator-circles">
                   <div 
                     className="project-indicator-circle" 
@@ -199,12 +235,30 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                   </div>
                 </div>
                 
-                <span className="project-response-count">
-                  {project.responseCount || 0} responses
-                </span>
+                <div className="flex items-center gap-2 mb-1">
+                  <span
+                    className="inline-flex items-center px-2 py-0.5 rounded-full border text-[11px]"
+                    style={{
+                      background: 'var(--surbee-bg-primary)',
+                      borderColor: 'var(--surbee-border-primary)',
+                      color: 'var(--surbee-fg-primary)'
+                    }}
+                  >
+                    {project.status === 'published' ? 'Published' : project.status === 'draft' ? 'Draft' : 'Archived'}
+                  </span>
+                  {/* Removed duplicate type pill at bottom to avoid duplication with header pill */}
+                </div>
               </div>
 
-              <div className="project-action-buttons">
+              <div className="project-action-buttons shrink-0">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onTogglePin?.(); }}
+                  className={`project-action-btn ${isPinned ? 'text-[var(--surbee-fg-primary)]' : 'project-settings-btn'}`}
+                  aria-label={isPinned ? 'Unpin' : 'Pin'}
+                  title={isPinned ? 'Unpin' : 'Pin'}
+                >
+                  <Pin size={18} />
+                </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -213,8 +267,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                   className={`project-action-btn project-heart-btn ${liked ? 'liked' : ''}`}
                   aria-label={liked ? 'Unlike' : 'Like'}
                 >
-                  <Heart 
-                    size={20} 
+                  <Heart
+                    size={18}
                     fill={liked ? 'currentColor' : 'none'}
                   />
                 </button>
@@ -223,11 +277,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                   <DropdownMenuTrigger asChild>
                     <button
                       onClick={(e) => e.stopPropagation()}
-                      className="project-action-btn project-settings-btn"
-                      aria-label="More options"
-                    >
-                      <MoreHorizontal size={20} />
-                    </button>
+                        className="project-action-btn project-settings-btn"
+                        aria-label="More options"
+                      >
+                        <MoreHorizontal size={18} />
+                      </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-40">
                     <DropdownMenuItem
@@ -442,6 +496,7 @@ export default function ProjectsPage() {
   const router = useRouter();
   const [projects, setProjects] = useState<ProjectWithStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published' | 'archived'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'Survey' | 'Study' | 'Feedback'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -474,6 +529,22 @@ export default function ProjectsPage() {
     }
   }, [user]);
 
+  // Load pinned projects from localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('pinnedProjects');
+      if (raw) setPinnedIds(JSON.parse(raw));
+    } catch {}
+  }, []);
+
+  const togglePin = (id: string) => {
+    setPinnedIds((prev) => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      try { localStorage.setItem('pinnedProjects', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
   const filteredProjects = useMemo(() => {
     let filtered = projects.filter(project => {
       const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
@@ -484,6 +555,9 @@ export default function ProjectsPage() {
 
     // Sort projects
     filtered.sort((a, b) => {
+      const aPinned = pinnedIds.includes(a.id) ? 1 : 0;
+      const bPinned = pinnedIds.includes(b.id) ? 1 : 0;
+      if (aPinned !== bPinned) return bPinned - aPinned; // pinned first
       switch (sortBy) {
         case 'updated':
           return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
@@ -499,7 +573,7 @@ export default function ProjectsPage() {
     });
 
     return filtered;
-  }, [projects, statusFilter, typeFilter, searchQuery, sortBy]);
+  }, [projects, statusFilter, typeFilter, searchQuery, sortBy, pinnedIds]);
 
   // Pagination
   const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
@@ -546,7 +620,7 @@ export default function ProjectsPage() {
         <div className="flex flex-col gap-6 p-6 mx-auto w-full max-w-[1280px] md:px-8">
           <div className="flex items-center justify-between mb-4">
             <h1 className="projects-title">Projects</h1>
-            <button className="px-6 py-2.5 bg-white text-black rounded-full flex items-center gap-2 text-sm font-medium">
+            <button className="px-6 py-2.5 bg-white text-black flex items-center gap-2 text-sm font-medium" style={{ borderRadius: '0.38rem' }}>
               <Plus className="w-4 h-4" />
               New Project
             </button>
@@ -599,7 +673,8 @@ export default function ProjectsPage() {
             <h1 className="projects-title">Projects</h1>
             <button
               onClick={handleCreateSurvey}
-              className="px-6 py-2.5 bg-white text-black rounded-full flex items-center gap-2 text-sm font-medium transition-all hover:bg-gray-100"
+              className="px-6 py-2.5 bg-white text-black flex items-center gap-2 text-sm font-medium transition-all hover:bg-gray-100"
+              style={{ borderRadius: '0.38rem' }}
             >
               <Plus className="w-4 h-4" />
               New Project
@@ -704,6 +779,8 @@ export default function ProjectsPage() {
               <ProjectCard
                 key={project.id}
                 project={project}
+                isPinned={pinnedIds.includes(project.id)}
+                onTogglePin={() => togglePin(project.id)}
                 onLike={() => console.log('Liked project:', project.id)}
                 onSettings={() => console.log('Settings for project:', project.id)}
                 onDuplicate={() => handleDuplicate(project.id)}
@@ -754,3 +831,5 @@ export default function ProjectsPage() {
     </div>
   );
 }
+
+

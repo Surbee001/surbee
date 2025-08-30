@@ -117,11 +117,13 @@ export default function DashboardSidebar() {
             isActive={pathname.startsWith('/dashboard/projects')}
             onClick={() => handleNavigation('/dashboard/projects')}
           />
-          <SidebarItem 
-            label="Knowledge Base" 
-            isActive={pathname.startsWith('/dashboard/kb')}
-            onClick={() => handleNavigation('/dashboard/kb')}
-          />
+          {false && (
+            <SidebarItem 
+              label="Knowledge Base" 
+              isActive={pathname.startsWith('/dashboard/kb')}
+              onClick={() => handleNavigation('/dashboard/kb')}
+            />
+          )}
           <SidebarItem 
             label="Marketplace" 
             isActive={pathname.startsWith('/dashboard/marketplace')}

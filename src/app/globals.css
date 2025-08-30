@@ -725,7 +725,7 @@ body {
 
 .project-card {
   background-color: var(--surbee-card-bg);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--surbee-border-primary);
   border-radius: 1rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.3s ease;
@@ -756,6 +756,10 @@ body {
   line-height: 1.25;
   color: var(--surbee-fg-primary);
   margin-bottom: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
 }
 
 .project-card-meta {
@@ -779,6 +783,11 @@ body {
 .project-card-indicator-circles {
   display: flex;
   margin-left: -0.5rem;
+}
+
+/* Hide old decorative circles in favor of chips */
+.project-card-indicator-circles {
+  display: none;
 }
 
 .project-card-indicator-circles > * + * {

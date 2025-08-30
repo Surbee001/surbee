@@ -21,6 +21,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
   Select,
   SelectContent,
   SelectItem,
@@ -39,6 +45,8 @@ import AccuracyMetricsCard, { AccuracyMetrics } from '@/components/analytics/Acc
 import AccuracyTrendChart from '@/components/analytics/AccuracyTrendChart';
 import ResponseQualityBadge, { ResponseAccuracy } from '@/components/analytics/ResponseQualityBadge';
 import SmartChart from '@/components/analytics/SmartChart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import type { Project } from '@/types/database';
@@ -219,11 +227,140 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'partial' | 'abandoned'>('all');
   const [accuracyFilter, setAccuracyFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [showActionDropdown, setShowActionDropdown] = useState(false);
+  const [comparePeriod, setComparePeriod] = useState<'last30' | 'vsPrev30'>('last30');
+
+  // Build mock analytics data (fallback for missing user/project)
+  const buildMockAnalytics = (): AnalyticsData => {
+    const timeline = generateTimelineData();
+    const responses = generateMockResponses();
+    const totalViews = timeline.reduce((sum, d: any) => sum + (d.views as number), 0);
+    const totalResponses = timeline.reduce((sum, d: any) => sum + (d.responses as number), 0);
+    const completionRate = totalViews > 0 ? (totalResponses / totalViews) * 100 : 0;
+
+    const speedAnomalies = responses.filter(r => r.accuracy?.checks?.speed && r.accuracy.checks.speed !== 'normal').length;
+    const patternFlags = responses.filter(r => r.accuracy?.checks?.pattern && r.accuracy.checks.pattern !== 'normal').length;
+    const attentionPass = responses.filter(r => r.accuracy?.checks?.attention).length;
+    const overallScore = responses.reduce((acc, r) => acc + (r.accuracy?.score || 0), 0) / (responses.length || 1);
+    const qualityDist = {
+      high: responses.filter(r => (r.accuracy?.score || 0) >= 80).length,
+      medium: responses.filter(r => (r.accuracy?.score || 0) >= 50 && (r.accuracy?.score || 0) < 80).length,
+      low: responses.filter(r => (r.accuracy?.score || 0) < 50).length,
+    };
+
+    const mockProject: Project = {
+      id: projectId || 'demo',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      title: 'Demo Project',
+      description: 'Mock analytics for design work',
+      user_id: user?.id || 'demo-user',
+      status: 'draft',
+    };
+
+    const accuracyMetrics: AccuracyMetrics = {
+      overallScore: Number.isFinite(overallScore) ? overallScore : 75,
+      attentionCheckPassRate: responses.length ? (attentionPass / responses.length) * 100 : 90,
+      consistencyScore: 78,
+      speedAnomalies,
+      patternFlags,
+      qualityDistribution: qualityDist,
+    };
+
+    return {
+      project: mockProject,
+      metrics: {
+        totalViews,
+        totalResponses,
+        completionRate,
+        avgCompletionTime: 6.2,
+        lastResponse: responses[0]?.submittedAt || null,
+      },
+      accuracyMetrics,
+      timelineData: timeline,
+      responses,
+      questionAnalytics: mockQuestionAnalytics,
+    };
+  };
+
+  // Helpers: export to CSV and print to PDF
+  const downloadCSV = (rows: any[], filename = 'analytics.csv') => {
+    if (!rows || rows.length === 0) return;
+    const headers = [
+      'id','status','accuracy_score','submitted_at','completion_time_m','device','location'
+    ];
+    const escape = (val: any) => {
+      const s = String(val ?? '').replace(/"/g, '""');
+      return `"${s}"`;
+    };
+    const csv = [
+      headers.join(','),
+      ...rows.map(r => [
+        r.id,
+        r.status,
+        r.accuracy?.score ?? '',
+        r.submittedAt?.toISOString?.() || r.submittedAt,
+        typeof r.completionTime === 'number' ? r.completionTime.toFixed(2) : r.completionTime,
+        r.deviceType,
+        r.location,
+      ].map(escape).join(','))
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const openPrintPreview = (rows: any[]) => {
+    const doc = window.open('', '_blank');
+    if (!doc) return;
+    const style = `
+      <style>
+        body { font-family: Arial, sans-serif; padding: 24px; color: #111; }
+        h1 { font-size: 20px; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f3f4f6; }
+      </style>
+    `;
+    const header = ['Response ID','Status','Accuracy','Submitted','Time (m)','Device','Location'];
+    const rowsHtml = rows.map(r => `
+      <tr>
+        <td>${r.id}</td>
+        <td>${r.status}</td>
+        <td>${r.accuracy?.score ?? ''}</td>
+        <td>${r.submittedAt?.toISOString?.() || r.submittedAt}</td>
+        <td>${typeof r.completionTime === 'number' ? r.completionTime.toFixed(2) : r.completionTime}</td>
+        <td>${r.deviceType}</td>
+        <td>${r.location}</td>
+      </tr>
+    `).join('');
+    const html = `
+      <!doctype html><html><head><meta charset="utf-8">${style}</head>
+      <body>
+        <h1>Survey Analytics Export</h1>
+        <table>
+          <thead><tr>${header.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </body></html>
+    `;
+    doc.document.write(html);
+    doc.document.close();
+    doc.focus();
+    doc.print();
+  };
 
   // Fetch analytics data
   useEffect(() => {
     const fetchAnalytics = async () => {
-      if (!user || !projectId) return;
+      if (!user || !projectId) {
+        setAnalyticsData(buildMockAnalytics());
+        setLoading(false);
+        return;
+      }
       
       try {
         const response = await fetch(`/api/projects/${projectId}/analytics?userId=${user.id}`);
@@ -240,9 +377,7 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
       }
     };
 
-    if (user && !authLoading && projectId) {
-      fetchAnalytics();
-    }
+    if (!authLoading) fetchAnalytics();
   }, [user, authLoading, projectId]);
 
   const chartConfig = {
@@ -257,10 +392,11 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
   };
 
 
+  // Safe analytics data for UI (fallbacks to mock if missing)
+  const safeData = analyticsData ?? buildMockAnalytics();
+
   const filteredResponses = useMemo(() => {
-    if (!analyticsData) return [];
-    
-    return analyticsData.responses.filter(response => {
+    return safeData.responses.filter(response => {
       const matchesSearch = searchQuery === '' || 
         (response.location && response.location.toLowerCase().includes(searchQuery.toLowerCase())) ||
         response.id.toLowerCase().includes(searchQuery.toLowerCase());
@@ -277,12 +413,64 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
       
       return matchesSearch && matchesStatus && matchesAccuracy;
     });
-  }, [analyticsData?.responses, searchQuery, statusFilter, accuracyFilter]);
+  }, [safeData.responses, searchQuery, statusFilter, accuracyFilter]);
+
+  // Compare period deltas
+  const prevTimeline = useMemo(() => {
+    // Generate a synthetic previous period series with similar structure
+    const data = [] as Array<{ date: string; responses: number; views: number }>;
+    for (let i = 60; i >= 31; i--) {
+      const date = format(subDays(new Date(), i), 'MMM dd');
+      data.push({
+        date,
+        responses: Math.floor(Math.random() * 20) + 4,
+        views: Math.floor(Math.random() * 40) + 8,
+      });
+    }
+    return data;
+  }, []);
+
+  const currentTotals = useMemo(() => {
+    const t = safeData.timelineData.reduce(
+      (acc, d: any) => {
+        acc.responses += d.responses || 0;
+        acc.views += d.views || 0;
+        return acc;
+      },
+      { responses: 0, views: 0 }
+    );
+    return t;
+  }, [safeData.timelineData]);
+
+  const prevTotals = useMemo(() => {
+    const t = prevTimeline.reduce(
+      (acc, d: any) => {
+        acc.responses += d.responses || 0;
+        acc.views += d.views || 0;
+        return acc;
+      },
+      { responses: 0, views: 0 }
+    );
+    return t;
+  }, [prevTimeline]);
+
+  const deltas = useMemo(() => {
+    const respDelta = prevTotals.responses ? ((currentTotals.responses - prevTotals.responses) / prevTotals.responses) * 100 : 0;
+    const viewDelta = prevTotals.views ? ((currentTotals.views - prevTotals.views) / prevTotals.views) * 100 : 0;
+    const completionNow = safeData.metrics.completionRate;
+    // Estimate previous completion rate from prev totals
+    const completionPrev = prevTotals.views ? (prevTotals.responses / prevTotals.views) * 100 : completionNow;
+    const completionDelta = completionPrev ? completionNow - completionPrev : 0;
+    return {
+      respDelta,
+      viewDelta,
+      completionDelta,
+    };
+  }, [currentTotals, prevTotals, safeData.metrics.completionRate]);
 
   const deviceTypeData = useMemo(() => {
-    if (!analyticsData?.responses?.length) return [];
-    
-    const deviceCounts = analyticsData.responses.reduce((acc, response) => {
+    if (!safeData?.responses?.length) return [];
+    const deviceCounts = safeData.responses.reduce((acc: Record<string, number>, response: any) => {
       const deviceType = response.deviceType || 'unknown';
       acc[deviceType] = (acc[deviceType] || 0) + 1;
       return acc;
@@ -291,9 +479,9 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
     return Object.entries(deviceCounts).map(([device, count]) => ({
       device: device.charAt(0).toUpperCase() + device.slice(1),
       count,
-      percentage: (count / analyticsData.responses.length * 100).toFixed(1)
+      percentage: (count / safeData.responses.length * 100).toFixed(1)
     }));
-  }, [analyticsData?.responses]);
+  }, [safeData.responses, projectId, user]);
 
   const handleEdit = () => {
     router.push(`/project/${projectId}`);
@@ -318,26 +506,7 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!user) {
-    router.push('/login');
-    return null;
-  }
-
-  // Show error state if no data
-  if (!analyticsData) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold mb-2">Project not found</h1>
-          <p className="text-gray-600">The project you're looking for doesn't exist or you don't have access to it.</p>
-          <Button onClick={() => router.push('/dashboard/projects')} className="mt-4">
-            Back to Projects
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  
 
 
   return (
@@ -351,29 +520,73 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
             </Button>
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
-              <p className="text-sm text-muted-foreground mt-1">{analyticsData.project.title}</p>
+              <p className="text-sm text-muted-foreground mt-1">{safeData.project.title}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleEdit}>
-              <Edit className="w-4 h-4 mr-2" />
-              Continue Editing
-            </Button>
+            {/* Share */}
             <Button variant="outline" size="sm" onClick={handleShare}>
               <Share2 className="w-4 h-4 mr-2" />
               Share
             </Button>
-            <Button size="sm" onClick={handleExport}>
-              <Download className="w-4 h-4 mr-2" />
-              Export
+            {/* Export dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => downloadCSV(filteredResponses, 'analytics.csv')}>
+                  CSV (Excel)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => openPrintPreview(filteredResponses)}>
+                  PDF (Print)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {/* Primary white button on the right */}
+            <Button size="sm" onClick={handleEdit} className="bg-white text-black hover:bg-gray-100">
+              <Edit className="w-4 h-4 mr-2" />
+              Continue Editing
             </Button>
           </div>
         </div>
 
         {/* Accuracy Metrics */}
-        <div className="mb-6">
-          <AccuracyMetricsCard metrics={analyticsData.accuracyMetrics} />
+        {/* AI Insights */}
+        <div className="mb-6 theme-card border border-theme-primary rounded-xl p-5">
+          <div className="flex items-start justify-between mb-2">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight text-theme-primary">AI Insights</h2>
+              <p className="text-sm text-theme-muted">Quick takeaways and suggested actions based on recent data</p>
+            </div>
+            <span className="text-xs text-theme-muted">Updated just now</span>
+          </div>
+          <ul className="grid sm:grid-cols-2 gap-3 list-disc pl-5">
+            <li className="text-sm text-theme-primary">
+              Peak responses on {safeData.timelineData.reduce((a,b)=> (b.responses>a.responses?b:a))?.date} &mdash; consider scheduling sends around this day.
+              <span className="block text-xs text-theme-muted">Why this insight: Sending campaigns near historical peaks increases visibility and response likelihood.</span>
+            </li>
+            <li className="text-sm text-theme-primary">
+              Top device: {(deviceTypeData[0]?.device) || 'Desktop'} &mdash; ensure mobile layout remains optimized.
+              <span className="block text-xs text-theme-muted">Why this insight: Optimizing for your most common device reduces friction and drop-offs.</span>
+            </li>
+            <li className="text-sm text-theme-primary">
+              Completion rate {safeData.metrics.completionRate.toFixed(1)}% &mdash; aim for &gt; 60% by trimming friction before longest questions.
+              <span className="block text-xs text-theme-muted">Why this insight: 60%+ is a healthy benchmark for completion in short surveys.</span>
+            </li>
+            <li className="text-sm text-theme-primary">
+              Overall data quality {safeData.accuracyMetrics.overallScore.toFixed(1)}% &mdash; {safeData.accuracyMetrics.patternFlags>0? 'address pattern flags in options' : 'quality is stable'}.
+              <span className="block text-xs text-theme-muted">Why this insight: Pattern flags like straight-lining can bias results and should be mitigated.</span>
+            </li>
+            <li className="text-sm text-theme-primary">
+              Suggestion: shorten any high skip-rate question and move it later in the flow.
+              <span className="block text-xs text-theme-muted">Why this insight: Early friction disproportionately reduces overall completion.</span>
+            </li>
+          </ul>
         </div>
 
         {/* Key Metrics */}
@@ -385,8 +598,12 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-semibold mb-1">{analyticsData.metrics.totalViews.toLocaleString()}</div>
-              <div className="text-xs text-muted-foreground">+12% from last week</div>
+              <div className="text-2xl font-semibold mb-1">{safeData.metrics.totalViews.toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground">
+                {comparePeriod === 'vsPrev30'
+                  ? `${deltas.viewDelta >= 0 ? '+' : ''}${deltas.viewDelta.toFixed(1)}% vs prev 30d`
+                  : 'Last 30 days'}
+              </div>
             </CardContent>
           </Card>
 
@@ -397,8 +614,12 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-semibold mb-1">{analyticsData.metrics.totalResponses}</div>
-              <div className="text-xs text-muted-foreground">+8% from last week</div>
+              <div className="text-2xl font-semibold mb-1">{safeData.metrics.totalResponses}</div>
+              <div className="text-xs text-muted-foreground">
+                {comparePeriod === 'vsPrev30'
+                  ? `${deltas.respDelta >= 0 ? '+' : ''}${deltas.respDelta.toFixed(1)}% vs prev 30d`
+                  : 'Last 30 days'}
+              </div>
             </CardContent>
           </Card>
 
@@ -409,8 +630,12 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-semibold mb-1">{analyticsData.metrics.completionRate.toFixed(1)}%</div>
-              <div className="text-xs text-muted-foreground">-2% from last week</div>
+              <div className="text-2xl font-semibold mb-1">{safeData.metrics.completionRate.toFixed(1)}%</div>
+              <div className="text-xs text-muted-foreground">
+                {comparePeriod === 'vsPrev30'
+                  ? `Î” ${deltas.completionDelta >= 0 ? '+' : ''}${deltas.completionDelta.toFixed(1)} pts vs prev 30d`
+                  : 'Last 30 days'}
+              </div>
             </CardContent>
           </Card>
 
@@ -421,7 +646,7 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-semibold mb-1">{analyticsData.metrics.avgCompletionTime.toFixed(1)}m</div>
+              <div className="text-2xl font-semibold mb-1">{safeData.metrics.avgCompletionTime.toFixed(1)}m</div>
               <div className="text-xs text-muted-foreground">Average completion</div>
             </CardContent>
           </Card>
@@ -429,27 +654,158 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-          {/* Accuracy Trend Chart */}
-          <AccuracyTrendChart data={generateAccuracyTrendData()} />
+          <div className="flex items-center justify-end mb-1 lg:col-span-2">
+            <div className="text-xs text-theme-muted mr-2">Range</div>
+            <select
+              value={comparePeriod}
+              onChange={(e) => setComparePeriod(e.target.value as any)}
+              className="h-8 px-2 rounded-md border text-xs bg-theme-secondary border-theme-primary text-theme-primary"
+            >
+              <option value="last30">Last 30 days</option>
+              <option value="vsPrev30">Compare previous 30 days</option>
+            </select>
+          </div>
+          {/* Response Timeline */}
           <SmartChart 
-            title="Response Timeline"
+            title="Responses Over Time"
             description="Daily responses over the last 30 days"
-            data={analyticsData.timelineData}
+            data={safeData.timelineData}
             dataType="time-series"
             config={chartConfig}
             dataKey="responses"
             xAxisKey="date"
           />
+          {/* Accuracy Trend */}
+          <AccuracyTrendChart data={generateAccuracyTrendData()} />
+          {/* Device Types full width */}
+          <div className="lg:col-span-2">
+            <SmartChart 
+              title="Device Types"
+              description="How users accessed the survey"
+              data={deviceTypeData.map(item => ({ name: item.device, value: item.count }))}
+              dataType="proportional"
+              config={chartConfig}
+              dataKey="value"
+              xAxisKey="name"
+            />
+          </div>
+          {/* Overlay: Responses vs Views */}
+          <div className="lg:col-span-2">
+            <div className="theme-card border border-theme-primary rounded-xl">
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <div className="text-[16px] font-medium text-theme-primary">Responses vs Views</div>
+                    <div className="text-theme-muted text-sm">Overlay to spot correlation and campaigns impact</div>
+                  </div>
+                </div>
+                <ChartContainer config={chartConfig} className="h-[260px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={safeData.timelineData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="date" stroke="#6b7280" fontSize={11} />
+                      <YAxis stroke="#6b7280" fontSize={11} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Line type="monotone" dataKey="responses" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="views" stroke="#10B981" strokeWidth={2} dot={{ r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </div>
+            </div>
+          </div>
+        </div>
 
-          <SmartChart 
-            title="Device Types"
-            description="How users accessed the survey"
-            data={deviceTypeData.map(item => ({ name: item.device, value: item.count }))}
-            dataType="proportional"
-            config={chartConfig}
+        {/* Data Quality Metrics */}
+        <div className="mb-6">
+          <AccuracyMetricsCard metrics={safeData.accuracyMetrics} />
+        </div>
+
+        {/* Geography & Time-of-Day */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <SmartChart
+            title="Top Locations"
+            description="Where respondents are based"
+            data={(() => {
+              const map: Record<string, number> = {};
+              (safeData.responses || []).forEach((r: any) => {
+                const loc = r.location || 'Unknown';
+                map[loc] = (map[loc] || 0) + 1;
+              });
+              return Object.entries(map)
+                .map(([name, value]) => ({ name, value }))
+                .sort((a, b) => b.value - a.value)
+                .slice(0, 10);
+            })()}
+            dataType="categorical"
+            config={{ value: { label: 'Responses' } } as any}
             dataKey="value"
             xAxisKey="name"
           />
+          <SmartChart
+            title="Responses by Hour"
+            description="Engagement throughout the day"
+            data={(() => {
+              const hours = Array.from({ length: 24 }, (_, h) => ({ name: `${h}:00`, value: 0 }));
+              (safeData.responses || []).forEach((r: any) => {
+                const d = new Date(r.submittedAt);
+                const h = d.getHours();
+                hours[h].value += 1;
+              });
+              return hours;
+            })()}
+            dataType="categorical"
+            config={{ value: { label: 'Responses' } } as any}
+            dataKey="value"
+            xAxisKey="name"
+          />
+        </div>
+
+        {/* Skip-rate Hotspots (Heatmap) */}
+        <div className="mb-6 theme-card border border-theme-primary rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="text-[16px] font-medium text-theme-primary">Skip-rate Hotspots</h3>
+              <p className="text-sm text-theme-muted">Questions with elevated skip rates and suggested improvements</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {(safeData.questionAnalytics as any[])
+              .slice() // copy
+              .sort((a: any, b: any) => (b.skipRate || 0) - (a.skipRate || 0))
+              .slice(0, 9)
+              .map((q: any, idx: number) => {
+                const sr = Number(q.skipRate || 0);
+                const hue = Math.max(0, 120 - Math.min(100, sr) * 1.2); // 0=red, 120=green
+                const suggestion = (() => {
+                  if (q.type === 'text') return 'Shorten text, add context, or make optional';
+                  if (q.type === 'multiple_choice') return 'Reduce options or group choices logically';
+                  if (q.type === 'rating') return 'Clarify scale and allow N/A';
+                  if (q.type === 'yes_no') return 'Clarify wording and intent';
+                  return 'Simplify wording and placement';
+                })();
+                return (
+                  <div key={q.id || idx} className="rounded-lg p-3 border" style={{ borderColor: 'var(--surbee-border-primary)', background: `linear-gradient(0deg, hsla(${hue},80%,50%,0.12), transparent 80%)` }}>
+                    <div className="text-xs text-theme-muted mb-1">Skip rate</div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-[14px] font-medium text-theme-primary truncate" title={q.question}>{q.question}</div>
+                      <div className="text-[13px] font-semibold" style={{ color: sr >= 30 ? '#ef4444' : sr >= 15 ? '#f59e0b' : '#10b981' }}>{sr.toFixed(1)}%</div>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-xs text-theme-muted">Suggestion: {suggestion}</div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2"
+                        onClick={() => router.push(`/project/${projectId}?focusQuestion=${encodeURIComponent(q.id || '')}`)}
+                      >
+                        View question
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
         </div>
 
         {/* Question Analytics */}
@@ -460,7 +816,7 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {analyticsData.questionAnalytics.map((question) => {
+            {safeData.questionAnalytics.map((question) => {
               const chartData = question.options?.map(option => ({
                 name: option.label.length > 20 ? option.label.substring(0, 20) + '...' : option.label,
                 value: option.count,
@@ -472,11 +828,12 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
               else if (question.type === 'yes_no') dataType = 'proportional';
               else if (question.type === 'multiple_choice') dataType = 'categorical';
 
+              const desc = `${question.responses} responses - ${question.skipRate}% skip rate${question.avgRating ? ` - Avg: ${question.avgRating}/5` : ''}`;
               return (
                 <SmartChart
                   key={question.id}
                   title={question.question}
-                  description={`${question.responses} responses • ${question.skipRate}% skip rate${question.avgRating ? ` • Avg: ${question.avgRating}/5` : ''}`}
+                  description={desc}
                   data={chartData}
                   dataType={dataType}
                   config={{

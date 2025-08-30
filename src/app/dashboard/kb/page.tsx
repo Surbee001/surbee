@@ -1,11 +1,12 @@
 "use client";
 
-import KnowledgeBaseTable from "@/components/kb/KnowledgeBaseTable";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function DashboardKBPage() {
-  return (
-    <div className="h-full" style={{ fontFamily: 'Sohne, sans-serif' }}>
-      <KnowledgeBaseTable />
-    </div>
-  );
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/dashboard");
+  }, [router]);
+  return null;
 }

@@ -51,7 +51,8 @@
       "Bash(start \"http://localhost:3004/about\")",
       "mcp__ide__getDiagnostics",
       "Bash(git remote add:*)",
-      "Bash(git remote set-url:*)"
+      "Bash(git remote set-url:*)",
+      "Bash(git branch:*)"
     ],
     "deny": [],
     "ask": [],

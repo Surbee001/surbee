@@ -46,7 +46,9 @@ import {
   Eye,
   X,
   Upload,
-  FolderOpen
+  FolderOpen,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import DocumentViewer from './DocumentViewer';
 
@@ -149,6 +151,39 @@ export default function KnowledgeBaseTable() {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  
+  const handleOpenFileDialog = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const inferType = (name: string, mime: string): Document['type'] => {
+    const ext = name.split('.').pop()?.toLowerCase() || '';
+    if (mime.startsWith('image/')) return 'image';
+    if (ext === 'pdf') return 'pdf';
+    if (['doc', 'docx', 'txt', 'md', 'rtf'].includes(ext)) return 'doc';
+    if (['xls', 'xlsx', 'csv', 'tsv', 'ods'].includes(ext)) return 'spreadsheet';
+    return 'other';
+  };
+  
+  const handleFilesSelected: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const newDocs: Document[] = files.map((f) => ({
+      id: `${Date.now()}_${f.name}`,
+      title: f.name,
+      type: inferType(f.name, f.type),
+      date: new Date(),
+      size: `${(f.size / (1024 * 1024)).toFixed(1)} MB`,
+      tags: [],
+      url: f.type.startsWith('image/') ? URL.createObjectURL(f) : undefined,
+    }));
+    setDocuments((prev) => [...newDocs, ...prev]);
+    setShowUploadModal(false);
+    // Reset input so selecting the same files again still triggers change
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
   
   
 
@@ -337,18 +372,34 @@ export default function KnowledgeBaseTable() {
             <h1 className="projects-title">
               Knowledge Ba<span style={{ fontStyle: 'normal' }}>s</span>e
             </h1>
-            <div className="flex items-center gap-3">
-              <span className="text-sm" style={{ color: 'var(--surbee-fg-muted)' }}>
-                {Object.keys(rowSelection).length} selected
-              </span>
-              <button
-                onClick={() => setShowUploadModal(true)}
+          <div className="flex items-center gap-3">
+            <span className="text-sm" style={{ color: 'var(--surbee-fg-muted)' }}>
+              {Object.keys(rowSelection).length} selected
+            </span>
+            <button
+                onClick={handleOpenFileDialog}
                 className="px-6 py-2.5 bg-white text-black rounded-full flex items-center gap-2 text-sm font-medium transition-all hover:bg-gray-100"
               >
                 <Upload className="w-4 h-4" />
                 Upload Document
               </button>
-            </div>
+              <div className="ml-2 flex items-center gap-1">
+                <button
+                  onClick={() => setViewMode('table')}
+                  title="Table view"
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center hover:bg-accent transition-colors ${viewMode === 'table' ? 'bg-accent' : ''}`}
+                >
+                  <List className="w-4 h-4" style={{ color: 'var(--surbee-fg-muted)' }} />
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  title="Grid view"
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center hover:bg-accent transition-colors ${viewMode === 'grid' ? 'bg-accent' : ''}`}
+                >
+                  <LayoutGrid className="w-4 h-4" style={{ color: 'var(--surbee-fg-muted)' }} />
+                </button>
+              </div>
+          </div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
@@ -403,7 +454,17 @@ export default function KnowledgeBaseTable() {
         
         <div className="projects-cards-content">
           <div className="mx-auto w-full max-w-[1280px] px-6 md:px-8">
-            {/* Table or Empty State */}
+            {/* Hidden file input for uploads */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.txt,.md,.xls,.xlsx,.csv,.tsv,.ods,image/*"
+              onChange={handleFilesSelected}
+              className="hidden"
+            />
+
+            {/* Table/Grid or Empty State */}
             {filteredData.length === 0 ? (
               <div className="text-center py-20">
                 <h3 className="text-[18px] font-semibold mb-2" style={{ color: 'var(--surbee-fg-primary)' }}>
@@ -415,7 +476,7 @@ export default function KnowledgeBaseTable() {
                     : 'Upload your first document to get started'}
                 </p>
                 <button
-                  onClick={() => setShowUploadModal(true)}
+                  onClick={handleOpenFileDialog}
                   className="px-6 py-3 rounded-lg text-[14px] font-medium transition-colors"
                   style={{
                     backgroundColor: 'var(--surbee-bg-secondary)',
@@ -428,67 +489,105 @@ export default function KnowledgeBaseTable() {
                 </button>
               </div>
             ) : (
-              <div className="rounded-xl border" style={{ 
-                borderColor: 'var(--surbee-border-primary)',
-                backgroundColor: 'var(--surbee-bg-secondary)'
-              }}>
-                <Table>
-                  <TableHeader>
-                    {table.getHeaderGroups().map((headerGroup) => (
-                      <TableRow key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => (
-                          <TableHead key={header.id}>
-                            {header.isPlaceholder ? null : (
-                              <div
-                                {...{
-                                  className: header.column.getCanSort()
-                                    ? 'cursor-pointer select-none flex items-center gap-1'
-                                    : 'flex items-center gap-1',
-                                  onClick: header.column.getToggleSortingHandler(),
-                                }}
-                              >
-                                {flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext()
-                                )}
-                                {{
-                                  asc: <ChevronUp className="w-3 h-3" />,
-                                  desc: <ChevronDown className="w-3 h-3" />,
-                                }[header.column.getIsSorted() as string] ?? null}
-                              </div>
-                            )}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableHeader>
-                  <TableBody>
-                    {table.getRowModel().rows?.length ? (
-                      table.getRowModel().rows.map((row) => (
-                        <TableRow
-                          key={row.id}
-                          data-state={row.getIsSelected() && "selected"}
-                        >
-                          {row.getVisibleCells().map((cell) => (
-                            <TableCell key={cell.id}>
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext()
+              viewMode === 'grid' ? (
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                  {filteredData.map((doc) => (
+                    <button
+                      key={doc.id}
+                      onClick={() => setSelectedDocument(doc)}
+                      className="text-left rounded-xl border p-4 transition-shadow hover:shadow-md"
+                      style={{ borderColor: 'var(--surbee-border-primary)', backgroundColor: 'var(--surbee-card-bg)' }}
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--surbee-bg-secondary)' }}>
+                          {FILE_TYPE_ICONS[doc.type]}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="truncate text-sm" style={{ color: 'var(--surbee-fg-primary)' }}>{doc.title}</div>
+                          <div className="text-xs" style={{ color: 'var(--surbee-fg-muted)' }}>{formatDate(doc.date)}</div>
+                        </div>
+                      </div>
+                      {doc.type === 'image' && doc.url && (
+                        <div className="mb-3 overflow-hidden rounded-lg border" style={{ borderColor: 'var(--surbee-border-primary)' }}>
+                          <img src={doc.url} alt={doc.title} className="w-full h-32 object-cover" />
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {doc.tags.length ? doc.tags.map(t => (
+                          <span key={t.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
+                                style={{ backgroundColor: `${t.color}20`, border: `1px solid ${t.color}40`, color: 'var(--surbee-fg-primary)' }}>
+                            {t.name}
+                          </span>
+                        )) : (
+                          <span className="text-xs" style={{ color: 'var(--surbee-fg-muted)' }}>No tags</span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border" style={{ 
+                  borderColor: 'var(--surbee-border-primary)',
+                  backgroundColor: 'var(--surbee-bg-secondary)'
+                }}>
+                  <Table>
+                    <TableHeader>
+                      {table.getHeaderGroups().map((headerGroup) => (
+                        <TableRow key={headerGroup.id}>
+                          {headerGroup.headers.map((header) => (
+                            <TableHead key={header.id}>
+                              {header.isPlaceholder ? null : (
+                                <div
+                                  {...{
+                                    className: header.column.getCanSort()
+                                      ? 'cursor-pointer select-none flex items-center gap-1'
+                                      : 'flex items-center gap-1',
+                                    onClick: header.column.getToggleSortingHandler(),
+                                  }}
+                                >
+                                  {flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext()
+                                  )}
+                                  {{
+                                    asc: <ChevronUp className="w-3 h-3" />,
+                                    desc: <ChevronDown className="w-3 h-3" />,
+                                  }[header.column.getIsSorted() as string] ?? null}
+                                </div>
                               )}
-                            </TableCell>
+                            </TableHead>
                           ))}
                         </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={columns.length} className="h-24 text-center">
-                          No results.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                      ))}
+                    </TableHeader>
+                    <TableBody>
+                      {table.getRowModel().rows?.length ? (
+                        table.getRowModel().rows.map((row) => (
+                          <TableRow
+                            key={row.id}
+                            data-state={row.getIsSelected() && "selected"}
+                          >
+                            {row.getVisibleCells().map((cell) => (
+                              <TableCell key={cell.id}>
+                                {flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext()
+                                )}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={columns.length} className="h-24 text-center">
+                            No results.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )
             )}
           </div>
         </div>
@@ -513,7 +612,9 @@ export default function KnowledgeBaseTable() {
               <p className="text-sm mb-4" style={{ color: 'var(--surbee-fg-muted)' }}>
                 Drag and drop your files here, or click to browse
               </p>
-              <button className="px-6 py-2 bg-white text-black rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
+              <button 
+                onClick={handleOpenFileDialog}
+                className="px-6 py-2 bg-white text-black rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
                 Choose Files
               </button>
               <p className="text-xs mt-4" style={{ color: 'var(--surbee-fg-muted)' }}>
