@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Play, ArrowUpRight, Paperclip, Sparkles, ChevronRight, Menu, User, Plus, Minus } from 'lucide-react';
+import { FaDiscord } from "react-icons/fa";
 import { Component as AnimatedBackground } from '../open-ai-codex-animated-background';
 import ChatInputLight from '@/components/ui/chat-input-light';
 import { useAuth } from '@/contexts/AuthContext';
@@ -39,7 +40,7 @@ const partnerLogos = [
   { name: 'Tribeca', logo: 'TRIBECA' },
 ];
 
-export default function RunwayLandingPage() {
+export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAccess?: boolean }) {
   const [inputValue, setInputValue] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -50,27 +51,27 @@ export default function RunwayLandingPage() {
   const faqData = [
     {
       question: "How does Surbee ensure response quality?",
-      answer: "Surbee uses advanced AI to analyze response patterns, timing, and consistency. We detect rushed responses, straight-lining, and other quality issues in real-time. Each response gets a quality score, and only high-quality responses contribute to your final results."
+      answer: "We watch how people answer, not what they answer. Bots and speedrunners have patterns. Real, thoughtful humans don't. Our AI spots the difference in seconds and filters out the junk automatically."
     },
     {
       question: "What is the Credit Network and how does it work?",
-      answer: "Our Credit Network is a community-driven system where you earn credits by thoughtfully answering other people's surveys, then spend those credits to distribute your own. This creates a fair ecosystem where quality participation is rewarded and ensures engaged, invested respondents."
+      answer: "Think of it like a favor exchange. You help others by answering their surveys thoughtfully, you earn credits. Then you use those credits to get your own surveys answered by people who actually care. Everyone wins, and the quality stays high."
     },
     {
       question: "Can I use Surbee for academic research?",
-      answer: "Absolutely! Surbee is designed with researchers in mind. Our PhD-grade survey creation tools help eliminate bias and ambiguity, while our quality verification ensures your data meets academic standards. Many universities and research institutions already use Surbee for their studies."
+      answer: "Absolutely! We built this specifically because academic surveys need to be bulletproof. Our AI helps you avoid leading questions and confusing wording, plus our quality checks make sure you're getting real data, not garbage. Perfect for thesis work, research papers, or any study where accuracy matters."
     },
     {
       question: "How is Surbee different from other survey platforms?",
-      answer: "Unlike traditional platforms that focus on quantity, Surbee prioritizes quality. We use AI to help you write better questions, verify response authenticity, and build a community of engaged participants. This means fewer responses, but much more reliable and actionable data."
+      answer: "Most survey platforms are basically spam factories. They care about quantity, not quality. We're the opposite. We'd rather give you 100 thoughtful responses than 1000 rushed ones. Plus our AI actually helps you write better questions instead of just collecting whatever you throw at people."
     },
     {
       question: "What happens to my data and survey responses?",
-      answer: "Your data belongs to you, period. We use enterprise-grade security to protect your surveys and responses. Data is encrypted in transit and at rest, and we never share or sell your information to third parties. You can export or delete your data at any time."
+      answer: "Your data is yours, full stop. We encrypt everything, never sell your info to anyone, and you can download or delete everything whenever you want. We're not in the data-selling business. We're in the good-surveys business."
     },
     {
       question: "Is there a free version of Surbee?",
-      answer: "Yes! You can start with Surbee for free and create your first surveys. Our free plan includes access to AI-powered question generation, basic quality checking, and limited responses. As you grow, you can upgrade to access advanced features and higher response limits."
+      answer: "Yep! Start for free, no credit card needed. You get access to our AI question helper, basic quality filtering, and can collect your first responses without paying anything. Once you're hooked (and you will be), you can upgrade for more features and higher limits."
     }
   ];
 
@@ -112,7 +113,8 @@ export default function RunwayLandingPage() {
               <Link href="/changelog" className="px-4 py-2 text-sm text-black hover:bg-gray-100 rounded-lg transition-colors" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
                 Changelog
               </Link>
-              <a href="https://discord.gg/krs577Qxqr" target="_blank" rel="noopener noreferrer" className="px-4 py-2 text-sm text-black hover:bg-gray-100 rounded-lg transition-colors" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+              <a href="https://discord.gg/krs577Qxqr" target="_blank" rel="noopener noreferrer" className="px-4 py-2 text-sm text-black hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+                <FaDiscord className="w-4 h-4 text-gray-500" />
                 Community
               </a>
             </div>
@@ -135,8 +137,8 @@ export default function RunwayLandingPage() {
                       {user.email}
                     </span>
                   </div>
-                  <Link href="/dashboard" className="px-3 py-1.5 bg-black text-white rounded-full hover:bg-black/80 transition-colors" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
-                    Dashboard
+                  <Link href={isEarlyAccess ? "/earlyaccess" : "/dashboard"} className="px-3 py-1.5 bg-black text-white rounded-full hover:bg-black/80 transition-colors" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+                    {isEarlyAccess ? "Get Early Access" : "Dashboard"}
                   </Link>
                 </div>
               ) : (
@@ -171,56 +173,87 @@ export default function RunwayLandingPage() {
           <div className="w-full max-w-4xl px-8">
           <div className="bg-black/20 backdrop-blur-sm rounded-xl p-12 border border-white/20 w-full text-center">
             <h1 className="text-5xl text-center mb-4 tracking-tight text-white" style={{ fontFamily: 'PP Editorial, serif', fontWeight: 200 }}>
-              What do you want to create?
+              {isEarlyAccess ? (
+                <span className="inline-flex items-end gap-2">
+                  Get Early Access to Surbee
+                  <span className="bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full border border-white/30 mb-1" style={{ fontFamily: 'FK Grotesk, sans-serif', fontSize: '12px' }}>
+                    beta
+                  </span>
+                </span>
+              ) : "What do you want to create?"}
             </h1>
             <p className="text-center text-white/90 mb-8" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
-              Start generating with a simple conversation.
+              {isEarlyAccess ? "Join the waitlist and be among the first to experience the future of surveys." : "Start generating with a simple conversation."}
             </p>
             
-            {/* Chat Input */}
+            {/* Chat Input or Waitlist Form */}
             <div className="max-w-2xl mx-auto">
-              <ChatInputLight
-                onSendMessage={(message, images) => {
-                  if (!message && (!images || images.length === 0)) return;
-                  try { sessionStorage.setItem('surbee_initial_prompt', message || ''); } catch {}
-                  const projectId = `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                  const url = new URL(window.location.origin + `/project/${projectId}`);
-                  // Carry images to project page via session storage (avoid long URLs)
-                  if (images && images.length) {
-                    try { sessionStorage.setItem('surbee_initial_images', JSON.stringify(images.slice(0, 10))); } catch {}
-                  }
-                  window.location.href = url.toString();
-                }}
-                placeholder="Describe your survey idea..."
-                style={{ fontFamily: 'FK Grotesk, sans-serif' }}
-                className=""
-                theme="white"
-              />
-              
-              {/* Suggestion Pills */}
-              <div className="grid grid-cols-2 gap-3 mt-4">
-                <button className="text-left p-2 rounded-lg border border-white/30 bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors h-12 flex items-center cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-white text-black text-xs px-2 py-1 rounded" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>New</span>
-                    <p className="text-sm text-white/90" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Lyra is now available</p>
+              {isEarlyAccess ? (
+                <>
+                  {/* Waitlist Form */}
+                  <div className="flex gap-3">
+                    <input
+                      type="email"
+                      placeholder="Enter your email address"
+                      className="flex-1 px-4 py-3 rounded-full border border-white/30 bg-white/10 backdrop-blur-sm text-white placeholder-white/70 focus:outline-none focus:border-white/50"
+                      style={{ fontFamily: 'FK Grotesk, sans-serif' }}
+                    />
+                    <button className="px-6 py-3 bg-white text-black rounded-full hover:bg-gray-100 transition-colors font-medium whitespace-nowrap"
+                      style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+                      Join Waitlist
+                    </button>
                   </div>
-                </button>
-                <button className="text-left p-2 rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors h-12 flex items-center cursor-pointer">
-                  <p className="text-sm text-white/90" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Create a customer satisfaction survey</p>
-                </button>
-                <button className="text-left p-2 rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors h-12 flex items-center cursor-pointer">
-                  <p className="text-sm text-white/90" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Design a market research questionnaire</p>
-                </button>
-                <button className="text-left p-2 rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors h-12 flex items-center cursor-pointer">
-                  <p className="text-sm text-white/90" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Build an employee feedback form</p>
-                </button>
-              </div>
-              
-              <p className="text-xs text-white/70 text-center mt-6" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
-                By sending a message, you agree to our{' '}
-                <Link href="/terms" className="underline">Terms of Use</Link> and acknowledge that you have read and understand our{' '}
-                <Link href="/privacy" className="underline">Privacy Policy</Link>.
-              </p>
+                  
+                  <p className="text-xs text-white/70 text-center mt-6" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+                    Be the first to know when Surbee launches. We'll never spam you.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <ChatInputLight
+                    onSendMessage={(message, images) => {
+                      if (!message && (!images || images.length === 0)) return;
+                      try { sessionStorage.setItem('surbee_initial_prompt', message || ''); } catch {}
+                      const projectId = `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                      const url = new URL(window.location.origin + `/project/${projectId}`);
+                      // Carry images to project page via session storage (avoid long URLs)
+                      if (images && images.length) {
+                        try { sessionStorage.setItem('surbee_initial_images', JSON.stringify(images.slice(0, 10))); } catch {}
+                      }
+                      window.location.href = url.toString();
+                    }}
+                    placeholder="Describe your survey idea..."
+                    style={{ fontFamily: 'FK Grotesk, sans-serif' }}
+                    className=""
+                    theme="white"
+                  />
+                  
+                  {/* Suggestion Pills */}
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <button className="text-left p-2 rounded-lg border border-white/30 bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors h-12 flex items-center cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <span className="bg-white text-black text-xs px-2 py-1 rounded" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>New</span>
+                        <p className="text-sm text-white/90" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Lyra is now available</p>
+                      </div>
+                    </button>
+                    <button className="text-left p-2 rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors h-12 flex items-center cursor-pointer">
+                      <p className="text-sm text-white/90" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Create a customer satisfaction survey</p>
+                    </button>
+                    <button className="text-left p-2 rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors h-12 flex items-center cursor-pointer">
+                      <p className="text-sm text-white/90" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Design a market research questionnaire</p>
+                    </button>
+                    <button className="text-left p-2 rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors h-12 flex items-center cursor-pointer">
+                      <p className="text-sm text-white/90" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Build an employee feedback form</p>
+                    </button>
+                  </div>
+                  
+                  <p className="text-xs text-white/70 text-center mt-6" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+                    By sending a message, you agree to our{' '}
+                    <Link href="/terms" className="underline">Terms of Use</Link> and acknowledge that you have read and understand our{' '}
+                    <Link href="/privacy" className="underline">Privacy Policy</Link>.
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -234,8 +267,8 @@ export default function RunwayLandingPage() {
             The New Era for Surveys
           </h2>
           <p className="text-center text-gray-600 mb-8 max-w-2xl mx-auto" style={{ fontFamily: 'FK Grotesk, sans-serif', fontSize: '16px' }}>
-          For decades, surveys have been slow, unreliable, and often ignored. 
-          Surbee redefines the experience — making it faster to create, smarter to answer, and impossible to fake.
+          Let's be honest: surveys suck. They're boring, people rush through them, and half the time you can't trust the results. 
+          We built Surbee because we were tired of bad data ruining good decisions.
           </p>
           
 
@@ -278,8 +311,8 @@ export default function RunwayLandingPage() {
           <div className="text-center mb-16">
             <h2 className="text-white mb-4 tracking-tight" style={{ fontFamily: 'PP Editorial, serif', fontSize: '72px', fontWeight: 200 }}>PhD-Grade Questionnaires</h2>
             <p className="text-gray-400 max-w-2xl mx-auto mb-8" style={{ fontFamily: 'FK Grotesk, sans-serif', fontSize: '16px' }}>
-              From first idea to final draft, Surbee makes it simple to create clear, engaging surveys. 
-              Every question is written to keep people thinking, not just clicking.
+              You don't need a research degree to write great surveys. Our AI helps you craft questions that actually make sense to real people. 
+              No jargon, no confusion, just clear communication.
             </p>
             <Link href={user ? "/dashboard" : "/login"} className="inline-block px-6 py-2 bg-white text-black rounded-full hover:bg-gray-100 transition-colors" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
               Try Surbee Free
@@ -302,17 +335,17 @@ export default function RunwayLandingPage() {
             {[
               { 
                 title: 'Smart Question Generation', 
-                description: 'AI-powered suggestions help you craft questions that get meaningful responses.',
+                description: 'Our AI catches the awkward wording and bias before your respondents do.',
                 image: images.lonelyPoster 
               },
               { 
                 title: 'Adaptive Logic', 
-                description: 'Dynamic branching that adapts based on responses for personalized survey experiences.',
+                description: 'Your survey adapts to each person\'s answers, like a real conversation.',
                 image: images.herdPoster 
               },
               { 
                 title: 'Real-time Preview', 
-                description: 'See exactly how your survey looks and feels from the respondent\'s perspective.',
+                description: 'Test drive your survey before sending it out and see what works and what doesn\'t.',
                 image: images.retrievalPoster 
               },
             ].map((feature, idx) => (
@@ -336,8 +369,8 @@ export default function RunwayLandingPage() {
             Data You Can Actually Trust
           </h2>
           <p className="text-gray-400 max-w-2xl mb-8" style={{ fontFamily: 'FK Grotesk, sans-serif', fontSize: '18px' }}>
-            Every response is checked for quality. Surbee detects rushed clicks, inconsistent answers, 
-            and suspicious behaviour so you can focus on results that matter.
+            We catch the speedrunners, the bots, and the people just clicking randomly for rewards. 
+            Every response gets vetted, so you only see the real, thoughtful answers from actual humans who care.
           </p>
           <button className="px-6 py-2 border border-white rounded-full hover:bg-white hover:text-black transition-colors mb-12" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
             See How It Works
@@ -348,19 +381,19 @@ export default function RunwayLandingPage() {
               { 
                 image: images.alephCard, 
                 title: 'Response Time Analysis', 
-                description: 'Detect rushed responses and flag answers completed too quickly to be thoughtful.',
+                description: 'Spots people who blast through surveys in 30 seconds flat.',
                 metric: '99.2% accuracy' 
               },
               { 
                 image: images.gen4Card, 
                 title: 'Pattern Detection', 
-                description: 'Identify suspicious response patterns like straight-lining or random clicking.',
+                description: 'Catches the "all 5s" crowd and random clickers before they mess up your data.',
                 metric: '15x faster' 
               },
               { 
                 image: images.generalWorldModels, 
                 title: 'Quality Score', 
-                description: 'Each response gets a quality score based on multiple behavioral indicators.',
+                description: 'Every answer gets graded so only the thoughtful ones make it through.',
                 metric: '98% reliability' 
               },
             ].map((item, idx) => (
@@ -399,9 +432,8 @@ export default function RunwayLandingPage() {
           </div>
 
           <p className="text-3xl text-center max-w-4xl mx-auto mb-12 leading-relaxed" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
-            Reach your audience faster through a fair, community-powered system. 
-            Earn credits by answering other surveys and spend them to get high-quality 
-            responses for your own.
+            Here's the deal: answer surveys thoughtfully, earn credits. Use those credits to get your own surveys answered 
+            by people who actually give a damn. No bots, no click farms, just real people helping each other out.
           </p>
 
           <div className="text-center mb-20">
@@ -416,19 +448,19 @@ export default function RunwayLandingPage() {
               { 
                 image: images.aiffLogo, 
                 title: 'Earn Credits', 
-                description: 'Answer surveys from other researchers and earn credits for thoughtful, quality responses.',
+                description: 'Take your time answering others\' surveys and get rewarded for real, thoughtful responses.',
                 icon: '+'
               },
               { 
                 image: images.telescopeMag, 
                 title: 'Spend Credits', 
-                description: 'Use earned credits to distribute your surveys to engaged, verified participants.',
+                description: 'Spend your earned credits to get quality people answering your own surveys.',
                 icon: '→'
               },
               { 
                 image: images.marsAndSiv, 
                 title: 'Quality Guaranteed', 
-                description: 'Every participant is verified and responses are quality-checked before crediting.',
+                description: 'Everyone\'s verified, every response is checked. No gaming the system.',
                 icon: '✓'
               },
             ].map((item, idx) => (

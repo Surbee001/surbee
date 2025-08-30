@@ -1,5 +1,5 @@
-import MainLandingPage from '@/components/surbee-landing-page/MainLandingPage';
+import { redirect } from 'next/navigation';
 
 export default function HomePage() {
-  return <MainLandingPage />;
+  redirect('/earlyaccess');
 }
