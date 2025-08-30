@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test GPT-5 Frontend Generation</title>
+    <style>
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            background: #f9fafb;
+        }
+        button {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        .success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .info { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        pre {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .result-container {
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 GPT-5 Survey Frontend Generation Test</h1>
+        <p>Testing the advanced AI survey generation with GPT-5 support and complete HTML frontend generation.</p>
+
+        <div class="test-section">
+            <h3>🎨 Test 1: Basic Survey Generation</h3>
+            <p>Generate a complete HTML survey using the advanced pipeline.</p>
+            <button onclick="testBasicGeneration()" id="basicBtn">Generate Ice Cream Survey</button>
+            <div id="basicResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎭 Test 2: Advanced Generation with GPT-5</h3>
+            <p>Generate a professional survey with GPT-5 reasoning and advanced design.</p>
+            <button onclick="testAdvancedGeneration()" id="advancedBtn">Generate Professional Survey</button>
+            <div id="advancedResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Test 3: Frontend Generation API</h3>
+            <p>Test the complete frontend generation endpoint.</p>
+            <button onclick="testFrontendGeneration()" id="frontendBtn">Generate Complete Frontend</button>
+            <div id="frontendResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 System Status</h3>
+            <div id="systemStatus"></div>
+        </div>
+    </div>
+
+    <script>
+        // Test system status
+        async function checkSystemStatus() {
+            const status = document.getElementById('systemStatus');
+            status.innerHTML = '<div class="info">🔍 Checking system status...</div>';
+            
+            try {
+                // Test if the server is running
+                const response = await fetch('/api/health');
+                if (response.ok) {
+                    status.innerHTML = '<div class="success">✅ System ready - Next.js server running</div>';
+                } else {
+                    status.innerHTML = '<div class="info">📡 Server running (no health endpoint)</div>';
+                }
+            } catch (error) {
+                status.innerHTML = '<div class="error">❌ Server connection failed</div>';
+            }
+        }
+
+        // Test basic survey generation
+        async function testBasicGeneration() {
+            const btn = document.getElementById('basicBtn');
+            const result = document.getElementById('basicResult');
+            
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+            result.innerHTML = '<div class="info">🚀 Starting basic survey generation...</div>';
+            
+            try {
+                const response = await fetch('/api/trpc/survey.generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        json: {
+                            prompt: "Create a fun ice cream preferences survey with multiple choice questions",
+                            mode: "advanced",
+                            context: {
+                                surveyType: "marketing",
+                                complexity: "simple",
+                                designStyle: "creative",
+                                length: "short"
+                            },
+                            useTemplate: true
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.result) {
+                    result.innerHTML = `
+                        <div class="success">✅ Survey generated successfully!</div>
+                        <div class="result-container">
+                            <h4>Survey Details:</h4>
+                            <pre>${JSON.stringify({
+                                title: data.result.data.survey?.title,
+                                pages: data.result.data.survey?.pages?.length,
+                                components: data.result.data.aiOutput?.components?.length,
+                                qualityScore: data.result.data.aiOutput?.metadata?.qualityScore
+                            }, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    result.innerHTML = `<div class="error">❌ Generation failed: ${JSON.stringify(data.error)}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generate Ice Cream Survey';
+            }
+        }
+
+        // Test advanced generation with GPT-5
+        async function testAdvancedGeneration() {
+            const btn = document.getElementById('advancedBtn');
+            const result = document.getElementById('advancedResult');
+            
+            btn.disabled = true;
+            btn.textContent = 'Generating with GPT-5...';
+            result.innerHTML = '<div class="info">🤖 Starting advanced GPT-5 generation...</div>';
+            
+            try {
+                const response = await fetch('/api/trpc/survey.generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        json: {
+                            prompt: "Create a comprehensive customer satisfaction survey for a restaurant with advanced analytics and beautiful design",
+                            mode: "advanced",
+                            context: {
+                                surveyType: "feedback",
+                                complexity: "professional",
+                                designStyle: "modern",
+                                targetAudience: "restaurant customers",
+                                industry: "hospitality",
+                                length: "medium"
+                            },
+                            useTemplate: false // Force AI planning
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.result) {
+                    result.innerHTML = `
+                        <div class="success">✅ Advanced survey generated with GPT-5!</div>
+                        <div class="result-container">
+                            <h4>Advanced Survey Details:</h4>
+                            <pre>${JSON.stringify({
+                                title: data.result.data.survey?.title,
+                                description: data.result.data.survey?.description,
+                                pages: data.result.data.survey?.pages?.length,
+                                components: data.result.data.aiOutput?.components?.length,
+                                pipeline: data.result.data.aiOutput?.metadata?.pipeline,
+                                qualityScore: data.result.data.aiOutput?.metadata?.qualityScore,
+                                generationTime: data.result.data.aiOutput?.metadata?.generationTime,
+                                designSystem: !!data.result.data.aiOutput?.designSystem
+                            }, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    result.innerHTML = `<div class="error">❌ Advanced generation failed: ${JSON.stringify(data.error)}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generate Professional Survey';
+            }
+        }
+
+        // Test frontend generation
+        async function testFrontendGeneration() {
+            const btn = document.getElementById('frontendBtn');
+            const result = document.getElementById('frontendResult');
+            
+            btn.disabled = true;
+            btn.textContent = 'Generating Frontend...';
+            result.innerHTML = '<div class="info">🎨 Generating complete HTML frontend...</div>';
+            
+            try {
+                const response = await fetch('/api/trpc/survey.generateFrontend', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        json: {
+                            prompt: "Create a beautiful product feedback survey with modern design and smooth animations",
+                            context: {
+                                surveyType: "feedback",
+                                complexity: "professional",
+                                designStyle: "modern",
+                                length: "medium"
+                            },
+                            useTemplate: true,
+                            saveToFile: true,
+                            filename: "test_frontend_survey.html"
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.result) {
+                    const htmlPreview = data.result.data.html?.substring(0, 500) + '...';
+                    result.innerHTML = `
+                        <div class="success">✅ Complete frontend generated!</div>
+                        <div class="result-container">
+                            <h4>Frontend Details:</h4>
+                            <pre>${JSON.stringify({
+                                htmlSize: data.result.data.html?.length || 0,
+                                filePath: data.result.data.filePath,
+                                previewUrl: data.result.data.previewUrl,
+                                hasDesignSystem: !!data.result.data.surveyData?.designSystem
+                            }, null, 2)}</pre>
+                            <h4>HTML Preview (first 500 chars):</h4>
+                            <pre>${htmlPreview}</pre>
+                            ${data.result.data.previewUrl ? `
+                                <a href="${data.result.data.previewUrl}" target="_blank" style="color: #3b82f6; text-decoration: underline;">
+                                    🌐 Open Generated Survey
+                                </a>
+                            ` : ''}
+                        </div>
+                    `;
+                } else {
+                    result.innerHTML = `<div class="error">❌ Frontend generation failed: ${JSON.stringify(data.error)}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generate Complete Frontend';
+            }
+        }
+
+        // Initialize
+        checkSystemStatus();
+    </script>
+</body>
+</html>

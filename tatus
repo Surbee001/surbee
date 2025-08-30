@@ -1,0 +1,3 @@
+[33m71be6d2[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/ai-survey-engine[m[33m)[m fix: standardize sidemenu icon sizes and improve padding for better visual balance and spacing from borders
+[33ma1f81b7[m fix: standardize sidemenu icon sizes and improve padding for better visual balance
+[33m9c7a6b5[m chore(generator): enrich theme (font, colors, spacing) and validation guidance in fast generator

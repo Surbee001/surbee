@@ -1,0 +1,1276 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, ChevronLeft, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, StopCircle, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy } from "lucide-react";
+import UserNameBadge from "@/components/UserNameBadge";
+import UserMenu from "@/components/ui/user-menu";
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { File, Folder, Tree } from "@/components/ui/file-tree";
+import AIResponseActions from "@/components/ui/ai-response-actions";
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
+import ChatInputLight from "@/components/ui/chat-input-light";
+import dynamic from 'next/dynamic'
+import { MODELS } from "@/lib/deepsite/providers";
+import { useDeepSite } from "./deepsite-integration/hooks/useDeepSite";
+import { ChatProcessor } from "./deepsite-integration/editor/ChatProcessor";
+import { DeepSiteRenderer } from "./deepsite-integration/renderer/DeepSiteRenderer";
+import { ChatMessage } from "./deepsite-integration/types";
+import { SelectedHtmlElement } from "./deepsite-integration/components/SelectedHtmlElement";
+import { EditModeTooltip } from "./deepsite-integration/components/EditModeTooltip";
+import { AuthGuard } from "@/components/auth/AuthGuard";
+import AppLayout from "@/components/layout/AppLayout";
+import { useAuth } from '@/contexts/AuthContext';
+import { useRealtime } from '@/contexts/RealtimeContext';
+import type { Project } from '@/types/database';
+
+const InviteModal = dynamic(() => import('@/components/referrals/InviteModal'), { ssr: false })
+
+
+
+interface HistoryEntry {
+  id: string;
+  prompt: string;
+  timestamp: Date;
+  changes: string[];
+  version: number;
+  isFlagged: boolean;
+}
+
+interface ProjectPageProps {
+  params: {
+    id: string;
+  };
+}
+
+export default function ProjectPage() {
+  // In client components, use useParams() to read dynamic params
+  const { id } = useParams() as { id?: string };
+  const projectId: string | undefined = id;
+  const searchParams = useSearchParams();
+  const { user, loading: authLoading } = useAuth();
+  const { subscribeToProject } = useRealtime();
+  const router = useRouter();
+  
+  // Enable temporary mock mode to work on UI without DB/auth
+  const mockMode = (searchParams?.get('mock') === '1') || (process.env.NEXT_PUBLIC_MOCK_PROJECT === 'true');
+
+  // Project state
+  const [project, setProject] = useState<Project | null>(null);
+  const [projectLoading, setProjectLoading] = useState(true);
+  
+  const [isPlanUsageOpen, setIsPlanUsageOpen] = useState(true);
+  const [isChatsOpen, setIsChatsOpen] = useState(false);
+  const [isFoldersOpen, setIsFoldersOpen] = useState(false);
+  const [isHomeOpen, setIsHomeOpen] = useState(false);
+  const [isLabOpen, setIsLabOpen] = useState(false);
+  const [isKnowledgeBaseOpen, setIsKnowledgeBaseOpen] = useState(false);
+  const [chatText, setChatText] = useState("");
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [hasStartedChat, setHasStartedChat] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [filePreviews, setFilePreviews] = useState<{ [key: string]: string }>({});
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isThinking, setIsThinking] = useState(false);
+  const [isInputDisabled, setIsInputDisabled] = useState(false);
+  const [isCgihadiDropdownOpen, setIsCgihadiDropdownOpen] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
+  const [versionCounter, setVersionCounter] = useState(1);
+  const [currentDevice, setCurrentDevice] = useState<'desktop' | 'tablet' | 'phone'>('desktop');
+  const [previewUrl, setPreviewUrl] = useState('/');
+  const [isPageDropdownOpen, setIsPageDropdownOpen] = useState(false);
+  const [selectedRoute, setSelectedRoute] = useState<string>('/');
+  const [pages, setPages] = useState<{ path: string; title: string }[]>([{ path: '/', title: '/' }]);
+  const [isChatHidden, setIsChatHidden] = useState(false);
+  const [currentView, setCurrentView] = useState<'viewer' | 'flow'>('viewer');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
+  const [isEditableModeEnabled, setIsEditableModeEnabled] = useState(false);
+  const [selectedElement, setSelectedElement] = useState<HTMLElement | null>(null);
+  const [activeTopButton, setActiveTopButton] = useState<'upgrade' | 'publish' | null>(null);
+  const [rendererKey, setRendererKey] = useState(0);
+  const [isAskMode, setIsAskMode] = useState(false);
+  const askModeRef = useRef(false);
+  useEffect(() => { askModeRef.current = isAskMode; }, [isAskMode]);
+  // Error detection and credit guard
+  const [errorBarVisible, setErrorBarVisible] = useState(false);
+  const [errorCount, setErrorCount] = useState(0);
+  const [lastErrors, setLastErrors] = useState<string[]>([]);
+  const lastTokenIncRef = useRef<number>(0);
+  const lastCreditChargeRef = useRef<number>(0);
+  const refundLastUsage = () => {
+    try {
+      if (lastTokenIncRef.current > 0) {
+        ctxTokensUsedRef.current = Math.max(0, ctxTokensUsedRef.current - lastTokenIncRef.current);
+        const limit = ctxLimitRef.current || DEFAULT_CONTEXT_TOKENS;
+        const pct = ((ctxTokensUsedRef.current % limit) / limit) * 100;
+        setContextPercent(Math.max(0, Math.min(100, Math.round(pct * 10) / 10)));
+        lastTokenIncRef.current = 0;
+      }
+      if (lastCreditChargeRef.current === 1) {
+        setCreditsUsed(u => Math.max(0, u - 1));
+        lastCreditChargeRef.current = 0;
+      }
+    } catch {}
+  };
+  const recordError = (err: string) => {
+    setErrorBarVisible(true);
+    setLastErrors(prev => [err, ...prev].slice(0, 5));
+    setErrorCount(c => c + 1);
+    refundLastUsage();
+  };
+
+  // Context usage meter (approximate). Default 32k; long-context ~200k.
+  const DEFAULT_CONTEXT_TOKENS = Number(process.env.NEXT_PUBLIC_CONTEXT_TOKENS || 32000);
+  const LONG_CONTEXT_TOKENS = Number(process.env.NEXT_PUBLIC_LONG_CONTEXT_TOKENS || 200000);
+  const [contextPercent, setContextPercent] = useState<number>(0);
+  const ctxTokensUsedRef = useRef<number>(0);
+  const ctxLimitRef = useRef<number>(DEFAULT_CONTEXT_TOKENS);
+  useEffect(() => {
+    ctxLimitRef.current = isAskMode ? LONG_CONTEXT_TOKENS : DEFAULT_CONTEXT_TOKENS;
+  }, [isAskMode]);
+  const estimateTokens = (text: string) => Math.ceil((text || '').length / 4);
+  const preciseCountTokens = async (text: string) => {
+    try {
+      const model = (isAskMode ? (process.env.OPENAI_LONG_MODEL || 'o200k_base') : (process.env.OPENAI_MODEL || 'cl100k_base'));
+      const res = await fetch('/api/tokens/estimate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, model }) });
+      const data = await res.json();
+      if (data?.ok && typeof data.count === 'number') return data.count as number;
+    } catch {}
+    return estimateTokens(text);
+  };
+  
+  // DeepSite integration
+  const chatProcessorRef = useRef<ChatProcessor | null>(null);
+  
+  const deepSite = useDeepSite({
+    defaultHtml: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preview</title>
+  <style>html,body{height:100%;margin:0;padding:0;background:#101010;color:#fff}</style>
+</head>
+<body></body>
+</html>`,
+    onMessage: (message) => {
+      setMessages(prev => [...prev, message]);
+    },
+    onError: (error) => {
+      console.error('DeepSite error:', error);
+      recordError(typeof error === 'string' ? error : 'Renderer error');
+    }
+  });
+  
+  const chatAreaRef = useRef<HTMLDivElement>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+  const publishMenuRef = useRef<HTMLDivElement>(null);
+  const [isPublishOpen, setIsPublishOpen] = useState(false);
+  const [creditsUsed, setCreditsUsed] = useState(0);
+  const [creditsTotal] = useState(5);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const shareMenuRef = useRef<HTMLDivElement>(null);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [publishToCommunity, setPublishToCommunity] = useState(true);
+
+  // Fetch project data (or use mock)
+  useEffect(() => {
+    const fetchProject = async () => {
+      if (mockMode) {
+        // Minimal mock project so the page can render without backend
+        const now = new Date().toISOString();
+        setProject({
+          id: projectId || 'mock-project',
+          created_at: now,
+          updated_at: now,
+          title: `Demo Project ${projectId || ''}`.trim(),
+          description: null,
+          user_id: 'mock-user',
+          status: 'draft',
+        } as Project);
+        // No seeded chat messages in mock mode
+        setMessages([]);
+        setHasStartedChat(false);
+        setProjectLoading(false);
+        return;
+      }
+
+      if (!user || !projectId) return;
+      
+      try {
+        const response = await fetch(`/api/projects/${projectId}?userId=${user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setProject(data.project);
+          
+          // Load existing messages
+          const messagesResponse = await fetch(`/api/projects/${projectId}/messages?userId=${user.id}`);
+          if (messagesResponse.ok) {
+            const messagesData = await messagesResponse.json();
+            const formattedMessages = messagesData.messages?.map((msg: any) => ({
+              id: msg.id,
+              text: msg.content,
+              isUser: Boolean(msg.is_user),
+              timestamp: new Date(msg.created_at),
+            })) || [];
+            setMessages(formattedMessages);
+            if (formattedMessages.length > 0) {
+              setHasStartedChat(true);
+            }
+          }
+        } else if (response.status === 404) {
+          // Project doesn't exist, create it
+          const createResponse = await fetch('/api/projects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: `Project ${projectId}`,
+              description: 'Project created from builder',
+              user_id: user.id
+            })
+          });
+          
+          if (createResponse.ok) {
+            const { project } = await createResponse.json();
+            setProject(project);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch project:', error);
+      } finally {
+        setProjectLoading(false);
+      }
+    };
+
+    if (user && !authLoading && projectId) {
+      fetchProject();
+    }
+  }, [user, authLoading, projectId]);
+
+  // Subscribe to real-time messages for this project
+  useEffect(() => {
+    if (projectId && user && !mockMode) {
+      const unsubscribe = subscribeToProject(projectId);
+      return unsubscribe;
+    }
+  }, [projectId, user, subscribeToProject, mockMode]);
+
+  // Initialize chat processor
+  useEffect(() => {
+    if (!chatProcessorRef.current) {
+      chatProcessorRef.current = new ChatProcessor({
+        onMessage: async (message) => {
+          setMessages(prev => [...prev, message]);
+
+          // Save message to database (skip in mock mode)
+          if (user && project && !mockMode) {
+            try {
+              await fetch(`/api/projects/${project.id}/messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  content: message.text,
+                  is_user: message.isUser,
+                  user_id: user.id,
+                  metadata: { timestamp: message.timestamp }
+                })
+              });
+            } catch (error) {
+              console.error('Failed to save message:', error);
+            }
+          }
+        },
+        onMessageUpdate: (id, text, suggestions) => {
+          setMessages(prev => prev.map(m => m.id === id ? { ...m, text, suggestions: suggestions ?? m.suggestions } : m));
+        },
+        onError: (error) => {
+          console.error('Chat processing error:', error);
+          recordError(typeof error === 'string' ? error : 'Chat processing error');
+        },
+        onHtmlUpdate: (html) => {
+          // In Ask mode, do not apply changes to the canvas
+          if (!askModeRef.current) {
+            deepSite.updateHtml(html);
+          }
+        },
+        onStateChange: ({ isWorking, isThinking }) => {
+          deepSite.setIsAiWorking(isWorking);
+          deepSite.setIsThinking(isThinking);
+          setIsInputDisabled(isWorking);
+        },
+        onPromptApplied: (prompt) => {
+          deepSite.setPreviousPrompt(prompt);
+          // Index the current HTML into RAG for this project (best-effort)
+          try {
+            if (!mockMode && project?.id && user?.id && deepSite.html) {
+              const content = deepSite.html;
+              // Basic chunking by length to avoid huge single embeddings
+              const chunks: { project_id: string; user_id: string; source: string; path: string; content: string }[] = [];
+              const maxLen = 4000;
+              for (let i = 0; i < content.length; i += maxLen) {
+                const slice = content.slice(i, i + maxLen);
+                chunks.push({ project_id: project.id, user_id: user.id, source: 'html', path: selectedRoute || '/', content: slice });
+              }
+              fetch('/api/rag/upsert', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chunks }) }).catch(() => {});
+            }
+          } catch {}
+        },
+        onProgressReset: () => {
+          deepSite.resetProgress();
+        },
+        onProgress: (step) => {
+          deepSite.pushProgress(step);
+        },
+        onUserMessageCreated: (msg) => {
+          // Create a checkpoint when user prompts, before generation starts
+          // Skip in Ask mode (no modifications)
+          if (!askModeRef.current) {
+            deepSite.updateHtml(deepSite.html, msg.text);
+          }
+        }
+      });
+    }
+  }, [deepSite]);
+
+  // Sync in-frame navigations to the route dropdown
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      const data: any = e.data || {};
+      if (data && data.type === 'deepsite:navigate' && typeof data.path === 'string') {
+        setSelectedRoute(data.path);
+      }
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+
+
+  // Handle placeholder visibility
+  useEffect(() => {
+    // Check for initial prompt and images from session storage
+    let initialPrompt: string | null = null;
+    let initialImages: string[] = [];
+    try {
+      if (typeof window !== 'undefined') {
+        initialPrompt = sessionStorage.getItem('surbee_initial_prompt');
+        const imagesStr = sessionStorage.getItem('surbee_initial_images');
+        if (imagesStr) {
+          try { initialImages = JSON.parse(imagesStr) as string[]; } catch {}
+          sessionStorage.removeItem('surbee_initial_images');
+        }
+        if (initialPrompt) {
+          sessionStorage.removeItem('surbee_initial_prompt');
+        }
+      }
+    } catch {}
+    
+    if (initialPrompt || (initialImages && initialImages.length > 0)) {
+      handleSendMessage(initialPrompt || '', initialImages);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Update placeholder class in editor when chat text changes
+  useEffect(() => {
+    const contentEditableDiv = document.querySelector('.ProseMirror') as HTMLDivElement;
+    if (contentEditableDiv) {
+      const isEmpty = !contentEditableDiv.textContent || contentEditableDiv.textContent.trim() === '';
+      if (isEmpty) {
+        contentEditableDiv.classList.add('is-editor-empty');
+      } else {
+        contentEditableDiv.classList.remove('is-editor-empty');
+      }
+    }
+  }, [chatText]);
+
+
+
+
+
+  const stopGeneration = () => {
+    deepSite.stopGeneration();
+    const stopMsg: ChatMessage = {
+      id: (Date.now() + 1).toString(),
+      text: 'Generation stopped.',
+      isUser: false,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, stopMsg]);
+  };
+
+  const handleSendMessage = async (message?: string, images?: string[]) => {
+    const textToSend = message || chatText.trim();
+    const hasImages = Array.isArray(images) && images.length > 0;
+    if (!textToSend && !hasImages && files.length === 0) return;
+    if (isInputDisabled || deepSite.isAiWorking) return;
+
+    if (!message) {
+      setChatText("");
+      setFiles([]);
+      setFilePreviews({});
+    }
+    setHasStartedChat(true);
+
+    // Update context meter based on this prompt size (approx.)
+    try {
+      const tokenCount = await preciseCountTokens(textToSend);
+      const inc = tokenCount + (Array.isArray(images) ? images.length * 128 : 0);
+      ctxTokensUsedRef.current += inc;
+      const limit = ctxLimitRef.current || DEFAULT_CONTEXT_TOKENS;
+      const pct = ((ctxTokensUsedRef.current % limit) / limit) * 100;
+      setContextPercent(Math.max(0, Math.min(100, Math.round(pct * 10) / 10)));
+    } catch {}
+
+    // Add to history
+    addHistoryEntry(textToSend, [
+      "Updated website content",
+      "Enhanced user interface", 
+      "Improved design"
+    ]);
+
+    // Clear the contentEditable div
+    const contentEditableDiv = document.querySelector('.ProseMirror') as HTMLDivElement;
+    if (contentEditableDiv) {
+      contentEditableDiv.innerHTML = '<p class="is-empty is-editor-empty" style="margin: 0px; color: rgb(235, 235, 235);"><br class="ProseMirror-trailingBreak"></p>';
+    }
+
+    // Ask mode: brainstorm only (no HTML changes, no follow-up PUT)
+    if (isAskMode) {
+      await deepSite.callAi(textToSend, undefined, false, true, projectId, true);
+    } else {
+      // Process message through ChatProcessor (build/modify HTML)
+      if (chatProcessorRef.current) {
+        await chatProcessorRef.current.processMessage(
+          textToSend,
+          deepSite.html,
+          deepSite.previousPrompt,
+          deepSite.provider,
+          deepSite.model,
+          selectedElement,
+          images,
+          projectId,
+          false
+        );
+      }
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const isImageFile = (file: File) => file.type.startsWith("image/");
+
+  const processFile = (file: File) => {
+    if (!isImageFile(file)) {
+      console.log("Only image files are allowed");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      console.log("File too large (max 10MB)");
+      return;
+    }
+    setFiles(prev => (prev.length >= 10 ? prev : [...prev, file].slice(0, 10)));
+    const reader = new FileReader();
+    reader.onload = (e) => setFilePreviews(prev => ({ ...prev, [file.name]: e.target?.result as string }));
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveFile = (index: number) => {
+    const newFiles = files.filter((_, i) => i !== index);
+    setFiles(newFiles);
+    const newPreviews = { ...filePreviews };
+    delete newPreviews[files[index].name];
+    setFilePreviews(newPreviews);
+  };
+
+  const openImageModal = (imageUrl: string) => setSelectedImage(imageUrl);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter((file) => isImageFile(file));
+    imageFiles.slice(0, 10).forEach(processFile);
+  };
+
+  const handlePaste = (e: ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const images: File[] = []
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image") !== -1) {
+        const file = items[i].getAsFile();
+        if (file) images.push(file)
+      }
+    }
+    if (images.length) {
+      e.preventDefault();
+      images.slice(0, 10).forEach(processFile)
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("paste", handlePaste);
+    return () => document.removeEventListener("paste", handlePaste);
+  }, []);
+
+  // Close publish menu on outside click or Escape
+  useEffect(() => {
+    if (!isPublishOpen && !isShareOpen) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (publishMenuRef.current && !publishMenuRef.current.contains(t)) setIsPublishOpen(false);
+      if (shareMenuRef.current && !shareMenuRef.current.contains(t)) setIsShareOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsPublishOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [isPublishOpen, isShareOpen]);
+
+  useEffect(() => {
+    if (chatAreaRef.current) {
+      chatAreaRef.current.scrollTop = chatAreaRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const handleHistoryClick = () => {
+    setShowHistory(!showHistory);
+  };
+
+  const addHistoryEntry = (prompt: string, changes: string[]) => {
+    const newEntry: HistoryEntry = {
+      id: Date.now().toString(),
+      prompt,
+      timestamp: new Date(),
+      changes,
+      version: versionCounter,
+      isFlagged: false,
+    };
+    setHistoryEntries(prev => [newEntry, ...prev]);
+    setVersionCounter(prev => prev + 1);
+  };
+
+  const toggleHistoryFlag = (entryId: string) => {
+    setHistoryEntries(prev => 
+      prev.map(entry => 
+        entry.id === entryId 
+          ? { ...entry, isFlagged: !entry.isFlagged }
+          : entry
+      )
+    );
+  };
+
+  const formatHistoryDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  const togglePageDropdown = () => {
+    setIsPageDropdownOpen(!isPageDropdownOpen);
+  };
+
+  // Derive pages from current HTML by scanning for anchor links with absolute paths
+  useEffect(() => {
+    try {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = deepSite.html || '';
+      const anchors = Array.from(tmp.querySelectorAll('a')) as HTMLAnchorElement[];
+      const found: { path: string; title: string }[] = [];
+      const seen = new Set<string>();
+      // Always include root
+      found.push({ path: '/', title: '/' });
+      seen.add('/');
+      anchors.forEach(a => {
+        const href = (a.getAttribute('href') || '').trim();
+        if (!href || !href.startsWith('/')) return;
+        const path = href.split('#')[0];
+        if (!seen.has(path)) {
+          const txt = (a.textContent || '').trim();
+          const title = txt || path;
+          found.push({ path, title });
+          seen.add(path);
+        }
+      });
+      setPages(found);
+      // If selected route no longer exists, fall back to '/'
+      if (!found.find(p => p.path === selectedRoute)) {
+        setSelectedRoute('/');
+      }
+    } catch {
+      // ignore parsing errors
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepSite.html]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.cgihadi-dropdown')) {
+        setIsCgihadiDropdownOpen(false);
+      }
+      if (!target.closest('.page-dropdown')) {
+        setIsPageDropdownOpen(false);
+      }
+    };
+
+    if (isCgihadiDropdownOpen || isPageDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isCgihadiDropdownOpen, isPageDropdownOpen]);
+
+  const getDeviceStyles = () => {
+    switch (currentDevice) {
+      case 'phone':
+        // Shrink width only; keep full height
+        return 'w-[375px] max-w-full h-full';
+      case 'tablet':
+        // Shrink width only; keep full height
+        return 'w-[768px] max-w-full h-full';
+      default:
+        return 'w-full h-full';
+    }
+  };
+
+  // Show loading state while authenticating or loading project
+  if (authLoading || projectLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!user && !mockMode) {
+    window.location.href = '/login';
+    return null;
+  }
+
+  // Show error state if no project
+  if (!project) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold mb-2 text-white">Project not found</h1>
+          <p className="text-gray-400">The project you're looking for doesn't exist or you don't have access to it.</p>
+          <button 
+            onClick={() => window.location.href = '/dashboard/projects'}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Back to Projects
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <AppLayout hideSidebar fullBleed>
+      <div className="flex h-full w-full" style={{ fontFamily: 'FK Grotesk, sans-serif', backgroundColor: 'var(--surbee-sidebar-bg)', color: 'var(--surbee-fg-primary)' }}>
+      {/* Left Sidebar - Chat Area */}
+      <div className={`flex flex-col transition-all duration-300 ${
+        isChatHidden ? 'w-0 opacity-0 pointer-events-none' : (isSidebarCollapsed ? 'w-16' : 'w-140')
+      }`} style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
+        {/* Profile Section at Top (match dashboard UserMenu) */}
+        <div className="profile-section relative">
+          <div className="flex items-center gap-1">
+            <div className="profile-button">
+              <div 
+                className="profile-circle cursor-pointer"
+                onClick={() => setIsCgihadiDropdownOpen(!isCgihadiDropdownOpen)}
+              >
+                H
+              </div>
+              <motion.div
+                className="profile-arrow-container cursor-pointer"
+                animate={{ rotate: isCgihadiDropdownOpen ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setIsCgihadiDropdownOpen(!isCgihadiDropdownOpen)}
+              >
+                <ChevronDown className="profile-arrow" />
+              </motion.div>
+            </div>
+            <div className="user-plan-text pro" style={{ margin: '0', padding: '0', marginLeft: '-8px' }}>Max</div>
+          </div>
+          <AnimatePresence>
+            {isCgihadiDropdownOpen && (
+              <motion.div
+                className="absolute z-50 mt-2"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <UserMenu className="mt-2" onClose={() => setIsCgihadiDropdownOpen(false)} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Chat Area in Sidebar */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {showHistory ? (
+            /* History View */
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-4 pr-4">
+                <div className="mb-4" style={{ paddingLeft: '8px' }}>
+                  <h3 className="text-lg font-semibold text-white mb-2" style={{
+                    fontFamily: 'Sohne, sans-serif',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    lineHeight: '1.375rem'
+                  }}>History</h3>
+                </div>
+                <div className="space-y-2">
+                  {historyEntries.map((entry) => (
+                    <div key={entry.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-zinc-800/50 transition-colors cursor-pointer group">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm text-white font-medium truncate" style={{ fontFamily: 'Sohne, sans-serif' }}>
+                              {entry.prompt}
+                            </p>
+                            <span className="text-xs text-gray-500 bg-zinc-800 px-2 py-1 rounded whitespace-nowrap">
+                              v{entry.version}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">{formatHistoryDate(entry.timestamp)}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleHistoryFlag(entry.id);
+                        }}
+                        className={`p-1 rounded transition-colors ${
+                          entry.isFlagged 
+                            ? 'text-yellow-400 hover:text-yellow-300' 
+                            : 'text-gray-500 hover:text-gray-300 opacity-0 group-hover:opacity-100'
+                        }`}
+                        title={entry.isFlagged ? 'Remove flag' : 'Flag this version'}
+                      >
+                        <Flag className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  {historyEntries.length === 0 && (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500 text-sm">No history entries yet</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Messages */
+            <div 
+              ref={chatAreaRef}
+              className="flex-1 overflow-y-auto max-h-[calc(100vh-10rem)] scrollbar-hide"
+              style={{ scrollBehavior: 'smooth' }}
+            >
+              <div className="space-y-4 p-4 chatbox-fade-container">
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`group relative ${
+                      message.isUser ? 'text-right' : 'text-left'
+                    }`}
+                  >
+                    {/* Thinking indicator for AI messages */}
+                    {!message.isUser && deepSite.isThinking && message.id === messages[messages.length - 1]?.id && (
+                      <div className="text-sm text-gray-400 mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                          </div>
+                          <span>AI is thinking...</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="text-base leading-relaxed">
+                      {message.isUser ? (
+                        <span
+                          className="text-white text-left inline-block rounded-xl max-w-[80%] px-3 py-3 text-base md:text-sm leading-[22px] overflow-auto whitespace-pre-wrap break-words"
+                          style={{ backgroundColor: '#1a1a1a', overflowWrap: 'anywhere' }}
+                        >
+                          {message.text}
+                        </span>
+                      ) : (
+                        <MarkdownRenderer content={message.text} className="text-[15px] leading-6" />
+                      )}
+                    </div>
+                    {/* Suggestion pills */}
+                    {!message.isUser && Array.isArray(message.suggestions) && message.suggestions.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {message.suggestions.map((sugg) => (
+                          <button
+                            key={sugg}
+                            onClick={() => handleSendMessage(sugg)}
+                            className="px-2.5 py-1 rounded-full text-xs bg-white/5 text-gray-200 hover:bg-white/10 border border-white/10 transition-colors"
+                          >
+                            {sugg}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {/* Progress steps for the latest AI message */}
+                    {!message.isUser && message.id === messages[messages.length - 1]?.id && deepSite.isAiWorking && (
+                      <div className="mt-2 text-xs text-gray-400 space-y-1">
+                        {deepSite.progress?.map((step) => (
+                          <div key={step.id} className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${step.status === 'done' ? 'bg-green-500' : step.status === 'error' ? 'bg-red-500' : 'bg-blue-500 animate-pulse'}`}></div>
+                            <span>{step.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {/* Revert button on user messages as checkpoints */}
+                    {message.isUser && (
+                      <div className="mt-2 flex justify-end">
+                        <button
+                          className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-white/5"
+                          onClick={() => {
+                            const target = deepSite.checkpoints?.find((cp) => cp.createdAt >= message.timestamp) || deepSite.checkpoints?.[0];
+                            if (!target) {
+                              console.warn('No checkpoint found to revert');
+                              return;
+                            }
+                            const name = 'alert-dialog';
+                            // Lightweight custom dialog in lieu of shadcn wiring here
+                            const ok = window.confirm('Revert to this checkpoint? You will lose changes made after this point.');
+                            if (ok) deepSite.revertToCheckpoint(target.id);
+                          }}
+                        >
+                          Revert
+                        </button>
+                      </div>
+                    )}
+                    
+                    {!message.isUser && (
+                      <div className="mt-2 group">
+                        <AIResponseActions
+                          message={message.text}
+                          onCopy={(content) => navigator.clipboard.writeText(content)}
+                          onThumbsUp={() => console.log('Thumbs up')}
+                          onThumbsDown={() => console.log('Thumbs down')}
+                          onRetry={() => {
+                            const lastUser = [...messages].reverse().find(m => m.isUser)?.text || '';
+                            if (lastUser) handleSendMessage(lastUser);
+                          }}
+                          onCreateSurvey={() => setCurrentView('viewer')}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Chat Input */}
+        <div className="px-1 pr-0 pb-3">
+          <div className="relative ml-1 mr-0">
+            {/* Credits/Error bar exactly above chatbox */}
+            {errorBarVisible ? (
+              <div className="mb-0.5 -mx-2 flex items-center justify-between rounded-t-[0.625rem] bg-red-900/70 border border-red-800 px-2 py-2" style={{ marginLeft: '-8px', marginRight: '-0px' }}>
+                <div className="flex items-center gap-2 text-red-200 text-xs">
+                  <span>⚠️</span>
+                  <span>{errorCount} {errorCount === 1 ? 'error' : 'errors'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={handleFixErrors} className="px-2 py-0.5 rounded bg-white text-black text-xs font-medium hover:opacity-90">Fix for me</button>
+                  <button onClick={() => setErrorBarVisible(false)} className="text-red-200 hover:text-white text-xs">✕</button>
+                </div>
+              </div>
+            ) : (
+              <div className="relative overflow-visible flex items-center justify-between rounded-t-xl border px-3 py-1.5"
+                   style={{ backgroundColor: '#1A1A1A', borderColor: 'rgba(63,63,70,0.4)' }}>
+                <span className="text-xs text-gray-300" style={{ fontFamily: 'Sohne, sans-serif', transform: 'translateY(-1px)' }}>Credits left {Math.max(0, creditsTotal - creditsUsed)}/{creditsTotal}</span>
+                <span className="text-xs text-gray-400" style={{ transform: 'translateY(-1px)' }}>Project: {project?.title || 'Untitled'}</span>
+                {/* Visual extension behind the chatbox */}
+                <div aria-hidden
+                     className="pointer-events-none absolute left-[-1px] right-[-1px] top-full h-8 border-x rounded-b-none"
+                     style={{ backgroundColor: '#1A1A1A', borderColor: 'rgba(63,63,70,0.4)' }}
+                />
+              </div>
+            )}
+
+            {/* Chat input container to anchor controls to the box itself */}
+            <div className="relative">
+              <ChatInputLight
+                onSendMessage={(message, images) => handleSendMessage(message, images)}
+                isInputDisabled={isInputDisabled || deepSite.isAiWorking}
+                placeholder="Ask a follow up."
+                className="chat-input-grey"
+                isEditMode={isEditableModeEnabled}
+                onToggleEditMode={() => {
+                  setIsEditableModeEnabled(!isEditableModeEnabled);
+                  if (selectedElement) {
+                    setSelectedElement(null);
+                  }
+                }}
+                isAskMode={isAskMode}
+                onToggleAskMode={() => setIsAskMode(v => !v)}
+                showSettings={false}
+                selectedElement={selectedElement}
+                onClearSelection={() => setSelectedElement(null)}
+                tokenPercent={contextPercent}
+              />
+              {/* Additional Controls pinned to the input's top-right */}
+              <div className="absolute top-2 right-2 flex items-center gap-2 z-10">
+                {deepSite.isAiWorking && (
+                  <button
+                    onClick={stopGeneration}
+                    className="relative justify-center whitespace-nowrap ring-offset-background focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 h-7 data-[state=open]:bg-muted focus-visible:outline-none group inline-flex gap-1 items-center px-2.5 py-1 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer w-fit focus-visible:ring-0 focus-visible:ring-offset-0 bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-transparent"
+                    type="button"
+                  >
+                    <StopCircle className="w-4 h-4" />
+                    <span className="text-sm font-medium">Stop</span>
+                  </button>
+                )}
+                {/* Token meter moved into ChatInputLight */}
+              </div>
+            </div>
+        </div>
+      </div>
+      </div>
+
+      {/* Right Side - Preview */}
+      <div className="flex-1 flex flex-col relative" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
+        {/* Header */}
+        <div className="h-14 flex items-center justify-between pl-2 pr-4" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
+          {/* Left Section */}
+          <div className="flex items-center gap-2">
+            {/* Collapse/Expand Chat */}
+            <button
+              className={`rounded-md transition-colors cursor-pointer ${
+                isChatHidden 
+                  ? 'text-gray-400 hover:text-white hover:bg-white/5' 
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+              onClick={() => setIsChatHidden(v => !v)}
+              title={isChatHidden ? 'Expand chat' : 'Collapse chat'}
+              style={{
+                fontFamily: 'Sohne, sans-serif',
+                padding: '8px 12px'
+              }}
+            >
+              {isChatHidden ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+            </button>
+            <button
+              className={`rounded-md transition-colors cursor-pointer ${
+                showHistory 
+                  ? 'text-white bg-white/10' 
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+              onClick={() => setShowHistory((v) => !v)}
+              aria-pressed={showHistory}
+              title="Toggle history"
+              style={{
+                fontFamily: 'Sohne, sans-serif',
+                padding: '8px 12px'
+              }}
+            >
+              <History className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Center Section - Device Controls */}
+          <div className="hidden md:flex flex-1 items-center justify-center">
+            <div className="relative flex h-8 min-w-[340px] max-w-[560px] items-center justify-between gap-2 rounded-md border border-zinc-800 bg-[#1a1a1a] px-2 text-sm page-dropdown">
+              {/* Device View Buttons */}
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={() => setCurrentDevice('desktop')}
+                  className={`p-1 rounded transition-colors ${
+                    currentDevice === 'desktop' 
+                      ? 'bg-zinc-700/50 text-white' 
+                      : 'text-gray-400 hover:text-white hover:bg-zinc-700/30'
+                  }`}
+                >
+                  <Monitor className="w-3.5 h-3.5" />
+                </button>
+                <button 
+                  onClick={() => setCurrentDevice('tablet')}
+                  className={`p-1 rounded transition-colors ${
+                    currentDevice === 'tablet' 
+                      ? 'bg-zinc-700/50 text-white' 
+                      : 'text-gray-400 hover:text-white hover:bg-zinc-700/30'
+                  }`}
+                >
+                  <Tablet className="w-3.5 h-3.5" />
+                </button>
+                <button 
+                  onClick={() => setCurrentDevice('phone')}
+                  className={`p-1 rounded transition-colors ${
+                    currentDevice === 'phone' 
+                      ? 'bg-zinc-700/50 text-white' 
+                      : 'text-gray-400 hover:text-white hover:bg-zinc-700/30'
+                  }`}
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Center: Route dropdown showing '/', '/contact', etc. */}
+              <div className="flex-1 flex items-center gap-2 px-1">
+                <div className="relative">
+                  <button
+                    onClick={togglePageDropdown}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-gray-200 hover:bg-zinc-700/30"
+                    title="Select page"
+                  >
+                    <span className="text-sm" style={{ fontFamily: 'Sohne, sans-serif' }}>{selectedRoute}</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                  </button>
+                  {isPageDropdownOpen && (
+                    <div className="absolute z-50 mt-1 w-48 bg-[#0f0f0f] border border-zinc-800 rounded-md shadow-xl">
+                      <div className="py-1 max-h-64 overflow-auto">
+                        {pages.map(p => (
+                          <button
+                            key={p.path}
+                            onClick={() => { setSelectedRoute(p.path); setIsPageDropdownOpen(false); setRendererKey(k => k+1); }}
+                            className={`w-full text-left px-3 py-1.5 text-sm hover:bg-white/5 ${selectedRoute === p.path ? 'text-white' : 'text-gray-300'}`}
+                          >
+                            {p.path}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {isEditableModeEnabled && (
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={() => {
+                    const previewUrl = `https://Surbee.dev/preview/${projectId}`;
+                    window.open(previewUrl, '_blank', 'width=1200,height=800');
+                  }}
+                  className="p-1 rounded text-gray-400 hover:text-white hover:bg-zinc-700/30 transition-colors"
+                  title="Open preview in new tab"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </button>
+                <button 
+                  onClick={() => setRendererKey((k) => k + 1)}
+                  className="p-1 rounded text-gray-400 hover:text-white hover:bg-zinc-700/30 transition-colors"
+                  title="Refresh page"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Section - Upgrade & Publish Buttons */}
+          <div className="relative flex items-center gap-2">
+            {/* Share */}
+            <div className="relative">
+              <button
+                onClick={() => setIsShareOpen((v) => !v)}
+                className="p-1.5 rounded-md text-gray-300 hover:bg-white/10"
+                title="Share"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+              {isShareOpen && (
+                <div ref={shareMenuRef} className="absolute top-full right-0 mt-2 w-[320px] bg-black border border-zinc-800 rounded-xl shadow-2xl z-50 p-3">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-400">Share</span>
+                      <button
+                        onClick={() => { try { navigator.clipboard.writeText(window.location.href); } catch {} }}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-white/5 hover:bg-white/10 text-gray-200"
+                      >
+                        <Copy className="w-3.5 h-3.5" /> Copy link
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs text-gray-400">Invite by email</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          placeholder="name@company.com"
+                          className="flex-1 h-8 rounded-md bg-zinc-900 border border-zinc-800 px-2 text-sm text-white outline-none focus:border-zinc-700"
+                        />
+                        <button
+                          onClick={() => { try { /* TODO: backend invite */ alert(`Invited ${inviteEmail}`); } catch {} setInviteEmail(''); }}
+                          className="h-8 px-2 rounded-md bg-white text-black text-sm font-medium hover:opacity-90"
+                        >
+                          Invite
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-sm text-gray-300">Publish to community</span>
+                      <button
+                        onClick={() => setPublishToCommunity(v => !v)}
+                        className={`w-10 h-6 rounded-full relative transition-colors ${publishToCommunity ? 'bg-blue-600' : 'bg-zinc-700'}`}
+                        aria-pressed={publishToCommunity}
+                        title="Toggle publish to community"
+                      >
+                        <span className={`absolute top-0.5 ${publishToCommunity ? 'left-5' : 'left-0.5'} w-5 h-5 bg-white rounded-full transition-all`} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <button
+              className={`relative px-3 py-1.5 font-medium text-sm transition-all duration-150 cursor-pointer rounded-[0.38rem] ${
+                activeTopButton === 'upgrade' ? 'bg-white/10 text-white' : 'text-gray-300 hover:bg-white/10'
+              }`}
+              style={{
+                fontFamily: 'FK Grotesk, sans-serif',
+                fontSize: '14px',
+                fontWeight: 500,
+                lineHeight: '1.375rem'
+              }}
+              onClick={() => router.push('/dashboard/upgrade-plan')}
+            >
+              Upgrade
+            </button>
+            <button
+              onClick={() => {
+                setIsPublishOpen((v) => !v);
+                setActiveTopButton(activeTopButton === 'publish' ? null : 'publish');
+              }}
+              className={`relative px-3 py-1.5 font-medium text-sm transition-all duration-150 cursor-pointer rounded-[0.38rem] ${
+                activeTopButton === 'publish' ? 'bg-white text-black' : 'bg-white text-black hover:opacity-90'
+              }`}
+              style={{
+                fontFamily: 'FK Grotesk, sans-serif',
+                fontSize: '14px',
+                fontWeight: 500,
+                lineHeight: '1.375rem'
+              }}
+            >
+              Publish
+            </button>
+            {isPublishOpen && (
+              <div
+                ref={publishMenuRef}
+                className="absolute top-full right-0 mt-2 w-[360px] bg-black border border-zinc-800 rounded-xl shadow-2xl z-50"
+              >
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">Preview</span>
+                    <a
+                      href={`https://Surbee.dev/preview/${projectId}`}
+                      target="_blank"
+                      className="inline-flex items-center gap-2 px-2 py-1 rounded-md text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span className="truncate">Surbee.dev/preview/{projectId}</span>
+                    </a>
+                  </div>
+                  <div className="border-t border-zinc-800" />
+                  <div className="space-y-2">
+                    <button className="w-full h-9 rounded-md bg-zinc-900 text-gray-200 text-sm font-medium hover:bg-zinc-800 transition-colors border border-zinc-800">
+                      Connect Domain
+                    </button>
+                    <button className="w-full h-9 rounded-md bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors border border-white/10">
+                      Publish to Surbee.dev
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex relative">
+          {/* Restored rounded preview frame with border, like before */}
+          <div className="flex-1 flex flex-col relative bg-[#1a1a1a] rounded-[0.625rem] border border-zinc-800 mt-0 mr-3 mb-3 ml-2 overflow-hidden">
+            <div className="flex-1 overflow-hidden flex items-center justify-center">
+              {/* Device-sized container with smooth transitions on resize */}
+              <div className={`relative ${getDeviceStyles()} transition-all duration-300 ease-in-out`}>
+                <DeepSiteRenderer
+                  key={`renderer-${rendererKey}`}
+                  html={deepSite.html}
+                  currentPath={selectedRoute}
+                  deviceType={currentDevice}
+                  title="Website Preview"
+                  className="h-full w-full"
+                  isEditableModeEnabled={isEditableModeEnabled}
+                  onClickElement={(element) => {
+                    setIsEditableModeEnabled(false);
+                    setSelectedElement(element);
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="relative max-w-4xl max-h-4xl">
+            <img src={selectedImage} alt="Preview" className="max-w-full max-h-full object-contain" />
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-70"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Invite Modal */}
+      <InviteModal open={inviteOpen} onOpenChange={setInviteOpen} />
+      </div>
+    </AppLayout>
+  );
+}
+

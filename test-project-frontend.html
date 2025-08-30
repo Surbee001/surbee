@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Project Page</title>
+    <style>
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            background: #f9fafb;
+        }
+        .test-button {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+        }
+        .test-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        .success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .info { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        pre {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Test Survey Builder Project Page</h1>
+        <p>Testing the survey builder by directly opening the project page and triggering survey generation.</p>
+
+        <div class="test-section">
+            <h3>🎯 Direct Project Page Test</h3>
+            <p>Open the actual project page in the browser to test end-to-end functionality.</p>
+            <button onclick="openProjectPage()" class="test-button">Open Project Page</button>
+            <div id="pageResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Manual Test Instructions</h3>
+            <ol>
+                <li><strong>Open the project page:</strong> Click the button above or go to <code>http://localhost:3006/project/test-project</code></li>
+                <li><strong>Enter a prompt:</strong> Type "create me a fun survey on user ice creams! try to go for that new apple look, where its glassy"</li>
+                <li><strong>Submit:</strong> Press Enter or click the send button</li>
+                <li><strong>Wait for generation:</strong> Watch the thinking process (should take ~60 seconds)</li>
+                <li><strong>Check the right panel:</strong> Survey should appear with components and beautiful design</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Expected Results</h3>
+            <ul>
+                <li>✅ Survey title: "User Experience Research"</li>
+                <li>✅ 4 pages with 6 components total</li>
+                <li>✅ Modern design with glassy Apple-inspired look</li>
+                <li>✅ Interactive components (text input, checkboxes, radio, scale, textarea)</li>
+                <li>✅ Real-time validation and progress tracking</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Troubleshooting</h3>
+            <p>If the survey doesn't appear:</p>
+            <ul>
+                <li>Check browser console for errors</li>
+                <li>Verify the server is running on port 3006</li>
+                <li>Make sure the AI components are compiling correctly</li>
+                <li>Check that the data structure fix is working</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Current Fix Applied</h3>
+            <div class="info">
+                <strong>Fixed the data structure issue:</strong><br>
+                Frontend was looking for <code>result?.aiOutput</code><br>
+                But data was actually in <code>result?.json?.aiOutput</code><br>
+                <br>
+                <strong>Solution:</strong> Updated to check both paths:<br>
+                <code>const ai = result?.aiOutput || result?.json?.aiOutput</code>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openProjectPage() {
+            const projectUrl = 'http://localhost:3006/project/test-project';
+            const result = document.getElementById('pageResult');
+            
+            result.innerHTML = '<div class="info">🚀 Opening project page in new tab...</div>';
+            
+            window.open(projectUrl, '_blank');
+            
+            setTimeout(() => {
+                result.innerHTML = `
+                    <div class="success">✅ Project page opened!</div>
+                    <div class="info">
+                        <strong>Next steps:</strong><br>
+                        1. Type your ice cream survey prompt in the chat<br>
+                        2. Wait for AI generation to complete<br>
+                        3. Survey should appear in the right panel<br>
+                        4. Test the interactive components
+                    </div>
+                `;
+            }, 1000);
+        }
+
+        // Auto-check if server is running
+        fetch('http://localhost:3006/api/health')
+            .then(response => {
+                if (response.ok) {
+                    document.querySelector('.container').insertAdjacentHTML('afterbegin', 
+                        '<div class="success">✅ Server is running on port 3006</div>'
+                    );
+                } else {
+                    document.querySelector('.container').insertAdjacentHTML('afterbegin', 
+                        '<div class="info">📡 Server detected but no health endpoint</div>'
+                    );
+                }
+            })
+            .catch(() => {
+                document.querySelector('.container').insertAdjacentHTML('afterbegin', 
+                    '<div class="error">❌ Server not accessible on port 3006 - make sure npm run dev is running</div>'
+                );
+            });
+    </script>
+</body>
+</html>

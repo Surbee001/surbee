@@ -1,0 +1,233 @@
+# Surbee Lyra Project - Cursor AI Rules
+
+## Project Overview
+Surbee is an AI-powered survey and website builder platform built with Next.js 15, React, TypeScript, Tailwind CSS, and Supabase.
+
+## Core Technologies
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **AI**: OpenAI GPT models
+- **State Management**: React Context + Zustand
+- **UI Components**: Custom components + shadcn/ui
+- **Forms**: React Hook Form
+- **Package Manager**: pnpm
+
+## Project Structure
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── (auth)/            # Auth routes
+│   ├── api/               # API routes
+│   ├── dashboard/         # Dashboard pages
+│   └── project/           # Project pages
+├── components/            # React components
+│   ├── auth/             # Authentication components
+│   ├── survey-builder/   # Survey building components
+│   ├── ui/               # Reusable UI components
+│   └── website-builder/  # Website building components
+├── lib/                  # Utility functions
+│   ├── ai/              # AI-related utilities
+│   ├── supabase.ts      # Supabase client
+│   └── utils.ts         # General utilities
+└── types/               # TypeScript type definitions
+```
+
+## Coding Standards
+
+### TypeScript
+- Use strict TypeScript with proper type definitions
+- Prefer `interface` over `type` for object shapes
+- Use proper generic types for reusable components
+- Always define return types for functions
+- Use `const assertions` where appropriate
+
+### React Components
+- Use function components with hooks
+- Prefer composition over inheritance
+- Use proper React patterns (lifting state up, compound components)
+- Always use React.memo() for performance-critical components
+- Use proper key props in lists
+
+### Next.js App Router
+- Use Server Components by default
+- Add "use client" directive only when necessary
+- Leverage Next.js built-in optimizations
+- Use proper metadata API for SEO
+- Implement proper error boundaries
+
+### Styling
+- Use Tailwind CSS classes
+- Follow mobile-first responsive design
+- Use CSS variables for theme customization
+- Prefer utility classes over custom CSS
+- Use consistent spacing scale (4, 8, 12, 16, 24, 32, 48, 64)
+
+### File Naming
+- Use PascalCase for React components
+- Use camelCase for utility functions
+- Use kebab-case for API routes
+- Use descriptive, meaningful names
+- Group related files in folders
+
+### Import/Export
+- Use named exports for utilities
+- Use default exports for React components
+- Organize imports: external → internal → relative
+- Use path aliases (@/) for cleaner imports
+- Avoid deep relative imports (../../)
+
+## AI Integration Guidelines
+
+### OpenAI Integration
+- Use streaming responses for better UX
+- Implement proper error handling and fallbacks
+- Add rate limiting for API calls
+- Use appropriate models for different tasks
+- Implement token counting and cost optimization
+
+### Prompt Engineering
+- Write clear, specific prompts
+- Use system messages for context
+- Implement prompt templating
+- Add validation for AI responses
+- Use structured outputs when possible
+
+## Database Guidelines
+
+### Supabase
+- Use TypeScript types generated from schema
+- Implement proper Row Level Security (RLS)
+- Use real-time subscriptions efficiently
+- Optimize queries with proper indexing
+- Handle database errors gracefully
+
+### Data Fetching
+- Use React Query for server state
+- Implement proper loading states
+- Add optimistic updates where appropriate
+- Cache data efficiently
+- Handle offline scenarios
+
+## Security Best Practices
+- Validate all user inputs
+- Sanitize data before database operations
+- Use environment variables for secrets
+- Implement proper authentication checks
+- Add CSRF protection for forms
+- Use HTTPS in production
+
+## Performance Guidelines
+- Implement code splitting with Next.js
+- Use proper image optimization
+- Minimize bundle size
+- Implement proper caching strategies
+- Use React.memo() and useMemo() wisely
+- Optimize database queries
+
+## Error Handling
+- Use error boundaries for React errors
+- Implement proper API error responses
+- Add user-friendly error messages
+- Log errors for debugging
+- Provide fallback UI for failures
+
+## Testing Guidelines
+- Write unit tests for utility functions
+- Test React components with Testing Library
+- Add integration tests for critical flows
+- Mock external dependencies properly
+- Maintain good test coverage
+
+## Code Organization
+
+### Components
+- Keep components small and focused
+- Use composition over inheritance
+- Implement proper prop validation
+- Use custom hooks for complex logic
+- Follow single responsibility principle
+
+### API Routes
+- Use proper HTTP methods
+- Implement request validation
+- Add proper error responses
+- Use middleware for common logic
+- Document API endpoints
+
+### Utilities
+- Create pure functions when possible
+- Add proper JSDoc comments
+- Handle edge cases gracefully
+- Use consistent naming conventions
+- Export utilities clearly
+
+## Specific Patterns for Surbee
+
+### Survey Builder
+- Use atomic design principles
+- Implement drag-and-drop functionality
+- Add real-time preview capabilities
+- Support undo/redo operations
+- Validate survey structure
+
+### Website Builder
+- Use component-based architecture
+- Implement responsive design tools
+- Add theme customization options
+- Support template library
+- Enable export functionality
+
+### AI Features
+- Stream AI responses for better UX
+- Implement thinking/processing states
+- Add regeneration capabilities
+- Support different AI models
+- Cache expensive operations
+
+## Environment Setup
+- Use pnpm for package management
+- Configure ESLint and Prettier
+- Set up proper Git hooks
+- Use environment variables properly
+- Document setup requirements
+
+## Deployment
+- Optimize for Vercel deployment
+- Configure proper environment variables
+- Set up database migrations
+- Implement proper monitoring
+- Use proper caching headers
+
+## Common Anti-Patterns to Avoid
+- Don't use any types
+- Avoid deep prop drilling
+- Don't mutate props directly
+- Avoid excessive useEffect usage
+- Don't ignore TypeScript errors
+- Avoid large bundle sizes
+- Don't skip error handling
+- Avoid blocking the main thread
+
+## Best Practices Summary
+1. Always use TypeScript with strict mode
+2. Implement proper error boundaries
+3. Use Server Components when possible
+4. Optimize for Core Web Vitals
+5. Follow React best practices
+6. Implement proper accessibility
+7. Use semantic HTML elements
+8. Write self-documenting code
+9. Test critical user flows
+10. Monitor performance metrics
+
+## Git Workflow
+- Use conventional commit messages
+- Create feature branches for new work
+- Write descriptive pull request descriptions
+- Review code before merging
+- Keep commits focused and atomic
+
+Remember: Always prioritize user experience, performance, and maintainability in all development decisions.
