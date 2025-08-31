@@ -3,10 +3,13 @@ import { HtmlHistory, DeepSiteState } from "../types";
 import { DEFAULT_HTML } from "../lib/constants";
 import { DEFAULT_MODEL, DEFAULT_PROVIDER } from "@/lib/deepsite/providers";
 
-const STORAGE_KEY_HTML = 'surbee:deepsite:html';
-const STORAGE_KEY_PREV_PROMPT = 'surbee:deepsite:prevPrompt';
+const getStorageKeys = (projectId?: string) => ({
+  html: projectId ? `surbee:deepsite:html:${projectId}` : 'surbee:deepsite:html',
+  prevPrompt: projectId ? `surbee:deepsite:prevPrompt:${projectId}` : 'surbee:deepsite:prevPrompt'
+});
 
-export const useEditor = (defaultHtml?: string) => {
+export const useEditor = (defaultHtml?: string, projectId?: string) => {
+  const storageKeys = getStorageKeys(projectId);
   /**
    * State to manage the HTML content of the editor.
    * This will be the main content that users edit.
@@ -117,30 +120,37 @@ export const useEditor = (defaultHtml?: string) => {
     return true;
   }, [checkpoints]);
 
-  // Load from localStorage on mount (client-only)
+  // Load from localStorage on mount and when projectId changes
   useEffect(() => {
     try {
       if (typeof window !== 'undefined') {
-        const savedHtml = localStorage.getItem(STORAGE_KEY_HTML);
+        const savedHtml = localStorage.getItem(storageKeys.html);
         if (savedHtml && savedHtml.trim().length > 0) {
           setHtml(savedHtml);
+        } else {
+          // Reset to default HTML when no saved content for this project
+          setHtml(defaultHtml || DEFAULT_HTML);
         }
-        const savedPrev = localStorage.getItem(STORAGE_KEY_PREV_PROMPT);
-        if (savedPrev) setPreviousPrompt(savedPrev);
+        const savedPrev = localStorage.getItem(storageKeys.prevPrompt);
+        if (savedPrev) {
+          setPreviousPrompt(savedPrev);
+        } else {
+          setPreviousPrompt('');
+        }
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [projectId]);  // Reset when projectId changes
 
   // Persist to localStorage when html or previousPrompt changes
   useEffect(() => {
     try {
       if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY_HTML, html || '');
-        localStorage.setItem(STORAGE_KEY_PREV_PROMPT, previousPrompt || '');
+        localStorage.setItem(storageKeys.html, html || '');
+        localStorage.setItem(storageKeys.prevPrompt, previousPrompt || '');
       }
     } catch {}
-  }, [html, previousPrompt]);
+  }, [html, previousPrompt, storageKeys.html, storageKeys.prevPrompt]);
 
   return {
     // HTML state

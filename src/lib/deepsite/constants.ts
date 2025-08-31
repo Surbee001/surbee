@@ -87,7 +87,8 @@ RULES:
 - Keep original structure/content unless changes are requested.
 - Use Tailwind via <script src="https://cdn.tailwindcss.com"></script> in <head>.
 - Ensure the result is a valid, standalone HTML document.
-- Maintain accessibility and responsive design.`;
+- Maintain accessibility and responsive design.
+- Avoid AI-cliché styles (no neon/purple gradients, sparkles, AI/brain icons). Prefer a neutral background (#f9fafb) unless the user specifies otherwise.`;
 
 export const DEFAULT_HTML = `<!DOCTYPE html>
 <html>
@@ -126,7 +127,7 @@ export const ENHANCED_INITIAL_SYSTEM_PROMPT = INITIAL_SYSTEM_PROMPT;
 export const ENHANCED_FOLLOW_UP_FULL_HTML_PROMPT = FOLLOW_UP_FULL_HTML_PROMPT;
 // GPT-5 supported values: 'low' | 'medium' | 'high'
 export const VERBOSITY_LEVELS = {
-  PLANNING: 'low',
+  PLANNING: 'high',
   GENERATION: 'medium',
   SUMMARY: 'low',
 } as const;

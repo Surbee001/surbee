@@ -32,7 +32,8 @@ export class ChatProcessor {
     selectedElement?: HTMLElement | null,
     attachedImages?: string[],
     projectId?: string,
-    useLongContext?: boolean
+    useLongContext?: boolean,
+    chatSummary?: string
   ): Promise<void> {
     if (!message.trim() && !(Array.isArray(attachedImages) && attachedImages.length > 0)) return;
 
@@ -72,8 +73,20 @@ export class ChatProcessor {
         // Only treat as follow-up if we have a previous prompt (i.e., at least one successful generation)
         const hasPreviousPrompt = Boolean(previousPrompt && previousPrompt.trim().length > 0);
         const hasCurrentHtml = currentHtml.trim().length > 0;
-        const isFollowUp = Boolean(hasPreviousPrompt && hasCurrentHtml && !this.isDefaultHtml(currentHtml));
+        const isDefaultHtml = this.isDefaultHtml(currentHtml);
+        const isFollowUp = Boolean(hasPreviousPrompt && hasCurrentHtml && !isDefaultHtml);
         const selectedElementHtml = selectedElement ? selectedElement.outerHTML : undefined;
+
+        console.log('[ChatProcessor] Route determination:', {
+          hasPreviousPrompt,
+          hasCurrentHtml,
+          htmlLength: currentHtml.length,
+          isDefaultHtml,
+          isFollowUp,
+          endpoint: isFollowUp ? 'PUT (update)' : 'POST (create)',
+          htmlPreview: currentHtml.substring(0, 200) + '...',
+          previousPromptPreview: previousPrompt ? previousPrompt.substring(0, 100) + '...' : 'none'
+        });
 
         if (selectedElementHtml) {
           this.options.onProgress?.({ id: 'target-selection', label: 'Targeting selected element', status: 'pending' });
@@ -84,7 +97,7 @@ export class ChatProcessor {
         } else {
           this.options.onProgress?.({ id: 'plan-layout', label: 'Planning layout', status: 'pending' });
         }
-        await this.handleAiRequest(message, currentHtml, previousPrompt, provider, model, isFollowUp, undefined, selectedElementHtml, projectId, useLongContext);
+        await this.handleAiRequest(message, currentHtml, previousPrompt, provider, model, isFollowUp, undefined, selectedElementHtml, projectId, useLongContext, chatSummary);
       }
     } catch (error: any) {
       this.handleError(error);
@@ -133,7 +146,8 @@ export class ChatProcessor {
     redesignMarkdown?: string,
     selectedElementHtml?: string,
     projectId?: string,
-    useLongContext?: boolean
+    useLongContext?: boolean,
+    chatSummary?: string
   ): Promise<void> {
     const endpoint = "/api/website-builder/ask-ai";
     const method = isFollowUp ? "PUT" : "POST";
@@ -148,6 +162,7 @@ export class ChatProcessor {
           selectedElementHtml,
           projectId,
           useLongContext,
+          chatSummary,
         }
       : {
           prompt,
@@ -157,8 +172,10 @@ export class ChatProcessor {
           redesignMarkdown,
           projectId,
           useLongContext,
+          chatSummary,
         };
 
+    console.log('[ChatProcessor] sending', method, endpoint, { isFollowUp, hasHtml: !!currentHtml, hasPrev: !!previousPrompt });
     const request = await fetch(endpoint, {
       method,
       body: JSON.stringify(body),
@@ -167,6 +184,7 @@ export class ChatProcessor {
         "x-forwarded-for": window.location.hostname,
       },
     });
+    console.log('[ChatProcessor] response status', request?.status);
 
     if (!request.ok) {
       const errorText = await request.text();
@@ -216,12 +234,19 @@ export class ChatProcessor {
         const emitLine = (line: string) => {
           const trimmed = line.trim();
           if (!trimmed) return;
-          const statusMatch = trimmed.match(/^<<<PHASE:STATUS>>>\s*(.*)$/);
-          if (statusMatch) {
+          // Handle server phase/status/error markers
+          const phaseMatch = trimmed.match(/^<<<PHASE:(STATUS|REASON_PLAN|HTML|SUMMARY|ERROR)>>>\s*(.*)$/);
+          if (phaseMatch) {
+            const phase = phaseMatch[1];
+            const msg = phaseMatch[2] || '';
             ensureMessage();
             const current = buildAggregate();
-            const text = current ? current + '\n\n' + statusMatch[1] : statusMatch[1];
+            const text = current ? (current + (msg ? '\n\n' + msg : '')) : msg;
             this.options.onMessageUpdate?.(aiMessageId!, text);
+            if (phase === 'ERROR' && msg) {
+              // Surface error to UI
+              this.options.onError(msg);
+            }
             return;
           }
           const isThink = /^THINK:\s*/i.test(trimmed) || /^REASON:\s*/i.test(trimmed);
@@ -293,7 +318,7 @@ export class ChatProcessor {
         const trailing = (postRemainder + postHtmlBuffer).split('\n');
         for (const ln of trailing) emitLine(ln);
 
-        const finalHtml = extractHtmlSafe(result) || result.trim();
+        const finalHtml = extractHtmlSafe(result) || '';
         if (finalHtml && finalHtml.length > 0) {
           this.options.onHtmlUpdate(finalHtml);
           if (prompt && this.options.onPromptApplied) {
@@ -303,7 +328,8 @@ export class ChatProcessor {
           this.options.onProgress?.({ id: 'apply', label: 'Applying updates', status: 'done' });
           // Suggestions are already streamed as NEXT lines; avoid extra generic message.
         } else {
-          throw new Error('No content returned from the model');
+          // Graceful: keep existing HTML and surface a status line instead of throwing
+          this.options.onMessage({ id: (Date.now() + Math.floor(Math.random() * 1000)).toString(), text: 'STATUS: No changes were applied (model returned no HTML).', isUser: false, timestamp: new Date() });
         }
       } else {
         throw new Error('No response body received');
@@ -350,12 +376,17 @@ export class ChatProcessor {
         const emitLine = (line: string) => {
           const trimmed = line.trim();
           if (!trimmed) return;
-          const statusMatch2 = trimmed.match(/^<<<PHASE:STATUS>>>\s*(.*)$/);
-          if (statusMatch2) {
+          const phaseMatch2 = trimmed.match(/^<<<PHASE:(STATUS|REASON_PLAN|HTML|SUMMARY|ERROR)>>>\s*(.*)$/);
+          if (phaseMatch2) {
+            const phase = phaseMatch2[1];
+            const msg = phaseMatch2[2] || '';
             ensureMessage2();
             const current = buildAggregate2();
-            const text = current ? current + '\n\n' + statusMatch2[1] : statusMatch2[1];
+            const text = current ? (current + (msg ? '\n\n' + msg : '')) : msg;
             this.options.onMessageUpdate?.(aiMessageId2!, text);
+            if (phase === 'ERROR' && msg) {
+              this.options.onError(msg);
+            }
             return;
           }
           const isThink = /^THINK:\s*/i.test(trimmed) || /^REASON:\s*/i.test(trimmed);
@@ -550,16 +581,50 @@ export class ChatProcessor {
   // Extraction handled via shared helper in ../lib/html-utils
 
   /**
-   * Check if HTML is the default template
+   * Check if HTML is the default template or minimal/empty
    */
   private isDefaultHtml(html: string): boolean {
-    // Consider multiple known default templates/messages
-    return (
-      html.includes('Ask me anything.') ||
-      html.includes('Ready to create') ||
-      html.includes('Website Builder') ||
-      html.includes('Ready to build your website')
-    );
+    if (!html || html.trim().length === 0) return true;
+    
+    // Check for minimal HTML structure (just basic elements, no content)
+    const cleanHtml = html.replace(/\s+/g, ' ').trim().toLowerCase();
+    
+    // Default minimal HTML patterns
+    const minimalPatterns = [
+      // Empty body
+      /<body[^>]*>\s*<\/body>/,
+      // Only basic HTML structure with no meaningful content
+      /<!doctypehtml><html[^>]*><head[^>]*>.*?<\/head><body[^>]*>\s*<\/body><\/html>/,
+      // Very short HTML with no survey content
+      cleanHtml.length < 200 && !cleanHtml.includes('input') && !cleanHtml.includes('form') && !cleanHtml.includes('button')
+    ];
+    
+    // Check for old default messages (legacy)
+    const legacyDefaults = [
+      'Ask me anything.',
+      'Ready to create',
+      'Website Builder', 
+      'Ready to build your website'
+    ];
+    
+    // It's default if it matches minimal patterns OR contains legacy defaults
+    const isMinimal = minimalPatterns.some(pattern => {
+      if (pattern instanceof RegExp) {
+        return pattern.test(cleanHtml);
+      }
+      return pattern; // for boolean expressions
+    });
+    
+    const hasLegacyDefault = legacyDefaults.some(text => html.includes(text));
+    
+    console.log('[ChatProcessor] isDefaultHtml check:', { 
+      htmlLength: html.length, 
+      isMinimal, 
+      hasLegacyDefault, 
+      isDefault: isMinimal || hasLegacyDefault 
+    });
+    
+    return isMinimal || hasLegacyDefault;
   }
 
   /**

@@ -15,19 +15,27 @@ interface UseDeepSiteOptions {
   defaultHtml?: string;
   onMessage?: (message: ChatMessage) => void;
   onError?: (error: string) => void;
+  projectId?: string;
 }
 
 export const useDeepSite = ({ 
   defaultHtml, 
   onMessage, 
-  onError 
+  onError,
+  projectId 
 }: UseDeepSiteOptions = {}) => {
-  const editor = useEditor(defaultHtml);
+  const editor = useEditor(defaultHtml, projectId);
   // Track stream text markers and avoid duplicate emissions
   let streamTextRemainder = '';
   const emittedLines = new Set<string>();
   const [phase, setPhase] = useState<'idle'|'reason_plan'|'status'|'html'|'summary'|'error'>('idle');
   const [statusText, setStatusText] = useState<string>('');
+  
+  // New thinking state management
+  const [thinkingContent, setThinkingContent] = useState<string[]>([]);
+  const [thinkingStartTime, setThinkingStartTime] = useState<number | null>(null);
+  const [isThinking, setIsThinking] = useState(false);
+  const [isBuilding, setIsBuilding] = useState(false);
 
   const tryEmitTextMarkers = (incoming: string) => {
     const combined = streamTextRemainder + incoming;
@@ -41,14 +49,47 @@ export const useDeepSite = ({
       if (phaseMatch) {
         const key = phaseMatch[1];
         const rest = phaseMatch[2]?.trim() || '';
-        if (key === 'REASON_PLAN') setPhase('reason_plan');
-        else if (key === 'STATUS') { setPhase('status'); setStatusText(rest); }
-        else if (key === 'HTML') setPhase('html');
-        else if (key === 'SUMMARY') setPhase('summary');
-        else if (key === 'ERROR') { setPhase('error'); setStatusText(rest); }
+        if (key === 'REASON_PLAN') {
+          setPhase('reason_plan');
+          setIsThinking(true);
+          setIsBuilding(false);
+          setThinkingStartTime(Date.now());
+          setThinkingContent([]);
+        }
+        else if (key === 'STATUS') { 
+          setPhase('status'); 
+          setStatusText(rest); 
+          setIsThinking(false);
+          setIsBuilding(true);
+        }
+        else if (key === 'HTML') {
+          setPhase('html');
+          setIsBuilding(true);
+        }
+        else if (key === 'SUMMARY') {
+          setPhase('summary');
+          setIsThinking(false);
+          setIsBuilding(false);
+        }
+        else if (key === 'ERROR') { 
+          setPhase('error'); 
+          setStatusText(rest); 
+          setIsThinking(false);
+          setIsBuilding(false);
+        }
         continue;
       }
-      if (/^(REASON|PLAN|STATUS|DONE|NEXT):/i.test(t)) {
+      if (/^(REASON|PLAN|THINK):/i.test(t)) {
+        // Capture thinking content instead of emitting as messages
+        if (phase === 'reason_plan' && !emittedLines.has(t)) {
+          emittedLines.add(t);
+          setThinkingContent(prev => [...prev, t]);
+        }
+      } else if (phase === 'reason_plan' && !emittedLines.has(t) && t.length > 0) {
+        // Capture any non-prefixed thinking content during reason_plan phase
+        emittedLines.add(t);
+        setThinkingContent(prev => [...prev, `THINK: ${t}`]);
+      } else if (/^(STATUS|DONE|NEXT):/i.test(t)) {
         if (!emittedLines.has(t)) {
           emittedLines.add(t);
           onMessage?.({ id: (Date.now()+Math.floor(Math.random()*1000)).toString(), text: t, isUser: false, timestamp: new Date() });
@@ -66,7 +107,8 @@ export const useDeepSite = ({
     isFollowUp: boolean = false,
     reasonOnly: boolean = false,
     projectId?: string,
-    useLongContext?: boolean
+    useLongContext?: boolean,
+    chatSummary?: string
   ) => {
     if (editor.isAiWorking) return;
     if (!redesignMarkdown && !prompt.trim()) return;
@@ -87,6 +129,7 @@ export const useDeepSite = ({
             reasonOnly,
             projectId,
             useLongContext,
+            chatSummary,
           }),
           headers: {
             "Content-Type": "application/json",
@@ -152,6 +195,7 @@ export const useDeepSite = ({
             reasonOnly,
             projectId,
             useLongContext,
+            chatSummary,
           }),
           headers: {
             "Content-Type": "application/json",
@@ -281,6 +325,12 @@ export const useDeepSite = ({
     callAi,
     redesignFromUrl,
     processChatMessage,
+    
+    // Thinking state
+    thinkingContent,
+    thinkingStartTime,
+    isThinking,
+    isBuilding,
     
     // Utility methods
     isDefaultHtml: editor.html === defaultHtml,

@@ -42,7 +42,10 @@ export async function searchProjectContext(projectId: string, query: string, top
     .select('id, content, embedding, source, path, metadata')
     .eq('project_id', projectId)
     .limit(1000)
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.warn('[RAG] Database table missing or error:', error.message);
+    return []; // Return empty array instead of throwing, so system continues without RAG
+  }
   const scored = (data || []).map((r: any) => ({
     id: r.id,
     source: r.source,

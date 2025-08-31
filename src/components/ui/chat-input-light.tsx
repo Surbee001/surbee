@@ -190,7 +190,7 @@ export default function ChatInputLight({
             {files.map((file, index) => (
               <div key={index} className="relative group">
                 {file.type.startsWith("image/") && filePreviews[file.name] && (
-                  <div className="w-16 h-16 rounded-xl overflow-hidden cursor-pointer transition-all duration-300">
+                  <div className="w-16 h-16 rounded-xl overflow-hidden cursor-pointer h-9 w-9 rounded-full border transition-all duration-300">
                     <img
                       src={filePreviews[file.name]}
                       alt={file.name}
@@ -244,9 +244,9 @@ export default function ChatInputLight({
         
         {/* Main content area with consistent height */}
         <div className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 min-h-0 overflow-hidden px-3.5" style={{ paddingTop: (files.length > 0 || selectedElement) ? '0.5rem' : '0.75rem' }}>
+          <div className="flex-1 min-h-0 px-3.5" style={{ paddingTop: (files.length > 0 || selectedElement) ? '0.5rem' : '0.75rem' }}>
           <form id="prompt">
-            <div className={`w-full leading-[22px] text-sm max-sm:text-[14px] truncate resize-none bg-transparent focus:outline-none scrollbar-hide border-none ${theme === 'white' ? 'placeholder:text-gray-500' : 'placeholder:text-gray-400'}`}>
+            <div className={`w-full leading-[22px] text-sm max-sm:text-[14px] resize-none bg-transparent focus:outline-none border-none ${theme === 'white' ? 'placeholder:text-gray-500' : 'placeholder:text-gray-400'}`}>
               <div className={
                 `[&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[60px] [&_.ProseMirror.is-editor-empty]:before:content-[attr(data-placeholder)] [&_.ProseMirror.is-editor-empty]:before:float-left [&_.ProseMirror.is-editor-empty]:before:pointer-events-none [&_.ProseMirror.is-editor-empty]:before:h-0 [&_.ProseMirror.is-editor-empty]:before:absolute [&_.ProseMirror.is-editor-empty]:before:top-0 [&_.ProseMirror.is-editor-empty]:before:left-0` + 
                 (theme === 'white' 
@@ -267,6 +267,8 @@ export default function ChatInputLight({
                     fontVariantLigatures: "none",
                     fontFeatureSettings: '"liga" 0',
                     minHeight: "60px",
+                    maxHeight: "180px",
+                    overflowY: "auto",
                     outline: "transparent solid 2px",
                     outlineOffset: "2px",
                     color: theme === 'white' ? "rgb(0, 0, 0)" : "rgb(255, 255, 255)",
@@ -288,12 +290,12 @@ export default function ChatInputLight({
             <div className="flex flex-row gap-1 items-center min-w-0 flex-1">
               <button
                 onClick={() => uploadInputRef.current?.click()}
-                className={`inline-flex items-center relative gap-2 font-semibold justify-center whitespace-nowrap rounded-md text-sm transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 h-7 w-7 cursor-pointer border ${theme === 'white' ? 'border-gray-300 text-gray-700 hover:text-black hover:bg-black/5' : 'border-zinc-700/40 text-gray-300 hover:text-white hover:bg-white/5'}`}
+                className={`inline-flex items-center justify-center rounded-md transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer border h-[28px] w-7 ${theme === 'white' ? 'border-gray-300 text-gray-700 hover:text-black hover:bg-black/5' : 'border-zinc-700/40 text-gray-300 hover:text-white hover:bg-white/5'}`}
                 type="button"
                 disabled={isInputDisabled}
                 title="Add"
               >
-                <Plus className={`h-4 w-4 ${theme === 'white' ? 'text-gray-700' : 'text-white'}`} />
+                <Plus className="h-3 w-3" />
                 <input
                   ref={uploadInputRef}
                   type="file"
@@ -383,7 +385,7 @@ export default function ChatInputLight({
                 </div>
               )}
               <button
-                className={`flex justify-center items-center ease-in transition-all duration-150 cursor-pointer ${
+                className={`flex justify-center items-center ease-in transition-all duration-150 cursor-pointer rounded-full ${
                   chatText.trim() && !isInputDisabled 
                     ? (theme === 'white' ? 'bg-black text-white p-1.5' : 'bg-white text-black p-1.5')
                     : (theme === 'white' ? 'text-gray-500 hover:text-gray-600 p-1.5' : 'text-gray-400 hover:text-gray-300 p-1.5')
@@ -406,3 +408,9 @@ export default function ChatInputLight({
     </div>
   );
 }
+
+
+
+
+
+

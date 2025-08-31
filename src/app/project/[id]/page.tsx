@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronLeft, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, StopCircle, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy } from "lucide-react";
 import UserNameBadge from "@/components/UserNameBadge";
 import UserMenu from "@/components/ui/user-menu";
+import { ThinkingDisplay } from "@/components/ui/thinking-display";
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { File, Folder, Tree } from "@/components/ui/file-tree";
 import AIResponseActions from "@/components/ui/ai-response-actions";
@@ -146,6 +147,16 @@ export default function ProjectPage() {
   // DeepSite integration
   const chatProcessorRef = useRef<ChatProcessor | null>(null);
   
+  // Memoize callbacks to prevent unnecessary re-renders
+  const onDeepSiteMessage = useCallback((message: any) => {
+    setMessages(prev => [...prev, message]);
+  }, []);
+
+  const onDeepSiteError = useCallback((error: string) => {
+    console.error('DeepSite error:', error);
+    recordError(typeof error === 'string' ? error : 'Renderer error');
+  }, [recordError]);
+
   const deepSite = useDeepSite({
     defaultHtml: `<!DOCTYPE html>
 <html lang="en">
@@ -157,13 +168,9 @@ export default function ProjectPage() {
 </head>
 <body></body>
 </html>`,
-    onMessage: (message) => {
-      setMessages(prev => [...prev, message]);
-    },
-    onError: (error) => {
-      console.error('DeepSite error:', error);
-      recordError(typeof error === 'string' ? error : 'Renderer error');
-    }
+    onMessage: onDeepSiteMessage,
+    onError: onDeepSiteError,
+    projectId: projectId || undefined
   });
   
   const chatAreaRef = useRef<HTMLDivElement>(null);
@@ -320,10 +327,10 @@ export default function ProjectPage() {
           } catch {}
         },
         onProgressReset: () => {
-          deepSite.resetProgress();
+          // Progress system disabled - using ThinkingDisplay instead
         },
         onProgress: (step) => {
-          deepSite.pushProgress(step);
+          // Progress system disabled - using ThinkingDisplay instead
         },
         onUserMessageCreated: (msg) => {
           // Create a checkpoint when user prompts, before generation starts
@@ -334,14 +341,20 @@ export default function ProjectPage() {
         }
       });
     }
-  }, [deepSite]);
+  }, [deepSite, user, project, mockMode, recordError]); // Include essential dependencies only
 
   // Sync in-frame navigations to the route dropdown
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
       const data: any = e.data || {};
       if (data && data.type === 'deepsite:navigate' && typeof data.path === 'string') {
-        setSelectedRoute(data.path);
+        setSelectedRoute(prevRoute => {
+          // Only update if the route actually changed
+          if (prevRoute !== data.path) {
+            return data.path;
+          }
+          return prevRoute;
+        });
       }
     };
     window.addEventListener('message', onMsg);
@@ -403,6 +416,17 @@ export default function ProjectPage() {
     setMessages(prev => [...prev, stopMsg]);
   };
 
+  // Fix errors helper for the error bar
+  const handleFixErrors = async () => {
+    try {
+      setErrorBarVisible(false);
+      const prompt = 'Please fix any errors in the current HTML, validate structure and accessibility, and ensure it renders without runtime errors.';
+      await handleSendMessage(prompt);
+    } catch {
+      // no-op
+    }
+  };
+
   const handleSendMessage = async (message?: string, images?: string[]) => {
     const textToSend = message || chatText.trim();
     const hasImages = Array.isArray(images) && images.length > 0;
@@ -441,10 +465,59 @@ export default function ProjectPage() {
 
     // Ask mode: brainstorm only (no HTML changes, no follow-up PUT)
     if (isAskMode) {
-      await deepSite.callAi(textToSend, undefined, false, true, projectId, true);
+      // Snapshot message index for capturing plan output
+      const msgStart = messages.length;
+      // Build a larger chat summary from recent messages
+      const buildChatSummary = () => {
+        try {
+          const recent = messages.slice(-30);
+          const lines = recent.map(m => `${m.isUser ? 'User' : 'Assistant'}: ${m.text}`);
+          let joined = lines.join('\n');
+          // Larger cap for Ask planning
+          const MAX = 12000;
+          if (joined.length > MAX) joined = joined.slice(-MAX);
+          return joined;
+        } catch {
+          return '';
+        }
+      };
+      const chatSummary = buildChatSummary();
+      await deepSite.callAi(textToSend, undefined, false, true, projectId, true, chatSummary);
+      // After Ask completes, index the plan into RAG for continuity
+      try {
+        if (!mockMode && project?.id && user?.id) {
+          const newMsgs = messages.slice(msgStart);
+          const planLines = newMsgs
+            .map(m => m.text)
+            .filter(t => /^\s*(THINK:|PLAN:)\s*/i.test(t || ''))
+            .map(t => t.trim());
+          if (planLines.length) {
+            const planText = planLines.join('\n');
+            const chunks: { project_id: string; user_id: string; source: string; path: string; content: string }[] = [];
+            const maxLen = 4000;
+            for (let i = 0; i < planText.length; i += maxLen) {
+              chunks.push({ project_id: project.id, user_id: user.id, source: 'plan', path: selectedRoute || '/', content: planText.slice(i, i + maxLen) });
+            }
+            fetch('/api/rag/upsert', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chunks }) }).catch(() => {});
+          }
+        }
+      } catch {}
     } else {
       // Process message through ChatProcessor (build/modify HTML)
       if (chatProcessorRef.current) {
+        const buildChatSummary = () => {
+          try {
+            const recent = messages.slice(-24);
+            const lines = recent.map(m => `${m.isUser ? 'User' : 'Assistant'}: ${m.text}`);
+            let joined = lines.join('\n');
+            const MAX = 6000;
+            if (joined.length > MAX) joined = joined.slice(-MAX);
+            return joined;
+          } catch {
+            return '';
+          }
+        };
+        const chatSummary = buildChatSummary();
         await chatProcessorRef.current.processMessage(
           textToSend,
           deepSite.html,
@@ -454,7 +527,8 @@ export default function ProjectPage() {
           selectedElement,
           images,
           projectId,
-          false
+          false,
+          chatSummary
         );
       }
     }
@@ -812,19 +886,6 @@ export default function ProjectPage() {
                       message.isUser ? 'text-right' : 'text-left'
                     }`}
                   >
-                    {/* Thinking indicator for AI messages */}
-                    {!message.isUser && deepSite.isThinking && message.id === messages[messages.length - 1]?.id && (
-                      <div className="text-sm text-gray-400 mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                          </div>
-                          <span>AI is thinking...</span>
-                        </div>
-                      </div>
-                    )}
                     
                     <div className="text-base leading-relaxed">
                       {message.isUser ? (
@@ -835,7 +896,9 @@ export default function ProjectPage() {
                           {message.text}
                         </span>
                       ) : (
-                        <MarkdownRenderer content={message.text} className="text-[15px] leading-6" />
+                        <span className="text-left inline-block rounded-xl max-w-[80%] px-3 py-3 text-base md:text-sm leading-[22px] overflow-auto whitespace-pre-wrap break-words bg-white/5 border border-white/10" style={{ overflowWrap: 'anywhere' }}>
+                          <MarkdownRenderer content={message.text} className="text-[15px] leading-6" />
+                        </span>
                       )}
                     </div>
                     {/* Suggestion pills */}
@@ -849,17 +912,6 @@ export default function ProjectPage() {
                           >
                             {sugg}
                           </button>
-                        ))}
-                      </div>
-                    )}
-                    {/* Progress steps for the latest AI message */}
-                    {!message.isUser && message.id === messages[messages.length - 1]?.id && deepSite.isAiWorking && (
-                      <div className="mt-2 text-xs text-gray-400 space-y-1">
-                        {deepSite.progress?.map((step) => (
-                          <div key={step.id} className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${step.status === 'done' ? 'bg-green-500' : step.status === 'error' ? 'bg-red-500' : 'bg-blue-500 animate-pulse'}`}></div>
-                            <span>{step.label}</span>
-                          </div>
                         ))}
                       </div>
                     )}
@@ -902,6 +954,18 @@ export default function ProjectPage() {
                     )}
                   </div>
                 ))}
+                
+                {/* Global Thinking Display - shows when AI is thinking/building */}
+                {(deepSite.isThinking || deepSite.isBuilding) && (
+                  <div className="p-4 pt-0">
+                    <ThinkingDisplay
+                      isThinking={deepSite.isThinking}
+                      isBuilding={deepSite.isBuilding}
+                      thinkingContent={deepSite.thinkingContent || []}
+                      thinkingStartTime={deepSite.thinkingStartTime || undefined}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}

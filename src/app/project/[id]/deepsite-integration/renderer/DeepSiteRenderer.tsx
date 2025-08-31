@@ -386,7 +386,7 @@ export const DeepSiteRenderer: React.FC<DeepSiteRendererProps> = ({
       <div className={`bg-white shadow-lg rounded-lg overflow-hidden transition-all duration-300 ${getDeviceStyles(deviceType)}`}>
         <iframe
           ref={iframeRef}
-          className={`w-full h-full border-0 ${isEditableModeEnabled ? 'pointer-events-auto' : ''}`}
+          className={`w-full h-full border-0 rounded-lg ${isEditableModeEnabled ? 'pointer-events-auto' : ''}`}
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
           title={title}
         />
