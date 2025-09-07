@@ -6,6 +6,7 @@ import { ChevronDown, ChevronLeft, Plus, Home, Library, Search, MessageSquare, F
 import UserNameBadge from "@/components/UserNameBadge";
 import UserMenu from "@/components/ui/user-menu";
 import { ThinkingDisplay } from "@/components/ui/thinking-display";
+import { ThinkingChainAI } from "@/components/ui/thinking-chain-ai";
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { File, Folder, Tree } from "@/components/ui/file-tree";
 import AIResponseActions from "@/components/ui/ai-response-actions";
@@ -49,16 +50,29 @@ export default function ProjectPage() {
   const { id } = useParams() as { id?: string };
   const projectId: string | undefined = id;
   const searchParams = useSearchParams();
-  const { user, loading: authLoading } = useAuth();
-  const { subscribeToProject } = useRealtime();
+  // Disabled for demo
+  const user = { id: 'demo-user' };
+  const authLoading = false;
+  // Disabled for demo
+  const subscribeToProject = () => {};
   const router = useRouter();
   
   // Enable temporary mock mode to work on UI without DB/auth
   const mockMode = (searchParams?.get('mock') === '1') || (process.env.NEXT_PUBLIC_MOCK_PROJECT === 'true');
 
-  // Project state
-  const [project, setProject] = useState<Project | null>(null);
-  const [projectLoading, setProjectLoading] = useState(true);
+  // Project state - mock project for demo
+  const [project, setProject] = useState<Project | null>({
+    id: 'demo-project',
+    name: 'Demo Project',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    user_id: 'demo-user',
+    html: '',
+    css: '',
+    js: '',
+    is_published: false
+  });
+  const [projectLoading, setProjectLoading] = useState(false);
   
   const [isPlanUsageOpen, setIsPlanUsageOpen] = useState(true);
   const [isChatsOpen, setIsChatsOpen] = useState(false);
@@ -75,6 +89,12 @@ export default function ProjectPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isThinking, setIsThinking] = useState(false);
   const [isInputDisabled, setIsInputDisabled] = useState(false);
+  
+  // Thinking chain state
+  const [thinkingPhases, setThinkingPhases] = useState<import('@/components/ui/thinking-chain-ai').ThinkingPhase[]>([]);
+  const [currentThinkingPhase, setCurrentThinkingPhase] = useState<string>('');
+  const [thinkingStartTime, setThinkingStartTime] = useState<number | null>(null);
+  const [htmlStreamContent, setHtmlStreamContent] = useState<string>('');
   const [isCgihadiDropdownOpen, setIsCgihadiDropdownOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
@@ -338,6 +358,34 @@ export default function ProjectPage() {
           if (!askModeRef.current) {
             deepSite.updateHtml(deepSite.html, msg.text);
           }
+        },
+        // Thinking chain callbacks
+        onThinkingPhaseStart: (phase) => {
+          setThinkingPhases(prev => {
+            // Remove any existing phase of the same type to avoid duplicates
+            const filtered = prev.filter(p => p.type !== phase.type);
+            return [...filtered, phase];
+          });
+          if (phase.type === 'thinking') {
+            setThinkingStartTime(Date.now());
+          }
+        },
+        onThinkingPhaseUpdate: (phase) => {
+          setThinkingPhases(prev => prev.map(p => p.id === phase.id ? { ...phase } : p));
+        },
+        onThinkingPhaseComplete: (phase) => {
+          setThinkingPhases(prev => prev.map(p => p.id === phase.id ? { ...p, isComplete: true } : p));
+          // Clear current phase when completing
+          if (currentThinkingPhase === phase.type) {
+            // Small delay to show completion before clearing
+            setTimeout(() => setCurrentThinkingPhase(''), 1000);
+          }
+        },
+        onCurrentPhaseChange: (phase) => {
+          setCurrentThinkingPhase(phase);
+        },
+        onHtmlStream: (html) => {
+          setHtmlStreamContent(html);
         }
       });
     }
@@ -407,6 +455,11 @@ export default function ProjectPage() {
 
   const stopGeneration = () => {
     deepSite.stopGeneration();
+    
+    // Clear thinking chain state when stopping generation
+    setCurrentThinkingPhase('');
+    setHtmlStreamContent('');
+    
     const stopMsg: ChatMessage = {
       id: (Date.now() + 1).toString(),
       text: 'Generation stopped.',
@@ -439,6 +492,12 @@ export default function ProjectPage() {
       setFilePreviews({});
     }
     setHasStartedChat(true);
+
+    // Reset thinking chain for new conversation
+    setThinkingPhases([]);
+    setCurrentThinkingPhase('');
+    setThinkingStartTime(null);
+    setHtmlStreamContent('');
 
     // Update context meter based on this prompt size (approx.)
     try {
@@ -740,38 +799,38 @@ export default function ProjectPage() {
     }
   };
 
-  // Show loading state while authenticating or loading project
-  if (authLoading || projectLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
-      </div>
-    );
-  }
+  // Skip loading states for demo mode
+  // if (authLoading || projectLoading) {
+  //   return (
+  //     <div className="flex items-center justify-center min-h-screen">
+  //       <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
+  //     </div>
+  //   );
+  // }
 
-  // Redirect to login if not authenticated
-  if (!user && !mockMode) {
-    window.location.href = '/login';
-    return null;
-  }
+  // Skip authentication for demo mode
+  // if (!user && !mockMode) {
+  //   window.location.href = '/login';
+  //   return null;
+  // }
 
-  // Show error state if no project
-  if (!project) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold mb-2 text-white">Project not found</h1>
-          <p className="text-gray-400">The project you're looking for doesn't exist or you don't have access to it.</p>
-          <button 
-            onClick={() => window.location.href = '/dashboard/projects'}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Back to Projects
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Skip project check for demo mode
+  // if (!project) {
+  //   return (
+  //     <div className="flex items-center justify-center min-h-screen">
+  //       <div className="text-center">
+  //         <h1 className="text-2xl font-semibold mb-2 text-white">Project not found</h1>
+  //         <p className="text-gray-400">The project you're looking for doesn't exist or you don't have access to it.</p>
+  //         <button 
+  //           onClick={() => window.location.href = '/dashboard/projects'}
+  //           className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+  //         >
+  //           Back to Projects
+  //         </button>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <AppLayout hideSidebar fullBleed>
@@ -955,14 +1014,15 @@ export default function ProjectPage() {
                   </div>
                 ))}
                 
-                {/* Global Thinking Display - shows when AI is thinking/building */}
-                {(deepSite.isThinking || deepSite.isBuilding) && (
+                {/* Enhanced Thinking Chain - shows when AI is processing */}
+                {(thinkingPhases.length > 0 || currentThinkingPhase) && (
                   <div className="p-4 pt-0">
-                    <ThinkingDisplay
-                      isThinking={deepSite.isThinking}
-                      isBuilding={deepSite.isBuilding}
-                      thinkingContent={deepSite.thinkingContent || []}
-                      thinkingStartTime={deepSite.thinkingStartTime || undefined}
+                    <ThinkingChainAI
+                      phases={thinkingPhases}
+                      isActive={!!currentThinkingPhase}
+                      currentPhase={currentThinkingPhase}
+                      thinkingStartTime={thinkingStartTime || undefined}
+                      htmlStream={htmlStreamContent}
                     />
                   </div>
                 )}

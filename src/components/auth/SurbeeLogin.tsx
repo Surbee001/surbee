@@ -13,7 +13,7 @@ export default function SurbeeLogin() {
   const router = useRouter();
   const params = useSearchParams();
   const redirectTo = params.get('redirect') || '/dashboard';
-  const { signIn, signInWithOAuth } = useAuth();
+  const { signIn, signInWithOAuth, hasCompletedOnboarding } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,7 +27,9 @@ export default function SurbeeLogin() {
     if (error) {
       setError(error.message);
     } else {
-      router.push(redirectTo);
+      // Check onboarding status before redirecting
+      const destination = hasCompletedOnboarding ? redirectTo : '/onboarding';
+      router.push(destination);
     }
     setLoading(false);
   };
@@ -39,7 +41,9 @@ export default function SurbeeLogin() {
     if (error) {
       setError(error.message);
     } else {
-      router.push(redirectTo);
+      // Check onboarding status before redirecting
+      const destination = hasCompletedOnboarding ? redirectTo : '/onboarding';
+      router.push(destination);
     }
     setLoading(false);
   };
@@ -53,7 +57,9 @@ export default function SurbeeLogin() {
     if (error) {
       setError(error.message);
     } else {
-      router.push(redirectTo);
+      // Check onboarding status before redirecting
+      const destination = hasCompletedOnboarding ? redirectTo : '/onboarding';
+      router.push(destination);
     }
     setLoading(false);
   };

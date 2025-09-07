@@ -5,10 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ThemeSelector } from '@/components/ui/theme-selector';
 import { Settings, User, Bell, Shield, CreditCard, HelpCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { SkeletonText, SkeletonCard, SkeletonForm } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [autoSave, setAutoSave] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [analyticsTracking, setAnalyticsTracking] = useState(true);
   const [exportFormat, setExportFormat] = useState('csv');
   const [metadataSettings, setMetadataSettings] = useState({
@@ -33,6 +37,110 @@ export default function SettingsPage() {
       return () => scrollElement.removeEventListener('scroll', handleScroll);
     }
   }, []);
+
+  // Only show loading on first visit, not on navigation
+  useEffect(() => {
+    if (!authLoading) {
+      const hasLoaded = sessionStorage.getItem('dashboard_loaded');
+      if (hasLoaded) {
+        setIsLoading(false);
+      } else {
+        const timer = setTimeout(() => {
+          setIsLoading(false);
+          sessionStorage.setItem('dashboard_loaded', 'true');
+        }, 800);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [authLoading]);
+
+  if (authLoading || isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full max-w-6xl mx-auto">
+            {/* Settings Navigation Skeleton */}
+            <div className="lg:col-span-1">
+              <div className="space-y-4">
+                <SkeletonText width="120px" height="2rem" className="mb-6" />
+                <div className="space-y-1">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 px-3 py-2">
+                      <div className="skeleton-circle" style={{ width: '16px', height: '16px' }}></div>
+                      <SkeletonText width={`${60 + Math.random() * 40}px`} height="14px" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Settings Content Skeleton */}
+            <div className="lg:col-span-3 space-y-6">
+              {/* Appearance Settings Card Skeleton */}
+              <div className="skeleton-card" style={{ padding: '24px' }}>
+                <div className="space-y-4">
+                  <SkeletonText width="120px" height="1.5rem" className="mb-4" />
+                  <div className="space-y-3">
+                    <SkeletonText width="100%" height="3rem" />
+                    <div className="grid grid-cols-3 gap-3">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="skeleton-base" style={{ height: '4rem', borderRadius: '0.5rem' }}></div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Survey Preferences Card Skeleton */}
+              <div className="skeleton-card" style={{ padding: '24px' }}>
+                <div className="space-y-4">
+                  <SkeletonText width="160px" height="1.5rem" className="mb-2" />
+                  <SkeletonText width="300px" height="1rem" className="mb-6" />
+                  <div className="space-y-4">
+                    {Array.from({ length: 2 }).map((_, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <SkeletonText width="140px" height="1rem" className="mb-1" />
+                          <SkeletonText width="240px" height="0.75rem" />
+                        </div>
+                        <div className="skeleton-base" style={{ width: '44px', height: '24px', borderRadius: '12px' }}></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Data Export Card Skeleton */}
+              <div className="skeleton-card" style={{ padding: '24px' }}>
+                <div className="space-y-4">
+                  <SkeletonText width="120px" height="1.5rem" className="mb-2" />
+                  <SkeletonText width="280px" height="1rem" className="mb-6" />
+                  <div className="space-y-4">
+                    <div>
+                      <SkeletonText width="180px" height="1rem" className="mb-2" />
+                      <div className="skeleton-form-input" style={{ height: '2.5rem' }}></div>
+                    </div>
+                    <div>
+                      <SkeletonText width="200px" height="1rem" className="mb-2" />
+                      <div className="space-y-2">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <div className="skeleton-circle" style={{ width: '16px', height: '16px' }}></div>
+                            <SkeletonText width={`${80 + Math.random() * 60}px`} height="0.75rem" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col overflow-hidden">
 

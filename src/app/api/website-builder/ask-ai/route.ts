@@ -333,9 +333,12 @@ export async function POST(request: NextRequest) {
           promptLength: prompt?.length || 0,
           builderReason: envBuilderModel ? 'env override' : 'forced mini for better rate limits'
         });
+        
+        // Send model info to client for transparency
+        await writer.write(encoder.encode(`<<<MODEL_INFO>>>Planning: ${planModel}, Building: ${builderModel}\n`));
 
-        // Build instruction used for both models; keep concise to reduce tokens
-        const buildInstruction = `${userContent}\n\nRequirements (always apply unless overridden): Avoid AI-cliché styles (no neon/purple gradients, sparkles, AI/brain icons). Use neutral background (#f9fafb) and clean typography. Provide: Welcome page, at least 2 question pages (short text, multiple-choice, rating) with client-side validation, a visible progress indicator, smooth transitions, autosave answers to localStorage, and a Thank-you page with a subtle confetti effect. Return a single, complete HTML document only (<!DOCTYPE html> ... </html>). Use Tailwind.`;
+        // Build instruction - let the AI build what the user actually wants
+        const buildInstruction = `${userContent}\n\nRequirements: Build exactly what the user is asking for. Use modern web technologies (HTML, CSS, JavaScript) with Tailwind CSS for styling. Create beautiful, responsive, accessible designs. Return a single, complete HTML document only (<!DOCTYPE html> ... </html>).`;
 
         // Cache check
         const cached = getFromCache(builderModel, buildInstruction);
@@ -366,7 +369,33 @@ export async function POST(request: NextRequest) {
         let planningNote = "";
         const rpStream = await createModelStream(openai, {
           model: planModel,
-          instructions: `You are a senior, friendly survey builder talking to a human. Write a short, human-facing Markdown planning note with headings and bullets. Do NOT reveal chain-of-thought. Keep it concise and clear.\n\nStructure and tone:\n- Conversational, encouraging, professional.\n- Use Markdown sections and bullets: **bold**, _italics_, lists, and short phrases.\n- Sections to include: \n  • Overview (what you'll build and why)\n  • What I'll Build (bulleted features based on the user's prompt)\n  • Design Approach (colors/spacing/ARIA/responsiveness)\n  • Implementation Plan (steps you will take)\n\nOutput protocol (strict):\n- Emit each line prefixed with THINK: or PLAN: (we use these as markers).\n- You can include Markdown headings/bullets inside those lines.\n- Example:\n  THINK: ## Overview — friendly one-liner\n  THINK: - Key outcome A\n  THINK: - Key outcome B\n  PLAN: ## Implementation Plan\n  PLAN: - Step 1...\n  PLAN: - Step 2...`,
+          instructions: `You are an expert frontend developer talking to a human about their project. Write detailed, thoughtful reasoning about what you'll build. Show your complete thought process - explain what the user wants, analyze their requirements, consider different approaches, and plan your implementation strategy.
+
+Structure and tone:
+- Conversational, detailed, professional, and engaging
+- Think through the problem step-by-step like in your example
+- Explain your technology choices and design decisions
+- Show enthusiasm for creating something great
+
+Output protocol (strict):
+- Start with detailed THINK: lines (8-15 lines) explaining your reasoning process:
+  • What the user is asking for and why
+  • Your analysis of the requirements
+  • Technology choices and approach
+  • Design considerations
+- Then provide PLAN: lines (5-12 lines) with concrete implementation steps
+- Use natural, conversational language throughout
+- Example:
+  THINK: The user wants a modern gradient gallery page with the following requirements:
+  THINK: 
+  THINK: Main page shows 8 colors in a 2x4 grid centered on the page
+  THINK: No text, titles, or other elements on the main page
+  THINK: Tapping a gradient transitions to a lightbox showing a card with color details
+  THINK: Smooth animation for the layout transition
+  THINK: 
+  THINK: This seems like a PureFrontend application - it's just a color gallery with interactive transitions, no backend needed.
+  PLAN: Create a component for the gradient gallery
+  PLAN: Create a component for the lightbox/modal with color details`,
           input:
             (ragContext ? `Use the following reference context when planning (do not copy verbatim, cite as inspiration):\n\n${ragContext}\n\n` : '') +
             (boundedChatSum ? `Conversation summary (recent turns):\n${boundedChatSum}\n\n` : '') +
@@ -415,11 +444,11 @@ export async function POST(request: NextRequest) {
         const htmlStream = await createModelStream(openai, {
           model: builderModel,
           instructions: INITIAL_SYSTEM_PROMPT,
-          input: `User request:\n${userContent}\n\nReference plan (do not repeat; follow it):\n${planningNote.slice(0, 4000)}\n${boundedChatSum ? `\nConversation summary (optional):\n${boundedChatSum}\n` : ''}\nImplementation details (unless the user specifies otherwise):\n- Implement as a single-page wizard using <section data-step=\"1..N\"> blocks and toggle visibility.\n- Wire Next/Back with addEventListener after DOMContentLoaded, update a progress bar/steps, and validate before advancing.\n- Use buttons with type=\"button\" for navigation; only the final submit action should use type=\"submit\" (if using a form).\n- Avoid navigation to anchors or external pages; keep all logic in-page.`,
+          input: `User request:\n${userContent}\n\nReference plan (do not repeat; follow it):\n${planningNote.slice(0, 4000)}\n${boundedChatSum ? `\nConversation summary (optional):\n${boundedChatSum}\n` : ''}\nImplementation guidelines:\n- Build exactly what the user asked for with modern, beautiful design\n- For multi-step interfaces, use proper state management with clean navigation\n- Wire event listeners after DOMContentLoaded for interactive elements\n- Use appropriate HTML semantic elements and form controls\n- Keep all functionality in-page unless external navigation is specifically requested\n- CRITICAL: Generate a COMPLETE, fully functional application with ALL features, styling, and JavaScript. Do not truncate or abbreviate any sections.`,
           reasoning: { effort: 'low' },
           text: { verbosity: VERBOSITY_LEVELS.GENERATION }, // Centralized verbosity
           temperature: 0.5,
-          max_output_tokens: 6144,
+          max_output_tokens: 20000,
           stream: true,
         });
         for await (const event of htmlStream as any) {
@@ -436,10 +465,10 @@ export async function POST(request: NextRequest) {
           const htmlStream2 = await createModelStream(openai, {
             model: planModel,
             instructions: INITIAL_SYSTEM_PROMPT,
-            input: `User request:\n${userContent}\n\nReference plan (do not repeat; follow it):\n${planningNote.slice(0, 4000)}\n${boundedChatSum ? `\nConversation summary (optional):\n${boundedChatSum}\n` : ''}\nImplementation details (unless the user specifies otherwise):\n- Implement as a single-page wizard using <section data-step=\"1..N\"> blocks and toggle visibility.\n- Wire Next/Back with addEventListener after DOMContentLoaded, update a progress bar/steps, and validate before advancing.\n- Use buttons with type=\"button\" for navigation; only the final submit action should use type=\"submit\" (if using a form).\n- Avoid navigation to anchors or external pages; keep all logic in-page.`,
+            input: `User request:\n${userContent}\n\nReference plan (do not repeat; follow it):\n${planningNote.slice(0, 4000)}\n${boundedChatSum ? `\nConversation summary (optional):\n${boundedChatSum}\n` : ''}\nImplementation guidelines:\n- Build exactly what the user asked for with modern, beautiful design\n- For multi-step interfaces, use proper state management with clean navigation\n- Wire event listeners after DOMContentLoaded for interactive elements\n- Use appropriate HTML semantic elements and form controls\n- Keep all functionality in-page unless external navigation is specifically requested\n- CRITICAL: Generate a COMPLETE, fully functional application with ALL features, styling, and JavaScript. Do not truncate or abbreviate any sections.`,
             text: { verbosity: VERBOSITY_LEVELS.GENERATION },
             temperature: 0.4,
-            max_output_tokens: 6144,
+            max_output_tokens: 20000,
             stream: true,
           });
           for await (const event of htmlStream2 as any) {
@@ -603,7 +632,22 @@ export async function PUT(request: NextRequest) {
         console.log('[ask-ai][PUT] starting update planning stream');
         const rpStream = await createModelStream(openai, {
           model: followPlanModel,
-          instructions: `You are a senior, friendly survey builder talking to a human. Write a short, human-facing Markdown planning note for the requested update. Do NOT reveal chain-of-thought.\n\nStructure and tone:\n- Conversational, encouraging, professional.\n- Use Markdown sections and bullets: **bold**, _italics_, lists.\n- Sections to include: \n  • Overview (what will change and why)\n  • What I'll Update (bulleted feature changes)\n  • Implementation Plan (steps you will take)\n\nOutput protocol (strict):\n- Emit each line prefixed with THINK: or PLAN: (we use these as markers).\n- You can include Markdown headings/bullets inside those lines.\n- Example:\n  THINK: ## Overview — friendly one-liner\n  THINK: - Change A\n  PLAN: ## Implementation Plan\n  PLAN: - Step 1...\n  PLAN: - Step 2...`,
+          instructions: `You are an expert frontend developer analyzing an update request. Write detailed, thoughtful reasoning about the changes needed. Show your complete thought process - explain what the user wants to change, analyze the current state, and plan your implementation strategy.
+
+Structure and tone:
+- Conversational, detailed, professional, and engaging
+- Think through the changes step-by-step
+- Explain your approach and technology choices
+- Show understanding of both the current state and desired outcome
+
+Output protocol (strict):
+- Start with detailed THINK: lines (6-12 lines) explaining your reasoning process:
+  • What the user wants to change and why
+  • Analysis of the current implementation
+  • Your approach to making the changes
+  • Technology considerations
+- Then provide PLAN: lines (4-10 lines) with concrete implementation steps
+- Use natural, conversational language throughout`,
           input:
             (ragContext ? `Reference context (for updates):\n\n${ragContext}\n\n` : '') +
             ((typeof chatSummary === 'string' && chatSummary.trim()) ? `Conversation summary (recent turns):\n${chatSummary.trim().slice(-4000)}\n\n` : '') +
@@ -680,7 +724,7 @@ export async function PUT(request: NextRequest) {
             input: patchInput,
             text: { verbosity: VERBOSITY_LEVELS.SUMMARY },
             temperature: 0.2,
-            max_output_tokens: 1200,
+            max_output_tokens: 16000,
             stream: true,
           });
           let patchText = '';
@@ -720,7 +764,7 @@ export async function PUT(request: NextRequest) {
             reasoning: { effort: 'low' },
             text: { verbosity: VERBOSITY_LEVELS.GENERATION }, // Centralized verbosity
             temperature: 0.4,
-            max_output_tokens: 6144,
+            max_output_tokens: 20000,
             stream: true,
           });
           for await (const event of updateStream as any) {
@@ -740,7 +784,7 @@ export async function PUT(request: NextRequest) {
               input: `Current document (HTML):\n\n\`\`\`html\n${html}\n\`\`\`${selectedElementHtml ? `\n\nIf present, prefer updating this element/subtree: \n\n\`\`\`html\n${selectedElementHtml}\n\`\`\`` : ''}\n\nUser request: ${prompt}\n\nPrior instruction: ${prior}\n${(typeof chatSummary === 'string' && chatSummary.trim()) ? `\nConversation summary (optional):\n${chatSummary.trim().slice(-4000)}\n` : ''}\nReference plan:\n${planningNote2.slice(0, 4000)}`,
               text: { verbosity: VERBOSITY_LEVELS.GENERATION },
               temperature: 0.3,
-              max_output_tokens: 6144,
+              max_output_tokens: 20000,
               stream: true,
             });
             for await (const event of updateStream2 as any) {

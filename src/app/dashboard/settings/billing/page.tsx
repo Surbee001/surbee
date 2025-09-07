@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Settings, User, Bell, Shield, CreditCard, HelpCircle, CheckCircle, Download, Calendar, AlertCircle, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import PricingPage from '@/components/PricingPage';
+import { SkeletonText, SkeletonCard, SkeletonStatsCard } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Plan {
   id: string;
@@ -26,6 +28,8 @@ interface Invoice {
 
 export default function BillingSettingsPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
@@ -45,6 +49,22 @@ export default function BillingSettingsPage() {
       return () => scrollElement.removeEventListener('scroll', handleScroll);
     }
   }, []);
+
+  // Only show loading on first visit, not on navigation
+  useEffect(() => {
+    if (!authLoading) {
+      const hasLoaded = sessionStorage.getItem('dashboard_loaded');
+      if (hasLoaded) {
+        setIsLoading(false);
+      } else {
+        const timer = setTimeout(() => {
+          setIsLoading(false);
+          sessionStorage.setItem('dashboard_loaded', 'true');
+        }, 800);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [authLoading]);
 
   const plans: Plan[] = [
     {
@@ -146,6 +166,107 @@ export default function BillingSettingsPage() {
       day: 'numeric'
     });
   };
+
+  if (authLoading || isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>
+        <div className="flex-1 min-h-0">
+          <div className="max-w-screen-xl mx-auto px-6 md:px-10 lg:px-16 h-full pt-8">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full max-w-6xl mx-auto">
+              {/* Settings Navigation Skeleton */}
+              <div className="lg:col-span-1">
+                <div className="space-y-4">
+                  <SkeletonText width="120px" height="2rem" className="mb-6" />
+                  <div className="space-y-1">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-3 px-3 py-2">
+                        <div className="skeleton-circle" style={{ width: '16px', height: '16px' }}></div>
+                        <SkeletonText width={`${60 + Math.random() * 40}px`} height="14px" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Billing Content Skeleton */}
+              <div className="lg:col-span-3 space-y-6">
+                {/* Current Plan Card Skeleton */}
+                <div className="skeleton-card" style={{ padding: '24px' }}>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="skeleton-circle" style={{ width: '20px', height: '20px' }}></div>
+                      <SkeletonText width="120px" height="1.5rem" />
+                    </div>
+                    <SkeletonText width="250px" height="1rem" className="mb-6" />
+                    
+                    {/* Current plan display */}
+                    <div className="skeleton-base" style={{ height: '5rem', borderRadius: '0.5rem', marginBottom: '1rem' }}></div>
+                    
+                    {/* Usage stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="skeleton-stats-card" style={{ height: '5rem' }}></div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Available Plans Card Skeleton */}
+                <div className="skeleton-card" style={{ padding: '24px' }}>
+                  <div className="space-y-6">
+                    <SkeletonText width="140px" height="1.5rem" className="mb-2" />
+                    <SkeletonText width="220px" height="1rem" className="mb-6" />
+                    
+                    {/* Billing toggle */}
+                    <div className="flex justify-center mb-6">
+                      <div className="skeleton-base" style={{ width: '200px', height: '2.5rem', borderRadius: '0.5rem' }}></div>
+                    </div>
+                    
+                    {/* Plans grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="skeleton-base" style={{ height: '20rem', borderRadius: '0.75rem' }}></div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Method Card Skeleton */}
+                <div className="skeleton-card" style={{ padding: '24px' }}>
+                  <div className="space-y-4">
+                    <SkeletonText width="140px" height="1.5rem" className="mb-2" />
+                    <SkeletonText width="300px" height="1rem" className="mb-6" />
+                    
+                    {/* Payment method display */}
+                    <div className="skeleton-base" style={{ height: '4rem', borderRadius: '0.5rem' }}></div>
+                    <div className="skeleton-base" style={{ height: '3rem', borderRadius: '0.5rem' }}></div>
+                  </div>
+                </div>
+
+                {/* Billing History Card Skeleton */}
+                <div className="skeleton-card" style={{ padding: '24px' }}>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="skeleton-circle" style={{ width: '20px', height: '20px' }}></div>
+                      <SkeletonText width="140px" height="1.5rem" />
+                    </div>
+                    <SkeletonText width="250px" height="1rem" className="mb-6" />
+                    
+                    {/* Invoice list */}
+                    <div className="space-y-3">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="skeleton-base" style={{ height: '4rem', borderRadius: '0.5rem' }}></div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>

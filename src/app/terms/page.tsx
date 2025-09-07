@@ -89,7 +89,24 @@ export default function TermsPage() {
           </section>
 
           <section className="mb-12">
-            <h2 className="text-2xl mb-4 text-black" style={{ fontFamily: 'PP Editorial, serif', fontWeight: 200 }}>8. Changes to Terms</h2>
+            <h2 className="text-2xl mb-4 text-black" style={{ fontFamily: 'PP Editorial, serif', fontWeight: 200 }}>8. Referral Program ("Invite and Earn")</h2>
+            <p className="mb-4 text-gray-700 leading-relaxed">
+              Surbee offers a referral program that allows users to earn credits by inviting friends to join the platform.
+            </p>
+            <ul className="mb-4 text-gray-700 leading-relaxed ml-6">
+              <li className="mb-2">• Eligible users receive 5 credits for each successful referral</li>
+              <li className="mb-2">• A "successful referral" occurs when an invited user signs up using your referral link and completes their first project</li>
+              <li className="mb-2">• Credits are awarded within 24 hours of referral completion</li>
+              <li className="mb-2">• Referral credits cannot be exchanged for cash and have no monetary value</li>
+              <li className="mb-2">• Surbee reserves the right to investigate suspicious referral activity and may suspend or terminate accounts that engage in fraudulent behavior</li>
+              <li className="mb-2">• Self-referrals, fake accounts, or any attempt to manipulate the system will result in forfeiture of all referral credits</li>
+              <li className="mb-2">• Surbee may modify or discontinue the referral program at any time without prior notice</li>
+              <li className="mb-2">• Referral links are unique to each user and must not be shared in spam or unsolicited communications</li>
+            </ul>
+          </section>
+
+          <section className="mb-12">
+            <h2 className="text-2xl mb-4 text-black" style={{ fontFamily: 'PP Editorial, serif', fontWeight: 200 }}>9. Changes to Terms</h2>
             <p className="mb-4 text-gray-700 leading-relaxed">
               We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is 
               material, we will try to provide at least 30 days notice prior to any new terms taking effect.
@@ -97,7 +114,7 @@ export default function TermsPage() {
           </section>
 
           <section className="mb-12">
-            <h2 className="text-2xl mb-4 text-black" style={{ fontFamily: 'PP Editorial, serif', fontWeight: 200 }}>9. Contact Information</h2>
+            <h2 className="text-2xl mb-4 text-black" style={{ fontFamily: 'PP Editorial, serif', fontWeight: 200 }}>10. Contact Information</h2>
             <p className="mb-4 text-gray-700 leading-relaxed">
               If you have any questions about these Terms of Use, please contact us at legal@surbee.com.
             </p>

@@ -1,5 +1,6 @@
 import { ChatMessage } from '../types';
 import { extractHtmlFromResponse as extractHtmlSafe } from '../lib/html-utils';
+import { ThinkingPhase } from '@/components/ui/thinking-chain-ai';
 
 export interface ChatProcessorOptions {
   onMessage: (message: ChatMessage) => void;
@@ -11,13 +12,88 @@ export interface ChatProcessorOptions {
   onProgressReset?: () => void;
   onProgress?: (step: { id: string; label: string; status: 'pending' | 'done' | 'error' }) => void;
   onUserMessageCreated?: (message: ChatMessage) => void;
+  // New thinking chain callbacks
+  onThinkingPhaseStart?: (phase: ThinkingPhase) => void;
+  onThinkingPhaseUpdate?: (phase: ThinkingPhase) => void;
+  onThinkingPhaseComplete?: (phase: ThinkingPhase) => void;
+  onCurrentPhaseChange?: (phase: string) => void;
+  onHtmlStream?: (html: string) => void;
 }
 
 export class ChatProcessor {
   private options: ChatProcessorOptions;
+  private currentPhases: Map<string, ThinkingPhase> = new Map();
+  private currentPhase: string | null = null;
+  private thinkingStartTime: number | null = null;
 
   constructor(options: ChatProcessorOptions) {
     this.options = options;
+  }
+
+  /**
+   * Start a new thinking phase
+   */
+  private startThinkingPhase(type: ThinkingPhase['type'], content: string = '', filename?: string): ThinkingPhase {
+    const phase: ThinkingPhase = {
+      id: `${type}-${Date.now()}`,
+      type,
+      content,
+      filename,
+      timestamp: new Date(),
+      isComplete: false
+    };
+
+    if (type === 'thinking') {
+      this.thinkingStartTime = Date.now();
+    }
+
+    this.currentPhases.set(type, phase);
+    this.currentPhase = type;
+    this.options.onThinkingPhaseStart?.(phase);
+    this.options.onCurrentPhaseChange?.(type);
+    
+    return phase;
+  }
+
+  /**
+   * Update an existing thinking phase
+   */
+  private updateThinkingPhase(type: ThinkingPhase['type'], content: string, htmlContent?: string): void {
+    const phase = this.currentPhases.get(type);
+    if (phase) {
+      phase.content = content;
+      if (htmlContent) {
+        phase.htmlContent = htmlContent;
+        this.options.onHtmlStream?.(htmlContent);
+      }
+      this.options.onThinkingPhaseUpdate?.(phase);
+    }
+  }
+
+  /**
+   * Complete a thinking phase
+   */
+  private completeThinkingPhase(type: ThinkingPhase['type'], suggestions?: string[]): void {
+    const phase = this.currentPhases.get(type);
+    if (phase) {
+      phase.isComplete = true;
+      if (type === 'thinking' && this.thinkingStartTime) {
+        phase.duration = (Date.now() - this.thinkingStartTime) / 1000;
+      }
+      if (suggestions && suggestions.length > 0) {
+        phase.suggestions = suggestions;
+      }
+      this.options.onThinkingPhaseComplete?.(phase);
+    }
+  }
+
+  /**
+   * Reset all thinking phases
+   */
+  private resetThinkingPhases(): void {
+    this.currentPhases.clear();
+    this.currentPhase = null;
+    this.thinkingStartTime = null;
   }
 
   /**
@@ -47,8 +123,12 @@ export class ChatProcessor {
     this.options.onMessage(userMessage);
     this.options.onUserMessageCreated?.(userMessage);
 
-    // Update working state
+    // Reset any previous thinking phases and start fresh
+    this.resetThinkingPhases();
+    
+    // Update working state and start thinking phase
     this.options.onStateChange({ isWorking: true, isThinking: true });
+    this.startThinkingPhase('thinking', 'Understanding the request and analyzing requirements...');
 
     try {
       // Reset progress and start thinking steps
@@ -92,17 +172,30 @@ export class ChatProcessor {
           this.options.onProgress?.({ id: 'target-selection', label: 'Targeting selected element', status: 'pending' });
         }
         this.options.onProgress?.({ id: 'understand', label: 'Understanding request', status: 'done' });
+        
         if (isFollowUp) {
           this.options.onProgress?.({ id: 'compute-changes', label: 'Computing changes', status: 'pending' });
         } else {
           this.options.onProgress?.({ id: 'plan-layout', label: 'Planning layout', status: 'pending' });
         }
+        
         await this.handleAiRequest(message, currentHtml, previousPrompt, provider, model, isFollowUp, undefined, selectedElementHtml, projectId, useLongContext, chatSummary);
       }
     } catch (error: any) {
+      // Clear any active thinking phases on error
+      this.currentPhase = null;
+      this.options.onCurrentPhaseChange?.('');
       this.handleError(error);
     } finally {
       this.options.onStateChange({ isWorking: false, isThinking: false });
+      // Ensure all phases are marked complete on finish
+      if (this.currentPhases.size > 0) {
+        for (const phase of this.currentPhases.values()) {
+          if (!phase.isComplete) {
+            this.completeThinkingPhase(phase.type);
+          }
+        }
+      }
     }
   }
 
@@ -239,11 +332,24 @@ export class ChatProcessor {
           if (phaseMatch) {
             const phase = phaseMatch[1];
             const msg = phaseMatch[2] || '';
-            ensureMessage();
-            const current = buildAggregate();
-            const text = current ? (current + (msg ? '\n\n' + msg : '')) : msg;
-            this.options.onMessageUpdate?.(aiMessageId!, text);
-            if (phase === 'ERROR' && msg) {
+            
+            // Handle phase transitions
+            if (phase === 'REASON_PLAN') {
+              // Keep thinking phase active, AI will send THINK: and PLAN: lines
+              this.options.onCurrentPhaseChange?.('thinking');
+            } else if (phase === 'STATUS') {
+              // Complete thinking, start planning with status message
+              this.completeThinkingPhase('thinking');
+              this.startThinkingPhase('planning', msg || 'Processing your request...');
+            } else if (phase === 'HTML') {
+              // Complete planning, start building
+              this.completeThinkingPhase('planning');
+              this.startThinkingPhase('building', '', '/components/GeneratedComponent.tsx');
+            } else if (phase === 'SUMMARY') {
+              // Complete building, start summary
+              this.completeThinkingPhase('building');
+              this.startThinkingPhase('summary', 'Generation completed successfully!');
+            } else if (phase === 'ERROR' && msg) {
               // Surface error to UI
               this.options.onError(msg);
             }
@@ -253,14 +359,31 @@ export class ChatProcessor {
           const isPlan = /^PLAN:\s*/i.test(trimmed);
           const isDone = /^DONE:\s*/i.test(trimmed);
           const isNext = /^NEXT:\s*/i.test(trimmed);
-          if (isThink) { think.push(trimmed); ensureMessage(); this.options.onMessageUpdate?.(aiMessageId!, buildAggregate()); }
-          else if (isPlan) { plan.push(trimmed); ensureMessage(); this.options.onMessageUpdate?.(aiMessageId!, buildAggregate()); }
-          else if (isDone) { doneText = trimmed; ensureMessage(); this.options.onMessageUpdate?.(aiMessageId!, buildAggregate()); }
+          
+          if (isThink) { 
+            think.push(trimmed);
+            // Update thinking phase content
+            const content = think.map(l => l.replace(/^(THINK|REASON):\s*/i, '').trim()).join('\n');
+            this.updateThinkingPhase('thinking', content);
+          }
+          else if (isPlan) { 
+            plan.push(trimmed);
+            // Update planning phase content
+            const content = plan.map(l => l.replace(/^PLAN:\s*/i, '').trim()).join('\n');
+            this.updateThinkingPhase('planning', content);
+          }
+          else if (isDone) { 
+            doneText = trimmed;
+            // Update summary phase with DONE content
+            const summaryContent = trimmed.replace(/^DONE:\s*/i, '').trim();
+            this.updateThinkingPhase('summary', summaryContent);
+          }
           else if (isNext) {
             nextText = trimmed.replace(/^NEXT:\s*/i, '').trim();
+            // Parse comma-separated suggestions
             const suggestions = nextText.split(',').map(s => s.trim()).filter(Boolean);
-            ensureMessage();
-            this.options.onMessageUpdate?.(aiMessageId!, buildAggregate(), suggestions);
+            // Complete summary phase when we get NEXT suggestions
+            this.completeThinkingPhase('summary', suggestions);
           }
         };
 
@@ -288,6 +411,9 @@ export class ChatProcessor {
               for (const ln of parts) emitLine(ln);
               preRemainder = '';
               htmlStarted = true;
+              // Complete planning and start building phase
+              this.completeThinkingPhase('planning');
+              this.startThinkingPhase('building', '', '/components/GeneratedComponent.tsx');
               // fallthrough: append from idx to result for HTML processing
               result += chunk.slice(idx);
             }
@@ -307,9 +433,14 @@ export class ChatProcessor {
             const partialHtml = extractHtmlSafe(result);
             if (partialHtml && partialHtml.length > 0) {
               this.options.onHtmlUpdate(partialHtml);
+              // Update building phase with HTML content
+              this.updateThinkingPhase('building', 'Writing component code...', partialHtml);
               this.options.onProgress?.({ id: 'compute-changes', label: 'Computing changes', status: 'pending' });
               this.options.onProgress?.({ id: 'apply', label: 'Applying updates', status: 'pending' });
-              if (/<\/html>/i.test(partialHtml)) htmlCompleted = true;
+              if (/<\/html>/i.test(partialHtml)) {
+                htmlCompleted = true;
+                this.completeThinkingPhase('building');
+              }
             }
           }
         }
@@ -326,6 +457,10 @@ export class ChatProcessor {
           }
           this.options.onProgress?.({ id: 'compute-changes', label: 'Computing changes', status: 'done' });
           this.options.onProgress?.({ id: 'apply', label: 'Applying updates', status: 'done' });
+          
+          // Start summary phase - will be updated by DONE/NEXT lines from AI
+          this.startThinkingPhase('summary', 'Generation completed successfully!');
+          
           // Suggestions are already streamed as NEXT lines; avoid extra generic message.
         } else {
           // Graceful: keep existing HTML and surface a status line instead of throwing
@@ -380,11 +515,24 @@ export class ChatProcessor {
           if (phaseMatch2) {
             const phase = phaseMatch2[1];
             const msg = phaseMatch2[2] || '';
-            ensureMessage2();
-            const current = buildAggregate2();
-            const text = current ? (current + (msg ? '\n\n' + msg : '')) : msg;
-            this.options.onMessageUpdate?.(aiMessageId2!, text);
-            if (phase === 'ERROR' && msg) {
+            
+            // Handle phase transitions
+            if (phase === 'REASON_PLAN') {
+              // Keep thinking phase active, AI will send THINK: and PLAN: lines
+              this.options.onCurrentPhaseChange?.('thinking');
+            } else if (phase === 'STATUS') {
+              // Complete thinking, start planning with status message
+              this.completeThinkingPhase('thinking');
+              this.startThinkingPhase('planning', msg || 'Processing your request...');
+            } else if (phase === 'HTML') {
+              // Complete planning, start building
+              this.completeThinkingPhase('planning');
+              this.startThinkingPhase('building', '', '/components/GeneratedComponent.tsx');
+            } else if (phase === 'SUMMARY') {
+              // Complete building, start summary
+              this.completeThinkingPhase('building');
+              this.startThinkingPhase('summary', 'Generation completed successfully!');
+            } else if (phase === 'ERROR' && msg) {
               this.options.onError(msg);
             }
             return;
@@ -393,14 +541,31 @@ export class ChatProcessor {
           const isPlan = /^PLAN:\s*/i.test(trimmed);
           const isDone = /^DONE:\s*/i.test(trimmed);
           const isNext = /^NEXT:\s*/i.test(trimmed);
-          if (isThink) { think2.push(trimmed); ensureMessage2(); this.options.onMessageUpdate?.(aiMessageId2!, buildAggregate2()); }
-          else if (isPlan) { plan2.push(trimmed); ensureMessage2(); this.options.onMessageUpdate?.(aiMessageId2!, buildAggregate2()); }
-          else if (isDone) { doneText2 = trimmed; ensureMessage2(); this.options.onMessageUpdate?.(aiMessageId2!, buildAggregate2()); }
+          
+          if (isThink) { 
+            think2.push(trimmed);
+            // Update thinking phase content
+            const content = think2.map(l => l.replace(/^(THINK|REASON):\s*/i, '').trim()).join('\n');
+            this.updateThinkingPhase('thinking', content);
+          }
+          else if (isPlan) { 
+            plan2.push(trimmed);
+            // Update planning phase content
+            const content = plan2.map(l => l.replace(/^PLAN:\s*/i, '').trim()).join('\n');
+            this.updateThinkingPhase('planning', content);
+          }
+          else if (isDone) { 
+            doneText2 = trimmed;
+            // Update summary phase with DONE content
+            const summaryContent = trimmed.replace(/^DONE:\s*/i, '').trim();
+            this.updateThinkingPhase('summary', summaryContent);
+          }
           else if (isNext) {
             nextText2 = trimmed.replace(/^NEXT:\s*/i, '').trim();
+            // Parse comma-separated suggestions
             const suggestions = nextText2.split(',').map(s => s.trim()).filter(Boolean);
-            ensureMessage2();
-            this.options.onMessageUpdate?.(aiMessageId2!, buildAggregate2(), suggestions);
+            // Complete summary phase when we get NEXT suggestions
+            this.completeThinkingPhase('summary', suggestions);
           }
         };
 
@@ -428,6 +593,9 @@ export class ChatProcessor {
               for (const ln of parts) emitLine(ln);
               preRemainder = '';
               htmlStarted = true;
+              // Complete planning and start building phase
+              this.completeThinkingPhase('planning');
+              this.startThinkingPhase('building', '', '/components/GeneratedComponent.tsx');
               result += chunk.slice(idx);
             }
           } else if (!htmlCompleted) {
@@ -445,10 +613,15 @@ export class ChatProcessor {
           if (partialHtml && partialHtml.length > 0) {
             partialSeen = true;
             this.options.onHtmlUpdate(partialHtml);
+            // Update building phase with HTML content
+            this.updateThinkingPhase('building', 'Writing component code...', partialHtml);
             // Mark steps during streaming
             this.options.onProgress?.({ id: 'plan-layout', label: 'Planning layout', status: 'done' });
             this.options.onProgress?.({ id: 'generate', label: 'Generating structure', status: 'pending' });
-            if (/<\/html>/i.test(partialHtml)) htmlCompleted = true;
+            if (/<\/html>/i.test(partialHtml)) {
+              htmlCompleted = true;
+              this.completeThinkingPhase('building');
+            }
           }
         }
 
@@ -461,6 +634,10 @@ export class ChatProcessor {
           }
           this.options.onProgress?.({ id: 'generate', label: 'Generating structure', status: 'done' });
           this.options.onProgress?.({ id: 'finalize', label: 'Finalizing', status: 'done' });
+          
+          // Start summary phase - will be updated by DONE/NEXT lines from AI
+          this.startThinkingPhase('summary', 'Generation completed successfully!');
+          
           // Suggestions are already streamed as NEXT lines; avoid extra generic message.
         } else {
           // Check if the AI returned a refusal message

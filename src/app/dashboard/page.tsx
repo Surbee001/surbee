@@ -37,7 +37,7 @@ interface RecentChat {
 
 export default function Dashboard() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, userProfile, loading: authLoading } = useAuth();
   const { onlineUsers, subscribeToUserProjects } = useRealtime();
   const [isLabOpen, setIsLabOpen] = useState(false);
   const [isPlanUsageOpen, setIsPlanUsageOpen] = useState(false);
@@ -123,140 +123,15 @@ export default function Dashboard() {
       setCurrentChatSessionId(sessionId);
     }
 
-    // Normal chat mode - stay on home page and start chatting
-    const userMessage: ChatMessage = {
-      id: `${sessionId}_msg_${Date.now()}`,
-      text: message.trim(),
-      isUser: true,
-      timestamp: new Date(),
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
-    
-    // Smooth transition when starting chat
-    if (!hasStartedChat) {
-      setHasStartedChat(true);
-    }
-
-    // Save user message to database (create a new project if first message)
+    // Redirect to survey builder with the initial prompt
+    const projectId = `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     try {
-      // For dashboard chat, create a new project for each conversation session
-      if (messages.length === 0) {
-        const projectResponse = await fetch('/api/projects', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: `Chat: ${message.substring(0, 50)}${message.length > 50 ? '...' : ''}`,
-            description: `Chat conversation from dashboard (Session: ${sessionId})`,
-            user_id: user.id
-          })
-        });
-        
-        if (projectResponse.ok) {
-          const { project } = await projectResponse.json();
-          
-          // Save the user message
-          await fetch(`/api/projects/${project.id}/messages`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              content: message.trim(),
-              is_user: true,
-              user_id: user.id
-            })
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Failed to save message:', error);
-    }
-    
-    // Start SSE think + final streaming
-    const thinkingStartTime = Date.now();
-    setIsThinking(true);
-    setThinkPhase('thinking');
-    setThoughts([]);
-    setCurrentThought("");
-    setIsInputDisabled(true);
+      sessionStorage.setItem('surbee_initial_prompt', message.trim());
+    } catch {}
+    router.push(`/project/${projectId}`);
+    return;
 
-    // Prepare placeholder assistant message ID for streaming tokens
-    const aiMessageId = `${sessionId}_ai_${Date.now()}`;
-
-    // Helper to apply live style edits from SSE
-    const applyEdit = (edit: any) => {
-      if (!edit || typeof document === 'undefined') return;
-      if (edit.type === 'style' && typeof edit.target === 'string' && edit.changes) {
-        try {
-          const nodes = document.querySelectorAll<HTMLElement>(edit.target);
-          nodes.forEach((el) => {
-            Object.entries(edit.changes as Record<string, string>).forEach(([k, v]) => {
-              // @ts-expect-error index style assignment
-              el.style[k] = v as any;
-            });
-          });
-        } catch {}
-      }
-    };
-
-    try {
-      const es = new EventSource(`/api/deepseek-think?prompt=${encodeURIComponent(message.trim())}`);
-      sseRef.current = es;
-
-      es.addEventListener('status', (e) => {
-        const data = JSON.parse((e as MessageEvent).data);
-        if (data.state === 'thinking_started') setThinkPhase('thinking');
-        if (data.state === 'final_streaming') setThinkPhase('streaming');
-      });
-
-      es.addEventListener('thought', (e) => {
-        const data = JSON.parse((e as MessageEvent).data);
-        if (typeof data.text === 'string') {
-          setThoughts(prev => [...prev, data.text]);
-          setCurrentThought(data.text);
-        }
-      });
-
-      es.addEventListener('edit', (e) => {
-        const data = JSON.parse((e as MessageEvent).data);
-        applyEdit(data);
-      });
-
-      es.addEventListener('final_token', (e) => {
-        const data = JSON.parse((e as MessageEvent).data);
-        const token = typeof data.token === 'string' ? data.token : '';
-        if (!token) return;
-        
-        // Add the AI message if it doesn't exist yet (first token)
-        setMessages(prev => {
-          const existing = prev.find(m => m.id === aiMessageId);
-          if (!existing) {
-            return [...prev, { id: aiMessageId, text: token, isUser: false, timestamp: new Date() }];
-          } else {
-            return prev.map(m => m.id === aiMessageId ? { ...m, text: (m.text || '') + token } : m);
-          }
-        });
-      });
-
-      const cleanUp = () => {
-        const thinkingEndTime = Date.now();
-        const duration = Math.round((thinkingEndTime - thinkingStartTime) / 1000);
-        setThinkingDuration(duration);
-        setIsThinking(false);
-        setThinkPhase('answered');
-        setIsInputDisabled(false);
-        es.close();
-        sseRef.current = null;
-      };
-
-      es.addEventListener('done', cleanUp);
-      es.addEventListener('error', cleanUp);
-    } catch (e) {
-      setIsThinking(false);
-      setThinkPhase('answered');
-      setThinkingDuration(0);
-      setIsInputDisabled(false);
-      setMessages(prev => [...prev, { id: (Date.now() + 2).toString(), text: 'Failed to reach thinking service.', isUser: false, timestamp: new Date() }]);
-    }
+    // No longer needed since we're redirecting to project builder
   };
 
   const openImageModal = (imageUrl: string) => setSelectedImage(imageUrl);
@@ -346,11 +221,53 @@ export default function Dashboard() {
     return () => document.removeEventListener('mousedown', onDocClick);
   }, [isUserMenuOpen]);
 
-  // Show loading state while authenticating
+  // Show loading state only during initial auth loading
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
+      <div className="flex flex-col h-full" style={{ fontFamily: 'Sohne, sans-serif' }}>
+        {/* Only skeleton for main content area - no sidebar */}
+        <div className="w-full max-w-2xl flex flex-col mx-auto flex-1 justify-center">
+          {/* Greeting Text Skeleton */}
+          <div className="text-center mb-4">
+            <div className="skeleton-text mx-auto mb-6" style={{ 
+              width: '350px', 
+              height: '3rem',
+              borderRadius: '0.5rem'
+            }}></div>
+            <div className="skeleton-text mx-auto mb-4" style={{ 
+              width: '500px', 
+              height: '1.5rem',
+              borderRadius: '0.375rem'
+            }}></div>
+            <div className="skeleton-text mx-auto" style={{ 
+              width: '400px', 
+              height: '1.5rem',
+              borderRadius: '0.375rem'
+            }}></div>
+          </div>
+
+          {/* Chat Input Skeleton */}
+          <div className="mt-8 px-4">
+            <div className="relative">
+              <div className="skeleton-form-input" style={{
+                height: '3rem',
+                borderRadius: '0.75rem',
+                marginBottom: '1rem'
+              }}></div>
+              
+              {/* Quick Actions Skeleton */}
+              <div className="flex flex-wrap gap-2 justify-center mt-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="skeleton-base" style={{
+                    width: '120px',
+                    height: '2rem',
+                    borderRadius: '1rem'
+                  }}></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -391,7 +308,7 @@ export default function Dashboard() {
                       fontWeight: 200,
                       marginBottom: '0.5rem'
                     }}>
-                      Hell<span style={{ fontStyle: 'italic', fontWeight: 200 }}>o</span>, {user?.user_metadata?.name || user?.email?.split('@')[0] || 'there'}.
+                      Hell<span style={{ fontStyle: 'italic', fontWeight: 200 }}>o</span>, {userProfile?.name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'there'}.
                     </h1>
                   </motion.div>
                 )}
@@ -517,7 +434,7 @@ export default function Dashboard() {
                     handleSendMessage(message, images);
                   }}
                   isInputDisabled={isInputDisabled}
-                  placeholder={hasStartedChat ? "Ask a Follow-Up..." : "Ask Surbee anything. Type @ for mentions"}
+                  placeholder={"What survey do you want to create today?"}
                   className="chat-input-grey"
                 />
               </div>

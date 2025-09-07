@@ -136,9 +136,13 @@ export const DeepSiteRenderer: React.FC<DeepSiteRendererProps> = ({
           
           // Add <base> for relative links and custom CSS for hover/selection
           const baseHref = (currentPath || '/').endsWith('/') ? (currentPath || '/') : (currentPath + '/');
-          const htmlWithStyles = html.replace(
-            '</head>',
-            `<base href="${baseHref}"><style>
+          let htmlWithStyles = html;
+          
+          // Safely add styles only if </head> exists
+          if (html.includes('</head>')) {
+            htmlWithStyles = html.replace(
+              '</head>',
+              `<base href="${baseHref}"><style>
               .deepsite-hovered-element {
                 outline: 2px solid #3b82f6 !important;
                 outline-offset: 2px !important;
@@ -192,7 +196,25 @@ export const DeepSiteRenderer: React.FC<DeepSiteRendererProps> = ({
                 outline-color: #1d4ed8 !important;
               }
             </style></head>`
-          );
+            );
+          } else {
+            // If no </head> tag, add styles to body or at the beginning
+            htmlWithStyles = `<style>
+              .deepsite-hovered-element {
+                outline: 2px solid #3b82f6 !important;
+                outline-offset: 2px !important;
+                cursor: pointer !important;
+                position: relative !important;
+                transition: all 0.2s ease !important;
+              }
+              .deepsite-selected-element {
+                outline: 2px solid #10b981 !important;
+                outline-offset: 2px !important;
+                background-color: rgba(16, 185, 129, 0.05) !important;
+                position: relative !important;
+              }
+            </style>${html}`;
+          }
           
           doc.write(htmlWithStyles);
           doc.close();

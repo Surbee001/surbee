@@ -4,9 +4,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, User, Bell, Shield, CreditCard, HelpCircle, Lock, Eye, EyeOff, Download, Trash2, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { SkeletonText, SkeletonCard, SkeletonForm } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function PrivacySettingsPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
   const [privacySettings, setPrivacySettings] = useState({
     dataCollection: true,
     analyticsTracking: true,
@@ -35,6 +39,22 @@ export default function PrivacySettingsPage() {
       return () => scrollElement.removeEventListener('scroll', handleScroll);
     }
   }, []);
+
+  // Only show loading on first visit, not on navigation
+  useEffect(() => {
+    if (!authLoading) {
+      const hasLoaded = sessionStorage.getItem('dashboard_loaded');
+      if (hasLoaded) {
+        setIsLoading(false);
+      } else {
+        const timer = setTimeout(() => {
+          setIsLoading(false);
+          sessionStorage.setItem('dashboard_loaded', 'true');
+        }, 800);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [authLoading]);
 
   const handlePrivacyToggle = (setting: string, value: boolean) => {
     setPrivacySettings(prev => ({ ...prev, [setting]: value }));
@@ -70,6 +90,142 @@ export default function PrivacySettingsPage() {
     setShowDeleteModal(false);
     // TODO: Implement account deletion
   };
+
+  if (authLoading || isLoading) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>
+        <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full max-w-6xl mx-auto">
+            {/* Settings Navigation Skeleton */}
+            <div className="lg:col-span-1">
+              <div className="space-y-4">
+                <SkeletonText width="120px" height="2rem" className="mb-6" />
+                <div className="space-y-1">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 px-3 py-2">
+                      <div className="skeleton-circle" style={{ width: '16px', height: '16px' }}></div>
+                      <SkeletonText width={`${60 + Math.random() * 40}px`} height="14px" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Privacy Content Skeleton */}
+            <div className="lg:col-span-3 space-y-6">
+              {/* Account Security Card Skeleton */}
+              <div className="skeleton-card" style={{ padding: '24px' }}>
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="skeleton-circle" style={{ width: '20px', height: '20px' }}></div>
+                    <SkeletonText width="140px" height="1.5rem" />
+                  </div>
+                  <SkeletonText width="300px" height="1rem" className="mb-6" />
+                  
+                  {/* Change Password Section */}
+                  <div>
+                    <SkeletonText width="120px" height="1rem" className="mb-3" />
+                    <div className="space-y-3">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="skeleton-form-input" style={{ height: '3rem' }}></div>
+                      ))}
+                      <div className="skeleton-base" style={{ width: '140px', height: '2.5rem', borderRadius: '0.5rem' }}></div>
+                    </div>
+                  </div>
+                  
+                  {/* 2FA Section */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <SkeletonText width="160px" height="1rem" className="mb-1" />
+                      <SkeletonText width="220px" height="0.75rem" />
+                    </div>
+                    <div className="skeleton-base" style={{ width: '44px', height: '24px', borderRadius: '12px' }}></div>
+                  </div>
+                  
+                  {/* Active Sessions */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <SkeletonText width="120px" height="1rem" />
+                      <SkeletonText width="140px" height="0.75rem" />
+                    </div>
+                    <div className="space-y-2">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="skeleton-base" style={{ height: '3.5rem', borderRadius: '0.5rem' }}></div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Privacy Controls Card Skeleton */}
+              <div className="skeleton-card" style={{ padding: '24px' }}>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="skeleton-circle" style={{ width: '20px', height: '20px' }}></div>
+                    <SkeletonText width="140px" height="1.5rem" />
+                  </div>
+                  <SkeletonText width="280px" height="1rem" className="mb-6" />
+                  
+                  {/* Privacy toggles */}
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="flex items-center justify-between py-2">
+                      <div className="flex-1">
+                        <SkeletonText width={`${120 + Math.random() * 80}px`} height="1rem" className="mb-1" />
+                        <SkeletonText width={`${200 + Math.random() * 100}px`} height="0.75rem" />
+                      </div>
+                      <div className="skeleton-base" style={{ width: '44px', height: '24px', borderRadius: '12px' }}></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Profile Visibility Card Skeleton */}
+              <div className="skeleton-card" style={{ padding: '24px' }}>
+                <div className="space-y-4">
+                  <SkeletonText width="140px" height="1.5rem" className="mb-2" />
+                  <SkeletonText width="250px" height="1rem" className="mb-6" />
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <SkeletonText width="100px" height="1rem" className="mb-1" />
+                      <SkeletonText width="180px" height="0.75rem" />
+                    </div>
+                    <div className="skeleton-base" style={{ width: '44px', height: '24px', borderRadius: '12px' }}></div>
+                  </div>
+                  
+                  <div>
+                    <SkeletonText width="130px" height="1rem" className="mb-2" />
+                    <div className="skeleton-form-input" style={{ height: '3rem' }}></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Data Management Card Skeleton */}
+              <div className="skeleton-card" style={{ padding: '24px' }}>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="skeleton-circle" style={{ width: '20px', height: '20px' }}></div>
+                    <SkeletonText width="140px" height="1.5rem" />
+                  </div>
+                  <SkeletonText width="240px" height="1rem" className="mb-6" />
+                  
+                  {/* Data export and delete sections */}
+                  <div className="skeleton-base" style={{ height: '6rem', borderRadius: '0.5rem' }}></div>
+                  <div className="skeleton-base" style={{ height: '6rem', borderRadius: '0.5rem' }}></div>
+                </div>
+              </div>
+
+              {/* Save Buttons Skeleton */}
+              <div className="flex justify-end gap-3 py-4">
+                <div className="skeleton-base" style={{ width: '120px', height: '2.5rem', borderRadius: '0.5rem' }}></div>
+                <div className="skeleton-base" style={{ width: '120px', height: '2.5rem', borderRadius: '0.5rem' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>

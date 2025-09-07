@@ -3,20 +3,11 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Plus,
-  Heart,
-  MoreHorizontal,
-  Settings,
   Search,
   Filter,
-  Copy,
-  Trash2,
-  Share,
-  Archive,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Users,
-  Pin
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -27,6 +18,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import type { Project } from '@/types/database';
+import { ProjectCard } from '@/components/project-card/ProjectCard';
 
 interface ProjectWithStats extends Project {
   responseCount?: number;
@@ -35,17 +27,6 @@ interface ProjectWithStats extends Project {
   lastActivity?: Date;
 }
 
-interface ProjectCardProps {
-  project: ProjectWithStats;
-  onLike?: () => void;
-  onSettings?: () => void;
-  onDuplicate?: () => void;
-  onDelete?: () => void;
-  onShare?: () => void;
-  onArchive?: () => void;
-  isPinned?: boolean;
-  onTogglePin?: () => void;
-}
 
 // Filter Dropdown Component using Shadcn
 interface DropdownOption {
@@ -94,29 +75,44 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
   );
 };
 
-// Skeleton Loading Component
+// Skeleton Loading Component - Updated for new project card design
 const SkeletonCard: React.FC = () => (
-  <div className="skeleton-card">
-    <div className="skeleton-image"></div>
-    <div className="skeleton-content">
-      <div className="skeleton-title"></div>
-      <div className="skeleton-meta"></div>
-      <div className="skeleton-actions">
-        <div className="skeleton-indicators">
-          <div className="skeleton-circle"></div>
-          <div className="skeleton-circle"></div>
-          <div className="skeleton-text"></div>
+  <div className="project-card-container">
+    {/* Survey Preview Card Skeleton */}
+    <div className="project-card-preview-section">
+      <div className="skeleton-image" style={{ height: '11rem', borderRadius: 'calc(0.5rem * 1.5)' }}></div>
+    </div>
+    
+    {/* User Info and Actions Skeleton */}
+    <div className="project-card-info-section">
+      {/* User Avatar Skeleton */}
+      <div className="project-card-avatar-wrapper">
+        <div className="skeleton-circle" style={{ width: '2.25rem', height: '2.25rem' }}></div>
+      </div>
+
+      {/* Title, Status, and Actions Skeleton */}
+      <div className="project-card-content-wrapper">
+        <div className="project-card-text-section">
+          {/* Title and Status Badge Skeleton */}
+          <div className="project-card-title-row">
+            <div className="skeleton-text" style={{ width: '60%', height: '1rem' }}></div>
+            <div className="skeleton-badge"></div>
+          </div>
+          
+          {/* Last Edited Skeleton */}
+          <div className="project-card-meta-row" style={{ marginTop: '0.25rem' }}>
+            <div className="skeleton-text" style={{ width: '40%', height: '0.75rem' }}></div>
+          </div>
         </div>
-        <div className="skeleton-action-btns">
-          <div className="skeleton-action-btn"></div>
-          <div className="skeleton-action-btn"></div>
-        </div>
+
+        {/* 3 Dots Menu Skeleton */}
+        <div className="skeleton-circle" style={{ width: '1.75rem', height: '1.75rem' }}></div>
       </div>
     </div>
   </div>
 );
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ 
+const OldProjectCard: any = ({ 
   project, 
   onLike, 
   onSettings, 
@@ -127,26 +123,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   isPinned,
   onTogglePin,
 }) => {
-  const [liked, setLiked] = useState(false);
   const router = useRouter();
-
-  const handleLike = () => {
-    setLiked(!liked);
-    onLike?.();
-  };
 
   const handleCardClick = () => {
     router.push(`/project/${project.id}`);
-  };
-
-  const getTypeColor = (type: string) => {
-    const colors = {
-      Survey: '#6366f1',
-      Study: '#f59e0b',
-      Feedback: '#10b981',
-      default: 'var(--surbee-accent-primary)'
-    } as const;
-    return (colors as any)[type] || colors.default;
   };
 
   const formatDate = (dateString: string) => {
@@ -161,183 +141,117 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-
   return (
-    <>
-      <div className="relative">
-        <div
-          className="project-card"
-          role="button"
-          tabIndex={0}
-          onClick={handleCardClick}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleCardClick();
-            }
-          }}
-        >
-          <div className="project-card-image" onClick={handleCardClick}>
-            <div className="absolute inset-0" style={{ background: 'var(--surbee-bg-primary)' }} />
-            <div className="absolute bottom-2 left-2 flex items-center gap-2">
-              <div
-                className="flex items-center gap-2 px-2 py-1 rounded-md border text-xs"
-                style={{ background: 'var(--surbee-bg-secondary)', borderColor: 'var(--surbee-border-primary)', color: 'var(--surbee-fg-primary)' }}
-              >
-                <span>{project.type}</span>
-              </div>
-              <div
-                className="flex items-center gap-1 px-2 py-1 rounded-md border text-xs"
-                style={{ background: 'var(--surbee-bg-secondary)', borderColor: 'var(--surbee-border-primary)', color: 'var(--surbee-fg-primary)' }}
-                title="Responses"
-              >
-                <Users className="w-3 h-3" />
-                {project.responseCount || 0}
-              </div>
-            </div>
-            {isPinned ? (
-              <div className="absolute top-2 right-2 p-1 rounded-md border"
-                   style={{ background: 'var(--surbee-bg-secondary)', borderColor: 'var(--surbee-border-primary)' }}>
-                <Pin size={14} />
-              </div>
-            ) : null}
-          </div>
-
-          <div className="project-card-bottom">
-            <div className="mb-3">
-              <h3 className="project-card-title">
-                {project.title}
-              </h3>
-            </div>
-            
-            <div className="project-card-meta">
-              Last modified {formatDate(project.updated_at)}
-            </div>
-            
-            <div className="project-card-actions">
-              <div className="project-card-indicators flex-1 min-w-0 flex flex-wrap">
-                <div className="project-card-indicator-circles">
-                  <div 
-                    className="project-indicator-circle" 
-                    style={{ backgroundColor: project.status === 'published' ? '#10b981' : '#f59e0b' }}
-                  >
-                    <span className="text-xs text-white font-medium">
-                      {project.status === 'published' ? '✓' : '•'}
-                    </span>
-                  </div>
-                  <div 
-                    className="project-indicator-circle" 
-                    style={{ backgroundColor: '#6366f1' }}
-                  >
-                    <span className="text-xs text-white font-medium">
-                      {project.type.charAt(0)}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2 mb-1">
-                  <span
-                    className="inline-flex items-center px-2 py-0.5 rounded-full border text-[11px]"
-                    style={{
-                      background: 'var(--surbee-bg-primary)',
-                      borderColor: 'var(--surbee-border-primary)',
-                      color: 'var(--surbee-fg-primary)'
-                    }}
-                  >
-                    {project.status === 'published' ? 'Published' : project.status === 'draft' ? 'Draft' : 'Archived'}
-                  </span>
-                  {/* Removed duplicate type pill at bottom to avoid duplication with header pill */}
-                </div>
-              </div>
-
-              <div className="project-action-buttons shrink-0">
-                <button
-                  onClick={(e) => { e.stopPropagation(); onTogglePin?.(); }}
-                  className={`project-action-btn ${isPinned ? 'text-[var(--surbee-fg-primary)]' : 'project-settings-btn'}`}
-                  aria-label={isPinned ? 'Unpin' : 'Pin'}
-                  title={isPinned ? 'Unpin' : 'Pin'}
-                >
-                  <Pin size={18} />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleLike();
-                  }}
-                  className={`project-action-btn project-heart-btn ${liked ? 'liked' : ''}`}
-                  aria-label={liked ? 'Unlike' : 'Like'}
-                >
-                  <Heart
-                    size={18}
-                    fill={liked ? 'currentColor' : 'none'}
-                  />
-                </button>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      onClick={(e) => e.stopPropagation()}
-                        className="project-action-btn project-settings-btn"
-                        aria-label="More options"
-                      >
-                        <MoreHorizontal size={18} />
-                      </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40">
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDuplicate?.();
-                      }}
-                    >
-                      <Copy size={16} />
-                      <span>Duplicate</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onShare?.();
-                      }}
-                    >
-                      <Share size={16} />
-                      <span>Share</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSettings?.();
-                      }}
-                    >
-                      <Settings size={16} />
-                      <span>Settings</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onArchive?.();
-                      }}
-                    >
-                      <Archive size={16} />
-                      <span>Archive</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete?.();
-                      }}
-                      variant="destructive"
-                    >
-                      <Trash2 size={16} />
-                      <span>Delete</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
+    <div className="text-neutral-200 space-y-3 group cursor-pointer">
+      {/* Survey Preview Card */}
+      <div
+        className="relative bg-neutral-900 rounded-2xl overflow-hidden h-44 w-full border border-neutral-800"
+        onClick={handleCardClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleCardClick();
+          }
+        }}
+      >
+        <div className="absolute inset-0" style={{ background: 'var(--surbee-bg-primary)' }} />
+      </div>
+      
+      {/* User Info and Actions Below Card */}
+      <div className="flex items-start justify-between gap-3 relative group/actions">
+        <div className="flex items-start gap-3">
+          {/* User Profile Picture with Gradient */}
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"></div>
+          
+          {/* User Title and Last Edited */}
+          <div className="flex-1">
+            <p className="text-neutral-200 text-base font-semibold line-clamp-1">
+              {project.title}
+            </p>
+            <p className="text-sm text-neutral-500">
+              Last edited {formatDate(project.updated_at)}
+            </p>
           </div>
         </div>
+        
+        {/* Status Badge and 3 Dots Menu */}
+        <div className="flex items-center gap-2">
+          {/* Status Badge */}
+          <span
+            className="inline-block rounded-md px-2 py-0.5 text-xs font-medium"
+            style={{
+              backgroundColor: "hsl(217 33% 22%)",
+              color: "hsl(209 100% 85%)",
+            }}
+          >
+            {project.status === 'published' ? 'Published' : project.status === 'draft' ? 'Draft' : 'Archived'}
+          </span>
+          
+          {/* 3 Dots Menu - Shows on Hover */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button 
+                onClick={(e) => e.stopPropagation()}
+                className="opacity-0 group-hover/actions:opacity-100 transition-opacity duration-200 p-2 rounded-lg hover:bg-neutral-800"
+                aria-label="More options"
+              >
+                <MoreHorizontal className="text-neutral-400 size-5 hover:text-neutral-300 transition-colors duration-200" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDuplicate?.();
+                }}
+              >
+                <Copy size={16} />
+                <span>Duplicate</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onShare?.();
+                }}
+              >
+                <Share size={16} />
+                <span>Share</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSettings?.();
+                }}
+              >
+                <Settings size={16} />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onArchive?.();
+                }}
+              >
+                <Archive size={16} />
+                <span>Archive</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete?.();
+                }}
+                variant="destructive"
+              >
+                <Trash2 size={16} />
+                <span>Delete</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 
@@ -498,7 +412,7 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published' | 'archived'>('all');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'Survey' | 'Study' | 'Feedback'>('all');
+  const [typeFilter, setTypeFilter] = useState<'Survey' | 'Study' | 'Feedback'>('Survey');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<'updated' | 'created' | 'title' | 'responses'>('updated');
@@ -506,7 +420,6 @@ export default function ProjectsPage() {
 
   // Dropdown options
   const typeOptions: DropdownOption[] = [
-    { value: 'all', label: 'All Types' },
     { value: 'Survey', label: 'Survey' },
     { value: 'Study', label: 'Study' },
     { value: 'Feedback', label: 'Feedback' }
@@ -519,13 +432,20 @@ export default function ProjectsPage() {
     { value: 'responses', label: 'Responses' }
   ];
 
-  // Mock data loading
+  // Only show loading on first visit, not on navigation
   useEffect(() => {
     if (user) {
-      setTimeout(() => {
+      const hasLoaded = sessionStorage.getItem('dashboard_loaded');
+      if (hasLoaded) {
         setProjects(sampleProjects);
         setLoading(false);
-      }, 1000);
+      } else {
+        setTimeout(() => {
+          setProjects(sampleProjects);
+          setLoading(false);
+          sessionStorage.setItem('dashboard_loaded', 'true');
+        }, 1000);
+      }
     }
   }, [user]);
 
@@ -548,7 +468,7 @@ export default function ProjectsPage() {
   const filteredProjects = useMemo(() => {
     let filtered = projects.filter(project => {
       const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-      const matchesType = typeFilter === 'all' || project.type === typeFilter;
+      const matchesType = project.type === typeFilter;
       const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesStatus && matchesType && matchesSearch;
     });
@@ -778,10 +698,10 @@ export default function ProjectsPage() {
             {currentProjects.map((project) => (
               <ProjectCard
                 key={project.id}
-                project={project}
-                isPinned={pinnedIds.includes(project.id)}
-                onTogglePin={() => togglePin(project.id)}
-                onLike={() => console.log('Liked project:', project.id)}
+                id={project.id}
+                title={project.title}
+                status={project.status}
+                updatedAt={project.updated_at}
                 onSettings={() => console.log('Settings for project:', project.id)}
                 onDuplicate={() => handleDuplicate(project.id)}
                 onDelete={() => handleDelete(project.id)}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, Search, Star, TrendingUp, Briefcase, GraduationCap, Heart, Calendar, DollarSign, Target, BookOpen, List, Lightbulb, Users, Folder, PenTool, Rocket, Home, BarChart3, FileText } from 'lucide-react';
 import HorizontalScroller from '@/components/ui/HorizontalScroller';
+import { SkeletonHeroCard, SkeletonCard, SkeletonAvatar, SkeletonText } from '@/components/ui/skeleton';
 
 // Image constants - replace these with your actual image URLs
 const img6B8F021A90728209476Afbe585471C29Png = "/api/placeholder/825/300";
@@ -83,6 +84,187 @@ const imgBecomeCreatorDarkPng = "/api/placeholder/400/300";
 
 export default function NotionMarketplace() {
   const [viewAll, setViewAll] = useState<null | 'featured' | 'collections' | 'popular'>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Only show loading on first visit, not on navigation
+  React.useEffect(() => {
+    const hasLoaded = sessionStorage.getItem('dashboard_loaded');
+    if (hasLoaded) {
+      setLoading(false);
+    } else {
+      const timer = setTimeout(() => {
+        setLoading(false);
+        sessionStorage.setItem('dashboard_loaded', 'true');
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Skeleton loading state
+  if (loading) {
+    return (
+      <div className="flex flex-col h-full">
+        {/* Fixed Header */}
+        <div className="projects-header" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>
+          <div className="flex flex-col gap-6 p-6 mx-auto w-full max-w-[1280px] md:px-8">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="projects-title">Community</h1>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+              {/* Navigation Tabs */}
+              <div className="flex items-center gap-5">
+                <div className="text-[16px] font-medium" style={{ color: 'var(--surbee-fg-primary)' }}>
+                  Discover
+                </div>
+                <div className="text-[16px] font-medium opacity-60" style={{ color: 'var(--surbee-fg-muted)' }}>
+                  Templates
+                </div>
+              </div>
+              
+              {/* Search Skeleton */}
+              <div className="relative">
+                <div className="skeleton-form-input" style={{ width: '296px', height: '2.5rem' }}></div>
+              </div>
+            </div>
+
+            {/* Divider Line */}
+            <div className="w-full h-px bg-gray-200/10"></div>
+          </div>
+        </div>
+
+        {/* Scrollable Content Section */}
+        <div className="projects-cards-container">
+          <div className="projects-cards-fade"></div>
+          
+          <div className="projects-cards-content">
+            <div className="mx-auto w-full max-w-[1280px] px-6 md:px-8">
+
+              {/* Hero Section Skeleton */}
+              <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <SkeletonHeroCard />
+                </div>
+                <div className="w-full">
+                  <SkeletonHeroCard />
+                </div>
+              </div>
+
+              {/* Featured Templates Section Skeleton */}
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-11">
+                  <div className="flex items-center">
+                    <div className="w-3.5 h-3.5 mr-2 skeleton-base" style={{ borderRadius: '50%' }}></div>
+                    <SkeletonText width="120px" height="0.75rem" />
+                  </div>
+                  <SkeletonText width="60px" height="0.75rem" />
+                </div>
+                
+                <HorizontalScroller>
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className="w-[260px] md:w-[280px] flex-shrink-0 group cursor-pointer">
+                      <div className="relative h-[220px] md:h-[240px] rounded-xl overflow-hidden">
+                        <div className="skeleton-image w-full h-full"></div>
+                      </div>
+                      <div className="mt-3 flex items-start gap-2">
+                        <div className="skeleton-circle" style={{ width: '22px', height: '22px' }}></div>
+                        <div className="flex-1">
+                          <SkeletonText height="0.875rem" className="mb-1" />
+                          <div className="flex items-center gap-1">
+                            <div className="skeleton-circle" style={{ width: '10px', height: '10px' }}></div>
+                            <SkeletonText width="30px" height="0.75rem" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </HorizontalScroller>
+              </div>
+
+              {/* Survey Collections Section Skeleton */}
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-11">
+                  <div className="flex items-center">
+                    <div className="w-3.5 h-3.5 mr-2 skeleton-base" style={{ borderRadius: '50%' }}></div>
+                    <SkeletonText width="100px" height="0.75rem" />
+                  </div>
+                  <SkeletonText width="70px" height="0.75rem" />
+                </div>
+                
+                <HorizontalScroller>
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <div key={index} className="w-[240px] md:w-[252px] flex-shrink-0 bg-[rgba(255,255,255,0.05)] rounded-xl overflow-hidden">
+                      <div className="skeleton-image h-24"></div>
+                      <div className="p-4">
+                        <SkeletonText height="0.875rem" className="mb-2" />
+                        <div className="flex items-center gap-1">
+                          <div className="skeleton-circle" style={{ width: '16px', height: '16px' }}></div>
+                          <SkeletonText width="60px" height="0.75rem" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </HorizontalScroller>
+              </div>
+
+              {/* Popular This Week Skeleton */}
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-11">
+                  <div className="flex items-center">
+                    <div className="w-3.5 h-3.5 mr-2 skeleton-base" style={{ borderRadius: '50%' }}></div>
+                    <SkeletonText width="110px" height="0.75rem" />
+                  </div>
+                  <SkeletonText width="60px" height="0.75rem" />
+                </div>
+                
+                <HorizontalScroller>
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <div key={index} className="w-[260px] md:w-[280px] flex-shrink-0 group cursor-pointer">
+                      <div className="relative h-[220px] md:h-[240px] rounded-xl overflow-hidden">
+                        <div className="skeleton-image w-full h-full"></div>
+                      </div>
+                      <div className="mt-3 flex items-start gap-2">
+                        <div className="skeleton-circle" style={{ width: '22px', height: '22px' }}></div>
+                        <div className="flex-1">
+                          <SkeletonText height="0.875rem" className="mb-1" />
+                          <div className="flex items-center gap-1">
+                            <div className="skeleton-circle" style={{ width: '10px', height: '10px' }}></div>
+                            <SkeletonText width="30px" height="0.75rem" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </HorizontalScroller>
+              </div>
+
+              {/* Top Survey Creators Skeleton */}
+              <div className="mt-10 mb-20">
+                <div className="flex items-center justify-between mb-11">
+                  <div className="flex items-center">
+                    <div className="w-3.5 h-3.5 mr-2 skeleton-base" style={{ borderRadius: '50%' }}></div>
+                    <SkeletonText width="130px" height="0.75rem" />
+                  </div>
+                  <SkeletonText width="60px" height="0.75rem" />
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-[22.67px] gap-y-8">
+                  {Array.from({ length: 12 }).map((_, index) => (
+                    <div key={index} className="text-center cursor-pointer">
+                      <div className="w-[60px] h-[60px] mx-auto mb-3 skeleton-circle"></div>
+                      <SkeletonText height="0.875rem" className="mb-1" />
+                      <SkeletonText width="80%" height="0.75rem" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="flex flex-col h-full">
@@ -91,7 +273,7 @@ export default function NotionMarketplace() {
         <div className="flex flex-col gap-6 p-6 mx-auto w-full max-w-[1280px] md:px-8">
           <div className="flex items-center justify-between mb-4">
             <h1 className="projects-title">
-              Marketplace
+              Community
             </h1>
           </div>
 
@@ -111,7 +293,7 @@ export default function NotionMarketplace() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--surbee-input-placeholder)' }} />
               <input 
                 type="text" 
-                placeholder="Search survey templates..." 
+                placeholder="Search community surveys..." 
                 className="search-input"
                 style={{ paddingLeft: '2.5rem', width: '296px' }}
               />
@@ -141,11 +323,11 @@ export default function NotionMarketplace() {
                     <span className="text-[12px] font-semibold text-theme-muted">Featured</span>
                   </div>
                   <h2 className="text-[30px] font-semibold text-theme-primary leading-9 mb-4">
-                    Popular Survey Templates
+                    Popular Community Surveys
                   </h2>
                   <p className="text-[14px] text-theme-primary leading-5">
-                    Discover the most used survey templates<br />
-                    created by the Surbee community.
+                    Discover surveys created and shared<br />
+                    by the Surbee community.
                   </p>
                 </div>
                 <div className="absolute right-0 top-0 bottom-0 w-[413px] bg-theme-secondary rounded-r-2xl hidden md:block">
@@ -179,7 +361,7 @@ export default function NotionMarketplace() {
               <div className="flex items-center justify-between mb-11">
                 <div className="flex items-center">
                   <Lightbulb className="w-3.5 h-3.5 mr-2" />
-                  <span className="text-[12px] font-semibold text-theme-muted">Featured survey templates</span>
+                  <span className="text-[12px] font-semibold text-theme-muted">Featured community surveys</span>
                 </div>
                 <button onClick={() => setViewAll(viewAll === 'featured' ? null : 'featured')} className="text-[12px] font-semibold text-theme-muted hover:text-theme-secondary flex items-center gap-1">
                   See more

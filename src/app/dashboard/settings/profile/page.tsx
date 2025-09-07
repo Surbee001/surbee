@@ -4,9 +4,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, User, Bell, Shield, CreditCard, HelpCircle, Upload, Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { SkeletonText, SkeletonCard, SkeletonForm, SkeletonAvatar } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ProfileSettingsPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
     firstName: 'John',
     lastName: 'Doe', 
@@ -34,6 +38,22 @@ export default function ProfileSettingsPage() {
     }
   }, []);
 
+  // Only show loading on first visit, not on navigation
+  useEffect(() => {
+    if (!authLoading) {
+      const hasLoaded = sessionStorage.getItem('dashboard_loaded');
+      if (hasLoaded) {
+        setIsLoading(false);
+      } else {
+        const timer = setTimeout(() => {
+          setIsLoading(false);
+          sessionStorage.setItem('dashboard_loaded', 'true');
+        }, 800);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [authLoading]);
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -42,6 +62,115 @@ export default function ProfileSettingsPage() {
     console.log('Saving profile:', formData);
     // TODO: Implement save functionality
   };
+
+  if (authLoading || isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full max-w-6xl mx-auto">
+            {/* Settings Navigation Skeleton */}
+            <div className="lg:col-span-1">
+              <div className="space-y-4">
+                <SkeletonText width="120px" height="2rem" className="mb-6" />
+                <div className="space-y-1">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 px-3 py-2">
+                      <div className="skeleton-circle" style={{ width: '16px', height: '16px' }}></div>
+                      <SkeletonText width={`${60 + Math.random() * 40}px`} height="14px" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Profile Content Skeleton */}
+            <div className="lg:col-span-3 space-y-6">
+              {/* Profile Photo Card Skeleton */}
+              <div className="skeleton-card" style={{ padding: '24px' }}>
+                <div className="space-y-4">
+                  <SkeletonText width="140px" height="1.5rem" className="mb-2" />
+                  <SkeletonText width="250px" height="1rem" className="mb-6" />
+                  <div className="flex items-center gap-6">
+                    <SkeletonAvatar size={80} />
+                    <div className="space-y-2">
+                      <div className="skeleton-base" style={{ width: '140px', height: '2.5rem', borderRadius: '0.5rem' }}></div>
+                      <SkeletonText width="160px" height="0.75rem" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Personal Information Card Skeleton */}
+              <div className="skeleton-card" style={{ padding: '24px' }}>
+                <div className="space-y-4">
+                  <SkeletonText width="180px" height="1.5rem" className="mb-2" />
+                  <SkeletonText width="220px" height="1rem" className="mb-6" />
+                  <div className="space-y-4">
+                    {/* First/Last name row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <SkeletonText width="80px" height="1rem" className="mb-2" />
+                        <div className="skeleton-form-input" style={{ height: '3rem' }}></div>
+                      </div>
+                      <div>
+                        <SkeletonText width="80px" height="1rem" className="mb-2" />
+                        <div className="skeleton-form-input" style={{ height: '3rem' }}></div>
+                      </div>
+                    </div>
+                    {/* Email */}
+                    <div>
+                      <SkeletonText width="100px" height="1rem" className="mb-2" />
+                      <div className="skeleton-form-input" style={{ height: '3rem' }}></div>
+                    </div>
+                    {/* Company/Job title row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <SkeletonText width="70px" height="1rem" className="mb-2" />
+                        <div className="skeleton-form-input" style={{ height: '3rem' }}></div>
+                      </div>
+                      <div>
+                        <SkeletonText width="70px" height="1rem" className="mb-2" />
+                        <div className="skeleton-form-input" style={{ height: '3rem' }}></div>
+                      </div>
+                    </div>
+                    {/* Bio */}
+                    <div>
+                      <SkeletonText width="30px" height="1rem" className="mb-2" />
+                      <div className="skeleton-form-input" style={{ height: '5rem' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preferences Card Skeleton */}
+              <div className="skeleton-card" style={{ padding: '24px' }}>
+                <div className="space-y-4">
+                  <SkeletonText width="120px" height="1.5rem" className="mb-2" />
+                  <SkeletonText width="280px" height="1rem" className="mb-6" />
+                  <div className="space-y-4">
+                    <div>
+                      <SkeletonText width="70px" height="1rem" className="mb-2" />
+                      <div className="skeleton-form-input" style={{ height: '3rem' }}></div>
+                    </div>
+                    <div>
+                      <SkeletonText width="80px" height="1rem" className="mb-2" />
+                      <div className="skeleton-form-input" style={{ height: '3rem' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Save Changes Buttons Skeleton */}
+              <div className="flex justify-end gap-3 py-4">
+                <div className="skeleton-base" style={{ width: '80px', height: '2.5rem', borderRadius: '0.5rem' }}></div>
+                <div className="skeleton-base" style={{ width: '120px', height: '2.5rem', borderRadius: '0.5rem' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col overflow-hidden">

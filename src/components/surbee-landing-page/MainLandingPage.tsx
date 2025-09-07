@@ -213,6 +213,15 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
                   <ChatInputLight
                     onSendMessage={(message, images) => {
                       if (!message && (!images || images.length === 0)) return;
+                      
+                      // Check if user is logged in
+                      if (!user) {
+                        // Redirect to login page first
+                        window.location.href = '/login';
+                        return;
+                      }
+                      
+                      // User is logged in, proceed to create survey
                       try { sessionStorage.setItem('surbee_initial_prompt', message || ''); } catch {}
                       const projectId = `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                       const url = new URL(window.location.origin + `/project/${projectId}`);
