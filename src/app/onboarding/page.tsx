@@ -304,11 +304,18 @@ export default function OnboardingPage() {
 
       {/* Right Side - Image */}
       <div className="w-1/2 relative overflow-hidden bg-black">
-        <img 
-          src={getCurrentImage()}
-          alt="Onboarding background"
-          className="onboarding-right-image"
-        />
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={currentStep}
+            src={getCurrentImage()}
+            alt="Onboarding background"
+            className="onboarding-right-image"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          />
+        </AnimatePresence>
       </div>
     </div>
   );
