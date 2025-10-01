@@ -1496,7 +1496,7 @@ export default function CofounderPage() {
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
                           </div>
                         </div>
-                        <div className="grid-background absolute inset-0 w-full h-full opacity-3">
+                        <div className="grid-background-light absolute inset-0 w-full h-full opacity-3">
                         </div>
                       </div>
                     </div>
