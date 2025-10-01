@@ -9,7 +9,7 @@ export default function CofounderPage() {
   return (
     <div className="__variable_5567bd __variable_12efe5 __variable_9a8899 antialiased bg-neutral-50 text-neutral-900">
       <main className="flex flex-row h-screen pt-20">
-        <div className="flex flex-col w-[var(--sidebar-width)] border-r border-[#DEE2DE] h-full justify-between pt-6 pb-12 pl-20 pr-12 fixed top-0 left-0 gap-12 hidden lg:flex bg-neutral-50 z-52">
+        <div className="flex flex-col w-[var(--sidebar-width)] border-r h-full justify-between pt-6 pb-12 pl-20 pr-12 fixed top-0 left-0 gap-12 hidden lg:flex bg-neutral-50 z-52">
           <img alt="Cofounder" className="-ml-3 transition-opacity duration-700 ease-out" decoding="async" height={142} loading="lazy" src="/cofounder-assets/cofunder-logo-flower.avif" style={{color: 'transparent'}} width={74} />
           <div className="logo-context-menu fixed bg-neutral-50 rounded-lg p-2 shadow-md border" style={{top: 0, left: 0, zIndex: -1, opacity: 0, transform: 'scale(0.95)'}}>
             <div className="text-neutral-700 transition-colors py-2 px-1.5 hover:bg-neutral-100 cursor-pointer rounded-md">
@@ -164,8 +164,8 @@ export default function CofounderPage() {
           </div>
           <div className="w-full border-t border-b">
             <section className="pb-4 pt-4 px-4 w-full max-w-[1920px] mx-auto">
-              <div className="relative h-full w-full sm:max-w-auto min-h-[420px] sm:min-h-[400px] 2xl:aspect-[5/2] 3xl:max-h-[max(calc(30vh),_600px)] pt-16 lg:pt-0 flex items-start lg:items-center justify-center overflow-hidden rounded-lg bg-neutral-50">
-                <img alt="Hero animation" className="object-cover z-[-1] object-[50%_75%]" decoding="async" loading="lazy" src="/cofounder-assets/hero-anim-bg-2.png" style={{position: 'absolute', height: '100%', width: '100%', left: 0, top: 0, right: 0, bottom: 0, color: 'transparent', inset: '0px'}} />
+              <div className="relative h-full w-full sm:max-w-auto min-h-[420px] sm:min-h-[400px] 2xl:aspect-[5/2] 3xl:max-h-[max(calc(30vh),_600px)] pt-16 lg:pt-0 flex items-start lg:items-center justify-center overflow-hidden rounded-lg">
+                <img alt="Hero animation" className="object-cover z-[-1] object-[50%_75%]" decoding="async" loading="lazy" src="/cofounder-assets/hero-anim-bg-2.png" style={{position: 'absolute', height: '100%', width: '100%', left: 0, top: 0, right: 0, bottom: 0, color: 'transparent'}} />
                 <a className="cursor-pointer" href="https://app.cofounder.co" rel="noopener noreferrer" target="_blank">
                   <div className="relative inline-block">
                     <div className="rounded-lg px-4 pt-5 pb-3 backdrop-blur-lg max-w-[calc(100vw_-_64px)] w-[512px] flex flex-col justify-between gap-4 min-h-[125px] bg-gradient-to-b from-[rgba(255,255,255,0.80)] to-[rgba(255,255,255,0.16)] shadow-[0px_4px_12px_0px_rgba(255,255,255,0.10)_inset,0px_0px_0px_6px_rgba(255,255,255,0.40),0px_1px_8px_0px_rgba(0,0,0,0.13),0px_2px_6px_0px_rgba(0,0,0,0.20)] transition-all duration-300">
@@ -210,30 +210,6 @@ export default function CofounderPage() {
                     </div>
                   </div>
                 </a>
-                <div className="absolute bottom-4 right-auto left-[50%] -translate-x-1/2 md:right-4 md:left-auto md:translate-x-0 z-50 space-y-3">
-                  <div className="relative w-[80vw] max-w-[400px] md:max-w-[315px] rounded-2xl px-3 py-2.5 sm:py-3 bg-white/60 backdrop-blur-[20px] border border-white/60 shadow-[0_1px_8px_0_rgba(0,0,0,0.05)]">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-shrink-0">
-                        <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center p-2" style={{boxShadow: 'rgba(0, 0, 0, 0.1) 1px 1px 2px'}}>
-                          <img alt="New message from Cofounde..." className="w-full h-full object-cover" decoding="async" height={24} loading="lazy" src="/cofounder-assets/slack.b35ec1a3.avif" style={{color: 'transparent'}} width={24} />
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="text-[13px] font-semibold text-neutral-900 truncate tracking-13">
-                            New message from Cofounde...
-                          </h4>
-                          <span className="text-[13px] text-neutral-900/40 flex-shrink-0 ml-2">
-                            now
-                          </span>
-                        </div>
-                        <p className="font-af-foundary font-medium text-[13px] tracking-13 leading-[130%] text-neutral-900">
-                          ✏️ Here's your daily competitor update: Acme.io launched a new AI-powered...
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </section>
           </div>
