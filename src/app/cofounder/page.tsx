@@ -54,7 +54,7 @@ export default function CofounderPage() {
           </div>
         </div>
         <div className="flex-1 lg:pl-[var(--sidebar-width)] max-w-full">
-          <nav className="fixed top-0 z-[102] bg-white/90 backdrop-blur-sm transition-[min-height] duration-180 ease-in-out sidebar-page-width">
+          <nav className="fixed top-0 z-[102] bg-neutral-50/90 backdrop-blur-sm transition-[min-height] duration-180 ease-in-out sidebar-page-width">
             <div className="w-full">
               <div className="2xl:px-30 xl:px-12 md:px-8 px-5 max-w-[1920px] mx-auto w-full flex items-center justify-between py-2 min-h-20">
                 <a className="text-neutral-900 hover:text-neutral-700 transition-colors" href="/">
@@ -103,7 +103,7 @@ export default function CofounderPage() {
             </div>
           </nav>
           <div className="block lg:hidden fixed top-0 right-0 z-[100] full-page-width h-dvh pointer-events-none">
-            <div className="absolute inset-0 bg-white opacity-0">
+            <div className="absolute inset-0 bg-neutral-50 opacity-0">
             </div>
             <div className="relative z-10 flex flex-col items-center justify-center h-full px-8">
               <div className="flex flex-col items-center space-y-4">
@@ -164,7 +164,7 @@ export default function CofounderPage() {
           </div>
           <div className="w-full border-t border-b">
             <section className="pb-4 pt-4 px-4 w-full max-w-[1920px] mx-auto">
-              <div className="relative h-full w-full sm:max-w-auto min-h-[420px] sm:min-h-[400px] 2xl:aspect-[5/2] 3xl:max-h-[max(calc(30vh),_600px)] pt-16 lg:pt-0 flex items-start lg:items-center justify-center overflow-hidden rounded-lg">
+              <div className="relative h-full w-full sm:max-w-auto min-h-[420px] sm:min-h-[400px] 2xl:aspect-[5/2] 3xl:max-h-[max(calc(30vh),_600px)] pt-16 lg:pt-0 flex items-start lg:items-center justify-center overflow-hidden rounded-lg bg-neutral-50">
                 <img alt="Hero animation" className="object-cover z-[-1] object-[50%_75%]" decoding="async" loading="lazy" src="/cofounder-assets/hero-anim-bg-2.png" style={{position: 'absolute', height: '100%', width: '100%', left: 0, top: 0, right: 0, bottom: 0, color: 'transparent'}} />
                 <a className="cursor-pointer" href="https://app.cofounder.co" rel="noopener noreferrer" target="_blank">
                   <div className="relative inline-block">
