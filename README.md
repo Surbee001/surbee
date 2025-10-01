@@ -1,17 +1,19 @@
 # Surbee Lyra - Survey Builder
 
-A modern survey and questionnaire builder with AI-powered chat assistance.
+A modern survey and questionnaire builder with **Grok 4 Fast Reasoning** AI integration.
 
 ## Features
 
-- **AI-Powered Chat**: Intelligent chat assistant to help build surveys
-- **Survey Builder**: Drag-and-drop survey creation interface
-- **Real-time Collaboration**: Live chat and project management
-- **Modern UI**: Clean, dark-themed interface with smooth animations
-- **Database Integration**: Supabase backend with real-time data sync
+- **🧠 Grok 4 Fast Reasoning**: Watch AI think through survey design in real-time
+- **✨ Beautiful Survey Generation**: Production-quality, market-ready surveys
+- **📊 Real-time Streaming**: See reasoning and HTML generation as it happens
+- **🎨 Modern UI**: Clean, dark-themed interface with smooth animations
+- **🔄 Real-time Collaboration**: Live chat and project management
+- **💾 Database Integration**: Supabase backend with real-time data sync
 
 ## Tech Stack
 
+- **AI**: xAI Grok 4 Fast Reasoning (grok-4-fast-reasoning)
 - **Frontend**: Next.js 14, React, TypeScript
 - **Styling**: Tailwind CSS, shadcn/ui
 - **Animations**: Framer Motion
@@ -39,9 +41,16 @@ pnpm install
 Create a `.env.local` file in the root directory:
 
 ```env
+# Supabase
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# xAI Grok 4 Fast - Get your key at https://console.x.ai/
+XAI_API_KEY=your_xai_api_key_here
+XAI_API_BASE_URL=https://api.x.ai/v1
 ```
+
+> 💡 **New**: Grok 4 Fast Reasoning integration! See [GROK_4_FAST_INTEGRATION.md](./GROK_4_FAST_INTEGRATION.md) for detailed documentation.
 
 ### 4. Database Setup
 

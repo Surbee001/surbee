@@ -5,17 +5,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronLeft, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, StopCircle, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy } from "lucide-react";
 import UserNameBadge from "@/components/UserNameBadge";
 import UserMenu from "@/components/ui/user-menu";
-import { ThinkingDisplay } from "@/components/ui/thinking-display";
-import { ThinkingChainAI } from "@/components/ui/thinking-chain-ai";
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { File, Folder, Tree } from "@/components/ui/file-tree";
 import AIResponseActions from "@/components/ui/ai-response-actions";
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import ChatInputLight from "@/components/ui/chat-input-light";
+import { TextShimmerWave } from "@/components/ui/text-shimmer-wave";
 import dynamic from 'next/dynamic'
 import { MODELS } from "@/lib/deepsite/providers";
 import { useDeepSite } from "./deepsite-integration/hooks/useDeepSite";
-import { ChatProcessor } from "./deepsite-integration/editor/ChatProcessor";
 import { DeepSiteRenderer } from "./deepsite-integration/renderer/DeepSiteRenderer";
 import { ChatMessage } from "./deepsite-integration/types";
 import { SelectedHtmlElement } from "./deepsite-integration/components/SelectedHtmlElement";
@@ -63,14 +61,12 @@ export default function ProjectPage() {
   // Project state - mock project for demo
   const [project, setProject] = useState<Project | null>({
     id: 'demo-project',
-    name: 'Demo Project',
+    title: 'Demo Project',
+    description: 'Survey built with Grok 4 Fast Reasoning',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     user_id: 'demo-user',
-    html: '',
-    css: '',
-    js: '',
-    is_published: false
+    status: 'draft'
   });
   const [projectLoading, setProjectLoading] = useState(false);
   
@@ -91,11 +87,6 @@ export default function ProjectPage() {
   const [isInputDisabled, setIsInputDisabled] = useState(false);
   
   // Thinking chain state
-  const [thinkingPhases, setThinkingPhases] = useState<import('@/components/ui/thinking-chain-ai').ThinkingPhase[]>([]);
-  const [currentThinkingPhase, setCurrentThinkingPhase] = useState<string>('');
-  const [thinkingStartTime, setThinkingStartTime] = useState<number | null>(null);
-  const [htmlStreamContent, setHtmlStreamContent] = useState<string>('');
-  const [isCgihadiDropdownOpen, setIsCgihadiDropdownOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
   const [versionCounter, setVersionCounter] = useState(1);
@@ -114,9 +105,27 @@ export default function ProjectPage() {
   const [activeTopButton, setActiveTopButton] = useState<'upgrade' | 'publish' | null>(null);
   const [rendererKey, setRendererKey] = useState(0);
   const [isAskMode, setIsAskMode] = useState(false);
+  const [isCgihadiDropdownOpen, setIsCgihadiDropdownOpen] = useState(false);
   const askModeRef = useRef(false);
   useEffect(() => { askModeRef.current = isAskMode; }, [isAskMode]);
   // Error detection and credit guard
+  const conversationIdRef = useRef<string | null>(null);
+  const thinkingStartRef = useRef<number | null>(null);
+  const activeRequestRef = useRef<AbortController | null>(null);
+  const [builderStatus, setBuilderStatus] = useState<'idle' | 'thinking' | 'building' | 'complete' | 'error'>('idle');
+  const [builderStatusDetail, setBuilderStatusDetail] = useState<string>('');
+  const [builderThinkingText, setBuilderThinkingText] = useState<string>('');
+  const [isBuilderPanelOpen, setIsBuilderPanelOpen] = useState(true);
+  const [builderThinkingDuration, setBuilderThinkingDuration] = useState<number>(0);
+  const [latestUsage, setLatestUsage] = useState<Record<string, unknown> | null>(null);
+
+  const latestPromptTokens = typeof (latestUsage as any)?.prompt_tokens === 'number' ? (latestUsage as any).prompt_tokens : null;
+  const latestCompletionTokens = typeof (latestUsage as any)?.completion_tokens === 'number' ? (latestUsage as any).completion_tokens : null;
+  const latestReasoningTokens = typeof (latestUsage as any)?.completion_tokens_details?.reasoning_tokens === 'number'
+    ? (latestUsage as any).completion_tokens_details.reasoning_tokens
+    : null;
+  const latestTotalTokens = typeof (latestUsage as any)?.total_tokens === 'number' ? (latestUsage as any).total_tokens : null;
+
   const [errorBarVisible, setErrorBarVisible] = useState(false);
   const [errorCount, setErrorCount] = useState(0);
   const [lastErrors, setLastErrors] = useState<string[]>([]);
@@ -126,7 +135,7 @@ export default function ProjectPage() {
     try {
       if (lastTokenIncRef.current > 0) {
         ctxTokensUsedRef.current = Math.max(0, ctxTokensUsedRef.current - lastTokenIncRef.current);
-        const limit = ctxLimitRef.current || DEFAULT_CONTEXT_TOKENS;
+        const limit = ctxLimitRef.current || GROK_CONTEXT_TOKENS;
         const pct = ((ctxTokensUsedRef.current % limit) / limit) * 100;
         setContextPercent(Math.max(0, Math.min(100, Math.round(pct * 10) / 10)));
         lastTokenIncRef.current = 0;
@@ -144,15 +153,20 @@ export default function ProjectPage() {
     refundLastUsage();
   };
 
-  // Context usage meter (approximate). Default 32k; long-context ~200k.
-  const DEFAULT_CONTEXT_TOKENS = Number(process.env.NEXT_PUBLIC_CONTEXT_TOKENS || 32000);
-  const LONG_CONTEXT_TOKENS = Number(process.env.NEXT_PUBLIC_LONG_CONTEXT_TOKENS || 200000);
+  // Context usage meter for Grok-4 with 2 million token limit
+  const GROK_CONTEXT_TOKENS = 2000000; // 2 million tokens
   const [contextPercent, setContextPercent] = useState<number>(0);
   const ctxTokensUsedRef = useRef<number>(0);
-  const ctxLimitRef = useRef<number>(DEFAULT_CONTEXT_TOKENS);
-  useEffect(() => {
-    ctxLimitRef.current = isAskMode ? LONG_CONTEXT_TOKENS : DEFAULT_CONTEXT_TOKENS;
-  }, [isAskMode]);
+  const ctxLimitRef = useRef<number>(GROK_CONTEXT_TOKENS);
+
+  // Auto-reset context when hitting 2 million tokens
+  const resetContextIfNeeded = () => {
+    if (ctxTokensUsedRef.current >= GROK_CONTEXT_TOKENS) {
+      console.log('[Context] Auto-resetting context at 2M tokens');
+      ctxTokensUsedRef.current = 0;
+      setContextPercent(0);
+    }
+  };
   const estimateTokens = (text: string) => Math.ceil((text || '').length / 4);
   const preciseCountTokens = async (text: string) => {
     try {
@@ -165,8 +179,6 @@ export default function ProjectPage() {
   };
   
   // DeepSite integration
-  const chatProcessorRef = useRef<ChatProcessor | null>(null);
-  
   // Memoize callbacks to prevent unnecessary re-renders
   const onDeepSiteMessage = useCallback((message: any) => {
     setMessages(prev => [...prev, message]);
@@ -281,117 +293,12 @@ export default function ProjectPage() {
   // Subscribe to real-time messages for this project
   useEffect(() => {
     if (projectId && user && !mockMode) {
-      const unsubscribe = subscribeToProject(projectId);
+      const unsubscribe = subscribeToProject();
       return unsubscribe;
     }
   }, [projectId, user, subscribeToProject, mockMode]);
 
-  // Initialize chat processor
-  useEffect(() => {
-    if (!chatProcessorRef.current) {
-      chatProcessorRef.current = new ChatProcessor({
-        onMessage: async (message) => {
-          setMessages(prev => [...prev, message]);
-
-          // Save message to database (skip in mock mode)
-          if (user && project && !mockMode) {
-            try {
-              await fetch(`/api/projects/${project.id}/messages`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  content: message.text,
-                  is_user: message.isUser,
-                  user_id: user.id,
-                  metadata: { timestamp: message.timestamp }
-                })
-              });
-            } catch (error) {
-              console.error('Failed to save message:', error);
-            }
-          }
-        },
-        onMessageUpdate: (id, text, suggestions) => {
-          setMessages(prev => prev.map(m => m.id === id ? { ...m, text, suggestions: suggestions ?? m.suggestions } : m));
-        },
-        onError: (error) => {
-          console.error('Chat processing error:', error);
-          recordError(typeof error === 'string' ? error : 'Chat processing error');
-        },
-        onHtmlUpdate: (html) => {
-          // In Ask mode, do not apply changes to the canvas
-          if (!askModeRef.current) {
-            deepSite.updateHtml(html);
-          }
-        },
-        onStateChange: ({ isWorking, isThinking }) => {
-          deepSite.setIsAiWorking(isWorking);
-          deepSite.setIsThinking(isThinking);
-          setIsInputDisabled(isWorking);
-        },
-        onPromptApplied: (prompt) => {
-          deepSite.setPreviousPrompt(prompt);
-          // Index the current HTML into RAG for this project (best-effort)
-          try {
-            if (!mockMode && project?.id && user?.id && deepSite.html) {
-              const content = deepSite.html;
-              // Basic chunking by length to avoid huge single embeddings
-              const chunks: { project_id: string; user_id: string; source: string; path: string; content: string }[] = [];
-              const maxLen = 4000;
-              for (let i = 0; i < content.length; i += maxLen) {
-                const slice = content.slice(i, i + maxLen);
-                chunks.push({ project_id: project.id, user_id: user.id, source: 'html', path: selectedRoute || '/', content: slice });
-              }
-              fetch('/api/rag/upsert', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chunks }) }).catch(() => {});
-            }
-          } catch {}
-        },
-        onProgressReset: () => {
-          // Progress system disabled - using ThinkingDisplay instead
-        },
-        onProgress: (step) => {
-          // Progress system disabled - using ThinkingDisplay instead
-        },
-        onUserMessageCreated: (msg) => {
-          // Create a checkpoint when user prompts, before generation starts
-          // Skip in Ask mode (no modifications)
-          if (!askModeRef.current) {
-            deepSite.updateHtml(deepSite.html, msg.text);
-          }
-        },
-        // Thinking chain callbacks
-        onThinkingPhaseStart: (phase) => {
-          setThinkingPhases(prev => {
-            // Remove any existing phase of the same type to avoid duplicates
-            const filtered = prev.filter(p => p.type !== phase.type);
-            return [...filtered, phase];
-          });
-          if (phase.type === 'thinking') {
-            setThinkingStartTime(Date.now());
-          }
-        },
-        onThinkingPhaseUpdate: (phase) => {
-          setThinkingPhases(prev => prev.map(p => p.id === phase.id ? { ...phase } : p));
-        },
-        onThinkingPhaseComplete: (phase) => {
-          setThinkingPhases(prev => prev.map(p => p.id === phase.id ? { ...p, isComplete: true } : p));
-          // Clear current phase when completing
-          if (currentThinkingPhase === phase.type) {
-            // Small delay to show completion before clearing
-            setTimeout(() => setCurrentThinkingPhase(''), 1000);
-          }
-        },
-        onCurrentPhaseChange: (phase) => {
-          setCurrentThinkingPhase(phase);
-        },
-        onHtmlStream: (html) => {
-          setHtmlStreamContent(html);
-        }
-      });
-    }
-  }, [deepSite, user, project, mockMode, recordError]); // Include essential dependencies only
-
-  // Sync in-frame navigations to the route dropdown
+    // Sync in-frame navigations to the route dropdown
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
       const data: any = e.data || {};
@@ -454,19 +361,25 @@ export default function ProjectPage() {
 
 
   const stopGeneration = () => {
+    if (activeRequestRef.current) {
+      activeRequestRef.current.abort();
+      activeRequestRef.current = null;
+    }
     deepSite.stopGeneration();
-    
-    // Clear thinking chain state when stopping generation
-    setCurrentThinkingPhase('');
-    setHtmlStreamContent('');
-    
+    deepSite.setIsAiWorking(false);
+    deepSite.setIsThinking(false);
+    setIsThinking(false);
+    setIsInputDisabled(false);
+    applyBuilderStatus('error', 'Generation stopped by user.');
+    setIsBuilderPanelOpen(true);
+
     const stopMsg: ChatMessage = {
       id: (Date.now() + 1).toString(),
       text: 'Generation stopped.',
       isUser: false,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
-    setMessages(prev => [...prev, stopMsg]);
+    setMessages((prev) => [...prev, stopMsg]);
   };
 
   // Fix errors helper for the error bar
@@ -480,10 +393,302 @@ export default function ProjectPage() {
     }
   };
 
+  const appendThinkingChunk = (chunk: string) => {
+    if (typeof chunk !== 'string' || chunk.length === 0) return;
+
+    const normalized = chunk
+      .replace(/\\uFFFD/g, '')
+      .replace(/\\r\\n/g, '\n')
+      .replace(/\\r/g, '\n');
+
+    if (!normalized) return;
+
+    setBuilderThinkingText((prev) => {
+      if (!prev) {
+        return normalized;
+      }
+
+      const lastChar = prev[prev.length - 1] ?? '';
+      const firstChar = normalized[0] ?? '';
+
+      const needsSpace =
+        !/\\s/.test(lastChar) &&
+        !/^[\\s.,!?;:)\\]]/.test(firstChar);
+
+      return prev + (needsSpace ? ' ' : '') + normalized;
+    });
+  };
+  const sanitizeHtmlBuffer = (input: string): string => {
+    if (!input) return '';
+
+    let sanitized = input
+      .replace(/```(?:html)?/gi, '')
+      .replace(/\uFFFD/g, '')
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]+/g, '');
+
+    const startIndex = sanitized.search(/<!DOCTYPE|<html\b|<head\b|<body\b/i);
+    if (startIndex > 0) {
+      sanitized = sanitized.slice(startIndex);
+    }
+
+    return sanitized;
+  };
+
+  const extractPreviewHtml = (source: string) => {
+    const sanitized = sanitizeHtmlBuffer(source);
+    if (!sanitized) return '';
+
+    const docMatch = sanitized.match(/<!DOCTYPE html[\s\S]*?<\/html>/i);
+    if (docMatch) return docMatch[0];
+
+    const lower = sanitized.toLowerCase();
+    const htmlIndex = lower.indexOf('<html');
+    if (htmlIndex !== -1) {
+      const end = lower.lastIndexOf('</html>');
+      if (end !== -1) {
+        const extracted = sanitized.slice(htmlIndex, end + '</html>'.length);
+        if (extracted.includes('<head') || extracted.includes('<body')) {
+          return extracted;
+        }
+      }
+    }
+
+    const bodyStart = lower.indexOf('<body');
+    if (bodyStart !== -1) {
+      const bodyEnd = lower.lastIndexOf('</body>');
+      if (bodyEnd !== -1) {
+        const bodyContent = sanitized.slice(bodyStart, bodyEnd + '</body>'.length);
+        return `<!DOCTYPE html><html>${bodyContent}</html>`;
+      }
+    }
+
+    const tagMatch = sanitized.match(/<(!DOCTYPE|html|head|body|section|main|div)/i);
+    if (tagMatch && tagMatch.index !== undefined) {
+      return sanitized.slice(tagMatch.index);
+    }
+
+    return '';
+  };
+
+  const applyBuilderStatus = (
+    status: 'idle' | 'thinking' | 'building' | 'complete' | 'error',
+    detail?: string
+  ) => {
+    setBuilderStatus(status);
+    if (detail) {
+      setBuilderStatusDetail(detail);
+      return;
+    }
+    if (status === 'thinking') {
+      setBuilderStatusDetail('Analyzing request...');
+    } else if (status === 'building') {
+      setBuilderStatusDetail('Generating survey HTML...');
+    }
+  };
+
+  const runSurveyBuild = useCallback(async (prompt: string, images?: string[]) => {
+    const trimmed = prompt.trim();
+    if (!trimmed) return false;
+
+    if (activeRequestRef.current) {
+      activeRequestRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    activeRequestRef.current = controller;
+
+    setIsInputDisabled(true);
+    setIsThinking(true);
+    deepSite.setIsAiWorking(true);
+    deepSite.setIsThinking(true);
+
+    setBuilderThinkingText('');
+    setIsBuilderPanelOpen(true);
+    setBuilderThinkingDuration(0);
+    setLatestUsage(null);
+    thinkingStartRef.current = Date.now();
+    applyBuilderStatus('thinking', 'Grok 4 Fast is analyzing your request...');
+
+    let success = false;
+    let htmlBuffer = '';
+
+    const handleEvent = (evt: any) => {
+      switch (evt.type) {
+        case 'thinking': {
+          const delta = typeof evt.delta === 'string' ? evt.delta : '';
+          if (delta.trim().length > 0) {
+            appendThinkingChunk(delta);
+          }
+          break;
+        }
+        case 'status': {
+          const status = typeof evt.status === 'string' ? evt.status.toLowerCase() : '';
+          const detail = typeof evt.detail === 'string' ? evt.detail : undefined;
+          if (status === 'building') {
+            applyBuilderStatus('building', detail || 'Building beautiful survey HTML...');
+            setIsThinking(false);
+            deepSite.setIsThinking(false);
+          } else if (status === 'thinking') {
+            applyBuilderStatus('thinking', detail || 'Thinking through design...');
+          } else if (status === 'complete') {
+            applyBuilderStatus('complete', detail);
+            success = true;
+          }
+          break;
+        }
+        case 'htmlChunk': {
+          if (typeof evt.chunk === 'string' && evt.chunk.length > 0) {
+            htmlBuffer += evt.chunk;
+            // Extract and render clean HTML progressively
+            const previewHtml = extractPreviewHtml(htmlBuffer);
+            if (previewHtml && typeof deepSite.setHtml === 'function') {
+              deepSite.setHtml(previewHtml);
+            }
+            applyBuilderStatus('building', 'Streaming survey...');
+          }
+          break;
+        }
+        case 'usage': {
+          if (evt.usage && typeof evt.usage === 'object') {
+            setLatestUsage(evt.usage as Record<string, unknown>);
+          }
+          break;
+        }
+        case 'complete': {
+          // Extract final clean HTML
+          const finalHtml = extractPreviewHtml(htmlBuffer);
+          if (finalHtml) {
+            deepSite.updateHtml(finalHtml, trimmed);
+          }
+          
+          if (typeof deepSite.setPreviousPrompt === 'function') {
+            deepSite.setPreviousPrompt(trimmed);
+          }
+          
+          if (typeof evt.conversationId === 'string' && evt.conversationId.length > 0) {
+            conversationIdRef.current = evt.conversationId;
+          }
+          
+          const durationMs = thinkingStartRef.current ? Date.now() - thinkingStartRef.current : 0;
+          const seconds = durationMs > 0 ? Math.round((durationMs / 1000) * 10) / 10 : 0;
+          setBuilderThinkingDuration(seconds);
+          applyBuilderStatus('complete', `Created in ${seconds.toFixed(1)}s using Grok 4 Fast Reasoning.`);
+          
+          // Close thinking panel after 2 seconds
+          setTimeout(() => setIsBuilderPanelOpen(false), 2000);
+          
+          success = true;
+          
+          // Add AI suggestions message
+          const suggestionsText = typeof evt.suggestions === 'string' && evt.suggestions.trim()
+            ? evt.suggestions
+            : '✨ Survey created successfully! Let me know if you\'d like to make any changes.';
+
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `assistant-${Date.now()}`,
+              text: suggestionsText,
+              isUser: false,
+              timestamp: new Date(),
+            },
+          ]);
+          break;
+        }
+        case 'error': {
+          const message = typeof evt.message === 'string' ? evt.message : 'Survey generation failed.';
+          throw new Error(message);
+        }
+        default:
+          break;
+      }
+    };
+
+    try {
+      const response = await fetch('/api/grok-survey', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: trimmed,
+          conversationId: conversationIdRef.current,
+          images,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok || !response.body) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to stream from Grok 4 Fast');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (value) {
+          buffer += decoder.decode(value, { stream: true });
+          let newlineIndex = buffer.indexOf('\n');
+          while (newlineIndex !== -1) {
+            const chunk = buffer.slice(0, newlineIndex).trim();
+            buffer = buffer.slice(newlineIndex + 1);
+            if (chunk.length > 0) {
+              try {
+                handleEvent(JSON.parse(chunk));
+              } catch (err) {
+                console.warn('[Grok4Fast] Failed to parse event:', err, chunk.substring(0, 100));
+              }
+            }
+            newlineIndex = buffer.indexOf('\n');
+          }
+        }
+        if (done) {
+          const remaining = buffer.trim();
+          if (remaining.length > 0) {
+            try {
+              handleEvent(JSON.parse(remaining));
+            } catch (err) {
+              console.warn('[Grok4Fast] Failed to parse final event:', err);
+            }
+          }
+          break;
+        }
+      }
+
+      if (!success) {
+        throw new Error('Stream ended without completion event.');
+      }
+
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Survey generation failed.';
+      applyBuilderStatus('error', message);
+      setIsBuilderPanelOpen(true);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `assistant-error-${Date.now()}`,
+          text: `❌ Error: ${message}`,
+          isUser: false,
+          timestamp: new Date(),
+        },
+      ]);
+      recordError(message);
+      return false;
+    } finally {
+      activeRequestRef.current = null;
+      setIsInputDisabled(false);
+      setIsThinking(false);
+      deepSite.setIsAiWorking(false);
+      deepSite.setIsThinking(false);
+    }
+  }, [deepSite, recordError]);
+
   const handleSendMessage = async (message?: string, images?: string[]) => {
     const textToSend = message || chatText.trim();
-    const hasImages = Array.isArray(images) && images.length > 0;
-    if (!textToSend && !hasImages && files.length === 0) return;
+    const imagePayload = Array.isArray(images) && images.length > 0 ? images : undefined;
+    if (!textToSend && !imagePayload && files.length === 0) return;
     if (isInputDisabled || deepSite.isAiWorking) return;
 
     if (!message) {
@@ -493,104 +698,33 @@ export default function ProjectPage() {
     }
     setHasStartedChat(true);
 
-    // Reset thinking chain for new conversation
-    setThinkingPhases([]);
-    setCurrentThinkingPhase('');
-    setThinkingStartTime(null);
-    setHtmlStreamContent('');
-
-    // Update context meter based on this prompt size (approx.)
     try {
       const tokenCount = await preciseCountTokens(textToSend);
-      const inc = tokenCount + (Array.isArray(images) ? images.length * 128 : 0);
+      const inc = tokenCount + (imagePayload ? imagePayload.length * 128 : 0);
       ctxTokensUsedRef.current += inc;
-      const limit = ctxLimitRef.current || DEFAULT_CONTEXT_TOKENS;
-      const pct = ((ctxTokensUsedRef.current % limit) / limit) * 100;
+
+      // Check if we need to reset context
+      resetContextIfNeeded();
+
+      const limit = ctxLimitRef.current;
+      const pct = (ctxTokensUsedRef.current / limit) * 100;
       setContextPercent(Math.max(0, Math.min(100, Math.round(pct * 10) / 10)));
     } catch {}
 
-    // Add to history
-    addHistoryEntry(textToSend, [
-      "Updated website content",
-      "Enhanced user interface", 
-      "Improved design"
-    ]);
-
-    // Clear the contentEditable div
     const contentEditableDiv = document.querySelector('.ProseMirror') as HTMLDivElement;
     if (contentEditableDiv) {
       contentEditableDiv.innerHTML = '<p class="is-empty is-editor-empty" style="margin: 0px; color: rgb(235, 235, 235);"><br class="ProseMirror-trailingBreak"></p>';
     }
 
-    // Ask mode: brainstorm only (no HTML changes, no follow-up PUT)
-    if (isAskMode) {
-      // Snapshot message index for capturing plan output
-      const msgStart = messages.length;
-      // Build a larger chat summary from recent messages
-      const buildChatSummary = () => {
-        try {
-          const recent = messages.slice(-30);
-          const lines = recent.map(m => `${m.isUser ? 'User' : 'Assistant'}: ${m.text}`);
-          let joined = lines.join('\n');
-          // Larger cap for Ask planning
-          const MAX = 12000;
-          if (joined.length > MAX) joined = joined.slice(-MAX);
-          return joined;
-        } catch {
-          return '';
-        }
-      };
-      const chatSummary = buildChatSummary();
-      await deepSite.callAi(textToSend, undefined, false, true, projectId, true, chatSummary);
-      // After Ask completes, index the plan into RAG for continuity
-      try {
-        if (!mockMode && project?.id && user?.id) {
-          const newMsgs = messages.slice(msgStart);
-          const planLines = newMsgs
-            .map(m => m.text)
-            .filter(t => /^\s*(THINK:|PLAN:)\s*/i.test(t || ''))
-            .map(t => t.trim());
-          if (planLines.length) {
-            const planText = planLines.join('\n');
-            const chunks: { project_id: string; user_id: string; source: string; path: string; content: string }[] = [];
-            const maxLen = 4000;
-            for (let i = 0; i < planText.length; i += maxLen) {
-              chunks.push({ project_id: project.id, user_id: user.id, source: 'plan', path: selectedRoute || '/', content: planText.slice(i, i + maxLen) });
-            }
-            fetch('/api/rag/upsert', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chunks }) }).catch(() => {});
-          }
-        }
-      } catch {}
-    } else {
-      // Process message through ChatProcessor (build/modify HTML)
-      if (chatProcessorRef.current) {
-        const buildChatSummary = () => {
-          try {
-            const recent = messages.slice(-24);
-            const lines = recent.map(m => `${m.isUser ? 'User' : 'Assistant'}: ${m.text}`);
-            let joined = lines.join('\n');
-            const MAX = 6000;
-            if (joined.length > MAX) joined = joined.slice(-MAX);
-            return joined;
-          } catch {
-            return '';
-          }
-        };
-        const chatSummary = buildChatSummary();
-        await chatProcessorRef.current.processMessage(
-          textToSend,
-          deepSite.html,
-          deepSite.previousPrompt,
-          deepSite.provider,
-          deepSite.model,
-          selectedElement,
-          images,
-          projectId,
-          false,
-          chatSummary
-        );
-      }
-    }
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      text: textToSend,
+      isUser: true,
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, userMessage]);
+
+    await runSurveyBuild(textToSend, imagePayload);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -922,108 +1056,78 @@ export default function ProjectPage() {
                       </button>
                     </div>
                   ))}
-                  {historyEntries.length === 0 && (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500 text-sm">No history entries yet</p>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
           ) : (
-            /* Messages */
-            <div 
-              ref={chatAreaRef}
-              className="flex-1 overflow-y-auto max-h-[calc(100vh-10rem)] scrollbar-hide"
-              style={{ scrollBehavior: 'smooth' }}
-            >
-              <div className="space-y-4 p-4 chatbox-fade-container">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`group relative ${
-                      message.isUser ? 'text-right' : 'text-left'
-                    }`}
-                  >
-                    
-                    <div className="text-base leading-relaxed">
-                      {message.isUser ? (
-                        <span
-                          className="text-white text-left inline-block rounded-xl max-w-[80%] px-3 py-3 text-base md:text-sm leading-[22px] overflow-auto whitespace-pre-wrap break-words"
-                          style={{ backgroundColor: '#1a1a1a', overflowWrap: 'anywhere' }}
-                        >
-                          {message.text}
+            /* Chat Messages View */
+            <div className="flex-1 overflow-y-auto px-4 py-4" ref={chatAreaRef}>
+              <div className="space-y-4">
+                {messages.map((msg) => (
+                  <div key={msg.id} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] rounded-lg px-4 py-2 ${
+                      msg.isUser 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-zinc-800/50 text-gray-200'
+                    }`}>
+                      <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                        {msg.text}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Thinking Panel - Shows Grok 4 Fast Reasoning Process */}
+                {isBuilderPanelOpen && (
+                  <div className="rounded-lg bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-purple-500/30 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                        <span className="text-xs font-medium text-purple-300">
+                          {builderStatus === 'thinking' ? '🧠 Grok 4 Fast Reasoning' : 
+                           builderStatus === 'building' ? '🛠️ Building Survey' : 
+                           builderStatus === 'complete' ? '✅ Complete' : 
+                           '❌ Error'}
                         </span>
-                      ) : (
-                        <span className="text-left inline-block rounded-xl max-w-[80%] px-3 py-3 text-base md:text-sm leading-[22px] overflow-auto whitespace-pre-wrap break-words bg-white/5 border border-white/10" style={{ overflowWrap: 'anywhere' }}>
-                          <MarkdownRenderer content={message.text} className="text-[15px] leading-6" />
+                      </div>
+                      {builderStatus === 'complete' && builderThinkingDuration > 0 && (
+                        <span className="text-xs text-gray-400">
+                          {builderThinkingDuration.toFixed(1)}s
                         </span>
                       )}
                     </div>
-                    {/* Suggestion pills */}
-                    {!message.isUser && Array.isArray(message.suggestions) && message.suggestions.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {message.suggestions.map((sugg) => (
-                          <button
-                            key={sugg}
-                            onClick={() => handleSendMessage(sugg)}
-                            className="px-2.5 py-1 rounded-full text-xs bg-white/5 text-gray-200 hover:bg-white/10 border border-white/10 transition-colors"
-                          >
-                            {sugg}
-                          </button>
-                        ))}
+
+                    {builderStatusDetail && (
+                      <div className="text-xs text-gray-400 italic">
+                        {builderStatusDetail}
                       </div>
                     )}
-                    {/* Revert button on user messages as checkpoints */}
-                    {message.isUser && (
-                      <div className="mt-2 flex justify-end">
-                        <button
-                          className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-white/5"
-                          onClick={() => {
-                            const target = deepSite.checkpoints?.find((cp) => cp.createdAt >= message.timestamp) || deepSite.checkpoints?.[0];
-                            if (!target) {
-                              console.warn('No checkpoint found to revert');
-                              return;
-                            }
-                            const name = 'alert-dialog';
-                            // Lightweight custom dialog in lieu of shadcn wiring here
-                            const ok = window.confirm('Revert to this checkpoint? You will lose changes made after this point.');
-                            if (ok) deepSite.revertToCheckpoint(target.id);
-                          }}
-                        >
-                          Revert
-                        </button>
+
+                    {builderThinkingText.trim().length > 0 && (
+                      <div className="mt-3 rounded-md bg-black/30 p-3 max-h-64 overflow-y-auto">
+                        <div className="text-xs text-gray-300 leading-relaxed break-words whitespace-pre-wrap font-mono">
+                          {builderThinkingText}
+                        </div>
                       </div>
                     )}
-                    
-                    {!message.isUser && (
-                      <div className="mt-2 group">
-                        <AIResponseActions
-                          message={message.text}
-                          onCopy={(content) => navigator.clipboard.writeText(content)}
-                          onThumbsUp={() => console.log('Thumbs up')}
-                          onThumbsDown={() => console.log('Thumbs down')}
-                          onRetry={() => {
-                            const lastUser = [...messages].reverse().find(m => m.isUser)?.text || '';
-                            if (lastUser) handleSendMessage(lastUser);
-                          }}
-                          onCreateSurvey={() => setCurrentView('viewer')}
-                        />
+
+                    {latestUsage && (
+                      <div className="mt-3 pt-3 border-t border-purple-500/20">
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="text-gray-400">
+                            <span className="text-gray-500">Prompt:</span> {latestPromptTokens !== null ? latestPromptTokens.toLocaleString() : 'n/a'}
+                          </div>
+                          <div className="text-gray-400">
+                            <span className="text-gray-500">Completion:</span> {latestCompletionTokens !== null ? latestCompletionTokens.toLocaleString() : 'n/a'}
+                          </div>
+                          {typeof (latestUsage?.completion_tokens_details as any)?.reasoning_tokens === 'number' && (
+                            <div className="text-purple-300 col-span-2">
+                              <span className="text-gray-500">Reasoning:</span> {((latestUsage?.completion_tokens_details as any).reasoning_tokens).toLocaleString()} tokens
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
-                  </div>
-                ))}
-                
-                {/* Enhanced Thinking Chain - shows when AI is processing */}
-                {(thinkingPhases.length > 0 || currentThinkingPhase) && (
-                  <div className="p-4 pt-0">
-                    <ThinkingChainAI
-                      phases={thinkingPhases}
-                      isActive={!!currentThinkingPhase}
-                      currentPhase={currentThinkingPhase}
-                      thinkingStartTime={thinkingStartTime || undefined}
-                      htmlStream={htmlStreamContent}
-                    />
                   </div>
                 )}
               </div>
@@ -1038,12 +1142,12 @@ export default function ProjectPage() {
             {errorBarVisible ? (
               <div className="mb-0.5 -mx-2 flex items-center justify-between rounded-t-[0.625rem] bg-red-900/70 border border-red-800 px-2 py-2" style={{ marginLeft: '-8px', marginRight: '-0px' }}>
                 <div className="flex items-center gap-2 text-red-200 text-xs">
-                  <span>⚠️</span>
+                  <span>Errors detected</span>
                   <span>{errorCount} {errorCount === 1 ? 'error' : 'errors'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={handleFixErrors} className="px-2 py-0.5 rounded bg-white text-black text-xs font-medium hover:opacity-90">Fix for me</button>
-                  <button onClick={() => setErrorBarVisible(false)} className="text-red-200 hover:text-white text-xs">✕</button>
+                  <button onClick={() => setErrorBarVisible(false)} className="text-red-200 hover:text-white text-xs">Close</button>
                 </div>
               </div>
             ) : (
@@ -1397,4 +1501,7 @@ export default function ProjectPage() {
     </AppLayout>
   );
 }
+
+
+
 
