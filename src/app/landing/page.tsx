@@ -55,52 +55,54 @@ export default function LandingPage() {
 	          className={`${sidebarWidthClass} fixed left-0 top-0 z-50 h-screen border-r border-neutral-200/80 bg-[#FEFFFC]`}
 	        >
           {/* add top padding to avoid overlapping the nav items while border still cuts through */}
-          <div className="flex h-full flex-col justify-between p-4 pt-20">
-            <div className="px-1 mt-auto mb-5">
-			  <img
-				src="https://raw.githubusercontent.com/Surbee001/webimg/c120f0dfd46532bb149db06425090559998d97d5/New%20SVG.svg"
-                alt="Surbee logo"
-                className="w-20 h-auto object-contain"
-			  />
-			</div>
-            <div
-              className="flex flex-col gap-2 transition-opacity duration-700 ease-out opacity-100"
-              style={{ width: "calc(100vw - calc(100vw - 100%))" }}
-            >
-              <a
-                className="inline-flex items-center gap-2 whitespace-nowrap shrink-0 outline-none underline-offset-4 hover:text-neutral-800 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-[#171717] font-medium bg-neutral-100 rounded px-2 py-1 -ml-1"
+          <div className="flex h-full flex-col p-4 pt-20">
+            <div className="flex-1 flex flex-col">
+              <div className="px-1 mb-5">
+                <img
+                  src="https://raw.githubusercontent.com/Surbee001/webimg/c120f0dfd46532bb149db06425090559998d97d5/New%20SVG.svg"
+                  alt="Surbee logo"
+                  className="w-20 h-auto object-contain"
+                />
+              </div>
+              <div
+                className="flex flex-col gap-2 transition-opacity duration-700 ease-out opacity-100"
+                style={{ width: "calc(100vw - calc(100vw - 100%))" }}
               >
-                Surbee
-              </a>
-              <a
-                className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
-                href="#use-cases"
-              >
-                Use cases
-              </a>
-              <a
-                className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
-                href="#product"
-              >
-                Product
-              </a>
-              <a
-                className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
-                href="#students"
-              >
-                Students
-              </a>
-              
-             
-              <a
-                className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
-                href="#blog"
-              >
-                Blog
-              </a>
+                <a
+                  className="inline-flex items-center gap-2 whitespace-nowrap shrink-0 outline-none underline-offset-4 hover:text-neutral-800 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-[#171717] font-medium bg-neutral-100 rounded px-2 py-1 -ml-1"
+                >
+                  Surbee
+                </a>
+                <a
+                  className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
+                  href="#use-cases"
+                >
+                  Use cases
+                </a>
+                <a
+                  className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
+                  href="#product"
+                >
+                  Product
+                </a>
+                <a
+                  className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
+                  href="#students"
+                >
+                  Students
+                </a>
+                
+               
+                <a
+                  className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
+                  href="#blog"
+                >
+                  Blog
+                </a>
+              </div>
             </div>
             
-            <div className="flex flex-col items-end gap-3 pr-4 pb-4">
+            <div className="flex items-center gap-3 px-1 pb-4">
               <a href="https://twitter.com/surbee" target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-[#171717] transition-colors" aria-label="X">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
               </a>
@@ -1137,20 +1139,20 @@ export default function LandingPage() {
 	                {/* Left Testimonial */}
 	                <div className="flex flex-col gap-6 p-8 bg-neutral-50 rounded-lg">
 	                  <p className="font-af-foundary font-medium text-[18px] md:text-[20px] text-[#171717] leading-[140%]">
-	                    "This actually saves me hours. I just type what I want and it's done."
+	                    "Surbee will help my students collect reliable results quickly, it's definitely going to raise the quality of their work. The automated validation catches issues I used to spend hours explaining."
 	                  </p>
 	                  <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-[#171717]">
-	                    — Sarah, researcher
+	                    — Prelaunch testimonial
 	                  </p>
 	                </div>
 	                
 	                {/* Right Testimonial */}
 	                <div className="flex flex-col gap-6 p-8 bg-neutral-50 rounded-lg">
 	                  <p className="font-af-foundary font-medium text-[18px] md:text-[20px] text-[#171717] leading-[140%]">
-	                    "I can't believe how easy this is. No more complex setup, just tell it what you need."
+	                    "I've been waiting for something like this. Creating surveys used to take me days, now I can prototype in minutes and iterate based on real feedback. It's going to change how we do research."
 	                  </p>
 	                  <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-[#171717]">
-	                    — Michael, product manager
+	                    — Prelaunch testimonial
 	                  </p>
 	                </div>
 	              </div>
