@@ -57,7 +57,7 @@ export default function TypingOverlay({ prompts = DEFAULT_PROMPTS }: TypingOverl
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 100, damping: 10 }}
-            exit={{ opacity: 0, y: -24, x: 0, filter: "blur(8px)", scale: 1, position: "absolute" }}
+            exit={{ opacity: 0, y: 0, x: 0, filter: "blur(12px)", scale: 1, position: "absolute" }}
             className="z-10 inline-block text-left text-[#171717]"
           >
             <span className="font-medium">{display}</span>
