@@ -26,9 +26,9 @@ export default function LandingPage() {
 	  {/* Top Navigation (full-width) with blur */}
 	  <nav className="fixed left-0 right-0 top-0 z-40 w-full border-b border-neutral-200/80 bg-[#FEFFFC]/70 backdrop-blur supports-[backdrop-filter]:bg-[#FEFFFC]/70">
 		<div className="flex h-16 items-center justify-between gap-4 pl-56 pr-6">
-		  <div className="text-[#171717] font-semibold tracking-[-0.02em]">Surbee</div>
+		  <div className="text-xl text-[#171717] font-semibold tracking-[-0.02em] pl-6">Surbee</div>
 		  <div className="flex items-center gap-4">
-			<a href="#pricing" className="text-sm text-[#171717] hover:underline">
+			<a href="#pricing" className="text-sm text-[#171717] hover:text-neutral-800 transition-all duration-300 ease-out">
 			  Pricing
 			</a>
 			<a
@@ -67,7 +67,7 @@ export default function LandingPage() {
               style={{ width: "calc(100vw - calc(100vw - 100%))" }}
             >
               <a
-                className="inline-flex items-center gap-2 whitespace-nowrap shrink-0 outline-none underline-offset-4 hover:text-neutral-700 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-[#171717] font-medium bg-neutral-300 rounded px-2 py-1 -ml-1"
+                className="inline-flex items-center gap-2 whitespace-nowrap shrink-0 outline-none underline-offset-4 hover:text-neutral-800 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-[#171717] font-medium bg-neutral-100 rounded px-2 py-1 -ml-1"
                 href="#cofounder"
               >
                 Cofounder
