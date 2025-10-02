@@ -1,0 +1,193 @@
+/* Cofounder Landing Page Global Variables */
+
+:root {
+  /* Spacing */
+  --spacing: 4px;
+  
+  /* Sidebar */
+  --sidebar-width: 240px;
+  --scrollbar-width: 0px;
+  
+  /* Colors - Neutral Scale */
+  --color-neutral-0: #fff;
+  --color-neutral-50: #fefffc;
+  --color-neutral-100: #f9faf7;
+  --color-neutral-200: oklch(94.8% .006 132.497);
+  --color-neutral-300: #eef1ed;
+  --color-neutral-400: #dee2de;
+  --color-neutral-600: #b4b8b4;
+  --color-neutral-700: #646464;
+  --color-neutral-800: #444141;
+  --color-neutral-900: #2c2c2c;
+  
+  /* Colors - Gray Scale */
+  --color-gray-200: oklch(92.8% .006 264.531);
+  --color-gray-300: oklch(87.2% .01 258.338);
+  --color-gray-400: oklch(70.7% .022 261.325);
+  --color-gray-500: oklch(55.1% .027 264.364);
+  --color-gray-600: oklch(44.6% .03 256.802);
+  --color-gray-700: oklch(38% .029 259.016);
+  --color-gray-800: oklch(31.5% .026 256.802);
+  
+  /* Colors - Utility */
+  --color-white: #fff;
+  --color-black: #171717;
+  
+  /* Container Widths */
+  --container-2xl: 42rem;
+  --container-4xl: 56rem;
+  
+  /* Border Radius */
+  --radius: 0.5rem;
+  --radius-2xl: 1rem;
+  
+  /* Fonts */
+  --font-af-foundary: 'af', sans-serif;
+  --font-mondwest: 'ppmondwest', sans-serif;
+  --font-geist-mono: 'Geist Mono', monospace;
+  
+  /* Theme Colors */
+  --background: oklch(99.2% 0 0);
+  --foreground: oklch(9.8% 0 0);
+  --card: oklch(100% 0 0);
+  --card-foreground: oklch(9.8% 0 0);
+  --popover: oklch(100% 0 0);
+  --popover-foreground: oklch(9.8% 0 0);
+  --primary: oklch(9.8% 0 0);
+  --primary-foreground: oklch(99.2% 0 0);
+  --secondary: oklch(96.2% 0 0);
+  --secondary-foreground: oklch(9.8% 0 0);
+  --muted: oklch(96.2% 0 0);
+  --muted-foreground: oklch(45.9% .006 264.364);
+  --accent: oklch(96.2% 0 0);
+  --accent-foreground: oklch(9.8% 0 0);
+  --destructive: oklch(58.5% .227 25.331);
+  --destructive-foreground: oklch(99.2% 0 0);
+  --border: oklch(90% .006 264.364);
+  --input: oklch(90% .006 264.364);
+  --ring: oklch(9.8% 0 0);
+  
+  /* Shadows */
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-xs: 0 1px 0 0 rgba(0, 0, 0, 0.05);
+  
+  /* Blur */
+  --blur-sm: 8px;
+  --blur-lg: 16px;
+  
+  /* Animations */
+  --animate-spin: spin 1s linear infinite;
+  
+  /* Gradient */
+  --gradient-highlight-text: linear-gradient(90deg, #0072CC 0%, #005699 100%);
+}
+
+/* Font Face Declarations */
+@font-face {
+  font-family: 'af';
+  src: url('/fonts/af-normal.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ppmondwest';
+  src: url('/fonts/mondwest.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Utility Classes for Cofounder Landing */
+.sidebar-page-width {
+  width: 100vw;
+}
+
+@media (min-width: 1024px) {
+  .sidebar-page-width {
+    width: calc(100vw - var(--sidebar-width));
+  }
+}
+
+.full-page-width {
+  width: calc(100vw - var(--scrollbar-width));
+}
+
+/* Typography utilities */
+.tracking-11 {
+  letter-spacing: -0.11px;
+}
+
+.tracking-12 {
+  letter-spacing: -0.12px;
+}
+
+.tracking-13 {
+  letter-spacing: -0.13px;
+}
+
+.tracking-15 {
+  letter-spacing: -0.15px;
+}
+
+.tracking-24 {
+  letter-spacing: -0.24px;
+}
+
+.tracking-28 {
+  letter-spacing: -0.28px;
+}
+
+.tracking-32 {
+  letter-spacing: -0.32px;
+}
+
+.tracking-34 {
+  letter-spacing: -0.34px;
+}
+
+.tracking-48 {
+  letter-spacing: -0.48px;
+}
+
+.tracking-140 {
+  letter-spacing: -1.4px;
+}
+
+/* Custom Animations */
+@keyframes cursor-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.animate-cursor-pulse {
+  animation: cursor-pulse 0.7s ease-in-out infinite;
+}
+
+/* Button Styles */
+.primary-button-hover-bg {
+  background: linear-gradient(to bottom, rgba(0, 114, 204, 0.05), rgba(0, 86, 153, 0.08));
+}
+
+.btn-default-shadow {
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08), 0 4px 5px rgba(0, 0, 0, 0.08);
+}
+
+.btn-default-shadow:hover {
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.08), 0 6px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Box Shadows */
+.base-box-shadow {
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.14), 0 6px 6px rgba(0, 0, 0, 0), 0 0 0 3px rgba(0, 0, 0, 0.06);
+}
+
+.toast-shadow {
+  box-shadow: inset 0 4px 12px rgba(255, 255, 255, 0.1), 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
