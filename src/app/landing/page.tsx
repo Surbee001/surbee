@@ -29,33 +29,33 @@ export default function LandingPage() {
 		  <div className="text-2xl text-[#171717] font-semibold tracking-[-0.02em] pl-5 md:pl-8 xl:pl-12 2xl:pl-30">surbee</div>
 		  <div className="flex items-center gap-4">
 			<a href="#pricing" className="text-sm text-[#171717] hover:text-neutral-800 transition-all duration-300 ease-out">
-			  Pricing
-			</a>
-            <a
+            Pricing
+          </a>
+          <a
               href="/test-login"
-			  className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm text-[#171717] hover:bg-neutral-100"
-			>
-			  Log in
-			</a>
-			<a
+            className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm text-[#171717] hover:bg-neutral-100"
+          >
+            Log in
+          </a>
+          <a
               href="/test-login"
-			  className="rounded-full bg-neutral-900 px-4 py-1.5 text-sm text-white hover:bg-black"
-			>
-			  Sign up
-			</a>
+            className="rounded-full bg-neutral-900 px-4 py-1.5 text-sm text-white hover:bg-black"
+          >
+            Sign up
+          </a>
 		  </div>
-		</div>
-	  </nav>
+        </div>
+      </nav>
 
       {/* Layout wrapper: fixed sidebar + flowing content */}
       <div className="flex w-full">
         {/* Side Menu - fixed full height */}
-		    <aside
+	        <aside
 	          className={`${sidebarWidthClass} fixed left-0 top-0 z-50 h-screen border-r border-neutral-200/80 bg-[#FEFFFC]`}
 	        >
           {/* add top padding to avoid overlapping the nav items while border still cuts through */}
           <div className="flex h-full flex-col justify-between p-4 pt-20">
-            <div className="px-2 mt-auto mb-2">
+            <div className="px-1 mt-auto mb-5">
 			  <img
 				src="https://raw.githubusercontent.com/Surbee001/webimg/c120f0dfd46532bb149db06425090559998d97d5/New%20SVG.svg"
                 alt="Surbee logo"
@@ -145,10 +145,8 @@ export default function LandingPage() {
 	              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
 	                <a
 	                  className="cursor-pointer pointer-events-auto group"
-                  href="https://app.cofounder.co/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+	                  href="/test-login"
+	                >
                   <div className="relative inline-block">
                     <div className="rounded-lg px-4 pt-3 pb-2 backdrop-blur-lg max-w-[calc(100vw_-_64px)] w-[640px] flex flex-col items-start justify-between gap-2 h-[140px] bg-gradient-to-b from-[rgba(255,255,255,0.80)] to-[rgba(255,255,255,0.16)] shadow-[0px_4px_12px_0px_rgba(255,255,255,0.10)_inset,0px_0px_0px_6px_rgba(255,255,255,0.40),0px_1px_8px_0px_rgba(0,0,0,0.13),0px_2px_6px_0px_rgba(0,0,0,0.20)]">
                       {/* Typing overlay at top */}
@@ -204,36 +202,202 @@ export default function LandingPage() {
 	          <div className="mt-2 h-px w-full bg-neutral-200" />
 
 	          {/* Post-hero section */}
-	          <section className="px-6 pt-20 pb-12 text-center">
-	            <h2 className="font-af-foundary font-medium tracking-15 text-neutral-900 text-center text-[20px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 mb-8">
-	              Here’s some things Surbee can do for you
-	            </h2>
-	            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-	              {/* Card 2: Analyze behaviors like Sherlock Holmes */}
-	              <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/70">
-	                <div className="h-40 w-full bg-neutral-100" />
-	                <div className="p-5">
-	                  <h3 className="text-lg font-semibold text-[#171717]">Detect Odd Behaviors & Bad Data</h3>
-	                  <p className="mt-2 text-sm text-[#171717]">
-	                    Surbee flags suspicious patterns, bots, and inconsistent answers — like
-	                    a data detective — so your insights stay trustworthy.
-	                  </p>
+	          <div className="w-full border-t border-b">
+	            <section className="px-0 w-full max-w-[1920px] mx-auto flex flex-col lg:flex-row">
+	              <div className="p-2 md:p-4 2xl:p-8 flex border-b lg:border-b-0 items-center justify-center lg:max-w-[60%] xl:max-w-[68%] lg:min-h-[630px] w-full overflow-hidden">
+	                <div className="relative w-full h-full flex items-center justify-center p-8">
+	                  <img
+	                    className="absolute inset-0 object-cover rounded-lg"
+	                    alt="Detect behaviors"
+	                    sizes="100vw"
+	                    src="https://cofounder.co/_next/image?url=/images/agents-bg-img.png&w=3840&q=75"
+	                    srcSet="/_next/image?url=%2Fimages%2Fagents-bg-img.png&w=640&q=75 640w, /_next/image?url=%2Fimages%2Fagents-bg-img.png&w=750&q=75 750w, /_next/image?url=%2Fimages%2Fagents-bg-img.png&w=828&q=75 828w, /_next/image?url=%2Fimages%2Fagents-bg-img.png&w=1080&q=75 1080w, /_next/image?url=%2Fimages%2Fagents-bg-img.png&w=1200&q=75 1200w, /_next/image?url=%2Fimages%2Fagents-bg-img.png&w=1920&q=75 1920w, /_next/image?url=%2Fimages%2Fagents-bg-img.png&w=2048&q=75 2048w, /_next/image?url=%2Fimages%2Fagents-bg-img.png&w=3840&q=75 3840w"
+	                    style={{
+	                      color: "transparent",
+	                      inset: "0px",
+	                      position: "absolute",
+	                      height: "100%",
+	                      width: "100%",
+	                    }}
+	                  />
+	                  <div className="relative w-80 min-h-20 rounded-2xl overflow-hidden opacity-100 border border-[rgba(255,255,255,0.20)] p-1 bg-gradient-to-b from-[rgba(255,255,255,0.72)] to-[rgba(255,255,255,0.48)] shadow-[0_4px_12px_0_rgba(255,255,255,0.10)_inset,0_1px_8px_0_rgba(0,0,0,0.07),0_2px_6px_0_rgba(0,0,0,0.14)] backdrop-blur-lg">
+	                    <div className="flex justify-between items-center pl-3 py-3 pr-2">
+	                      <div className="text-gray-800 font-medium">
+	                        <p className="font-af-foundary font-bold text-[15px] tracking-15 leading-[140%] text-neutral-800">
+	                          Data Detective
+	                        </p>
+	                      </div>
+	                      <div className="border rounded-full min-w-[42px] text-center" style={{ background: "rgba(0, 128, 188, 0.12)", borderColor: "rgba(0, 128, 188, 0.12)", minWidth: "42px" }}>
+	                        <div className="text-gray-800 font-medium text-[12px]" style={{ color: "rgb(0, 99, 146)", fontSize: "12px" }}>
+	                          95%
+	                        </div>
+	                      </div>
+	                    </div>
+	                    <div className="flex rounded-lg border" style={{ borderColor: "rgba(255, 255, 255, 0.1)", background: "rgba(255, 255, 255, 0.2)" }}>
+	                      <div className="py-1 px-3 w-full">
+	                        <div className="todo-item flex justify-between min-h-[36px] items-center py-3 border-b" style={{ borderColor: "rgba(16, 66, 89, 0.08)", minHeight: "42px" }}>
+	                          <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
+	                            Suspicious patterns detected
+	                          </p>
+	                          <div className="w-4 h-4 flex items-center justify-center">
+	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-green-500 w-6 h-6">
+	                              <svg className="lucide lucide-check w-3 h-3 text-white" height="12" width="12" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+	                                <path d="M20 6 9 17l-5-5" />
+	                              </svg>
+	                            </div>
+	                          </div>
+	                        </div>
+	                        <div className="todo-item flex justify-between min-h-[36px] items-center py-3 border-b" style={{ borderColor: "rgba(16, 66, 89, 0.08)", minHeight: "42px" }}>
+	                          <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
+	                            Bot responses identified
+	                          </p>
+	                          <div className="w-4 h-4 flex items-center justify-center">
+	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-green-500 w-6 h-6">
+	                              <svg className="lucide lucide-check w-3 h-3 text-white" height="12" width="12" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+	                                <path d="M20 6 9 17l-5-5" />
+	                              </svg>
+	                            </div>
+	                          </div>
+	                        </div>
+	                        <div className="todo-item flex justify-between min-h-[36px] items-center py-3" style={{ borderColor: "rgba(16, 66, 89, 0.08)", minHeight: "42px" }}>
+	                          <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
+	                            Data quality verified
+	                          </p>
+	                          <div className="w-4 h-4 flex items-center justify-center">
+	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-green-500 w-6 h-6">
+	                              <svg className="lucide lucide-check w-3 h-3 text-white" height="12" width="12" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+	                                <path d="M20 6 9 17l-5-5" />
+	                              </svg>
+	                            </div>
+	                          </div>
+	                        </div>
+	                      </div>
+	                    </div>
+	                  </div>
 	                </div>
 	              </div>
+	              <div className="border-l border-gray-200 flex-1 flex flex-col justify-end p-5 sm:p-8 2xl:px-9 2xl:py-8">
+	                <div className="relative w-full h-full overflow-hidden">
+	                  <div className="relative w-full h-full min-h-[190px] sm:min-h-[170px] lg:min-h-auto flex flex-col justify-end">
+	                    <div className="flex flex-col gap-8 justify-end h-full">
+	                      <div className="flex flex-col gap-4">
+	                        <h4 className="font-af-foundary font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-[20px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 text-left text-neutral-900">
+	                          Detect Odd Behaviors & Bad Data
+	                        </h4>
+	                        <div className="flex flex-col gap-2">
+	                          <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700 [font-variant-numeric:lining-nums_proportional-nums]">
+	                            Surbee flags suspicious patterns, bots, and inconsistent answers — like a data detective — so your insights stay trustworthy.
+	                          </p>
+	                          <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700 [font-variant-numeric:lining-nums_proportional-nums]">
+	                            Get alerts when something doesn't look right, ensuring your survey data is always reliable and actionable.
+	                          </p>
+	                        </div>
+	                      </div>
+	                    </div>
+	                  </div>
+	                </div>
+	              </div>
+	            </section>
+	          </div>
 
-	              {/* Card 3: Build a community for fast answers */}
-	              <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/70">
-	                <div className="h-40 w-full bg-neutral-100" />
-	                <div className="p-5">
-	                  <h3 className="text-lg font-semibold text-[#171717]">Grow a Community Around Your Surveys</h3>
-	                  <p className="mt-2 text-sm text-[#171717]">
-	                    Launch a lightweight community where participants discuss, respond, and
-	                    resurface insights — accelerating answers to your questions.
-	                  </p>
+	          {/* Second card section */}
+	          <div className="w-full border-b">
+	            <section className="px-0 w-full max-w-[1920px] mx-auto flex flex-col lg:flex-row-reverse">
+	              <div className="p-2 md:p-4 2xl:p-8 flex border-b lg:border-b-0 items-center justify-center lg:max-w-[60%] xl:max-w-[68%] lg:min-h-[630px] w-full overflow-hidden">
+	                <div className="relative w-full h-full flex items-center justify-center p-8">
+	                  <img
+	                    className="absolute inset-0 object-cover rounded-lg"
+	                    alt="Community"
+	                    sizes="100vw"
+	                    src="https://cofounder.co/_next/image?url=/images/community-bg-img.png&w=3840&q=75"
+	                    srcSet="/_next/image?url=%2Fimages%2Fcommunity-bg-img.png&w=640&q=75 640w, /_next/image?url=%2Fimages%2Fcommunity-bg-img.png&w=750&q=75 750w, /_next/image?url=%2Fimages%2Fcommunity-bg-img.png&w=828&q=75 828w, /_next/image?url=%2Fimages%2Fcommunity-bg-img.png&w=1080&q=75 1080w, /_next/image?url=%2Fimages%2Fcommunity-bg-img.png&w=1200&q=75 1200w, /_next/image?url=%2Fimages%2Fcommunity-bg-img.png&w=1920&q=75 1920w, /_next/image?url=%2Fimages%2Fcommunity-bg-img.png&w=2048&q=75 2048w, /_next/image?url=%2Fimages%2Fcommunity-bg-img.png&w=3840&q=75 3840w"
+	                    style={{
+	                      color: "transparent",
+	                      inset: "0px",
+	                      position: "absolute",
+	                      height: "100%",
+	                      width: "100%",
+	                    }}
+	                  />
+	                  <div className="relative w-80 min-h-20 rounded-2xl overflow-hidden opacity-100 border border-[rgba(255,255,255,0.20)] p-1 bg-gradient-to-b from-[rgba(255,255,255,0.72)] to-[rgba(255,255,255,0.48)] shadow-[0_4px_12px_0_rgba(255,255,255,0.10)_inset,0_1px_8px_0_rgba(0,0,0,0.07),0_2px_6px_0_rgba(0,0,0,0.14)] backdrop-blur-lg">
+	                    <div className="flex justify-between items-center pl-3 py-3 pr-2">
+	                      <div className="text-gray-800 font-medium">
+	                        <p className="font-af-foundary font-bold text-[15px] tracking-15 leading-[140%] text-neutral-800">
+	                          Community Hub
+	                        </p>
+	                      </div>
+	                      <div className="border rounded-full min-w-[42px] text-center" style={{ background: "rgba(0, 128, 188, 0.12)", borderColor: "rgba(0, 128, 188, 0.12)", minWidth: "42px" }}>
+	                        <div className="text-gray-800 font-medium text-[12px]" style={{ color: "rgb(0, 99, 146)", fontSize: "12px" }}>
+	                          127
+	                        </div>
+	                      </div>
+	                    </div>
+	                    <div className="flex rounded-lg border" style={{ borderColor: "rgba(255, 255, 255, 0.1)", background: "rgba(255, 255, 255, 0.2)" }}>
+	                      <div className="py-1 px-3 w-full">
+	                        <div className="todo-item flex justify-between min-h-[36px] items-center py-3 border-b" style={{ borderColor: "rgba(16, 66, 89, 0.08)", minHeight: "42px" }}>
+	                          <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
+	                            Active discussions ongoing
+	                          </p>
+	                          <div className="w-4 h-4 flex items-center justify-center">
+	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-green-500 w-6 h-6">
+	                              <svg className="lucide lucide-check w-3 h-3 text-white" height="12" width="12" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+	                                <path d="M20 6 9 17l-5-5" />
+	                              </svg>
+	                            </div>
+	                          </div>
+	                        </div>
+	                        <div className="todo-item flex justify-between min-h-[36px] items-center py-3 border-b" style={{ borderColor: "rgba(16, 66, 89, 0.08)", minHeight: "42px" }}>
+	                          <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
+	                            50 responses collected
+	                          </p>
+	                          <div className="w-4 h-4 flex items-center justify-center">
+	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-green-500 w-6 h-6">
+	                              <svg className="lucide lucide-check w-3 h-3 text-white" height="12" width="12" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+	                                <path d="M20 6 9 17l-5-5" />
+	                              </svg>
+	                            </div>
+	                          </div>
+	                        </div>
+	                        <div className="todo-item flex justify-between min-h-[36px] items-center py-3" style={{ borderColor: "rgba(16, 66, 89, 0.08)", minHeight: "42px" }}>
+	                          <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
+	                            Insights surfaced
+	                          </p>
+	                          <div className="w-4 h-4 flex items-center justify-center">
+	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-green-500 w-6 h-6">
+	                              <svg className="lucide lucide-check w-3 h-3 text-white" height="12" width="12" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+	                                <path d="M20 6 9 17l-5-5" />
+	                              </svg>
+	                            </div>
+	                          </div>
+	                        </div>
+	                      </div>
+	                    </div>
+	                  </div>
 	                </div>
 	              </div>
-	            </div>
-	          </section>
+	              <div className="border-l lg:border-r border-gray-200 flex-1 flex flex-col justify-end p-5 sm:p-8 2xl:px-9 2xl:py-8">
+	                <div className="relative w-full h-full overflow-hidden">
+	                  <div className="relative w-full h-full min-h-[190px] sm:min-h-[170px] lg:min-h-auto flex flex-col justify-end">
+	                    <div className="flex flex-col gap-8 justify-end h-full">
+	                      <div className="flex flex-col gap-4">
+	                        <h4 className="font-af-foundary font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-[20px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 text-left text-neutral-900">
+	                          Grow a Community Around Your Surveys
+	                        </h4>
+	                        <div className="flex flex-col gap-2">
+	                          <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700 [font-variant-numeric:lining-nums_proportional-nums]">
+	                            Launch a lightweight community where participants discuss, respond, and resurface insights — accelerating answers to your questions.
+	                          </p>
+	                          <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700 [font-variant-numeric:lining-nums_proportional-nums]">
+	                            Build engagement and get richer feedback by creating spaces for ongoing conversations around your surveys.
+	                          </p>
+	                        </div>
+	                      </div>
+	                    </div>
+	                  </div>
+	                </div>
+	              </div>
+	            </section>
+	          </div>
 
 	          {/* Spacer section */}
 	          <div className="py-12"></div>
