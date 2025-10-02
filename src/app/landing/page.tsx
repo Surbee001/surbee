@@ -31,14 +31,14 @@ export default function LandingPage() {
 			<a href="#pricing" className="text-sm text-[#171717] hover:text-neutral-800 transition-all duration-300 ease-out">
 			  Pricing
 			</a>
-			<a
-			  href="#login"
+            <a
+              href="/test-login"
 			  className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm text-[#171717] hover:bg-neutral-100"
 			>
 			  Log in
 			</a>
 			<a
-			  href="#signup"
+              href="/test-login"
 			  className="rounded-full bg-neutral-900 px-4 py-1.5 text-sm text-white hover:bg-black"
 			>
 			  Sign up
@@ -55,13 +55,13 @@ export default function LandingPage() {
 	        >
           {/* add top padding to avoid overlapping the nav items while border still cuts through */}
           <div className="flex h-full flex-col justify-between p-4 pt-20">
-            <div className="px-2 mb-4">
-              <img
-                src="https://raw.githubusercontent.com/Surbee001/webimg/c120f0dfd46532bb149db06425090559998d97d5/New%20SVG.svg"
+            <div className="px-2 mt-auto mb-2">
+			  <img
+				src="https://raw.githubusercontent.com/Surbee001/webimg/c120f0dfd46532bb149db06425090559998d97d5/New%20SVG.svg"
                 alt="Surbee logo"
                 className="w-20 h-auto object-contain"
-              />
-            </div>
+			  />
+			</div>
             <div
               className="flex flex-col gap-2 transition-opacity duration-700 ease-out opacity-100"
               style={{ width: "calc(100vw - calc(100vw - 100%))" }}
@@ -143,9 +143,11 @@ export default function LandingPage() {
 
               {/* Centered overlay prompt card */}
 	              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-                <a
-                  className="cursor-pointer pointer-events-auto group"
-                  href="/test-login"
+	                <a
+	                  className="cursor-pointer pointer-events-auto group"
+                  href="https://app.cofounder.co/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                   <div className="relative inline-block">
                     <div className="rounded-lg px-4 pt-3 pb-2 backdrop-blur-lg max-w-[calc(100vw_-_64px)] w-[640px] flex flex-col items-start justify-between gap-2 h-[140px] bg-gradient-to-b from-[rgba(255,255,255,0.80)] to-[rgba(255,255,255,0.16)] shadow-[0px_4px_12px_0px_rgba(255,255,255,0.10)_inset,0px_0px_0px_6px_rgba(255,255,255,0.40),0px_1px_8px_0px_rgba(0,0,0,0.13),0px_2px_6px_0px_rgba(0,0,0,0.20)]">
@@ -246,6 +248,44 @@ export default function LandingPage() {
 	                <div className="flex relative flex-col items-center group">
 	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
 	                    <img
+	                      height={24}
+	                      width={30}
+	                      alt="Airtable"
+	                      src="https://cofounder.co/_next/image?url=/_next/static/media/airtable.f153f282.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
+	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fairtable.f153f282.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fairtable.f153f282.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
+                      style={{
+                        color: "transparent",
+                      }}
+	                    />
+	                  </div>
+	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
+	                      Airtable
+	                    </span>
+	                  </div>
+	                </div>
+	                <div className="flex relative flex-col items-center group">
+	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
+	                    <img
+	                      height={30}
+	                      width={30}
+	                      alt="Attio"
+	                      src="https://cofounder.co/_next/image?url=/_next/static/media/attio.bb561be4.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
+	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fattio.bb561be4.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fattio.bb561be4.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
+                      style={{
+                        color: "transparent",
+                      }}
+	                    />
+	                  </div>
+	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
+	                      Attio
+	                    </span>
+	                  </div>
+	                </div>
+	                <div className="flex relative flex-col items-center group">
+	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
+	                    <img
 	                      height={41}
 	                      width={30}
 	                      alt="Sheets"
@@ -300,7 +340,141 @@ export default function LandingPage() {
 	                    </span>
 	                  </div>
 	                </div>
+	                <div className="flex relative flex-col items-center group">
+	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
+	                    <img
+	                      height={41}
+	                      width={30}
+	                      alt="Docs"
+	                      src="https://cofounder.co/_next/image?url=/_next/static/media/google-docs.f7ba532d.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
+	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-docs.f7ba532d.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-docs.f7ba532d.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
+                      style={{
+                        color: "transparent",
+                      }}
+	                    />
+	                  </div>
+	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
+	                      Docs
+	                    </span>
+	                  </div>
+	                </div>
+	                <div className="flex relative flex-col items-center group">
+	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
+	                    <img
+	                      height={30}
+	                      width={30}
+	                      alt="Calendar"
+	                      src="https://cofounder.co/_next/image?url=/_next/static/media/google-calendar.2438840b.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
+	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-calendar.2438840b.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-calendar.2438840b.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
+                      style={{
+                        color: "transparent",
+                      }}
+	                    />
+	                  </div>
+	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
+	                      Calendar
+	                    </span>
+	                  </div>
+	                </div>
+	                <div className="flex relative flex-col items-center group">
+	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
+	                    <img
+	                      height={23}
+	                      width={30}
+	                      alt="Gmail"
+	                      src="https://cofounder.co/_next/image?url=/_next/static/media/gmail.e5bdc0e4.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
+	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgmail.e5bdc0e4.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgmail.e5bdc0e4.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
+                      style={{
+                        color: "transparent",
+                      }}
+	                    />
+	                  </div>
+	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
+	                      Gmail
+	                    </span>
+	                  </div>
+	                </div>
 	              </div>
+	              <div className="flex justify-center gap-3 sm:gap-4 pb-5 md:pb-6 border-b border-gray-200 px-3 sm:px-4">
+	                <div className="flex relative flex-col items-center group">
+	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
+	                    <img
+	                      height={30}
+	                      width={30}
+	                      alt="Intercom"
+	                      src="https://cofounder.co/_next/image?url=/_next/static/media/intercom.64399410.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
+	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fintercom.64399410.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fintercom.64399410.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
+                      style={{
+                        color: "transparent",
+                      }}
+	                    />
+	                  </div>
+	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
+	                      Intercom
+	                    </span>
+	                  </div>
+	                </div>
+	                <div className="flex relative flex-col items-center group">
+	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
+	                    <img
+	                      height={30}
+	                      width={30}
+	                      alt="Notion"
+	                      src="https://cofounder.co/_next/image?url=/_next/static/media/notion.f18f0582.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
+	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fnotion.f18f0582.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fnotion.f18f0582.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
+                      style={{
+                        color: "transparent",
+                      }}
+	                    />
+	                  </div>
+	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
+	                      Notion
+	                    </span>
+	                  </div>
+	                </div>
+	                <div className="flex relative flex-col items-center group">
+	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
+	                    <img
+	                      height={30}
+	                      width={30}
+	                      alt="Limitless"
+	                      src="https://cofounder.co/_next/image?url=/_next/static/media/limitless.70cd9c81.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
+	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flimitless.70cd9c81.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flimitless.70cd9c81.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
+                      style={{
+                        color: "transparent",
+                      }}
+	                    />
+	                  </div>
+	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
+	                      Limitless
+	                    </span>
+	                  </div>
+	                </div>
+	                <div className="flex relative flex-col items-center group">
+	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
+	                    <img
+	                      height={30}
+	                      width={30}
+	                      alt="Linear"
+	                      src="https://cofounder.co/_next/image?url=/_next/static/media/linear.1c44320d.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
+	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flinear.1c44320d.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flinear.1c44320d.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
+                      style={{
+                        color: "transparent",
+                      }}
+	                    />
+	                  </div>
+	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
+	                      Linear
+	                    </span>
+	                  </div>
+	                </div>
 	                <div className="flex relative flex-col items-center group">
 	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
 	                    <img
