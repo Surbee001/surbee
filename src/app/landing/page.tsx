@@ -1,11 +1,29 @@
 import React from "react";
 import { RevealSection, RevealDiv } from "@/components/landing/Reveal";
+import localFont from "next/font/local";
 import TypingOverlay from "@/components/landing/TypingOverlay";
+
+const epilogue = localFont({
+  src: [
+    {
+      path: "../../../Font/Epilogue_Complete/Fonts/WEB/fonts/Epilogue-Variable.woff2",
+      weight: "100 900",
+      style: "normal",
+    },
+    {
+      path: "../../../Font/Epilogue_Complete/Fonts/WEB/fonts/Epilogue-VariableItalic.woff2",
+      weight: "100 900",
+      style: "italic",
+    },
+  ],
+  variable: "--font-epilogue",
+  display: "swap",
+});
 
 export default function LandingPage() {
   const sidebarWidthClass = "w-56"; // 14rem ~ 224px
   return (
-    <div className="min-h-screen w-full" style={{ backgroundColor: "#FEFFFC", fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" }}>
+    <div className={`min-h-screen w-full ${epilogue.variable}`} style={{ backgroundColor: "#FEFFFC", fontFamily: "var(--font-epilogue)" }}>
 	  {/* Top Navigation (full-width) with blur */}
 	  <nav className="fixed left-0 right-0 top-0 z-40 w-full bg-[#FEFFFC]/70 backdrop-blur supports-[backdrop-filter]:bg-[#FEFFFC]/70">
 		<div className="flex h-16 items-center justify-between gap-4 pl-56 pr-6">
@@ -38,57 +56,52 @@ export default function LandingPage() {
 	        >
           {/* add top padding to avoid overlapping the nav items while border still cuts through */}
           <div className="flex h-full flex-col p-4 pt-20">
-            {/* Logo at top */}
-            <div className="px-1 mb-5">
-              <img
-                src="https://raw.githubusercontent.com/Surbee001/webimg/c120f0dfd46532bb149db06425090559998d97d5/New%20SVG.svg"
-                alt="Surbee logo"
-                className="w-20 h-auto object-contain"
-              />
+            <div className="flex-1 flex flex-col">
+              <div className="px-1 mb-5">
+                <img
+                  src="https://raw.githubusercontent.com/Surbee001/webimg/c120f0dfd46532bb149db06425090559998d97d5/New%20SVG.svg"
+                  alt="Surbee logo"
+                  className="w-20 h-auto object-contain"
+                />
+              </div>
+              <div
+                className="flex flex-col gap-2 transition-opacity duration-700 ease-out opacity-100"
+                style={{ width: "calc(100vw - calc(100vw - 100%))" }}
+              >
+                <a
+                  className="inline-flex items-center gap-2 whitespace-nowrap shrink-0 outline-none underline-offset-4 hover:text-neutral-800 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-[#171717] font-medium bg-neutral-100 rounded px-2 py-1 -ml-1"
+                >
+                  Surbee
+                </a>
+                <a
+                  className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
+                  href="#use-cases"
+                >
+                  Use cases
+                </a>
+                <a
+                  className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
+                  href="#product"
+                >
+                  Product
+                </a>
+                <a
+                  className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
+                  href="#students"
+                >
+                  Students
+                </a>
+                
+               
+                <a
+                  className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
+                  href="#blog"
+                >
+                  Blog
+                </a>
+              </div>
             </div>
             
-            {/* Spacer to push menu to bottom */}
-            <div className="flex-1"></div>
-            
-            {/* Menu buttons at bottom */}
-            <div
-              className="flex flex-col gap-2 transition-opacity duration-700 ease-out opacity-100 mb-4"
-              style={{ width: "calc(100vw - calc(100vw - 100%))" }}
-            >
-              <a
-                className="inline-flex items-center gap-2 whitespace-nowrap shrink-0 outline-none underline-offset-4 hover:text-neutral-800 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-[#171717] font-medium bg-neutral-100 rounded px-2 py-1 -ml-1"
-              >
-                Surbee
-              </a>
-              <a
-                className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
-                href="#use-cases"
-              >
-                Use cases
-              </a>
-              <a
-                className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
-                href="#product"
-              >
-                Product
-              </a>
-              <a
-                className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
-                href="#students"
-              >
-                Students
-              </a>
-              
-             
-              <a
-                className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
-                href="#blog"
-              >
-                Blog
-              </a>
-            </div>
-            
-            {/* Social icons at very bottom */}
             <div className="flex items-center gap-3 px-1 pb-4">
               <a href="https://twitter.com/surbee" target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-[#171717] transition-colors" aria-label="X">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>

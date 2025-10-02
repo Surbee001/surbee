@@ -24,6 +24,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@dqbd/tiktoken": "^1.0.15",
     "@hookform/resolvers": "^5.2.1",
     "@huggingface/hub": "^2.4.1",
     "@huggingface/inference": "^4.7.1",
@@ -58,7 +59,6 @@
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.7",
-    "@sentry/nextjs": "10",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.53.0",
     "@tanstack/react-query": "^5.84.1",
@@ -106,8 +106,7 @@
     "tailwind-merge": "^3.3.1",
     "unicornstudio-react": "1.4.29-1",
     "zod": "^4.0.14",
-    "zustand": "^5.0.7",
-    "@dqbd/tiktoken": "^1.0.15"
+    "zustand": "^5.0.7"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
