@@ -1,9 +1,27 @@
 import React from "react";
+import localFont from "next/font/local";
+
+const epilogue = localFont({
+  src: [
+    {
+      path: "../../../Font/Epilogue_Complete/Fonts/WEB/fonts/Epilogue-Variable.woff2",
+      weight: "100 900",
+      style: "normal",
+    },
+    {
+      path: "../../../Font/Epilogue_Complete/Fonts/WEB/fonts/Epilogue-VariableItalic.woff2",
+      weight: "100 900",
+      style: "italic",
+    },
+  ],
+  variable: "--font-epilogue",
+  display: "swap",
+});
 
 export default function LandingPage() {
   const sidebarWidthClass = "w-56"; // 14rem ~ 224px
   return (
-    <div className="min-h-screen w-full" style={{ backgroundColor: "#FEFFFC" }}>
+    <div className={`min-h-screen w-full ${epilogue.variable}`} style={{ backgroundColor: "#FEFFFC", fontFamily: "var(--font-epilogue)" }}>
 	  {/* Top Navigation (full-width) with blur */}
 	  <nav className="fixed left-0 right-0 top-0 z-40 w-full border-b border-neutral-200/80 bg-[#FEFFFC]/70 backdrop-blur supports-[backdrop-filter]:bg-[#FEFFFC]/70">
         <div className="flex h-16 items-center justify-end gap-4 px-6">
@@ -93,8 +111,8 @@ export default function LandingPage() {
               </h1>
               <div className="flex flex-col gap-6">
                 <p className="text-[#171717] text-[15px] leading-[140%] max-w-[482px]">
-                Surbee plugs into your research workflow, automates survey building, and organizes responses.
-                Empowering you with the tools you already use.
+                  Surbee plugs into your research workflow, automates survey building, and organizes responses.
+                  Empowering you with the tools you already use.
                 </p>
               </div>
             </div>
@@ -178,11 +196,48 @@ export default function LandingPage() {
 	          <div className="mt-8 h-px w-full bg-neutral-200" />
 
 	          {/* Post-hero section */}
-	          <section className="px-6 py-12">
-	            <h2 className="text-2xl sm:text-3xl font-semibold text-[#171717]">
-	              Here’s some things Surbee can do for you
-	            </h2>
-	          </section>
+          <section className="px-6 py-12">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-[#171717] mb-8">
+              Here’s some things Surbee can do for you
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Card 1: Create Forms in Natural Language */}
+              <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/70">
+                <div className="h-40 w-full bg-neutral-100" />
+                <div className="p-5">
+                  <h3 className="text-lg font-semibold text-[#171717]">Create Forms in Natural Language</h3>
+                  <p className="mt-2 text-sm text-[#171717]">
+                    Describe what you want, and Surbee drafts complete surveys — questions,
+                    options, and logic — instantly. Iterate with plain English.
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 2: Analyze behaviors like Sherlock Holmes */}
+              <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/70">
+                <div className="h-40 w-full bg-neutral-100" />
+                <div className="p-5">
+                  <h3 className="text-lg font-semibold text-[#171717]">Detect Odd Behaviors & Bad Data</h3>
+                  <p className="mt-2 text-sm text-[#171717]">
+                    Surbee flags suspicious patterns, bots, and inconsistent answers — like
+                    a data detective — so your insights stay trustworthy.
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 3: Build a community for fast answers */}
+              <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/70">
+                <div className="h-40 w-full bg-neutral-100" />
+                <div className="p-5">
+                  <h3 className="text-lg font-semibold text-[#171717]">Grow a Community Around Your Surveys</h3>
+                  <p className="mt-2 text-sm text-[#171717]">
+                    Launch a lightweight community where participants discuss, respond, and
+                    resurface insights — accelerating answers to your questions.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
         </main>
       </div>
     </div>
