@@ -25,33 +25,43 @@ export default function LandingPage() {
     <div className={`min-h-screen w-full ${epilogue.variable}`} style={{ backgroundColor: "#FEFFFC", fontFamily: "var(--font-epilogue)" }}>
 	  {/* Top Navigation (full-width) with blur */}
 	  <nav className="fixed left-0 right-0 top-0 z-40 w-full border-b border-neutral-200/80 bg-[#FEFFFC]/70 backdrop-blur supports-[backdrop-filter]:bg-[#FEFFFC]/70">
-        <div className="flex h-16 items-center justify-end gap-4 px-6">
-          <a href="#pricing" className="text-sm text-[#171717] hover:underline">
-            Pricing
-          </a>
-          <a
-            href="#login"
-            className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm text-[#171717] hover:bg-neutral-100"
-          >
-            Log in
-          </a>
-          <a
-            href="#signup"
-            className="rounded-full bg-neutral-900 px-4 py-1.5 text-sm text-white hover:bg-black"
-          >
-            Sign up
-          </a>
-        </div>
-      </nav>
+		<div className="flex h-16 items-center justify-between gap-4 pl-56 pr-6">
+		  <div className="text-[#171717] font-semibold tracking-[-0.02em]">Surbee</div>
+		  <div className="flex items-center gap-4">
+			<a href="#pricing" className="text-sm text-[#171717] hover:underline">
+			  Pricing
+			</a>
+			<a
+			  href="#login"
+			  className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm text-[#171717] hover:bg-neutral-100"
+			>
+			  Log in
+			</a>
+			<a
+			  href="#signup"
+			  className="rounded-full bg-neutral-900 px-4 py-1.5 text-sm text-white hover:bg-black"
+			>
+			  Sign up
+			</a>
+		  </div>
+		</div>
+	  </nav>
 
       {/* Layout wrapper: fixed sidebar + flowing content */}
       <div className="flex w-full">
         {/* Side Menu - fixed full height */}
-	        <aside
+		    <aside
 	          className={`${sidebarWidthClass} fixed left-0 top-0 z-50 h-screen border-r border-neutral-200/80 bg-[#FEFFFC]`}
 	        >
           {/* add top padding to avoid overlapping the nav items while border still cuts through */}
-          <div className="flex h-full flex-col justify-end p-4 pt-20">
+		  <div className="flex h-full flex-col justify-between p-4 pt-20">
+			<div className="px-2">
+			  <img
+				src="https://raw.githubusercontent.com/Surbee001/webimg/c120f0dfd46532bb149db06425090559998d97d5/New%20SVG.svg"
+				alt="Surbee side illustration"
+				className="w-full h-auto object-contain"
+			  />
+			</div>
             <div
               className="flex flex-col gap-2 transition-opacity duration-700 ease-out opacity-100"
               style={{ width: "calc(100vw - calc(100vw - 100%))" }}
