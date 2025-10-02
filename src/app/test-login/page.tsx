@@ -15,9 +15,9 @@ export default function TestLoginPage() {
     <div className={`${epilogue.variable} min-h-screen w-full`} style={{ backgroundColor: "#0A0A0A", color: "#EEF1ED", fontFamily: "var(--font-epilogue)" }}>
       <div className="grid min-h-screen grid-cols-1 md:grid-cols-2">
         {/* Left: form and copy */}
-        <div className="flex flex-col justify-between p-6 md:p-10">
-          {/* Logo */}
-          <div className="flex items-center gap-2">
+        <div className="relative flex flex-col justify-between p-6 md:p-10">
+          {/* Logo top-left */}
+          <div className="absolute left-6 top-6 md:left-10 md:top-10 flex items-center gap-2">
             <img
               src="https://raw.githubusercontent.com/Surbee001/webimg/c120f0dfd46532bb149db06425090559998d97d5/New%20SVG.svg"
               alt="SerbySVJ"
@@ -26,32 +26,37 @@ export default function TestLoginPage() {
             <span className="text-sm text-neutral-300">SerbySVJ</span>
           </div>
 
-          {/* Center copy */}
-          <div className="mt-16">
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Test Login</h1>
-            <p className="mt-3 text-neutral-300">Automate your surveys</p>
+          {/* Centered auth block */}
+          <div className="mx-auto mt-28 flex w-full max-w-sm flex-col items-center text-center">
+            {/* Title removed per request; keep concise tagline at bottom */}
 
-            {/* Auth buttons */}
-            <div className="mt-8 space-y-3">
-              <button className="w-full rounded-md border border-neutral-700 bg-transparent px-4 py-2 text-left text-sm hover:bg-neutral-800/60 transition">
-                Continue with Google
+            {/* Flat buttons, compact width */}
+            <div className="w-full space-y-3">
+              <button className="h-11 w-full rounded-full bg-zinc-900 text-zinc-100 px-5 text-sm font-medium hover:bg-zinc-800 transition">
+                <span className="inline-flex items-center justify-center gap-2">
+                  <svg className="h-4 w-4" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/><path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/><path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/><path d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l.003-.002l6.19 5.238C39.718 36.054 44 30.606 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/></svg>
+                  <span>Sign up with Google</span>
+                </span>
               </button>
-              <button className="w-full rounded-md border border-neutral-700 bg-transparent px-4 py-2 text-left text-sm hover:bg-neutral-800/60 transition">
-                Log in with email
+              <div className="flex items-center gap-3 px-4">
+                <div className="h-px flex-1 bg-zinc-800" />
+                <span className="text-xs text-zinc-500">or</span>
+                <div className="h-px flex-1 bg-zinc-800" />
+              </div>
+              <button className="h-11 w-full rounded-full bg-zinc-900 text-zinc-100 px-5 text-sm font-medium hover:bg-zinc-800 transition">
+                Log in
               </button>
             </div>
 
-            <p className="mt-6 text-[11px] text-neutral-500">
-              by signing up you agree to our privacy policy and terms of service
+            <p className="mt-8 text-[11px] text-zinc-500">
+              By signing up you agree to our <a className="underline" href="#">Privacy Policy</a> and <a className="underline" href="#">Terms of Service</a>.
             </p>
           </div>
-
-          <div />
         </div>
 
-        {/* Right: image with same bordered feel */}
+        {/* Right: image - remove heavy border, keep subtle rounding */}
         <div className="hidden md:block p-6 md:p-10">
-          <div className="h-full w-full overflow-hidden rounded-md border border-neutral-800">
+          <div className="h-full w-full overflow-hidden rounded-lg">
             <img
               src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__cbbf9473-785a-4dc6-a4d0-8eb684185fbc.png?raw=true"
               alt="login hero"
