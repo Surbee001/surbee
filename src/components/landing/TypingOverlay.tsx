@@ -65,7 +65,7 @@ export default function TypingOverlay({ prompts = DEFAULT_PROMPTS }: TypingOverl
             style={{ opacity: 0.92 }}
           >
             <span className="font-medium">{display}</span>
-            <span className="ml-0.5 inline-block h-3 w-[2px] translate-y-[1px] bg-[#171717] animate-[blink_1s_ease-in-out_infinite]" />
+            <span className="ml-0.5 inline-block h-3 w-[2px] translate-y-[1px] bg-[#171717] animate-[blink_1s_ease-in-out_infinite]" style={{ opacity: 0.92 }} />
           </motion.div>
         )}
       </AnimatePresence>
