@@ -1,6 +1,24 @@
 "use client";
 
 import { ChevronDown, ChevronLeft, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, Clock, Users, BarChart3, Calendar, FileText, Target, Settings } from "lucide-react";
+import localFont from "next/font/local";
+
+const epilogue = localFont({
+  src: [
+    {
+      path: "../../fonts/Epilogue-Variable.woff2",
+      weight: "100 900",
+      style: "normal",
+    },
+    {
+      path: "../../fonts/Epilogue-VariableItalic.woff2",
+      weight: "100 900",
+      style: "italic",
+    },
+  ],
+  variable: "--font-epilogue",
+  display: "swap",
+});
 import dynamic from 'next/dynamic'
 const InviteModal = dynamic(() => import('@/components/referrals/InviteModal'), { ssr: false })
 import { useState, useEffect, useRef } from "react";
@@ -224,25 +242,28 @@ export default function Dashboard() {
   // Show loading state only during initial auth loading
   if (authLoading) {
     return (
-      <div className="flex flex-col h-full" style={{ fontFamily: 'Sohne, sans-serif' }}>
+      <div className={`flex flex-col h-full ${epilogue.variable}`} style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
         {/* Only skeleton for main content area - no sidebar */}
         <div className="w-full max-w-2xl flex flex-col mx-auto flex-1 justify-center">
           {/* Greeting Text Skeleton */}
           <div className="text-center mb-4">
-            <div className="skeleton-text mx-auto mb-6" style={{ 
-              width: '350px', 
+            <div className="skeleton-text mx-auto mb-6" style={{
+              width: '350px',
               height: '3rem',
-              borderRadius: '0.5rem'
+              borderRadius: '0.5rem',
+              fontFamily: 'var(--font-epilogue), sans-serif'
             }}></div>
-            <div className="skeleton-text mx-auto mb-4" style={{ 
-              width: '500px', 
+            <div className="skeleton-text mx-auto mb-4" style={{
+              width: '500px',
               height: '1.5rem',
-              borderRadius: '0.375rem'
+              borderRadius: '0.375rem',
+              fontFamily: 'var(--font-epilogue), sans-serif'
             }}></div>
-            <div className="skeleton-text mx-auto" style={{ 
-              width: '400px', 
+            <div className="skeleton-text mx-auto" style={{
+              width: '400px',
               height: '1.5rem',
-              borderRadius: '0.375rem'
+              borderRadius: '0.375rem',
+              fontFamily: 'var(--font-epilogue), sans-serif'
             }}></div>
           </div>
 
@@ -252,16 +273,18 @@ export default function Dashboard() {
               <div className="skeleton-form-input" style={{
                 height: '3rem',
                 borderRadius: '0.75rem',
-                marginBottom: '1rem'
+                marginBottom: '1rem',
+                fontFamily: 'var(--font-epilogue), sans-serif'
               }}></div>
-              
+
               {/* Quick Actions Skeleton */}
               <div className="flex flex-wrap gap-2 justify-center mt-4">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="skeleton-base" style={{
                     width: '120px',
                     height: '2rem',
-                    borderRadius: '1rem'
+                    borderRadius: '1rem',
+                    fontFamily: 'var(--font-epilogue), sans-serif'
                   }}></div>
                 ))}
               </div>
@@ -279,7 +302,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ fontFamily: 'Sohne, sans-serif' }}>
+    <div className={`flex flex-col h-full ${epilogue.variable}`} style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
       {/* Content Area - Chat */}
       <div className="w-full max-w-2xl flex flex-col mx-auto flex-1" style={{ 
         height: '100%',
@@ -301,10 +324,10 @@ export default function Dashboard() {
                       justifyContent: 'center'
                     }}
                   >
-                    <h1 className="text-white text-center" style={{ 
-                      color: 'rgb(235, 235, 235)', 
-                      fontFamily: 'PP Editorial, sans-serif', 
-                      fontSize: '40px', 
+                    <h1 className="text-white text-center" style={{
+                      color: 'rgb(235, 235, 235)',
+                      fontFamily: 'var(--font-epilogue), serif',
+                      fontSize: '40px',
                       fontWeight: 200,
                       marginBottom: '0.5rem'
                     }}>
@@ -349,9 +372,9 @@ export default function Dashboard() {
                         )}
                         <div
                           className="text-base leading-relaxed w-full"
-                          style={{ 
+                          style={{
                             color: message.isUser ? '#ffffff' : '#ffffff',
-                            fontFamily: 'Sohne, sans-serif',
+                            fontFamily: 'var(--font-epilogue), sans-serif',
                             lineHeight: '1.6',
                             wordWrap: 'break-word',
                             fontSize: '16px'
@@ -410,7 +433,7 @@ export default function Dashboard() {
                       
                       {/* Thinking Duration Display */}
                       {thinkingDuration > 0 && !isThinking && (
-                        <div className="text-left text-xs text-gray-400" style={{ fontFamily: 'Sohne, sans-serif' }}>
+                        <div className="text-left text-xs text-gray-400" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                           Thought for {thinkingDuration} seconds
                         </div>
                       )}

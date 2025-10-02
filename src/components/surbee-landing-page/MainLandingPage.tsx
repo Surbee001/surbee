@@ -7,6 +7,24 @@ import { Component as AnimatedBackground } from '../open-ai-codex-animated-backg
 import ChatInputLight from '@/components/ui/chat-input-light';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import localFont from "next/font/local";
+
+const epilogue = localFont({
+  src: [
+    {
+      path: "../../fonts/Epilogue-Variable.woff2",
+      weight: "100 900",
+      style: "normal",
+    },
+    {
+      path: "../../fonts/Epilogue-VariableItalic.woff2",
+      weight: "100 900",
+      style: "italic",
+    },
+  ],
+  variable: "--font-epilogue",
+  display: "swap",
+});
 
 // Image placeholders - Replace these with your actual image URLs
 const images = {
@@ -89,7 +107,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className={`min-h-screen bg-white ${epilogue.variable}`} style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
       {/* Navigation Bar */}
       <nav className="w-full bg-transparent">
         <div className="max-w-7xl mx-auto px-8 py-2 h-[88px] flex items-center">
@@ -101,19 +119,19 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
             
             {/* Navigation Links - Centered */}
             <div className="hidden md:flex items-center justify-center space-x-2 absolute left-1/2 transform -translate-x-1/2">
-              <Link href="/about" className="px-4 py-2 text-sm text-black hover:bg-gray-100 rounded-lg transition-colors" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+              <Link href="/about" className="px-4 py-2 text-sm text-black hover:bg-gray-100 rounded-lg transition-colors" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                 About
               </Link>
-              <Link href="/pricing" className="px-4 py-2 text-sm text-black hover:bg-gray-100 rounded-lg transition-colors" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+              <Link href="/pricing" className="px-4 py-2 text-sm text-black hover:bg-gray-100 rounded-lg transition-colors" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                 Pricing
               </Link>
-              <Link href="/students" className="px-4 py-2 text-sm text-black hover:bg-gray-100 rounded-lg transition-colors" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+              <Link href="/students" className="px-4 py-2 text-sm text-black hover:bg-gray-100 rounded-lg transition-colors" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                 For Students
               </Link>
-              <Link href="/changelog" className="px-4 py-2 text-sm text-black hover:bg-gray-100 rounded-lg transition-colors" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+              <Link href="/changelog" className="px-4 py-2 text-sm text-black hover:bg-gray-100 rounded-lg transition-colors" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                 Changelog
               </Link>
-              <a href="https://discord.gg/krs577Qxqr" target="_blank" rel="noopener noreferrer" className="px-4 py-2 text-sm text-black hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+              <a href="https://discord.gg/krs577Qxqr" target="_blank" rel="noopener noreferrer" className="px-4 py-2 text-sm text-black hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                 <FaDiscord className="w-4 h-4 text-gray-500" />
                 Community
               </a>
@@ -122,31 +140,31 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
             {/* Authentication Section */}
             <div className="flex items-center ml-auto">
               {loading ? (
-                <div className="px-4 py-2 border border-black text-black rounded-full" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+                <div className="px-4 py-2 border border-black text-black rounded-full" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                   Loading...
                 </div>
               ) : user ? (
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full" style={{
-                    fontFamily: 'FK Grotesk, sans-serif',
+                    fontFamily: 'var(--font-epilogue), sans-serif',
                     fontSize: "14px",
                     color: "#666"
                   }}>
                     <div className="bg-blue-500 w-3 h-3 rounded-full" />
-                    <span className="text-sm" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+                    <span className="text-sm" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                       {user.email}
                     </span>
                   </div>
-                  <Link href={isEarlyAccess ? "/earlyaccess" : "/dashboard"} className="px-3 py-1.5 bg-black text-white rounded-full hover:bg-black/80 transition-colors" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+                  <Link href={isEarlyAccess ? "/earlyaccess" : "/dashboard"} className="px-3 py-1.5 bg-black text-white rounded-full hover:bg-black/80 transition-colors" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                     {isEarlyAccess ? "Get Early Access" : "Dashboard"}
                   </Link>
                 </div>
               ) : (
                 <div className="flex items-center space-x-4">
-                  <Link href="/login" className="px-4 py-2 text-black hover:opacity-70 transition-opacity" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+                  <Link href="/login" className="px-4 py-2 text-black hover:opacity-70 transition-opacity" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                     Sign In
                   </Link>
-                  <Link href="/signup" className="px-3 py-1.5 bg-black text-white rounded-full hover:bg-black/80 transition-colors" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+                  <Link href="/signup" className="px-3 py-1.5 bg-black text-white rounded-full hover:bg-black/80 transition-colors" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                     Get Started
                   </Link>
                 </div>
@@ -172,17 +190,17 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
         <div className="absolute top-0 left-0 right-0 bottom-40 z-10 flex items-center justify-center">
           <div className="w-full max-w-4xl px-8">
           <div className="bg-black/20 backdrop-blur-sm rounded-xl p-12 border border-white/20 w-full text-center">
-            <h1 className="text-5xl text-center mb-4 tracking-tight text-white" style={{ fontFamily: 'PP Editorial, serif', fontWeight: 200 }}>
+            <h1 className="text-5xl text-center mb-4 tracking-tight text-white" style={{ fontFamily: 'var(--font-epilogue), serif', fontWeight: 200 }}>
               {isEarlyAccess ? (
                 <span className="inline-flex items-end gap-2">
                   Get Early Access to Surbee
-                  <span className="bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full border border-white/30 mb-1" style={{ fontFamily: 'FK Grotesk, sans-serif', fontSize: '12px' }}>
+                  <span className="bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full border border-white/30 mb-1" style={{ fontFamily: 'var(--font-epilogue), sans-serif', fontSize: '12px' }}>
                     beta
                   </span>
                 </span>
               ) : "What do you want to create?"}
             </h1>
-            <p className="text-center text-white/90 mb-8" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+            <p className="text-center text-white/90 mb-8" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
               {isEarlyAccess ? "Join the waitlist and be among the first to experience the future of surveys." : "Start generating with a simple conversation."}
             </p>
             
@@ -196,15 +214,15 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
                       type="email"
                       placeholder="Enter your email address"
                       className="flex-1 px-4 py-3 rounded-full border border-white/30 bg-white/10 backdrop-blur-sm text-white placeholder-white/70 focus:outline-none focus:border-white/50"
-                      style={{ fontFamily: 'FK Grotesk, sans-serif' }}
+                      style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}
                     />
                     <button className="px-6 py-3 bg-white text-black rounded-full hover:bg-gray-100 transition-colors font-medium whitespace-nowrap"
-                      style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+                      style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                       Join Waitlist
                     </button>
                   </div>
                   
-                  <p className="text-xs text-white/70 text-center mt-6" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+                  <p className="text-xs text-white/70 text-center mt-6" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                     Be the first to know when Surbee launches. We'll never spam you.
                   </p>
                 </>
@@ -232,7 +250,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
                       window.location.href = url.toString();
                     }}
                     placeholder="Describe your survey idea..."
-                    style={{ fontFamily: 'FK Grotesk, sans-serif' }}
+                    style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}
                     className=""
                     theme="white"
                   />
@@ -241,22 +259,22 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
                   <div className="grid grid-cols-2 gap-3 mt-4">
                     <button className="text-left p-2 rounded-lg border border-white/30 bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors h-12 flex items-center cursor-pointer">
                       <div className="flex items-center gap-2">
-                        <span className="bg-white text-black text-xs px-2 py-1 rounded" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>New</span>
-                        <p className="text-sm text-white/90" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Lyra is now available</p>
+                        <span className="bg-white text-black text-xs px-2 py-1 rounded" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>New</span>
+                        <p className="text-sm text-white/90" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>Lyra is now available</p>
                       </div>
                     </button>
                     <button className="text-left p-2 rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors h-12 flex items-center cursor-pointer">
-                      <p className="text-sm text-white/90" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Create a customer satisfaction survey</p>
+                      <p className="text-sm text-white/90" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>Create a customer satisfaction survey</p>
                     </button>
                     <button className="text-left p-2 rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors h-12 flex items-center cursor-pointer">
-                      <p className="text-sm text-white/90" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Design a market research questionnaire</p>
+                      <p className="text-sm text-white/90" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>Design a market research questionnaire</p>
                     </button>
                     <button className="text-left p-2 rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors h-12 flex items-center cursor-pointer">
-                      <p className="text-sm text-white/90" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Build an employee feedback form</p>
+                      <p className="text-sm text-white/90" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>Build an employee feedback form</p>
                     </button>
                   </div>
                   
-                  <p className="text-xs text-white/70 text-center mt-6" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+                  <p className="text-xs text-white/70 text-center mt-6" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                     By sending a message, you agree to our{' '}
                     <Link href="/terms" className="underline">Terms of Use</Link> and acknowledge that you have read and understand our{' '}
                     <Link href="/privacy" className="underline">Privacy Policy</Link>.
@@ -275,7 +293,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
           <h2 className="text-black text-center mb-6 tracking-tight" style={{ fontFamily: 'PP Editorial, serif', fontSize: '72px', fontWeight: 200 }}>
             The New Era for Surveys
           </h2>
-          <p className="text-center text-gray-600 mb-8 max-w-2xl mx-auto" style={{ fontFamily: 'FK Grotesk, sans-serif', fontSize: '16px' }}>
+          <p className="text-center text-gray-600 mb-8 max-w-2xl mx-auto" style={{ fontFamily: 'var(--font-epilogue), sans-serif', fontSize: '16px' }}>
           Let's be honest: surveys suck. They're boring, people rush through them, and half the time you can't trust the results. 
           We built Surbee because we were tired of bad data ruining good decisions.
           </p>
@@ -287,7 +305,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
             <button className="absolute inset-0 flex items-center justify-center">
               <div className="bg-black/30 backdrop-blur-sm px-8 py-3 rounded-full flex items-center gap-3 hover:bg-black/40 transition-colors">
                 <Play className="w-4 h-4 text-white fill-white" />
-                <span className="text-white" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Play</span>
+                <span className="text-white" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>Play</span>
               </div>
             </button>
           </div>
@@ -306,7 +324,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
                     <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   </div>
                   <h4 className="text-xl mb-2 group-hover:opacity-70 transition-opacity">{item.title}</h4>
-                  <p className="text-sm text-gray-500" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>{item.category} / {item.date}</p>
+                  <p className="text-sm text-gray-500" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>{item.category} / {item.date}</p>
                 </a>
               ))}
             </div>
@@ -319,11 +337,11 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
         <div className="max-w-7xl mx-auto px-8">
           <div className="text-center mb-16">
             <h2 className="text-white mb-4 tracking-tight" style={{ fontFamily: 'PP Editorial, serif', fontSize: '72px', fontWeight: 200 }}>PhD-Grade Questionnaires</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto mb-8" style={{ fontFamily: 'FK Grotesk, sans-serif', fontSize: '16px' }}>
+            <p className="text-gray-400 max-w-2xl mx-auto mb-8" style={{ fontFamily: 'var(--font-epilogue), sans-serif', fontSize: '16px' }}>
               You don't need a research degree to write great surveys. Our AI helps you craft questions that actually make sense to real people. 
               No jargon, no confusion, just clear communication.
             </p>
-            <Link href={user ? "/dashboard" : "/login"} className="inline-block px-6 py-2 bg-white text-black rounded-full hover:bg-gray-100 transition-colors" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+            <Link href={user ? "/dashboard" : "/login"} className="inline-block px-6 py-2 bg-white text-black rounded-full hover:bg-gray-100 transition-colors" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
               Try Surbee Free
             </Link>
           </div>
@@ -334,7 +352,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
             <button className="absolute inset-0 flex items-center justify-center">
               <div className="bg-black/30 backdrop-blur-sm px-8 py-3 rounded-full flex items-center gap-3 hover:bg-black/40 transition-colors">
                 <Play className="w-4 h-4 text-white fill-white" />
-                <span className="text-white" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Watch Demo</span>
+                <span className="text-white" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>Watch Demo</span>
               </div>
             </button>
           </div>
@@ -363,7 +381,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
                   <img src={feature.image} alt={feature.title} className="w-full h-full object-cover" />
                 </div>
                 <h3 className="text-xl mb-2" style={{ fontFamily: 'PP Editorial, serif', fontWeight: 200 }}>{feature.title}</h3>
-                <p className="text-gray-400 text-sm" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>{feature.description}</p>
+                <p className="text-gray-400 text-sm" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>{feature.description}</p>
               </div>
             ))}
           </div>
@@ -373,15 +391,15 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
       {/* Accuracy Checker Section */}
       <section className="py-28 bg-black text-white border-t border-zinc-900 mx-4">
         <div className="max-w-7xl mx-auto px-8">
-          <p className="text-xs uppercase tracking-wider mb-4 text-gray-400" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Accuracy Checker</p>
+          <p className="text-xs uppercase tracking-wider mb-4 text-gray-400" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>Accuracy Checker</p>
           <h2 className="mb-4 tracking-tight whitespace-nowrap" style={{ fontFamily: 'PP Editorial, serif', fontSize: '72px', fontWeight: 200 }}>
             Data You Can Actually Trust
           </h2>
-          <p className="text-gray-400 max-w-2xl mb-8" style={{ fontFamily: 'FK Grotesk, sans-serif', fontSize: '18px' }}>
+          <p className="text-gray-400 max-w-2xl mb-8" style={{ fontFamily: 'var(--font-epilogue), sans-serif', fontSize: '18px' }}>
             We catch the speedrunners, the bots, and the people just clicking randomly for rewards. 
             Every response gets vetted, so you only see the real, thoughtful answers from actual humans who care.
           </p>
-          <button className="px-6 py-2 border border-white rounded-full hover:bg-white hover:text-black transition-colors mb-12" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+          <button className="px-6 py-2 border border-white rounded-full hover:bg-white hover:text-black transition-colors mb-12" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
             See How It Works
           </button>
 
@@ -414,7 +432,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
                   </div>
                 </div>
                 <h4 className="text-xl mb-2 group-hover:opacity-70 transition-opacity">{item.title}</h4>
-                <p className="text-sm text-gray-400" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>{item.description}</p>
+                <p className="text-sm text-gray-400" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>{item.description}</p>
               </div>
             ))}
           </div>
@@ -426,7 +444,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
         <div className="max-w-7xl mx-auto px-8">
           <div className="text-center mb-16">
             <div className="mb-8">
-              <span className="text-2xl font-light tracking-wider whitespace-nowrap" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>CREDIT NETWORK</span>
+              <span className="text-2xl font-light tracking-wider whitespace-nowrap" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>CREDIT NETWORK</span>
             </div>
             <h2 className="text-7xl mb-16 tracking-tight leading-tight whitespace-nowrap" style={{ fontFamily: 'PP Editorial, serif', fontWeight: 200 }}>
               Community-Powered Distribution
@@ -440,13 +458,13 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
             <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black to-transparent" />
           </div>
 
-          <p className="text-3xl text-center max-w-4xl mx-auto mb-12 leading-relaxed" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+          <p className="text-3xl text-center max-w-4xl mx-auto mb-12 leading-relaxed" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
             Here's the deal: answer surveys thoughtfully, earn credits. Use those credits to get your own surveys answered 
             by people who actually give a damn. No bots, no click farms, just real people helping each other out.
           </p>
 
           <div className="text-center mb-20">
-            <Link href={user ? "/dashboard" : "/login"} className="inline-block px-6 py-2 bg-white text-black rounded-full hover:bg-gray-100 transition-colors" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+            <Link href={user ? "/dashboard" : "/login"} className="inline-block px-6 py-2 bg-white text-black rounded-full hover:bg-gray-100 transition-colors" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
               Join Credit Network
             </Link>
           </div>
@@ -483,7 +501,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
                   </div>
                 </div>
                 <h4 className="text-xl mb-2 group-hover:opacity-70 transition-opacity">{item.title}</h4>
-                <p className="text-sm text-gray-400" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>{item.description}</p>
+                <p className="text-sm text-gray-400" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>{item.description}</p>
               </div>
             ))}
           </div>
@@ -499,7 +517,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
           </h2>
           
           <div className="text-center mb-16">
-            <button className="px-6 py-2 border border-black rounded-full hover:bg-black hover:text-white transition-colors" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+            <button className="px-6 py-2 border border-black rounded-full hover:bg-black hover:text-white transition-colors" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
               More Research Stories
             </button>
           </div>
@@ -529,8 +547,8 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
                 <div className="aspect-video bg-gray-200 rounded overflow-hidden mb-4">
                   <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 </div>
-                <p className="text-sm text-gray-500 mb-1" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>{item.category}</p>
-                <p className="text-xs text-blue-600 mb-2 font-semibold" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>{item.institution}</p>
+                <p className="text-sm text-gray-500 mb-1" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>{item.category}</p>
+                <p className="text-xs text-blue-600 mb-2 font-semibold" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>{item.institution}</p>
                 <h4 className="text-xl leading-snug group-hover:opacity-70 transition-opacity">{item.title}</h4>
               </a>
             ))}
@@ -547,7 +565,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
             <h2 className="text-5xl mb-6 tracking-tight text-black" style={{ fontFamily: 'PP Editorial, serif', fontWeight: 200 }}>
               Frequently Asked Questions
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto" style={{ fontFamily: 'FK Grotesk, sans-serif', fontSize: '16px' }}>
+            <p className="text-gray-600 max-w-2xl mx-auto" style={{ fontFamily: 'var(--font-epilogue), sans-serif', fontSize: '16px' }}>
               Everything you need to know about Surbee and how it works.
             </p>
           </div>
@@ -575,7 +593,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
                     openFaqIndex === index ? 'max-h-96 opacity-100 pb-6' : 'max-h-0 opacity-0'
                   }`}
                 >
-                  <p className="text-gray-700 leading-relaxed pr-8" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+                  <p className="text-gray-700 leading-relaxed pr-8" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                     {faq.answer}
                   </p>
                 </div>
@@ -584,10 +602,10 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
           </div>
 
           <div className="text-center mt-12">
-            <p className="text-gray-600 mb-4" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+            <p className="text-gray-600 mb-4" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
               Still have questions?
             </p>
-            <a href="https://discord.gg/krs577Qxqr" target="_blank" rel="noopener noreferrer" className="px-6 py-3 bg-black text-white rounded-full hover:bg-black/80 transition-colors" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+            <a href="https://discord.gg/krs577Qxqr" target="_blank" rel="noopener noreferrer" className="px-6 py-3 bg-black text-white rounded-full hover:bg-black/80 transition-colors" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
               Join Our Community
             </a>
           </div>
@@ -600,24 +618,24 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
           {/* Footer Links */}
           <div className="grid grid-cols-4 gap-8 mb-12">
             <div>
-              <h4 className="font-semibold text-gray-900 mb-4" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Product</h4>
-              <ul className="space-y-2" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+              <h4 className="font-semibold text-gray-900 mb-4" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>Product</h4>
+              <ul className="space-y-2" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                 <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Surbee Lyra</a></li>
                 <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Surbee Cipher</a></li>
                 <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Credit Network</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-4" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Resources</h4>
-              <ul className="space-y-2" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+              <h4 className="font-semibold text-gray-900 mb-4" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>Resources</h4>
+              <ul className="space-y-2" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                 <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Surbee for Education</a></li>
                 <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Surbee for Students</a></li>
                 <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Surbee for Researchers</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-4" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Legal</h4>
-              <ul className="space-y-2" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+              <h4 className="font-semibold text-gray-900 mb-4" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>Legal</h4>
+              <ul className="space-y-2" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                 <li><Link href="/privacy" className="text-gray-600 hover:text-gray-900 transition-colors">Privacy Policy</Link></li>
                 <li><Link href="/terms" className="text-gray-600 hover:text-gray-900 transition-colors">Terms of Service</Link></li>
                 <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Cookie Policy</a></li>
@@ -625,8 +643,8 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-4" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>Follow Us</h4>
-              <ul className="space-y-2" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+              <h4 className="font-semibold text-gray-900 mb-4" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>Follow Us</h4>
+              <ul className="space-y-2" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                 <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">X / Twitter</a></li>
                 <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Instagram</a></li>
                 <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">LinkedIn</a></li>
@@ -641,7 +659,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
             <div className="flex items-center mb-4 md:mb-0">
               <img src="https://raw.githubusercontent.com/Surbee001/webimg/d31a230c841bc324c709964f3d9ab01daec67f8d/Surbee%20Logo%20Final.svg" alt="Surbee" className="h-20" />
             </div>
-            <p className="text-sm text-gray-500" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+            <p className="text-sm text-gray-500" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
               © 2025 Surbee. All rights reserved.
             </p>
           </div>

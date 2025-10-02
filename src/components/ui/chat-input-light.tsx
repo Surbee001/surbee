@@ -218,7 +218,7 @@ export default function ChatInputLight({
             <div 
               className="relative px-3 py-1.5 text-white font-medium text-sm transition-all duration-150 rounded-[0.38rem] bg-white/10 flex items-center gap-2"
               style={{
-                fontFamily: 'Sohne, sans-serif',
+                fontFamily: 'var(--font-epilogue), sans-serif',
                 fontSize: '14px',
                 fontWeight: 500,
                 lineHeight: '1.375rem'
@@ -275,7 +275,7 @@ export default function ChatInputLight({
                     opacity: isInputDisabled ? 0.5 : 1,
                     pointerEvents: isInputDisabled ? "none" : "auto",
                     caretColor: theme === 'white' ? "rgb(0, 0, 0)" : "rgb(255, 255, 255)",
-                    fontFamily: "FK Grotesk, sans-serif",
+                    fontFamily: "var(--font-epilogue), sans-serif",
                   }}
                   ref={contentEditableRef}
                   onInput={handleInput}
@@ -377,7 +377,7 @@ export default function ChatInputLight({
                 <div className={`${theme === 'white' ? 'bg-black/5 border-gray-300 text-gray-700' : 'bg-white/5 border-white/10 text-gray-300'} flex items-center gap-2 px-2 py-1 rounded-md border`}
                   title="Approximate context usage"
                 >
-                  <span className="text-xs" style={{ fontFamily: 'Sohne, sans-serif' }}>{tokenPercent.toFixed(1)}%</span>
+                  <span className="text-xs" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>{tokenPercent.toFixed(1)}%</span>
                   <div className="relative w-4 h-4">
                     <div className={`${theme === 'white' ? 'border-gray-300/60' : 'border-white/20'} absolute inset-0 rounded-full border`} />
                     <div className="absolute inset-0 rounded-full" style={{ background: `conic-gradient(#9ca3af ${Math.max(0, Math.min(100, tokenPercent)) * 3.6}deg, transparent 0deg)` }} />
