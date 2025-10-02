@@ -1,5 +1,6 @@
 import React from "react";
 import localFont from "next/font/local";
+import TypingOverlay from "@/components/landing/TypingOverlay";
 
 const epilogue = localFont({
   src: [
@@ -139,27 +140,23 @@ export default function LandingPage() {
                   rel="noopener noreferrer"
                 >
                   <div className="relative inline-block">
-                    <div className="rounded-lg px-4 pt-5 pb-3 backdrop-blur-lg max-w-[calc(100vw_-_64px)] w-[512px] flex flex-col justify-between gap-4 min-h-[125px] bg-gradient-to-b from-[rgba(255,255,255,0.80)] to-[rgba(255,255,255,0.16)] shadow-[0px_4px_12px_0px_rgba(255,255,255,0.10)_inset,0px_0px_0px_6px_rgba(255,255,255,0.40),0px_1px_8px_0px_rgba(0,0,0,0.13),0px_2px_6px_0px_rgba(0,0,0,0.20)] transition-all duration-300">
-	                      <div className="flex flex-col gap-3 tracking-15 leading-[140%] text-neutral-800">
-	                        {/* background glass streak */}
-	                        <span
-	                          className="font-af-foundary font-medium"
-	                          style={{
-	                            clipPath: "inset(0px 50% 0px 0px)",
-	                            filter: "blur(6.412px)",
-	                            opacity: 0.1985,
-	                          }}
-	                        >
-	                          When an email is a bug report, create a new linear issue and message the #bugs channel
-	                        </span>
-	                        {/* visible prompt examples */}
-	                        <span className="text-[#171717]">
-	                          Create an event for Tuesday at 2:00 PM and attach all emails |
-	                        </span>
-	                        <span className="text-neutral-700">
-	                          Generate a customer feedback survey about our onboarding flow
-	                        </span>
-	                      </div>
+                    <div className="rounded-lg px-4 pt-5 pb-3 backdrop-blur-lg max-w-[calc(100vw_-_64px)] w-[512px] flex flex-col justify-between gap-3 min-h-[125px] bg-gradient-to-b from-[rgba(255,255,255,0.80)] to-[rgba(255,255,255,0.16)] shadow-[0px_4px_12px_0px_rgba(255,255,255,0.10)_inset,0px_0px_0px_6px_rgba(255,255,255,0.40),0px_1px_8px_0px_rgba(0,0,0,0.13),0px_2px_6px_0px_rgba(0,0,0,0.20)] transition-all duration-300">
+                      {/* subtle glass streak keeps original vibe */}
+                      <span
+                        className="font-medium"
+                        style={{
+                          clipPath: "inset(0px 50% 0px 0px)",
+                          filter: "blur(6.412px)",
+                          opacity: 0.18,
+                        }}
+                      >
+                        When an email is a bug report, create a new linear issue and message the #bugs channel
+                      </span>
+                      <TypingOverlay prompts={[
+                        "Create a 10-question onboarding survey for new users |",
+                        "Find anomalies in NPS comments and tag them by theme |",
+                        "Draft a community invite and collect 50 responses by Friday |",
+                      ]} />
                       <div className="flex flex-row gap-4 items-center justify-between">
                         <svg height="20" width="20" fill="none" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                           <path d="M12.374 6.58264L6.19085 12.8682C5.97358 13.092 5.85309 13.3924 5.85544 13.7043C5.85779 14.0162 5.98278 14.3147 6.2034 14.5352C6.42403 14.7558 6.72256 14.8806 7.03449 14.8828C7.34642 14.885 7.6467 14.7644 7.87042 14.5471L15.2411 7.07471C15.6865 6.62926 15.9368 6.0251 15.9368 5.39514C15.9368 4.76518 15.6865 4.16102 15.2411 3.71557C14.7956 3.27012 14.1915 3.01987 13.5615 3.01987C12.9316 3.01987 12.3274 3.27012 11.8819 3.71557L4.51128 11.1887C3.85217 11.8586 3.48448 12.7618 3.48831 13.7016C3.49214 14.6414 3.86717 15.5416 4.53171 16.2062C5.19626 16.8707 6.09647 17.2458 7.03628 17.2496C7.97608 17.2534 8.87932 16.8857 9.54925 16.2266L15.6396 10.1451" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
