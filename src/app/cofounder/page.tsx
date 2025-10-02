@@ -88,7 +88,6 @@ export default function CofounderPage() {
                       Log in
                     </a>
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 primary-button-hover-bg">
-                    </div>
                     <div className="relative w-full h-full z-10 flex items-center justify-center">
                       <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition-all disabled:pointer-events-none disabled:opacity-50 shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer bg-primary text-primary-foreground hover:text-shadow btn-default-shadow border border-neutral-700 h-9 px-4 pb-2 pt-1.75 group relative overflow-hidden relative inline-flex items-center justify-center">
                         <a href="https://app.cofounder.co">
@@ -96,10 +95,6 @@ export default function CofounderPage() {
                           up
                         </a>
                       </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </nav>
           <div className="block lg:hidden fixed top-0 right-0 z-[100] full-page-width h-dvh pointer-events-none">
@@ -116,7 +111,6 @@ export default function CofounderPage() {
                 <a className="text-5xl text-neutral-600 font-medium font-mondwest [font-kerning:none] [font-feature-settings:&quot;liga&quot;_off] hover:text-neutral-900 transition-colors duration-200 opacity-0 blur-[10px] [clip-path:inset(0_100%_0_0)]" href="https://app.cofounder.co">
                   Log in
                 </a>
-              </div>
             </div>
             <div className="absolute bottom-8 left-0 right-0 z-20 opacity-0 translate-y-20">
               <div className="w-full">
@@ -141,9 +135,6 @@ export default function CofounderPage() {
                         </path>
                       </svg>
                     </a>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
           <div className="w-full">
@@ -158,8 +149,6 @@ export default function CofounderPage() {
                     automations, and organizes workflows. Driving the
                     software you're already familiar with.
                   </p>
-                </div>
-              </div>
             </header>
           </div>
           <div className="w-full border-t border-b">
@@ -175,7 +164,6 @@ export default function CofounderPage() {
                             |
                           </span>
                         </span>
-                      </div>
                       <div className="flex flex-row gap-4 items-center justify-between">
                         <svg fill="none" height={20} viewBox="0 0 20 20" width={20} xmlns="http://www.w3.org/2000/svg">
                           <path d="M12.374 6.58264L6.19085 12.8682C5.97358 13.092 5.85309 13.3924 5.85544 13.7043C5.85779 14.0162 5.98278 14.3147 6.2034 14.5352C6.42403 14.7558 6.72256 14.8806 7.03449 14.8828C7.34642 14.885 7.6467 14.7644 7.87042 14.5471L15.2411 7.07471C15.6865 6.62926 15.9368 6.0251 15.9368 5.39514C15.9368 4.76518 15.6865 4.16102 15.2411 3.71557C14.7956 3.27012 14.1915 3.01987 13.5615 3.01987C12.9316 3.01987 12.3274 3.27012 11.8819 3.71557L4.51128 11.1887C3.85217 11.8586 3.48448 12.7618 3.48831 13.7016C3.49214 14.6414 3.86717 15.5416 4.53171 16.2062C5.19626 16.8707 6.09647 17.2458 7.03628 17.2496C7.97608 17.2534 8.87932 16.8857 9.54925 16.2266L15.6396 10.1451" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
@@ -187,8 +175,6 @@ export default function CofounderPage() {
                             </path>
                           </svg>
                         </button>
-                      </div>
-                    </div>
                     <div className="absolute z-50 bg-neutral-900 backdrop-blur-[20px] flex flex-col gap-1.5 px-3 py-1 w-min rounded-full whitespace-nowrap text-[#EEF1ED] text-xs font-medium leading-[130%] tracking-[-0.12px] font-af-foundary [leading-trim:both] [text-edge:cap] transition-all duration-300 ease-out left-1/2 transform -translate-x-1/2 bottom-full mb-4 opacity-0 translate-y-2 pointer-events-none">
                       <div className="flex items-center gap-1">
                         <p className="font-af-foundary font-medium text-[13px] tracking-13 leading-[130%] text-neutral-50">
@@ -204,13 +190,8 @@ export default function CofounderPage() {
                           <rect fill="currentColor" height="4.24579" width="1.41526" x="2.28467" y="2.37558">
                           </rect>
                         </svg>
-                      </div>
                       <div className="absolute left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent top-full border-t-[6px] border-t-neutral-900">
-                      </div>
-                    </div>
-                  </div>
                 </a>
-              </div>
             </section>
           </div>
           <div className="w-full">
@@ -224,7 +205,6 @@ export default function CofounderPage() {
                     <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
                       tasks automated by Cofounder
                     </p>
-                  </div>
                   <div className="flex flex-col">
                     <p className="font-mondwest font-normal text-[54px] sm:text-[64px] md:text-[54px] lg:text-[64px] text-neutral-900 leading-[130%] tracking-[-1.28px]">
                       &gt;18 billion
@@ -232,7 +212,6 @@ export default function CofounderPage() {
                     <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
                       tokens processed by our agents each month
                     </p>
-                  </div>
                   <div className="flex flex-col">
                     <p className="font-mondwest font-normal text-[54px] sm:text-[64px] md:text-[54px] lg:text-[64px] text-neutral-900 leading-[130%] tracking-[-1.28px]">
                       <span className="flex items-center lg:justify-start justify-center gap-1">
@@ -246,8 +225,6 @@ export default function CofounderPage() {
                     <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
                       uptime in 2024
                     </p>
-                  </div>
-                </div>
                 <div className="flex justify-center lg:justify-end flex-1 w-full lg:w-auto">
                   <div className="flex flex-col gap-8 lg:gap-12 items-center w-full lg:max-w-[520px] min-h-[400px] group">
                     <div className="flex flex-col transition-transform duration-300 group-hover:scale-105">
@@ -257,7 +234,6 @@ export default function CofounderPage() {
                             <div className="flex items-center justify-center lg:justify-start gap-4">
                               <div className="rounded-md relative overflow-hidden base-box-shadow">
                                 <img alt="Results" className="rounded-md base-box-shadow" decoding="async" height={103} loading="lazy" src="/cofounder-assets/blaine-davis.png" style={{color: 'transparent'}} width={91} />
-                              </div>
                               <p className="font-af-foundary font-medium text-[24px] md:text-[28px] text-center lg:text-left max-w-[504px] lg:max-w-[520px] leading-[130%] tracking-48">
                                 <span className="bg-gradient-highlight-text">
                                     "Integrating
@@ -266,8 +242,6 @@ export default function CofounderPage() {
                                     productivity."
                                   </span>
                                 </p>
-                              </div>
-                            </div>
                             <div className="flex flex-col gap-1">
                               <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-900 text-center lg:text-left">
                                 Blaine Davis
@@ -275,14 +249,6 @@ export default function CofounderPage() {
                               <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700 text-center lg:text-left">
                                 Product Manager
                               </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </section>
           </div>
           <div className="w-full">
@@ -290,8 +256,6 @@ export default function CofounderPage() {
               <div className="fixed pointer-events-none z-50" style={{left: '-70px', top: '-70px'}}>
                 <div style={{borderRadius: 999, border: '1px solid var(--neutral-400-stroke-light, #DEE2DE)', background: 'var(--CF-grad-neutral, linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.48) 100%))', boxShadow: '0 4px 12px 0 rgba(255, 255, 255, 0.10) inset, 0 1px 4px 0 rgba(0, 0, 0, 0.05), 0 3px 8px 0 rgba(0, 0, 0, 0.08)', backdropFilter: 'blur(5px)', display: 'flex', width: 140, height: 140, padding: 4, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 16, opacity: 0, transition: 'opacity 0.3s ease-out'}}>
                   <img alt="Cursor" decoding="async" height={132} loading="lazy" src="/cofounder-assets/cursor.png" style={{color: 'transparent'}} width={132} />
-                </div>
-              </div>
               <div className="flex flex-col gap-8 w-full">
                 <div className="flex flex-col items-start md:items-center gap-4">
                   <p className="font-af-foundary font-medium text-[13px] tracking-13 leading-[130%] text-neutral-600">
@@ -305,12 +269,9 @@ export default function CofounderPage() {
                       workflows and counting
                     </span>
                   </p>
-                </div>
                 <div className="flex flex-col gap-4 items-center w-full md:max-w-[640px]">
                   <a className="flex flex-col items-center gap-9 hover:cursor-none" href="https://app.cofounder.co" rel="noopener noreferrer" target="_blank">
                         </button>
-                      </div>
-                    </div>
                   </a>
                   <a className="group flex flex-col rounded-2xl border border-[#DEE2DE] bg-neutral-50 shadow-[0_2px_2px_0_rgba(0,0,0,0.06),_0_6px_6px_0_rgba(0,0,0,0.00)] transition-all hover:shadow-[0_2px_2px_0_rgba(0,0,0,0.06),_0_6px_6px_0_rgba(0,0,0,0.00),_0_0_0_5px_rgba(0,0,0,0.04)] p-4 sm:pt-5 sm:px-6 gap-4 justify-between group max-w-[332px] cursor-pointer" href="https://app.cofounder.co/replay/374c20b5-4df0-47bf-8308-29a5fa917f76" rel="noopener noreferrer" target="_blank">
                     <div className="flex flex-col gap-2">
@@ -321,20 +282,14 @@ export default function CofounderPage() {
                         Get a snapshot of your engineering team's status,
                         priorities, and challenges.
                       </p>
-                    </div>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex flex-wrap gap-2">
                         <div className="flex items-center gap-2">
                           <div className="flex items-center justify-center p-[7px] h-7 w-7 rounded-full bg-neutral-300">
                             <img alt="Linear" className="w-full" decoding="async" height={65} loading="lazy" src="/cofounder-assets/linear.1c44320d.avif" style={{color: 'transparent'}} width={65} />
-                          </div>
-                        </div>
                         <div className="flex items-center gap-2">
                           <div className="flex items-center justify-center p-[7px] h-7 w-7 rounded-full bg-neutral-300">
                             <img alt="Slack" className="w-full" decoding="async" height={124} loading="lazy" src="/cofounder-assets/slack.b35ec1a3.avif" style={{color: 'transparent'}} width={124} />
-                          </div>
-                        </div>
-                      </div>
                       <div className="opacity-0 group-hover:opacity-100 group-hover:blur-none transition-opacity ease-out duration-220">
                         <button className="flex items-center gap-[6px] px-[10px] py-1 rounded-[100px] border border-[rgba(255,255,255,0.60)] bg-neutral-900 shadow-[0_4px_12px_0_rgba(255,255,255,0.10)_inset,0_2px_6px_0_rgba(0,0,0,0.20)] backdrop-blur-[20px] cursor-pointer hover:[&>svg]:translate-x-[2px]">
                           <span className="text-[#FFF] font-af-foundary text-[13px] font-medium leading-[130%] tracking-[-0.13px]">
@@ -351,8 +306,6 @@ export default function CofounderPage() {
                             </rect>
                           </svg>
                         </button>
-                      </div>
-                    </div>
                   </a>
                   <a className="group flex flex-col rounded-2xl border border-[#DEE2DE] bg-neutral-50 shadow-[0_2px_2px_0_rgba(0,0,0,0.06),_0_6px_6px_0_rgba(0,0,0,0.00)] transition-all hover:shadow-[0_2px_2px_0_rgba(0,0,0,0.06),_0_6px_6px_0_rgba(0,0,0,0.00),_0_0_0_5px_rgba(0,0,0,0.04)] p-4 sm:pt-5 sm:px-6 gap-4 justify-between group max-w-[332px] cursor-pointer" href="https://app.cofounder.co/replay/cc082528-1026-4f3d-b342-c27b9ced4ea9" rel="noopener noreferrer" target="_blank">
                     <div className="flex flex-col gap-2">
@@ -364,15 +317,11 @@ export default function CofounderPage() {
                         and online research, omitting all personal contact
                         details.
                       </p>
-                    </div>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex flex-wrap gap-2">
                         <div className="flex items-center gap-2">
                           <div className="flex items-center justify-center p-[7px] h-7 w-7 rounded-full bg-neutral-300">
                             <img alt="Other" className="w-full" decoding="async" height={37} loading="lazy" src="/cofounder-assets/other-tool.dd5a1084.avif" style={{color: 'transparent'}} width={37} />
-                          </div>
-                        </div>
-                      </div>
                       <div className="opacity-0 group-hover:opacity-100 group-hover:blur-none transition-opacity ease-out duration-220">
                         <button className="flex items-center gap-[6px] px-[10px] py-1 rounded-[100px] border border-[rgba(255,255,255,0.60)] bg-neutral-900 shadow-[0_4px_12px_0_rgba(255,255,255,0.10)_inset,0_2px_6px_0_rgba(0,0,0,0.20)] backdrop-blur-[20px] cursor-pointer hover:[&>svg]:translate-x-[2px]">
                           <span className="text-[#FFF] font-af-foundary text-[13px] font-medium leading-[130%] tracking-[-0.13px]">
@@ -389,8 +338,6 @@ export default function CofounderPage() {
                             </rect>
                           </svg>
                         </button>
-                      </div>
-                    </div>
                   </a>
                   <a className="group flex flex-col rounded-2xl border border-[#DEE2DE] bg-neutral-50 shadow-[0_2px_2px_0_rgba(0,0,0,0.06),_0_6px_6px_0_rgba(0,0,0,0.00)] transition-all hover:shadow-[0_2px_2px_0_rgba(0,0,0,0.06),_0_6px_6px_0_rgba(0,0,0,0.00),_0_0_0_5px_rgba(0,0,0,0.04)] p-4 sm:pt-5 sm:px-6 gap-4 justify-between group max-w-[332px] cursor-pointer" href="https://app.cofounder.co/replay/9391d847-d187-4f27-97f2-a81ad45f3c92" rel="noopener noreferrer" target="_blank">
                     <div className="flex flex-col gap-2">
@@ -401,10 +348,8 @@ export default function CofounderPage() {
                         Convert any image into retro pixel art with
                         adjustable pixel size.
                       </p>
-                    </div>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex flex-wrap gap-2">
-                      </div>
                       <div className="opacity-0 group-hover:opacity-100 group-hover:blur-none transition-opacity ease-out duration-220">
                         <button className="flex items-center gap-[6px] px-[10px] py-1 rounded-[100px] border border-[rgba(255,255,255,0.60)] bg-neutral-900 shadow-[0_4px_12px_0_rgba(255,255,255,0.10)_inset,0_2px_6px_0_rgba(0,0,0,0.20)] backdrop-blur-[20px] cursor-pointer hover:[&>svg]:translate-x-[2px]">
                           <span className="text-[#FFF] font-af-foundary text-[13px] font-medium leading-[130%] tracking-[-0.13px]">
@@ -421,8 +366,6 @@ export default function CofounderPage() {
                             </rect>
                           </svg>
                         </button>
-                      </div>
-                    </div>
                   </a>
                   <a className="group flex flex-col rounded-2xl border border-[#DEE2DE] bg-neutral-50 shadow-[0_2px_2px_0_rgba(0,0,0,0.06),_0_6px_6px_0_rgba(0,0,0,0.00)] transition-all hover:shadow-[0_2px_2px_0_rgba(0,0,0,0.06),_0_6px_6px_0_rgba(0,0,0,0.00),_0_0_0_5px_rgba(0,0,0,0.04)] p-4 sm:pt-5 sm:px-6 gap-4 justify-between group max-w-[332px] cursor-pointer" href="https://app.cofounder.co/replay/11d69d9b-f88a-4ced-b9ed-ec681e216297" rel="noopener noreferrer" target="_blank">
                     <div className="flex flex-col gap-2">
@@ -435,15 +378,11 @@ export default function CofounderPage() {
                         and email a Monday summary with key takeaways and
                         links.
                       </p>
-                    </div>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex flex-wrap gap-2">
                         <div className="flex items-center gap-2">
                           <div className="flex items-center justify-center p-[7px] h-7 w-7 rounded-full bg-neutral-300">
                             <img alt="Other" className="w-full" decoding="async" height={37} loading="lazy" src="/cofounder-assets/other-tool.dd5a1084.avif" style={{color: 'transparent'}} width={37} />
-                          </div>
-                        </div>
-                      </div>
                       <div className="opacity-0 group-hover:opacity-100 group-hover:blur-none transition-opacity ease-out duration-220">
                         <button className="flex items-center gap-[6px] px-[10px] py-1 rounded-[100px] border border-[rgba(255,255,255,0.60)] bg-neutral-900 shadow-[0_4px_12px_0_rgba(255,255,255,0.10)_inset,0_2px_6px_0_rgba(0,0,0,0.20)] backdrop-blur-[20px] cursor-pointer hover:[&>svg]:translate-x-[2px]">
                           <span className="text-[#FFF] font-af-foundary text-[13px] font-medium leading-[130%] tracking-[-0.13px]">
@@ -460,8 +399,6 @@ export default function CofounderPage() {
                             </rect>
                           </svg>
                         </button>
-                      </div>
-                    </div>
                   </a>
                   <a className="group flex flex-col rounded-2xl border border-[#DEE2DE] bg-neutral-50 shadow-[0_2px_2px_0_rgba(0,0,0,0.06),_0_6px_6px_0_rgba(0,0,0,0.00)] transition-all hover:shadow-[0_2px_2px_0_rgba(0,0,0,0.06),_0_6px_6px_0_rgba(0,0,0,0.00),_0_0_0_5px_rgba(0,0,0,0.04)] p-4 sm:pt-5 sm:px-6 gap-4 justify-between group max-w-[332px] cursor-pointer" href="https://app.cofounder.co/replay/a1063eee-0eb5-4352-91d5-61e214a967c4" rel="noopener noreferrer" target="_blank">
                     <div className="flex flex-col gap-2">
@@ -472,20 +409,14 @@ export default function CofounderPage() {
                         Each morning, summarize your day's calendar with
                         key context and suggested prep.
                       </p>
-                    </div>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex flex-wrap gap-2">
                         <div className="flex items-center gap-2">
                           <div className="flex items-center justify-center p-[7px] h-7 w-7 rounded-full bg-neutral-300">
                             <img alt="Gmail" className="w-full" decoding="async" height={52} loading="lazy" src="/cofounder-assets/gmail.e5bdc0e4.avif" style={{color: 'transparent'}} width={69} />
-                          </div>
-                        </div>
                         <div className="flex items-center gap-2">
                           <div className="flex items-center justify-center p-[7px] h-7 w-7 rounded-full bg-neutral-300">
                             <img alt="Calendar" className="w-full" decoding="async" height={65} loading="lazy" src="/cofounder-assets/google-calendar.2438840b.avif" style={{color: 'transparent'}} width={65} />
-                          </div>
-                        </div>
-                      </div>
                       <div className="opacity-0 group-hover:opacity-100 group-hover:blur-none transition-opacity ease-out duration-220">
                         <button className="flex items-center gap-[6px] px-[10px] py-1 rounded-[100px] border border-[rgba(255,255,255,0.60)] bg-neutral-900 shadow-[0_4px_12px_0_rgba(255,255,255,0.10)_inset,0_2px_6px_0_rgba(0,0,0,0.20)] backdrop-blur-[20px] cursor-pointer hover:[&>svg]:translate-x-[2px]">
                           <span className="text-[#FFF] font-af-foundary text-[13px] font-medium leading-[130%] tracking-[-0.13px]">
@@ -502,11 +433,7 @@ export default function CofounderPage() {
                             </rect>
                           </svg>
                         </button>
-                      </div>
-                    </div>
                   </a>
-                </div>
-              </div>
             </section>
           </div>
           <div className="w-full">
@@ -522,7 +449,6 @@ export default function CofounderPage() {
                         Describe what you want to automate — we'll take
                         it from there.
                       </p>
-                    </div>
                     <div>
                       <div className="rounded-lg px-4 pt-5 pb-3 backdrop-blur-lg max-w-[calc(100vw_-_64px)] w-[512px] flex flex-col justify-between gap-4 min-h-[125px] bg-gradient-to-b from-[rgba(255,255,255,0.80)] to-[rgba(255,255,255,0.16)] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.06),0px_6px_6px_0px_rgba(0,0,0,0.00),0px_0px_0px_4px_rgba(0,0,0,0.03)] transition-all duration-300">
                         <div className="flex flex-col gap-4 tracking-15 leading-[140%] text-neutral-800">
@@ -899,7 +825,6 @@ export default function CofounderPage() {
                               |
                             </span>
                           </span>
-                        </div>
                         <div className="flex flex-row gap-4 items-center justify-between">
                           <svg fill="none" height={20} viewBox="0 0 20 20" width={20} xmlns="http://www.w3.org/2000/svg">
                             <path d="M12.374 6.58264L6.19085 12.8682C5.97358 13.092 5.85309 13.3924 5.85544 13.7043C5.85779 14.0162 5.98278 14.3147 6.2034 14.5352C6.42403 14.7558 6.72256 14.8806 7.03449 14.8828C7.34642 14.885 7.6467 14.7644 7.87042 14.5471L15.2411 7.07471C15.6865 6.62926 15.9368 6.0251 15.9368 5.39514C15.9368 4.76518 15.6865 4.16102 15.2411 3.71557C14.7956 3.27012 14.1915 3.01987 13.5615 3.01987C12.9316 3.01987 12.3274 3.27012 11.8819 3.71557L4.51128 11.1887C3.85217 11.8586 3.48448 12.7618 3.48831 13.7016C3.49214 14.6414 3.86717 15.5416 4.53171 16.2062C5.19626 16.8707 6.09647 17.2458 7.03628 17.2496C7.97608 17.2534 8.87932 16.8857 9.54925 16.2266L15.6396 10.1451" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
@@ -911,9 +836,6 @@ export default function CofounderPage() {
                               </path>
                             </svg>
                           </button>
-                        </div>
-                      </div>
-                    </div>
                     <div className="absolute translate-y-[-500px] opacity-0 max-w-[calc(100vw_-_64px)]">
                       <div className="relative rounded-lg shadow-[0px_4px_12px_0px_rgba(255,255,255,0.10)_inset,0px_0px_0px_6px_rgba(255,255,255,0.40),0px_1px_8px_0px_rgba(0,0,0,0.13),0px_2px_6px_0px_rgba(0,0,0,0.20)] bg-gradient-to-b from-[rgba(255,255,255,0.72)] to-[rgba(255,255,255,0.48)] backdrop-blur-sm h-full transition-all duration-300 ease-in-out min-h-[380px]">
                         <div className="text-[15px] tracking-15 leading-[140%] font-semibold text-neutral-800 p-4 pb-2 text-ellipsis whitespace-nowrap overflow-hidden border-b border-black/12">
@@ -930,7 +852,6 @@ export default function CofounderPage() {
                               <img alt="Notion" decoding="async" height={15} loading="lazy" src="/cofounder-assets/notion.svg" style={{color: 'transparent'}} width={15} />
                             </span>
                           </span>
-                        </div>
                         <div className="relative overflow-y-auto scrollbar-none flex flex-col-reverse max-h-[360px] transition-all duration-300 ease-in-out p-0 pb-4">
                           <div className="relative w-full h-full flex flex-col justify-end overflow-hidden max-w-[420px]">
                             <div className="flex flex-col justify-end w-full h-full overflow-hidden pb-2" style={{minHeight: 0}}>
@@ -950,7 +871,6 @@ export default function CofounderPage() {
                                         <path d="M16.0614 7.92292C15.4958 7.03446 14.7063 6.31052 13.7723 5.82389C12.8382 5.33725 11.7925 5.10506 10.7403 5.15064L10.7831 6.13788C11.662 6.09981 12.5355 6.29376 13.3157 6.70025C14.0959 7.10674 14.7554 7.71144 15.2278 8.45359L16.0614 7.92292Z" mask="url(#path-3-inside-1_1044_9776)" stroke="#646464">
                                         </path>
                                       </svg>
-                                    </div>
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2">
                                         <span className="text-neutral-800 text-[13px] tracking-13 font-medium truncate">
@@ -965,12 +885,7 @@ export default function CofounderPage() {
                                         <span className="text-xs text-neutral-700 tracking-13 font-medium">
                                           70%
                                         </span>
-                                      </div>
                                       <div className="flex flex-wrap gap-2 mt-2">
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
                                 <div className="relative">
                                   <div className="flex items-start gap-3 py-4 px-4 rounded-lg relative transition-all duration-400 opacity-0 max-h-0 pointer-events-none" style={{overflow: 'hidden'}}>
                                     <div className="hidden 2xs:flex bg-[#45404014] rounded-full p-1 h-6 w-6 items-center justify-center">
@@ -986,7 +901,6 @@ export default function CofounderPage() {
                                         <path d="M16.0614 7.92292C15.4958 7.03446 14.7063 6.31052 13.7723 5.82389C12.8382 5.33725 11.7925 5.10506 10.7403 5.15064L10.7831 6.13788C11.662 6.09981 12.5355 6.29376 13.3157 6.70025C14.0959 7.10674 14.7554 7.71144 15.2278 8.45359L16.0614 7.92292Z" mask="url(#path-3-inside-1_1044_9776)" stroke="#646464">
                                         </path>
                                       </svg>
-                                    </div>
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2">
                                         <span className="text-neutral-800 text-[13px] tracking-13 font-medium truncate">
@@ -1002,12 +916,7 @@ export default function CofounderPage() {
                                         <span className="text-xs text-neutral-700 tracking-13 font-medium">
                                           60%
                                         </span>
-                                      </div>
                                       <div className="flex flex-wrap gap-2 mt-2">
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
                                 <div className="relative">
                                   <div className="flex items-start gap-3 py-4 px-4 rounded-lg relative transition-all duration-400 opacity-0 max-h-0 pointer-events-none" style={{overflow: 'hidden'}}>
                                     <div className="hidden 2xs:flex bg-[#45404014] rounded-full p-1 h-6 w-6 items-center justify-center">
@@ -1023,7 +932,6 @@ export default function CofounderPage() {
                                         <path d="M16.0614 7.92292C15.4958 7.03446 14.7063 6.31052 13.7723 5.82389C12.8382 5.33725 11.7925 5.10506 10.7403 5.15064L10.7831 6.13788C11.662 6.09981 12.5355 6.29376 13.3157 6.70025C14.0959 7.10674 14.7554 7.71144 15.2278 8.45359L16.0614 7.92292Z" mask="url(#path-3-inside-1_1044_9776)" stroke="#646464">
                                         </path>
                                       </svg>
-                                    </div>
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2">
                                         <span className="text-neutral-800 text-[13px] tracking-13 font-medium truncate">
@@ -1039,12 +947,7 @@ export default function CofounderPage() {
                                         <span className="text-xs text-neutral-700 tracking-13 font-medium">
                                           70%
                                         </span>
-                                      </div>
                                       <div className="flex flex-wrap gap-2 mt-2">
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
                                 <div className="relative">
                                   <div className="flex items-start gap-3 py-4 px-4 rounded-lg relative transition-all duration-400 opacity-0 max-h-0 pointer-events-none" style={{overflow: 'hidden'}}>
                                     <div className="hidden 2xs:flex bg-[#45404014] rounded-full p-1 h-6 w-6 items-center justify-center">
@@ -1060,7 +963,6 @@ export default function CofounderPage() {
                                         <path d="M16.0614 7.92292C15.4958 7.03446 14.7063 6.31052 13.7723 5.82389C12.8382 5.33725 11.7925 5.10506 10.7403 5.15064L10.7831 6.13788C11.662 6.09981 12.5355 6.29376 13.3157 6.70025C14.0959 7.10674 14.7554 7.71144 15.2278 8.45359L16.0614 7.92292Z" mask="url(#path-3-inside-1_1044_9776)" stroke="#646464">
                                         </path>
                                       </svg>
-                                    </div>
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2">
                                         <span className="text-neutral-800 text-[13px] tracking-13 font-medium truncate">
@@ -1076,20 +978,12 @@ export default function CofounderPage() {
                                         <span className="text-xs text-neutral-700 tracking-13 font-medium">
                                           80%
                                         </span>
-                                      </div>
                                       <div className="flex flex-wrap gap-2 mt-2">
                                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[13px] text-neutral-800 tracking-13 font-medium border border-solid border-[rgba(255,255,255,0.6)] bg-[rgba(255,255,255,0.6)] shadow-[0_1px_8px_0_rgba(0,0,0,0.05)] backdrop-blur-[20px]">
                                           <img alt="Notion" decoding="async" height={12} loading="lazy" src="/cofounder-assets/notion.svg" style={{color: 'transparent'}} width={12} />
                                           Adding
                                           text
                                         </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
                           <div className="overflow-hidden max-h-0" style={{opacity: 0, filter: 'blur(6px)'}}>
                             <div className="rounded-lg px-4 pt-5 pb-3 backdrop-blur-lg max-w-[calc(100vw_-_64px)] w-[512px] flex flex-col justify-between gap-4 min-h-[125px] bg-gradient-to-b from-[rgba(255,255,255,0.80)] to-[rgba(255,255,255,0.16)] transition-all duration-300">
                               <div className="flex flex-col gap-4 tracking-15 leading-[140%] text-neutral-800">
@@ -1098,7 +992,6 @@ export default function CofounderPage() {
                                     |
                                   </span>
                                 </span>
-                              </div>
                               <div className="flex flex-row gap-4 items-center justify-between">
                                 <svg fill="none" height={20} viewBox="0 0 20 20" width={20} xmlns="http://www.w3.org/2000/svg">
                                   <path d="M12.374 6.58264L6.19085 12.8682C5.97358 13.092 5.85309 13.3924 5.85544 13.7043C5.85779 14.0162 5.98278 14.3147 6.2034 14.5352C6.42403 14.7558 6.72256 14.8806 7.03449 14.8828C7.34642 14.885 7.6467 14.7644 7.87042 14.5471L15.2411 7.07471C15.6865 6.62926 15.9368 6.0251 15.9368 5.39514C15.9368 4.76518 15.6865 4.16102 15.2411 3.71557C14.7956 3.27012 14.1915 3.01987 13.5615 3.01987C12.9316 3.01987 12.3274 3.27012 11.8819 3.71557L4.51128 11.1887C3.85217 11.8586 3.48448 12.7618 3.48831 13.7016C3.49214 14.6414 3.86717 15.5416 4.53171 16.2062C5.19626 16.8707 6.09647 17.2458 7.03628 17.2496C7.97608 17.2534 8.87932 16.8857 9.54925 16.2266L15.6396 10.1451" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
@@ -1110,11 +1003,6 @@ export default function CofounderPage() {
                                     </path>
                                   </svg>
                                 </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
                       <div aria-live="polite" className="flex items-center toast-shadow bg-neutral-900 rounded-full text-neutral-0 gap-2 pl-2 pr-2.5 py-1.5 absolute -bottom-10 left-1/2 -translate-x-1/2 z-1 opacity-0" role="status">
                         <svg className="text-neutral-600" fill="none" height={8} viewBox="0 0 10 8" width={10} xmlns="http://www.w3.org/2000/svg">
                           <rect fill="currentColor" height="1.41526" transform="rotate(90 5.12109 5.11768)" width="1.41526" x="5.12109" y="5.11768">
@@ -1131,7 +1019,6 @@ export default function CofounderPage() {
                         <p className="font-af-foundary font-medium text-[13px] tracking-13 text-neutral-0 whitespace-nowrap leading-none">
                           Task completed
                         </p>
-                      </div>
                       <div aria-live="polite" className="flex items-center toast-shadow bg-neutral-900 rounded-full text-neutral-0 gap-2 pl-2 pr-2.5 py-1.5 absolute -bottom-10 left-1/2 -translate-x-1/2 z-1 opacity-0" role="status">
                         <svg className="text-neutral-600" fill="none" height={8} viewBox="0 0 10 8" width={10} xmlns="http://www.w3.org/2000/svg">
                           <rect fill="currentColor" height="1.41526" transform="rotate(90 5.12109 5.11768)" width="1.41526" x="5.12109" y="5.11768">
@@ -1148,8 +1035,6 @@ export default function CofounderPage() {
                         <p className="font-af-foundary font-medium text-[13px] tracking-13 text-neutral-0 whitespace-nowrap leading-none">
                           New tag added to the automation
                         </p>
-                      </div>
-                    </div>
                     <div className="absolute bottom-6 right-6">
                       <div aria-disabled="true" aria-label="Replay animation" className="relative w-[83px] h-[32px] flex items-center justify-between rounded-full pr-[6px] pl-3 bg-neutral-0/60 border border-neutral-0/60 hover:bg-neutral-0/70 backdrop-blur-lg transition-all duration-300 group" style={{clipPath: 'inset(5px 6px 5px 55px round 12px)'}} tabIndex={-1}>
                         <p className="font-af-foundary font-medium text-[13px] tracking-13 leading-[130%] text-neutral-800">
@@ -1163,399 +1048,201 @@ export default function CofounderPage() {
                             </circle>
                           </svg>
                         </span>
-                      </div>
-                    </div>
                     <div className="h-full w-full min-h-[200px] sm:aspect-[5/2] flex flex-col items-center justify-center overflow-hidden absolute inset-0" style={{zIndex: -2}}>
                       <div className="absolute inset-0 w-full h-full z-0">
                         <img alt="Hero animation" className="object-cover" decoding="async" loading="lazy" src="/cofounder-assets/ai-anim-bg.png" style={{position: 'absolute', height: '100%', width: '100%', left: 0, top: 0, right: 0, bottom: 0, color: 'transparent', zIndex: -2}} />
-                      </div>
                       <div className="absolute inset-0 w-full h-full pointer-events-none flex flex-col">
                         <div className="flex flex-1">
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
-                        </div>
                         <div className="flex flex-1">
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
-                        </div>
                         <div className="flex flex-1">
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
-                        </div>
                         <div className="flex flex-1">
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
-                        </div>
                         <div className="flex flex-1">
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
-                        </div>
                         <div className="flex flex-1">
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
-                        </div>
                         <div className="flex flex-1">
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
-                        </div>
                         <div className="flex flex-1">
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
-                        </div>
                         <div className="flex flex-1">
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
-                        </div>
                         <div className="flex flex-1">
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
                           <div className="image-reveal-cell flex-1 bg-[#F9FAF7]" style={{opacity: 1}}>
-                          </div>
-                        </div>
                         <div className="grid-background-light absolute inset-0 w-full h-full opacity-3">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
                 <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800 max-w-[542px] text-center mx-auto">
                   Automate your life with natural language, driving the
                   software you're already familiar with.
@@ -1565,7 +1252,6 @@ export default function CofounderPage() {
                     does anytime—with plain English.
                   </span>
                 </p>
-              </div>
             </section>
           </div>
           <section id="agents">
@@ -1575,7 +1261,6 @@ export default function CofounderPage() {
                   Access our specialized agents that automate your
                   business for you
                 </h2>
-              </div>
             </div>
             <div className="w-full border-t border-b">
               <section className="px-0 w-full max-w-[1920px] mx-auto flex flex-col lg:flex-row">
@@ -1588,15 +1273,11 @@ export default function CofounderPage() {
                           <p className="font-af-foundary font-bold text-[15px] tracking-15 leading-[140%] text-neutral-800">
                             Todo List
                           </p>
-                        </div>
                         <div className="border rounded-full min-w-[42px] text-center" style={{background: 'rgba(0,128,188,0.12)', minWidth: 42, borderColor: 'rgba(0,128,188,0.12)'}}>
                           <div className="text-gray-800 font-medium text-[12px]" style={{color: '#006392', fontSize: 12}}>
                             0
                             {' '}
                             %
-                          </div>
-                        </div>
-                      </div>
                       <div className="flex rounded-lg border" style={{borderColor: 'rgba(255,255,255,0.10)', background: 'rgba(255,255,255,0.20)'}}>
                         <div className="py-1 px-3 w-full">
                           <div className="todo-item flex justify-between min-h-[36px] items-center py-3 border-b" style={{borderColor: 'rgba(16,66,89,0.08)', minHeight: 42}}>
@@ -1604,48 +1285,31 @@ export default function CofounderPage() {
                               Calendar Sync for 7/15
                             </p>
                             <div className="w-4 h-4 flex items-center justify-center">
-                            </div>
-                          </div>
                           <div className="todo-item flex justify-between min-h-[36px] items-center py-3 border-b" style={{borderColor: 'rgba(16,66,89,0.08)', minHeight: 42}}>
                             <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-900/40">
                               Linear roadmap sync for 7/15
                             </p>
                             <div className="w-4 h-4 flex items-center justify-center">
-                            </div>
-                          </div>
                           <div className="todo-item flex justify-between min-h-[36px] items-center py-3 border-b" style={{borderColor: 'rgba(16,66,89,0.08)', minHeight: 42}}>
                             <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-900/40">
                               Slack messages sync
                             </p>
                             <div className="w-4 h-4 flex items-center justify-center">
-                            </div>
-                          </div>
                           <div className="todo-item flex justify-between min-h-[36px] items-center py-3 border-b" style={{borderColor: 'rgba(16,66,89,0.08)', minHeight: 42}}>
                             <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-900/40">
                               Competitors research
                             </p>
                             <div className="w-4 h-4 flex items-center justify-center">
-                            </div>
-                          </div>
                           <div className="todo-item flex justify-between min-h-[36px] items-center py-3 border-b" style={{borderColor: 'rgba(16,66,89,0.08)', minHeight: 42}}>
                             <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-900/40">
                               CRM Enrichment
                             </p>
                             <div className="w-4 h-4 flex items-center justify-center">
-                            </div>
-                          </div>
                           <div className="todo-item flex justify-between min-h-[36px] items-center py-3" style={{borderColor: 'rgba(16,66,89,0.08)', minHeight: 42}}>
                             <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-900/40">
                               Notion roadmap update
                             </p>
                             <div className="w-4 h-4 flex items-center justify-center">
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
                 <div className="border-l border-gray-200 flex-1 flex flex-col justify-end p-5 sm:p-8 2xl:px-9 2xl:py-8">
                   <div className="relative w-full h-full overflow-hidden">
                     <div className="relative w-full h-full min-h-[190px] sm:min-h-[170px] lg:min-h-auto flex flex-col justify-end">
@@ -1669,12 +1333,6 @@ export default function CofounderPage() {
                                     keep your business memory
                                     updated.
                                   </p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
                       <div className="absolute inset-0 w-full h-full" style={{opacity: 1, filter: 'blur(0px)', clipPath: 'inset(0 0 0 0)', pointerEvents: 'auto', transition: 'none'}}>
                         <div className="flex flex-col gap-8 justify-end flex-col h-full">
                           <div className="flex flex-col gap-4">
@@ -1692,13 +1350,6 @@ export default function CofounderPage() {
                                 Cofounder Knowledgebase runs 24/7 to keep
                                 your business memory updated.
                               </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </section>
             </div>
           </section>
@@ -1709,182 +1360,127 @@ export default function CofounderPage() {
                   Connect the tools you already use
                 </h2>
                 <div className="space-y-5 md:space-y-6 w-min mx-auto hidden min-[365px]:block">
-                </div>
                 <div className="space-y-6 min-[365px]:hidden">
                   <div className="flex justify-center flex-wrap gap-y-6 gap-x-3 pb-6">
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="Airtable" decoding="async" height={64} loading="lazy" src="/cofounder-assets/airtable.f153f282.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           Airtable
                         </span>
-                      </div>
-                    </div>
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="Attio" decoding="async" height={64} loading="lazy" src="/cofounder-assets/attio.bb561be4.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           Attio
                         </span>
-                      </div>
-                    </div>
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="Sheets" decoding="async" height={64} loading="lazy" src="/cofounder-assets/google-sheets.0ca29299.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           Sheets
                         </span>
-                      </div>
-                    </div>
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="Docs" decoding="async" height={64} loading="lazy" src="/cofounder-assets/google-docs.f7ba532d.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           Docs
                         </span>
-                      </div>
-                    </div>
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="Calendar" decoding="async" height={64} loading="lazy" src="/cofounder-assets/google-calendar.2438840b.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           Calendar
                         </span>
-                      </div>
-                    </div>
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="Gmail" decoding="async" height={64} loading="lazy" src="/cofounder-assets/gmail.e5bdc0e4.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           Gmail
                         </span>
-                      </div>
-                    </div>
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="Intercom" decoding="async" height={64} loading="lazy" src="/cofounder-assets/intercom.64399410.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           Intercom
                         </span>
-                      </div>
-                    </div>
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="Notion" decoding="async" height={64} loading="lazy" src="/cofounder-assets/notion.f18f0582.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           Notion
                         </span>
-                      </div>
-                    </div>
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="Limitless" decoding="async" height={64} loading="lazy" src="/cofounder-assets/limitless.70cd9c81.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           Limitless
                         </span>
-                      </div>
-                    </div>
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="Linear" decoding="async" height={64} loading="lazy" src="/cofounder-assets/linear.1c44320d.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           Linear
                         </span>
-                      </div>
-                    </div>
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="Loops" decoding="async" height={64} loading="lazy" src="/cofounder-assets/loops.66c08dd0.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           Loops
                         </span>
-                      </div>
-                    </div>
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="Metabase" decoding="async" height={64} loading="lazy" src="/cofounder-assets/metabase.d38bb0ee.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           Metabase
                         </span>
-                      </div>
-                    </div>
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="PDL" decoding="async" height={64} loading="lazy" src="/cofounder-assets/people-data-labs.9aafd8bf.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           PDL
                         </span>
-                      </div>
-                    </div>
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="PostHog" decoding="async" height={64} loading="lazy" src="/cofounder-assets/posthog.0fe60258.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           PostHog
                         </span>
-                      </div>
-                    </div>
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="Slack" decoding="async" height={64} loading="lazy" src="/cofounder-assets/slack.b35ec1a3.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           Slack
                         </span>
-                      </div>
-                    </div>
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="Github" decoding="async" height={64} loading="lazy" src="/cofounder-assets/github.0fa38615.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           Github
                         </span>
-                      </div>
-                    </div>
                     <div className="flex relative flex-col items-center group">
                       <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
                         <img alt="Slides" decoding="async" height={64} loading="lazy" src="/cofounder-assets/google-slides.b68e7a05.avif" style={{color: 'transparent'}} width={64} />
-                      </div>
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                         <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
                           Slides
                         </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </section>
           </div>
           <div className="w-full">
@@ -1898,7 +1494,6 @@ export default function CofounderPage() {
                     <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
                       tasks automated by Cofounder
                     </p>
-                  </div>
                   <div className="flex flex-col">
                     <p className="font-mondwest font-normal text-[54px] sm:text-[64px] md:text-[54px] lg:text-[64px] text-neutral-900 leading-[130%] tracking-[-1.28px]">
                       &gt;18 billion
@@ -1906,7 +1501,6 @@ export default function CofounderPage() {
                     <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
                       tokens processed by our agents each month
                     </p>
-                  </div>
                   <div className="flex flex-col">
                     <p className="font-mondwest font-normal text-[54px] sm:text-[64px] md:text-[54px] lg:text-[64px] text-neutral-900 leading-[130%] tracking-[-1.28px]">
                       <span className="flex items-center lg:justify-start justify-center gap-1">
@@ -1920,8 +1514,6 @@ export default function CofounderPage() {
                     <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
                       tools available across 19+ integrations
                     </p>
-                  </div>
-                </div>
                 <div className="flex flex-col flex-1 gap-8 items-center lg:items-start">
                   <div className="w-full max-w-[600px]">
                     <div className="relative w-full h-full overflow-hidden">
@@ -1949,8 +1541,6 @@ export default function CofounderPage() {
                                 <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700">
                                   Blaine Davis at Superconnector
                                 </p>
-                              </div>
-                            </div>
                             <div className="flex-shrink-0 w-full h-full" style={{minWidth: '100%'}}>
                               <div className="flex flex-col gap-8 justify-end items-center lg:items-start h-full pl-1 py-1">
                                 <img alt="Results" className="rounded-md base-box-shadow" decoding="async" height={103} loading="lazy" src="/cofounder-assets/sabina-cabrera.png" style={{color: 'transparent'}} width={91} />
@@ -1970,10 +1560,6 @@ export default function CofounderPage() {
                                 <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700">
                                   Sabina Cabrera at Pogidraw
                                 </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
                         <div className="absolute inset-0 w-full h-full cursor-pointer" style={{opacity: 1, filter: 'blur(0px)', clipPath: 'inset(0 0 0 0)', pointerEvents: 'auto', transition: 'none'}}>
                           <div className="flex flex-col gap-8 justify-end items-center lg:items-start h-full pl-1 py-1">
                             <img alt="Results" className="rounded-md base-box-shadow" decoding="async" height={103} loading="lazy" src="/cofounder-assets/blaine-davis.png" style={{color: 'transparent'}} width={91} />
@@ -1994,8 +1580,6 @@ export default function CofounderPage() {
                             <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700">
                               Blaine Davis at Superconnector
                             </p>
-                          </div>
-                        </div>
                         <div className="absolute inset-0 w-full h-full cursor-pointer" style={{opacity: 0, filter: 'blur(4px)', clipPath: 'inset(0 0 0 0)', pointerEvents: 'none', transition: 'none'}}>
                           <div className="flex flex-col gap-8 justify-end items-center lg:items-start h-full pl-1 py-1">
                             <img alt="Results" className="rounded-md base-box-shadow" decoding="async" height={103} loading="lazy" src="/cofounder-assets/sabina-cabrera.png" style={{color: 'transparent'}} width={91} />
@@ -2014,21 +1598,10 @@ export default function CofounderPage() {
                             <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700">
                               Sabina Cabrera at Pogidraw
                             </p>
-                          </div>
-                        </div>
-                      </div>
                       <div className="mt-8 w-full flex justify-center lg:justify-start">
                         <div className="h-3 flex items-center gap-1 border border-neutral-300 rounded-full py-1 px-1.25">
                           <div className="relative h-1 flex">
-                          </div>
                           <div className="relative h-1 flex">
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </section>
           </div>
           <section className="w-full 2xl:mb-[200px] xl:mb-[180px] md:mb-[140px] mb-[120px]" id="blog">
@@ -2050,8 +1623,6 @@ export default function CofounderPage() {
                       </path>
                     </svg>
                   </button>
-                </div>
-              </div>
             </div>
             <div className="w-full border-t border-b">
               <div className="px-0 w-full max-w-[1920px] mx-auto">
@@ -2080,21 +1651,16 @@ export default function CofounderPage() {
                                 </rect>
                               </svg>
                             </button>
-                          </div>
                           <div className="flex relative flex-1 justify-center items-center">
                             <div aria-label="Introducing Cofounder - Our State of the Art Memory System in an Agent" className="overflow-hidden relative rounded-lg w-[240px] h-[240px] mx-auto" role="img">
                               <canvas>
                               </canvas>
-                            </div>
-                          </div>
                           <div className="flex flex-col justify-start space-y-3 mt-auto min-h-[44px]">
                             <h3 className="font-af-foundary font-medium text-[17px] tracking-34 leading-[130%] line-clamp-2">
                               Introducing Cofounder - Our State of the Art
                               Memory System in an Agent
                             </h3>
-                          </div>
                         </a>
-                      </div>
                       <div className="swiper-slide max-w-[390px] h-full">
                         <a className="flex flex-1 justify-between gap-8 flex-col h-full min-h-[480px] p-5 md:p-8 xl:px-12 border-r transition-all duration-300 ease-in-out group hover:bg-neutral-100" href="https://www.generalintelligencecompany.com//writing/memory-is-the-last-problem-to-solve-to-reach-agi">
                           <div className="flex items-center justify-between space-x-1 min-h-[36px]">
@@ -2117,21 +1683,16 @@ export default function CofounderPage() {
                                 </rect>
                               </svg>
                             </button>
-                          </div>
                           <div className="flex relative flex-1 justify-center items-center">
                             <div aria-label="Memory Is The Last Problem To Solve To Reach Agi" className="overflow-hidden relative rounded-lg w-[240px] h-[240px] mx-auto" role="img">
                               <canvas>
                               </canvas>
-                            </div>
-                          </div>
                           <div className="flex flex-col justify-start space-y-3 mt-auto min-h-[44px]">
                             <h3 className="font-af-foundary font-medium text-[17px] tracking-34 leading-[130%] line-clamp-2">
                               Memory Is The Last Problem To Solve To Reach
                               Agi
                             </h3>
-                          </div>
                         </a>
-                      </div>
                       <div className="swiper-slide max-w-[390px] h-full">
                         <a className="flex flex-1 justify-between gap-8 flex-col h-full min-h-[480px] p-5 md:p-8 xl:px-12 border-r transition-all duration-300 ease-in-out group hover:bg-neutral-100" href="https://www.generalintelligencecompany.com//writing/superoptimization-organizational-management-by-agents">
                           <div className="flex items-center justify-between space-x-1 min-h-[36px]">
@@ -2154,25 +1715,16 @@ export default function CofounderPage() {
                                 </rect>
                               </svg>
                             </button>
-                          </div>
                           <div className="flex relative flex-1 justify-center items-center">
                             <div aria-label="Superoptimization: Organizational Management By Agents" className="overflow-hidden relative rounded-lg w-[240px] h-[240px] mx-auto" role="img">
                               <canvas>
                               </canvas>
-                            </div>
-                          </div>
                           <div className="flex flex-col justify-start space-y-3 mt-auto min-h-[44px]">
                             <h3 className="font-af-foundary font-medium text-[17px] tracking-34 leading-[130%] line-clamp-2">
                               Superoptimization: Organizational Management
                               By Agents
                             </h3>
-                          </div>
                         </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </section>
           <div className="w-full">
@@ -2186,8 +1738,6 @@ export default function CofounderPage() {
                       Cofounder
                     </span>
                   </p>
-                </div>
-              </div>
               <a className="flex flex-col items-center gap-9 hover:cursor-none" href="https://app.cofounder.co" rel="noopener noreferrer" target="_blank">
                 <div className="flex flex-col items-center max-w-[420px] md:max-w-[640px] gap-7 mx:auto">
                   <h2 className="font-mondwest font-normal tracking-15 text-[40px] sm:text-[48px] md:text-[70px] text-center tracking-140 leading-[100%]">
@@ -2197,8 +1747,6 @@ export default function CofounderPage() {
                     <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
                       by The General Intelligence Company
                     </p>
-                  </div>
-                </div>
                 <div className="flex flex-col items-center gap-5">
                   <img alt="Cofounder" decoding="async" height={173} loading="lazy" src="/cofounder-assets/poststamp.png" style={{color: 'transparent'}} width={273} />
                   <div className="flex items-center gap-2">
@@ -2209,8 +1757,6 @@ export default function CofounderPage() {
                     <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
                       in New York
                     </p>
-                  </div>
-                </div>
               </a>
               <div className="flex flex-col items-center justify-between gap-5 w-full md:px-4 lg:px-8 2xl:px-26">
                 <div className="flex items-end justify-between gap-2 w-full">
@@ -2236,8 +1782,6 @@ export default function CofounderPage() {
                       <a className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer text-neutral-900 underline-offset-4 hover:text-neutral-700 transition-colors duration-200 rounded focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] tracking-15 leading-[140%]" data-slot="button" href="https://www.generalintelligencecompany.com/" rel="noopener noreferrer" target="_blank">
                         Company
                       </a>
-                    </div>
-                  </div>
                   <div className="flex gap-2 mb-1">
                     <a aria-label="Open linkedin profile" className="relative w-9 h-9 flex flex-col justify-center items-center rounded-full border border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-1 focus:ring-neutral-100 focus:ring-offset-2 group hover:bg-secondary transition-all duration-280 ease-in-out" href="https://www.linkedin.com/company/the-general-intelligence-company-of-new-york/" rel="noopener noreferrer" target="_blank">
                       <svg fill="none" height={15} viewBox="0 0 15 15" width={15} xmlns="http://www.w3.org/2000/svg">
@@ -2255,8 +1799,6 @@ export default function CofounderPage() {
                         </path>
                       </svg>
                     </a>
-                  </div>
-                </div>
                 <div className="flex items-center justify-between gap-2 w-full">
                   <div className="flex flex-col items-start gap-1">
                     <p className="font-af-foundary font-normal text-[13px] tracking-13 leading-[130%] text-neutral-600">
@@ -2267,7 +1809,6 @@ export default function CofounderPage() {
                       The General
                       Intelligence Company Of New York
                     </p>
-                  </div>
                   <div>
                     <p className="font-af-foundary font-normal text-[13px] tracking-13 leading-[130%] text-neutral-600">
                       Design by
@@ -2276,9 +1817,6 @@ export default function CofounderPage() {
                         Altalogy
                       </a>
                     </p>
-                  </div>
-                </div>
-              </div>
             </footer>
           </div>
         </div>
