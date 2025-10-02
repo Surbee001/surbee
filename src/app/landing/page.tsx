@@ -1,7 +1,5 @@
 import React from "react";
-import dynamic from "next/dynamic";
-const RevealSection = dynamic(() => import("@/components/landing/Reveal").then(m => m.RevealSection), { ssr: false });
-const RevealDiv = dynamic(() => import("@/components/landing/Reveal").then(m => m.RevealDiv), { ssr: false });
+import { RevealSection, RevealDiv } from "@/components/landing/Reveal";
 import localFont from "next/font/local";
 import TypingOverlay from "@/components/landing/TypingOverlay";
 
@@ -71,9 +69,8 @@ export default function LandingPage() {
             >
               <a
                 className="inline-flex items-center gap-2 whitespace-nowrap shrink-0 outline-none underline-offset-4 hover:text-neutral-800 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-[#171717] font-medium bg-neutral-100 rounded px-2 py-1 -ml-1"
-                href="#cofounder"
               >
-                Cofounder
+                Surbee
               </a>
               <a
                 className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
@@ -89,22 +86,12 @@ export default function LandingPage() {
               </a>
               <a
                 className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
-                href="#agents"
+                href="#students"
               >
-                Agents
+                Students
               </a>
-              <a
-                className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
-                href="#integrations"
-              >
-                Integrations
-              </a>
-              <a
-                className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
-                href="#results"
-              >
-                Results
-              </a>
+              
+             
               <a
                 className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
                 href="#blog"
@@ -1125,257 +1112,86 @@ export default function LandingPage() {
 	            </div>
           </RevealSection>
 
-	          {/* Results Section */}
+	          {/* Testimonials Section */}
 	          <div className="w-full">
 	            <section
 	              id="results"
-	              className="2xl:pb-[220px] xl:pb-[200px] md:pb-[160px] pb-[120px] 2xl:pt-[200px] xl:pt-[180px] md:pt-[140px] pt-[120px] 2xl:px-30 xl:px-12 md:px-8 px-5 w-full max-w-[1920px] mx-auto"
+	              className="2xl:pb-[120px] xl:pb-[100px] md:pb-[80px] pb-[60px] 2xl:pt-[120px] xl:pt-[100px] md:pt-[80px] pt-[60px] 2xl:px-30 xl:px-12 md:px-8 px-5 w-full max-w-[1920px] mx-auto"
 	            >
-	              <div className="flex flex-col lg:flex-row gap-30 sm:gap-23 lg:gap-8 items-center">
-	                <div className="flex flex-col flex-1 gap-8 lg:gap-15 text-center lg:text-left">
-	                  <div className="flex flex-col">
-	                    <p className="font-mondwest font-normal text-[54px] sm:text-[64px] md:text-[54px] lg:text-[64px] text-neutral-900 leading-[130%] tracking-[-1.28px]">
-	                      15,847
-	                    </p>
-	                    <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
-	                      surveys created with Surbee
-	                    </p>
-	                  </div>
-	                  <div className="flex flex-col">
-	                    <p className="font-mondwest font-normal text-[54px] sm:text-[64px] md:text-[54px] lg:text-[64px] text-neutral-900 leading-[130%] tracking-[-1.28px]">
-	                      2.3M+
-	                    </p>
-	                    <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
-	                      responses collected and analyzed
-	                    </p>
-	                  </div>
-	                  <div className="flex flex-col">
-	                    <p className="font-mondwest font-normal text-[54px] sm:text-[64px] md:text-[54px] lg:text-[64px] text-neutral-900 leading-[130%] tracking-[-1.28px]">
-	                      <span className="flex items-center lg:justify-start justify-center gap-1">
-	                        500{" "}
-	                        <svg
-	                          height="23"
-	                          width="23"
-	                          fill="none"
-	                          viewBox="0 0 23 23"
-	                          xmlns="http://www.w3.org/2000/svg"
-	                        >
-	                          <path
-	                            d="M13.4688 10.1087H22.6451V13.3826H13.4688V22.8816H10.1488V13.3826H0.972575V10.1087H10.1488V0.563566H13.4688V10.1087Z"
-	                            fill="#2C2C2C"
-	                          />
-	                        </svg>
-	                      </span>
-	                    </p>
-	                    <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
-	                      active researchers using Surbee
-	                    </p>
-	                  </div>
+	              <h2 className="font-af-foundary font-medium tracking-15 text-[#171717] text-center text-[20px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 mb-12">
+	                What people are saying about Surbee
+	              </h2>
+	              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+	                {/* Left Testimonial */}
+	                <div className="flex flex-col gap-6 p-8 bg-neutral-50 rounded-lg">
+	                  <p className="font-af-foundary font-medium text-[18px] md:text-[20px] text-[#171717] leading-[140%]">
+	                    "Surbee will revolutionize how researchers create and manage surveys. The AI-powered automation eliminates hours of manual work, allowing teams to focus on insights rather than logistics. It's going to be an essential tool for modern research workflows."
+	                  </p>
+	                  <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-[#171717]">
+	                    — Early adopter testimonial
+	                  </p>
 	                </div>
-	                <div className="flex flex-col flex-1 gap-8 items-center lg:items-start">
-	                  <div className="w-full max-w-[600px]">
-	                    <div className="relative w-full h-full overflow-hidden">
-	                      <div className="relative w-full h-full flex flex-col justify-end">
-	                        <div className="relative h-full opacity-0 pointer-events-none overflow-hidden">
-	                          <div className="flex w-full h-full flex-row flex-no-wrap">
-	                            <div
-	                              className="flex-shrink-0 w-full h-full"
-	                              style={{ minWidth: "100%" }}
-	                            >
-	                              <div className="flex flex-col gap-8 justify-end items-center lg:items-start h-full pl-1 py-1">
-	                                <img
-	                                  className="rounded-md base-box-shadow"
-	                                  height={104}
-	                                  width={91}
-	                                  alt="User"
-	                                  src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_861e01b6-89f3-4d0f-aad6-6192ba927e14.png?raw=true"
-                                  style={{
-                                    WebkitUserDrag: "none",
-                                    userSelect: "none",
-                                    boxShadow:
-                                      "rgba(0, 0, 0, 0.14) 0px 2px 2px, rgba(0, 0, 0, 0) 0px 6px 6px, rgba(0, 0, 0, 0.06) 0px 0px 0px 3px",
-                                    color: "transparent",
-                                  } as React.CSSProperties & { WebkitUserDrag: string }}
-	                                />
-	                                <p className="font-af-foundary font-medium text-[24px] md:text-[28px] text-center lg:text-left max-w-[504px] lg:max-w-[520px] leading-[130%] tracking-48">
-                                  <span
-                                    className="relative"
-                                    style={{
-                                      background: "#c2185b", // Darker red
-                                      padding: "0 4px",
-                                      borderRadius: "2px",
-                                    }}
-                                  >
-	                                    "Surbee's AI-powered survey creation has
-	                                    completely transformed our research workflow.
-	                                  </span>{" "}
-	                                  It automatically generates sophisticated surveys
-	                                  from simple descriptions, analyzes responses with
-	                                  incredible accuracy, and saves us countless hours of manual work."
-	                                </p>
-	                                <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700">
-	                                  Dr. Sarah Martinez, Research Director at Insight Analytics
-	                                </p>
-	                              </div>
-	                            </div>
-	                            <div
-	                              className="flex-shrink-0 w-full h-full"
-	                              style={{ minWidth: "100%" }}
-	                            >
-	                              <div className="flex flex-col gap-8 justify-end items-center lg:items-start h-full pl-1 py-1">
-	                                <img
-	                                  className="rounded-md base-box-shadow"
-	                                  height={104}
-	                                  width={91}
-	                                  alt="User"
-	                                  src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__496a7873-dd10-4e60-a067-a2c0bc0ef982.png?raw=true"
-                                  style={{
-                                    WebkitUserDrag: "none",
-                                    userSelect: "none",
-                                    boxShadow:
-                                      "rgba(0, 0, 0, 0.14) 0px 2px 2px, rgba(0, 0, 0, 0) 0px 6px 6px, rgba(0, 0, 0, 0.06) 0px 0px 0px 3px",
-                                    color: "transparent",
-                                  } as React.CSSProperties & { WebkitUserDrag: string }}
-	                                />
-	                                <p className="font-af-foundary font-medium text-[24px] md:text-[28px] text-center lg:text-left max-w-[504px] lg:max-w-[520px] leading-[130%] tracking-48">
-	                                  "As a market researcher, Surbee has revolutionized
-	                                  how we conduct studies. The AI generates nuanced
-	                                  questions automatically, detects response quality
-	                                  issues in real-time, and{" "}
-                                  <span
-                                    className="relative"
-                                    style={{
-                                      background: "#c2185b", // Darker red
-                                      padding: "0 4px",
-                                      borderRadius: "2px",
-                                    }}
-                                  >
-	                                    delivers insights 10x faster than traditional methods."
-	                                  </span>
-	                                </p>
-	                                <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700">
-	                                  Michael Chen, Head of UX Research at TechFlow
-	                                </p>
-	                              </div>
-	                            </div>
-	                          </div>
-	                        </div>
-	                        <div
-	                          className="absolute inset-0 w-full h-full cursor-pointer"
-	                          style={{
-	                            transition: "none",
-	                            opacity: 1,
-	                            filter: "blur(0px)",
-	                            clipPath: "inset(0px)",
-	                            pointerEvents: "auto",
-	                          }}
-	                        >
-	                          <div className="flex flex-col gap-8 justify-end items-center lg:items-start h-full pl-1 py-1">
-	                            <img
-	                              className="rounded-md base-box-shadow"
-	                              height={104}
-	                              width={91}
-	                              alt="Results"
-	                              src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_861e01b6-89f3-4d0f-aad6-6192ba927e14.png?raw=true"
-                                  style={{
-                                    WebkitUserDrag: "none",
-                                    userSelect: "none",
-                                    boxShadow:
-                                      "rgba(0, 0, 0, 0.14) 0px 2px 2px, rgba(0, 0, 0, 0) 0px 6px 6px, rgba(0, 0, 0, 0.06) 0px 0px 0px 3px",
-                                    color: "transparent",
-                                  } as React.CSSProperties & { WebkitUserDrag: string }}
-	                            />
-	                            <p className="font-af-foundary font-medium text-[24px] md:text-[28px] text-center lg:text-left max-w-[504px] lg:max-w-[520px] leading-[130%] tracking-48">
-                                  <span
-                                    className="relative"
-                                    style={{
-                                      background: "#c2185b", // Darker red
-                                      padding: "0 4px",
-                                      borderRadius: "2px",
-                                    }}
-                                  >
-	                                "Integrating GIC into my daily operations has been a
-	                                complete game-changer for my efficiency.
-	                              </span>{" "}
-	                              Their swarm of agents seamlessly handles tasks that
-	                              used to consume hours of my time, allowing me to focus
-	                              on decision-making. I love it– huge time save and
-	                              efficiency boost."
-	                            </p>
-	                            <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700">
-	                              Blaine Davis at Superconnector
-	                            </p>
-	                          </div>
-	                        </div>
-	                        <div
-	                          className="absolute inset-0 w-full h-full cursor-pointer"
-	                          style={{
-	                            transition: "none",
-	                            opacity: 0,
-	                            filter: "blur(4px)",
-	                            clipPath: "inset(0px)",
-	                            pointerEvents: "none",
-	                          }}
-	                        >
-	                          <div className="flex flex-col gap-8 justify-end items-center lg:items-start h-full pl-1 py-1">
-	                            <img
-	                              className="rounded-md base-box-shadow"
-	                              height={104}
-	                              width={91}
-	                              alt="Results"
-	                              src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__496a7873-dd10-4e60-a067-a2c0bc0ef982.png?raw=true"
-                                  style={{
-                                    WebkitUserDrag: "none",
-                                    userSelect: "none",
-                                    boxShadow:
-                                      "rgba(0, 0, 0, 0.14) 0px 2px 2px, rgba(0, 0, 0, 0) 0px 6px 6px, rgba(0, 0, 0, 0.06) 0px 0px 0px 3px",
-                                    color: "transparent",
-                                  } as React.CSSProperties & { WebkitUserDrag: string }}
-	                            />
-	                            <p className="font-af-foundary font-medium text-[24px] md:text-[28px] text-center lg:text-left max-w-[504px] lg:max-w-[520px] leading-[130%] tracking-48">
-	                              "As a solo founder, Cofounder has opened up my time
-	                              from responding and coordinating user interviews to
-	                              being able to work on the product full time and ship
-	                              faster than just working solo or even with an EA.{" "}
-                                  <span
-                                    className="relative"
-                                    style={{
-                                      background: "#c2185b", // Darker red
-                                      padding: "0 4px",
-                                      borderRadius: "2px",
-                                    }}
-                                  >
-	                                Truly couldn't function without it."
-	                              </span>
-	                            </p>
-	                            <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700">
-	                              Sabina Cabrera at Pogidraw
-	                            </p>
-	                          </div>
-	                        </div>
-	                      </div>
-	                      <div className="mt-8 w-full flex justify-center lg:justify-start">
-	                        <div className="h-3 flex items-center gap-1 border border-neutral-300 rounded-full py-1 px-1.25">
-	                          <div className="relative h-1 flex">
-	                            <button
-	                              className="relative transition-all duration-300 ease-out w-[7px] h-1 bg-neutral-900 rounded-[4px]"
-	                              aria-label="Go to slide 1"
-	                            />
-	                          </div>
-	                          <div className="relative h-1 flex">
-	                            <button
-	                              className="relative transition-all duration-300 ease-out w-1 h-1 bg-neutral-600 hover:bg-white/75 rounded-full"
-	                              aria-label="Go to slide 2"
-	                            />
-	                          </div>
-	                        </div>
-	                      </div>
-	                    </div>
-	                  </div>
+	                
+	                {/* Right Testimonial */}
+	                <div className="flex flex-col gap-6 p-8 bg-neutral-50 rounded-lg">
+	                  <p className="font-af-foundary font-medium text-[18px] md:text-[20px] text-[#171717] leading-[140%]">
+	                    "What excites me most about Surbee is its potential to democratize professional-grade survey research. By automating complex question logic and data validation, it empowers anyone to conduct rigorous research without needing specialized expertise."
+	                  </p>
+	                  <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-[#171717]">
+	                    — Beta user feedback
+	                  </p>
 	                </div>
 	              </div>
 	            </section>
 	          </div>
+
+	          {/* Footer Section */}
+	          <RevealSection className="mt-8 w-full px-6 pb-8">
+	            <RevealDiv className="relative h-[50vh] w-full overflow-hidden rounded-md">
+	              <img
+	                src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__423e2f06-d2d7-4c2c-bd7b-9aec2b6c1fbe.png?raw=true"
+	                alt="Join our community"
+	                className="h-full w-full object-cover"
+	              />
+	              
+	              {/* Centered overlay card */}
+	              <RevealDiv className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+	                <a
+	                  className="cursor-pointer pointer-events-auto group"
+	                  href="https://discord.gg/surbee"
+	                  target="_blank"
+	                  rel="noopener noreferrer"
+	                >
+	                  <RevealDiv className="relative inline-block">
+	                    <div className="rounded-lg px-8 py-6 backdrop-blur-lg max-w-[calc(100vw_-_64px)] w-[500px] flex flex-col items-center justify-center gap-3 bg-gradient-to-b from-[rgba(255,255,255,0.80)] to-[rgba(255,255,255,0.16)] shadow-[0px_4px_12px_0px_rgba(255,255,255,0.10)_inset,0px_0px_0px_6px_rgba(255,255,255,0.40),0px_1px_8px_0px_rgba(0,0,0,0.13),0px_2px_6px_0px_rgba(0,0,0,0.20)]">
+	                      <h3 className="text-[#171717] font-semibold text-[28px] leading-[130%] tracking-[-0.56px] text-center">
+	                        Join Our Community
+	                      </h3>
+	                      <p className="text-[#171717] text-[15px] leading-[140%] text-center">
+	                        Connect with researchers, share insights, and stay updated on Surbee
+	                      </p>
+	                    </div>
+	                    
+	                    {/* Hover tooltip */}
+	                    <div className="absolute z-50 bg-neutral-900 backdrop-blur-[20px] flex flex-col gap-1.5 px-3 py-1 w-min rounded-full whitespace-nowrap text-[#EEF1ED] text-xs font-medium leading-[130%] tracking-[-0.12px] left-1/2 transform -translate-x-1/2 bottom-full mb-4 opacity-0 translate-y-1 scale-95 pointer-events-none transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100">
+	                      <div className="flex items-center gap-1">
+	                        <p className="font-medium text-[13px] tracking-13 leading-[130%] text-neutral-50">
+	                          Join Discord
+	                        </p>
+	                        <svg className="text-neutral-600 -mt-0.25" height="12" width="7" fill="none" viewBox="0 0 6 9" xmlns="http://www.w3.org/2000/svg">
+	                          <rect height="1.41526" width="1.41526" fill="currentColor" x="3.7002" y="3.79085" />
+	                          <rect height="1.41526" width="1.41526" fill="currentColor" x="0.884766" y="0.97023" />
+	                          <rect height="1.41526" width="1.41526" fill="currentColor" x="0.884766" y="6.6144" />
+	                          <rect height="4.24579" width="1.41526" fill="currentColor" x="2.28467" y="2.37558" />
+	                        </svg>
+	                      </div>
+	                      <div className="absolute left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent top-full border-t-[6px] border-t-neutral-900" />
+	                    </div>
+	                  </RevealDiv>
+	                </a>
+	              </RevealDiv>
+	            </RevealDiv>
+	          </RevealSection>
         </main>
       </div>
     </div>

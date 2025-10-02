@@ -16,18 +16,23 @@ export default function TestLoginPage() {
       <div className="grid min-h-screen grid-cols-1 md:grid-cols-2">
         {/* Left: form and copy */}
         <div className="relative flex items-center justify-center p-6 md:p-10">
-          {/* Logo top-left */}
-          <div className="absolute left-6 top-6 md:left-10 md:top-10 flex items-center gap-2">
-            <img
-              src="https://raw.githubusercontent.com/Surbee001/webimg/c120f0dfd46532bb149db06425090559998d97d5/New%20SVG.svg"
-              alt="SerbySVJ"
-              className="h-8 w-auto"
-            />
-            <span className="text-sm text-neutral-300">SerbySVJ</span>
-          </div>
 
           {/* Centered auth block */}
           <div className="mx-auto flex w-full max-w-sm flex-col items-center text-center">
+            {/* Logo above Automate Your Surveys */}
+            <div className="mb-6">
+              <img
+                src="https://raw.githubusercontent.com/Surbee001/webimg/3f6411aa09c8946e2cd942244f90e52cffbac43b/New%20SVG.svg"
+                alt="Surbee Logo"
+                className="h-12 w-auto mx-auto"
+                style={{
+                  borderRadius: 8,
+                  objectFit: 'contain',
+                  filter: 'brightness(0) invert(1)' // Makes the SVG white to match #FEFFFC background
+                }}
+              />
+            </div>
+
             <p className="mb-6 text-sm text-neutral-300">Automate your surveys.</p>
 
             {/* Flat buttons, compact width and centered vertically */}
@@ -58,7 +63,7 @@ export default function TestLoginPage() {
         <div className="hidden md:block p-6 md:p-10">
           <div className="h-full w-full overflow-hidden rounded-lg">
             <img
-              src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__cbbf9473-785a-4dc6-a4d0-8eb684185fbc.png?raw=true"
+              src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__496a7873-dd10-4e60-a067-a2c0bc0ef982.png?raw=true"
               alt="login hero"
               className="h-full w-full object-cover"
             />
