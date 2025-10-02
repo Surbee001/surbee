@@ -49,7 +49,7 @@ export default function TypingOverlay({ prompts = DEFAULT_PROMPTS }: TypingOverl
   };
 
   return (
-    <div className="relative flex flex-col gap-1.5 tracking-15 leading-[140%] text-neutral-800 min-h-[60px] w-full" style={{ fontFamily: "var(--font-epilogue)" }}>
+    <div className="relative flex flex-col gap-1.5 tracking-15 leading-[140%] text-neutral-800 min-h-[60px] w-full pt-1" style={{ fontFamily: "var(--font-epilogue)" }}>
       <AnimatePresence mode="wait" onExitComplete={handleExitComplete}>
         {show && (
           <motion.div
@@ -62,12 +62,23 @@ export default function TypingOverlay({ prompts = DEFAULT_PROMPTS }: TypingOverl
               transition: { duration: 0.5, ease: "easeOut" }
             }}
             className="z-10 text-left text-[#171717] w-full"
+            style={{ opacity: 0.92 }}
           >
             <span className="font-medium">{display}</span>
-            <span className="ml-0.5 inline-block h-3 w-[2px] translate-y-[1px] bg-[#171717] animate-pulse" />
+            <span className="ml-0.5 inline-block h-3 w-[2px] translate-y-[1px] bg-[#171717] animate-[blink_1s_ease-in-out_infinite]" />
           </motion.div>
         )}
       </AnimatePresence>
+      <style jsx>{`
+        @keyframes blink {
+          0%, 49% {
+            opacity: 1;
+          }
+          50%, 100% {
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 }

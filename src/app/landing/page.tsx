@@ -153,9 +153,9 @@ export default function LandingPage() {
                     <div className="rounded-lg px-4 pt-3 pb-2 backdrop-blur-lg max-w-[calc(100vw_-_64px)] w-[640px] flex flex-col items-start justify-between gap-2 h-[140px] bg-gradient-to-b from-[rgba(255,255,255,0.80)] to-[rgba(255,255,255,0.16)] shadow-[0px_4px_12px_0px_rgba(255,255,255,0.10)_inset,0px_0px_0px_6px_rgba(255,255,255,0.40),0px_1px_8px_0px_rgba(0,0,0,0.13),0px_2px_6px_0px_rgba(0,0,0,0.20)]">
                       {/* Typing overlay at top */}
                       <TypingOverlay prompts={[
-                        "Create a 10-question onboarding survey for new users",
-                        "Find anomalies in NPS comments and tag them by theme",
-                        "Draft a community invite and collect 50 responses by Friday",
+                        "Build a survey with conditional logic and skip patterns based on user responses",
+                        "Generate 15 PhD-level questions about machine learning ethics and bias",
+                        "Create a product feedback survey with a clean minimalist design and progress bar",
                       ]} />
                       <div className="flex flex-row items-center justify-between w-full">
                         {/* Attachment icon at bottom-left */}
