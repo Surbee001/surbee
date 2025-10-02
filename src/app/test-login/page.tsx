@@ -3,8 +3,8 @@ import localFont from "next/font/local";
 
 const epilogue = localFont({
   src: [
-    { path: "/fonts/Epilogue-Variable.woff2", weight: "100 900", style: "normal" },
-    { path: "/fonts/Epilogue-VariableItalic.woff2", weight: "100 900", style: "italic" },
+    { path: "./fonts/Epilogue-Variable.woff2", weight: "100 900", style: "normal" },
+    { path: "./fonts/Epilogue-VariableItalic.woff2", weight: "100 900", style: "italic" },
   ],
   variable: "--font-epilogue",
   display: "swap",
