@@ -2,14 +2,17 @@
 import path from "path";
 import ReplicaClient from "./ReplicaClient";
 
+// Force dynamic rendering to avoid build-time file access errors
+export const dynamic = 'force-dynamic';
+
 const ASSET_BASE = "https://cofounder.co";
 
 const projectRoot = process.cwd();
 const htmlSourcePath = path.join(projectRoot, "..", "view-page-source.com-cofounder.co_.html");
 const cssSourcePath = path.join(projectRoot, "..", "cofoundercss.css");
 
-const rawHtml = fs.readFileSync(htmlSourcePath, "utf-8");
-const rawCss = fs.readFileSync(cssSourcePath, "utf-8");
+const rawHtml = fs.existsSync(htmlSourcePath) ? fs.readFileSync(htmlSourcePath, "utf-8") : "";
+const rawCss = fs.existsSync(cssSourcePath) ? fs.readFileSync(cssSourcePath, "utf-8") : "";
 
 const bodyMatch = rawHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
 const bodyInner = bodyMatch ? bodyMatch[1] : "";

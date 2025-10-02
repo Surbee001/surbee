@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,7 +74,7 @@ const interestOptions = [
   'Art & Design', 'Music', 'Fashion', 'Gaming', 'Environment'
 ];
 
-export default function OnboardingPage() {
+function OnboardingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, updateUserProfile } = useAuth();
@@ -318,5 +318,14 @@ export default function OnboardingPage() {
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+// Wrapper component with Suspense boundary for useSearchParams
+export default function OnboardingPageWrapper() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-black text-white">Loading...</div>}>
+      <OnboardingPage />
+    </Suspense>
   );
 }
