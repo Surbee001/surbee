@@ -14,7 +14,6 @@ import ChatInputLight from "@/components/ui/chat-input-light";
 import ThoughtProcess from "../../../components/survey-builder/thought-process";
 import { useRouter } from "next/navigation";
 import UserNameBadge from "@/components/UserNameBadge";
-import UserMenu from "@/components/ui/user-menu";
 import { recordAIFeedback } from '@/lib/database';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { useAuth } from '@/contexts/AuthContext';
@@ -114,7 +113,8 @@ export default function Dashboard() {
   const handleSendMessage = async (message: string, images?: string[]) => {
     if (!message.trim()) return;
     if (isInputDisabled) return;
-    if (!user) return;
+    // Demo mode: Allow sending messages without authentication
+    // if (!user) return;
 
     // Generate chat session ID for new conversations
     let sessionId = currentChatSessionId;
@@ -128,7 +128,7 @@ export default function Dashboard() {
     try {
       sessionStorage.setItem('surbee_initial_prompt', message.trim());
     } catch {}
-    router.push(`/project/${projectId}`);
+    router.push(`/project/${projectId}/view`);
     return;
 
     // No longer needed since we're redirecting to project builder
@@ -137,7 +137,7 @@ export default function Dashboard() {
   const openImageModal = (imageUrl: string) => setSelectedImage(imageUrl);
 
   const handleRecentChatClick = (projectId: string) => {
-    router.push(`/project/${projectId}`);
+    router.push(`/project/${projectId}/view`);
   };
 
   const formatTimeAgo = (timestamp: Date) => {
@@ -153,7 +153,11 @@ export default function Dashboard() {
   // Fetch recent chats when user is authenticated
   useEffect(() => {
     const fetchRecentChats = async () => {
-      if (!user) return;
+      // Demo mode: Skip fetching chats if no user
+      if (!user) {
+        setLoadingChats(false);
+        return;
+      }
       
       try {
         const response = await fetch(`/api/chats/recent?userId=${user.id}&limit=10`);
@@ -202,24 +206,6 @@ export default function Dashboard() {
     }
   }, [messages.length]);
 
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement>(null);
-  const userButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!isUserMenuOpen) return;
-    const onDocClick = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (
-        userMenuRef.current && !userMenuRef.current.contains(t) &&
-        userButtonRef.current && !userButtonRef.current.contains(t)
-      ) {
-        setIsUserMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [isUserMenuOpen]);
 
   // Show loading state only during initial auth loading
   if (authLoading) {
@@ -272,11 +258,11 @@ export default function Dashboard() {
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!user) {
-    router.push('/login');
-    return null;
-  }
+  // Demo mode: Allow access without authentication
+  // if (!user) {
+  //   router.push('/login');
+  //   return null;
+  // }
 
   return (
     <div className="flex flex-col h-full" style={{ fontFamily: 'Sohne, sans-serif' }}>
@@ -308,7 +294,7 @@ export default function Dashboard() {
                       fontWeight: 200,
                       marginBottom: '0.5rem'
                     }}>
-                      Hell<span style={{ fontStyle: 'italic', fontWeight: 200 }}>o</span>, {userProfile?.name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'there'}.
+                      Hell<span style={{ fontStyle: 'italic', fontWeight: 200 }}>o</span>, {user ? (userProfile?.name || user?.user_metadata?.name || user?.email?.split('@')[0]) : 'there'}.
                     </h1>
                   </motion.div>
                 )}
@@ -397,7 +383,7 @@ export default function Dashboard() {
                                 if (prompt) {
                                   const projectId = `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                                   try { sessionStorage.setItem('surbee_initial_prompt', prompt); } catch {}
-                                  window.location.href = `/project/${projectId}`;
+                                  window.location.href = `/project/${projectId}/view`;
                                 }
                               }}
                             />
@@ -437,6 +423,81 @@ export default function Dashboard() {
                   placeholder={"What survey do you want to create today?"}
                   className="chat-input-grey"
                 />
+
+                {/* Suggestion Pills - Moving Carousel */}
+                <div className="mt-4 w-full">
+                  <div className="space-y-2 overflow-hidden">
+                    {/* Top Row - Moving Left (revert fades to full-width edges) */}
+                    <div className="relative group marquee marquee--slow">
+                      <div className="marquee__track gap-2">
+                        {[
+                          "Create a customer feedback survey",
+                          "Design an employee satisfaction form", 
+                          "Build a product review questionnaire",
+                          "Make a market research survey",
+                          "Generate a user experience poll",
+                          "Create an event registration form",
+                          "Design a course evaluation survey",
+                          "Build a health screening questionnaire"
+                        ].concat([
+                          "Create a customer feedback survey",
+                          "Design an employee satisfaction form", 
+                          "Build a product review questionnaire",
+                          "Make a market research survey",
+                          "Generate a user experience poll",
+                          "Create an event registration form",
+                          "Design a course evaluation survey",
+                          "Build a health screening questionnaire"
+                        ]).map((suggestion, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleSendMessage(suggestion, [])}
+                            className="flex-shrink-0 px-3 py-1.5 text-xs bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10 rounded-full transition-colors"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-[#1C1C1C] via-[#1C1C1C]/80 to-transparent pointer-events-none" />
+                      <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-[#1C1C1C] via-[#1C1C1C]/80 to-transparent pointer-events-none" />
+                    </div>
+
+                    {/* Bottom Row - Moving Right (Narrower) */}
+                    <div className="relative group marquee marquee--reverse marquee--slow">
+                      {/* Make bottom line shorter to match fades and clip track inside this width */}
+                      <div className="max-w-[80%] mx-auto relative overflow-hidden">
+                        <div className="marquee__track gap-2">
+                        {[
+                          "Create a job application form",
+                          "Design a website feedback survey", 
+                          "Build a membership signup form",
+                          "Generate a training needs assessment",
+                          "Create a volunteer registration form",
+                          "Design a patient intake questionnaire"
+                        ].concat([
+                          "Create a job application form",
+                          "Design a website feedback survey", 
+                          "Build a membership signup form",
+                          "Generate a training needs assessment",
+                          "Create a volunteer registration form",
+                          "Design a patient intake questionnaire"
+                        ]).map((suggestion, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleSendMessage(suggestion, [])}
+                            className="flex-shrink-0 px-3 py-1.5 text-xs bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10 rounded-full transition-colors"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                        </div>
+                        {/* Narrower fades so the bottom line feels shorter; placed inside wrapper */}
+                        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#1C1C1C] via-[#1C1C1C]/80 to-transparent" />
+                        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#1C1C1C] via-[#1C1C1C]/80 to-transparent" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
       </div>

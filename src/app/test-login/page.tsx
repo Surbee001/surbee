@@ -24,7 +24,7 @@ export default function TestLoginPage() {
               <img
                 src="https://raw.githubusercontent.com/Surbee001/webimg/3f6411aa09c8946e2cd942244f90e52cffbac43b/New%20SVG.svg"
                 alt="Surbee Logo"
-                className="h-12 w-auto mx-auto"
+                className="h-32 w-auto mx-auto"
                 style={{
                   borderRadius: 8,
                   objectFit: 'contain',

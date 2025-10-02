@@ -34,7 +34,7 @@ export default function LandingPage() {
           </a>
           <a
               href="/test-login"
-            className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm text-[#171717] hover:bg-neutral-100"
+            className="rounded-full border border-neutral-300 bg-white px-4 py-1.5 text-sm text-[#171717] hover:bg-neutral-100"
           >
             Log in
           </a>
@@ -97,6 +97,18 @@ export default function LandingPage() {
                 href="#blog"
               >
                 Blog
+              </a>
+            </div>
+            
+            <div className="flex flex-col items-end gap-3 pr-4 pb-4">
+              <a href="https://twitter.com/surbee" target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-[#171717] transition-colors" aria-label="X">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </a>
+              <a href="https://discord.gg/surbee" target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-[#171717] transition-colors" aria-label="Discord">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 127.14 96"><path d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0a105.89 105.89 0 0 0-26.25 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15zM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69z"/></svg>
+              </a>
+              <a href="https://instagram.com/surbee" target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-[#171717] transition-colors" aria-label="Instagram">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
               </a>
             </div>
           </div>
@@ -201,7 +213,7 @@ export default function LandingPage() {
           </RevealSection>
 
           {/* Features title */}
-          <section className="px-6 pt-12 pb-8 text-center">
+          <section className="px-6 pt-24 pb-2 text-center">
             <h2 className="font-af-foundary font-medium tracking-15 text-neutral-900 text-center text-[20px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 mb-8">
               Here's what Surbee can do for you
             </h2>
@@ -414,7 +426,7 @@ export default function LandingPage() {
 	            <h2 className="font-af-foundary font-medium tracking-15 text-neutral-900 text-center text-[20px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 mb-8">
 	              Connect the tools you already use
 	            </h2>
-	            <div className="space-y-5 md:space-y-6 w-min mx-auto hidden min-[365px]:block">
+	            <div className="flex justify-center gap-3 sm:gap-4 pb-5 md:pb-6 border-t border-b border-gray-200 pt-3 md:pt-6 px-3 sm:px-4 flex-wrap">
 	              <div className="flex justify-center gap-3 sm:gap-4 pb-5 md:pb-6 border-t border-gray-200 pt-3 md:pt-6 border-b px-3 sm:px-4">
 	                <div className="flex relative flex-col items-center group">
 	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
@@ -1125,20 +1137,20 @@ export default function LandingPage() {
 	                {/* Left Testimonial */}
 	                <div className="flex flex-col gap-6 p-8 bg-neutral-50 rounded-lg">
 	                  <p className="font-af-foundary font-medium text-[18px] md:text-[20px] text-[#171717] leading-[140%]">
-	                    "Surbee will revolutionize how researchers create and manage surveys. The AI-powered automation eliminates hours of manual work, allowing teams to focus on insights rather than logistics. It's going to be an essential tool for modern research workflows."
+	                    "This actually saves me hours. I just type what I want and it's done."
 	                  </p>
 	                  <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-[#171717]">
-	                    — Early adopter testimonial
+	                    — Sarah, researcher
 	                  </p>
 	                </div>
 	                
 	                {/* Right Testimonial */}
 	                <div className="flex flex-col gap-6 p-8 bg-neutral-50 rounded-lg">
 	                  <p className="font-af-foundary font-medium text-[18px] md:text-[20px] text-[#171717] leading-[140%]">
-	                    "What excites me most about Surbee is its potential to democratize professional-grade survey research. By automating complex question logic and data validation, it empowers anyone to conduct rigorous research without needing specialized expertise."
+	                    "I can't believe how easy this is. No more complex setup, just tell it what you need."
 	                  </p>
 	                  <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-[#171717]">
-	                    — Beta user feedback
+	                    — Michael, product manager
 	                  </p>
 	                </div>
 	              </div>
