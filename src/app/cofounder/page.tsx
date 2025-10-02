@@ -285,7 +285,6 @@ export default function CofounderPage() {
               </div>
             </section>
           </div>
-          </section>
           <div className="w-full">
             <footer className="px-4 w-full max-w-[1920px] mx-auto flex flex-col items-center gap-16 pb-12 overflow-hidden" id="page-footer">
               <div className="fixed pointer-events-none z-50" style={{left: '-70px', top: '-70px'}}>
