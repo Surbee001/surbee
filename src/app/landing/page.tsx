@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "framer-motion";
 import localFont from "next/font/local";
 import TypingOverlay from "@/components/landing/TypingOverlay";
 
@@ -115,7 +116,13 @@ export default function LandingPage() {
         {/* Main Content - occupies the rest of the page width */}
         <main className={`ml-56 w-full pt-20`}> {/* ml must equal sidebar width; pt offset for navbar */}
           {/* Title and description (hero header) */}
-          <section className="w-full max-w-[1920px] mx-auto px-5 md:px-8 xl:px-12 2xl:px-30 pb-8 pt-8 xl:pb-20 xl:pt-20">
+          <motion.section
+            className="w-full max-w-[1920px] mx-auto px-5 md:px-8 xl:px-12 2xl:px-30 pb-8 pt-8 xl:pb-20 xl:pt-20"
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+          >
             <div className="flex flex-col gap-12">
               <h1 className='text-[#171717] font-semibold leading-none tracking-[-0.96px] text-[48px] max-w-[520px] sm:text-[54px] sm:leading-[110%] sm:tracking-[-1.08px] sm:max-w-[620px] xl:text-[70px] xl:leading-none xl:tracking-[-1.4px] xl:max-w-[720px] 3xl:text-[90px] 3xl:leading-none 3xl:tracking-[-1.8px] 3xl:max-w-[820px]'>
                 Automate your surveys with natural language
@@ -127,27 +134,51 @@ export default function LandingPage() {
                 </p>
               </div>
             </div>
-          </section>
+          </motion.section>
 
           {/* Divider spanning full content width and touching sidebar border */}
           <div className="mt-10 h-px w-full bg-neutral-200" />
 
           {/* Picture/Hero area with rounded corners and padding like before + centered overlay card */}
-	          <section className="mt-8 w-full px-6">
-	            <div className="relative h-[60vh] w-full overflow-hidden rounded-md">
+	          <motion.section
+              className="mt-8 w-full px-6"
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+            >
+	            <motion.div
+                className="relative h-[60vh] w-full overflow-hidden rounded-md"
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.35 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+            >
               <img
-                src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__cbbf9473-785a-4dc6-a4d0-8eb684185fbc.png?raw=true"
+                src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png?raw=true"
                 alt="Surbee hero landscape"
                 className="h-full w-full object-cover"
               />
 
               {/* Centered overlay prompt card */}
-	              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+	              <motion.div
+                  className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+                  initial={{ opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.35 }}
+                  transition={{ duration: 0.28, ease: "easeOut", delay: 0.05 }}
+              >
 	                <a
 	                  className="cursor-pointer pointer-events-auto group"
 	                  href="/test-login"
-	                >
-                  <div className="relative inline-block">
+                >
+	                  <motion.div
+                      className="relative inline-block"
+                      initial={{ opacity: 0, y: 8 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, amount: 0.35 }}
+                      transition={{ duration: 0.25, ease: "easeOut", delay: 0.1 }}
+                  >
                     <div className="rounded-lg px-4 pt-3 pb-2 backdrop-blur-lg max-w-[calc(100vw_-_64px)] w-[640px] flex flex-col items-start justify-between gap-2 h-[140px] bg-gradient-to-b from-[rgba(255,255,255,0.80)] to-[rgba(255,255,255,0.16)] shadow-[0px_4px_12px_0px_rgba(255,255,255,0.10)_inset,0px_0px_0px_6px_rgba(255,255,255,0.40),0px_1px_8px_0px_rgba(0,0,0,0.13),0px_2px_6px_0px_rgba(0,0,0,0.20)]">
                       {/* Typing overlay at top */}
                       <TypingOverlay prompts={[
@@ -182,36 +213,54 @@ export default function LandingPage() {
                         </svg>
                       </div>
                       <div className="absolute left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent top-full border-t-[6px] border-t-neutral-900" />
-                    </div>
-                  </div>
+	                    </div>
+	                  </motion.div>
                 </a>
-              </div>
-            </div>
-          </section>
+	              </motion.div>
+	            </motion.div>
+	          </motion.section>
 
           {/* Centered description text */}
-          <section className="mt-8 mb-6 px-6">
+          <motion.section
+            className="mt-8 mb-6 px-6"
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
             <div className="text-center">
               <p className="text-[15px] text-neutral-600 leading-[140%] max-w-2xl mx-auto">
                 Describe what you want, and Surbee drafts complete surveys — questions, options, and logic — instantly. Iterate with plain English.
               </p>
             </div>
+          </motion.section>
+
+          {/* Features title */}
+          <section className="px-6 pt-12 pb-8 text-center">
+            <h2 className="font-af-foundary font-medium tracking-15 text-neutral-900 text-center text-[20px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 mb-8">
+              Here's what Surbee can do for you
+            </h2>
           </section>
 
 	          {/* Divider spanning full content width and touching sidebar border */}
 	          <div className="mt-2 h-px w-full bg-neutral-200" />
 
 	          {/* Post-hero section */}
-	          <div className="w-full border-t border-b">
-	            <section className="px-0 w-full max-w-[1920px] mx-auto flex flex-col lg:flex-row">
+	          <div className="w-full border-t border-b border-gray-200">
+            <motion.section
+              className="px-0 w-full max-w-[1920px] mx-auto flex flex-col lg:flex-row"
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.25 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+            >
 	              <div className="p-2 md:p-4 2xl:p-8 flex border-b lg:border-b-0 items-center justify-center lg:max-w-[60%] xl:max-w-[68%] lg:min-h-[630px] w-full overflow-hidden">
 	                <div className="relative w-full h-full flex items-center justify-center p-8">
 	                  <img
 	                    className="absolute inset-0 object-cover rounded-lg"
-	                    alt="Detect behaviors"
+	                    alt="Drone view colorful landscape"
 	                    sizes="100vw"
-	                    src="https://cofounder.co/_next/image?url=/images/agents-bg-img.png&w=3840&q=75"
-	                    srcSet="/_next/image?url=%2Fimages%2Fagents-bg-img.png&w=640&q=75 640w, /_next/image?url=%2Fimages%2Fagents-bg-img.png&w=750&q=75 750w, /_next/image?url=%2Fimages%2Fagents-bg-img.png&w=828&q=75 828w, /_next/image?url=%2Fimages%2Fagents-bg-img.png&w=1080&q=75 1080w, /_next/image?url=%2Fimages%2Fagents-bg-img.png&w=1200&q=75 1200w, /_next/image?url=%2Fimages%2Fagents-bg-img.png&w=1920&q=75 1920w, /_next/image?url=%2Fimages%2Fagents-bg-img.png&w=2048&q=75 2048w, /_next/image?url=%2Fimages%2Fagents-bg-img.png&w=3840&q=75 3840w"
+	                    src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_38ad15d7-b5a3-4398-b147-29c92e90c780.png?raw=true"
 	                    style={{
 	                      color: "transparent",
 	                      inset: "0px",
@@ -227,11 +276,11 @@ export default function LandingPage() {
 	                          Data Detective
 	                        </p>
 	                      </div>
-	                      <div className="border rounded-full min-w-[42px] text-center" style={{ background: "rgba(0, 128, 188, 0.12)", borderColor: "rgba(0, 128, 188, 0.12)", minWidth: "42px" }}>
-	                        <div className="text-gray-800 font-medium text-[12px]" style={{ color: "rgb(0, 99, 146)", fontSize: "12px" }}>
-	                          95%
-	                        </div>
-	                      </div>
+                      <div className="border rounded-full min-w-[42px] text-center" style={{ background: "transparent", borderColor: "rgba(255, 255, 255, 0.3)", minWidth: "42px" }}>
+                        <div className="text-gray-800 font-medium text-[12px]" style={{ color: "rgba(255, 255, 255, 0.9)", fontSize: "12px" }}>
+                          95%
+                        </div>
+                      </div>
 	                    </div>
 	                    <div className="flex rounded-lg border" style={{ borderColor: "rgba(255, 255, 255, 0.1)", background: "rgba(255, 255, 255, 0.2)" }}>
 	                      <div className="py-1 px-3 w-full">
@@ -240,7 +289,7 @@ export default function LandingPage() {
 	                            Suspicious patterns detected
 	                          </p>
 	                          <div className="w-4 h-4 flex items-center justify-center">
-	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-green-500 w-6 h-6">
+	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-transparent border border-white/30 w-6 h-6">
 	                              <svg className="lucide lucide-check w-3 h-3 text-white" height="12" width="12" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
 	                                <path d="M20 6 9 17l-5-5" />
 	                              </svg>
@@ -252,7 +301,7 @@ export default function LandingPage() {
 	                            Bot responses identified
 	                          </p>
 	                          <div className="w-4 h-4 flex items-center justify-center">
-	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-green-500 w-6 h-6">
+	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-transparent border border-white/30 w-6 h-6">
 	                              <svg className="lucide lucide-check w-3 h-3 text-white" height="12" width="12" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
 	                                <path d="M20 6 9 17l-5-5" />
 	                              </svg>
@@ -264,7 +313,7 @@ export default function LandingPage() {
 	                            Data quality verified
 	                          </p>
 	                          <div className="w-4 h-4 flex items-center justify-center">
-	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-green-500 w-6 h-6">
+	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-transparent border border-white/30 w-6 h-6">
 	                              <svg className="lucide lucide-check w-3 h-3 text-white" height="12" width="12" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
 	                                <path d="M20 6 9 17l-5-5" />
 	                              </svg>
@@ -281,15 +330,12 @@ export default function LandingPage() {
 	                  <div className="relative w-full h-full min-h-[190px] sm:min-h-[170px] lg:min-h-auto flex flex-col justify-end">
 	                    <div className="flex flex-col gap-8 justify-end h-full">
 	                      <div className="flex flex-col gap-4">
-	                        <h4 className="font-af-foundary font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-[20px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 text-left text-neutral-900">
+	                        <h4 className="font-af-foundary font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-[24px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 text-left text-neutral-900">
 	                          Detect Odd Behaviors & Bad Data
 	                        </h4>
 	                        <div className="flex flex-col gap-2">
 	                          <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700 [font-variant-numeric:lining-nums_proportional-nums]">
-	                            Surbee flags suspicious patterns, bots, and inconsistent answers — like a data detective — so your insights stay trustworthy.
-	                          </p>
-	                          <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700 [font-variant-numeric:lining-nums_proportional-nums]">
-	                            Get alerts when something doesn't look right, ensuring your survey data is always reliable and actionable.
+	                            Surbee flags suspicious patterns, bots, and inconsistent answers — like a data detective.
 	                          </p>
 	                        </div>
 	                      </div>
@@ -297,20 +343,25 @@ export default function LandingPage() {
 	                  </div>
 	                </div>
 	              </div>
-	            </section>
+            </motion.section>
 	          </div>
 
 	          {/* Second card section */}
-	          <div className="w-full border-b">
-	            <section className="px-0 w-full max-w-[1920px] mx-auto flex flex-col lg:flex-row-reverse">
+	          <div className="w-full border-b border-gray-200">
+            <motion.section
+              className="px-0 w-full max-w-[1920px] mx-auto flex flex-col lg:flex-row-reverse"
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.25 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+            >
 	              <div className="p-2 md:p-4 2xl:p-8 flex border-b lg:border-b-0 items-center justify-center lg:max-w-[60%] xl:max-w-[68%] lg:min-h-[630px] w-full overflow-hidden">
 	                <div className="relative w-full h-full flex items-center justify-center p-8">
 	                  <img
 	                    className="absolute inset-0 object-cover rounded-lg"
-	                    alt="Community"
+	                    alt="Drone view colorful landscape 2"
 	                    sizes="100vw"
-	                    src="https://cofounder.co/_next/image?url=/images/community-bg-img.png&w=3840&q=75"
-	                    srcSet="/_next/image?url=%2Fimages%2Fcommunity-bg-img.png&w=640&q=75 640w, /_next/image?url=%2Fimages%2Fcommunity-bg-img.png&w=750&q=75 750w, /_next/image?url=%2Fimages%2Fcommunity-bg-img.png&w=828&q=75 828w, /_next/image?url=%2Fimages%2Fcommunity-bg-img.png&w=1080&q=75 1080w, /_next/image?url=%2Fimages%2Fcommunity-bg-img.png&w=1200&q=75 1200w, /_next/image?url=%2Fimages%2Fcommunity-bg-img.png&w=1920&q=75 1920w, /_next/image?url=%2Fimages%2Fcommunity-bg-img.png&w=2048&q=75 2048w, /_next/image?url=%2Fimages%2Fcommunity-bg-img.png&w=3840&q=75 3840w"
+	                    src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_abf323ce-3d0a-417d-8ce7-b307c8e84258.png?raw=true"
 	                    style={{
 	                      color: "transparent",
 	                      inset: "0px",
@@ -326,11 +377,11 @@ export default function LandingPage() {
 	                          Community Hub
 	                        </p>
 	                      </div>
-	                      <div className="border rounded-full min-w-[42px] text-center" style={{ background: "rgba(0, 128, 188, 0.12)", borderColor: "rgba(0, 128, 188, 0.12)", minWidth: "42px" }}>
-	                        <div className="text-gray-800 font-medium text-[12px]" style={{ color: "rgb(0, 99, 146)", fontSize: "12px" }}>
-	                          127
-	                        </div>
-	                      </div>
+                      <div className="border rounded-full min-w-[42px] text-center" style={{ background: "transparent", borderColor: "rgba(255, 255, 255, 0.3)", minWidth: "42px" }}>
+                        <div className="text-gray-800 font-medium text-[12px]" style={{ color: "rgba(255, 255, 255, 0.9)", fontSize: "12px" }}>
+                          127
+                        </div>
+                      </div>
 	                    </div>
 	                    <div className="flex rounded-lg border" style={{ borderColor: "rgba(255, 255, 255, 0.1)", background: "rgba(255, 255, 255, 0.2)" }}>
 	                      <div className="py-1 px-3 w-full">
@@ -339,7 +390,7 @@ export default function LandingPage() {
 	                            Active discussions ongoing
 	                          </p>
 	                          <div className="w-4 h-4 flex items-center justify-center">
-	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-green-500 w-6 h-6">
+	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-transparent border border-white/30 w-6 h-6">
 	                              <svg className="lucide lucide-check w-3 h-3 text-white" height="12" width="12" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
 	                                <path d="M20 6 9 17l-5-5" />
 	                              </svg>
@@ -351,7 +402,7 @@ export default function LandingPage() {
 	                            50 responses collected
 	                          </p>
 	                          <div className="w-4 h-4 flex items-center justify-center">
-	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-green-500 w-6 h-6">
+	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-transparent border border-white/30 w-6 h-6">
 	                              <svg className="lucide lucide-check w-3 h-3 text-white" height="12" width="12" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
 	                                <path d="M20 6 9 17l-5-5" />
 	                              </svg>
@@ -363,7 +414,7 @@ export default function LandingPage() {
 	                            Insights surfaced
 	                          </p>
 	                          <div className="w-4 h-4 flex items-center justify-center">
-	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-green-500 w-6 h-6">
+	                            <div className="flex items-center justify-center p-[7px] rounded-full bg-transparent border border-white/30 w-6 h-6">
 	                              <svg className="lucide lucide-check w-3 h-3 text-white" height="12" width="12" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
 	                                <path d="M20 6 9 17l-5-5" />
 	                              </svg>
@@ -375,20 +426,17 @@ export default function LandingPage() {
 	                  </div>
 	                </div>
 	              </div>
-	              <div className="border-l lg:border-r border-gray-200 flex-1 flex flex-col justify-end p-5 sm:p-8 2xl:px-9 2xl:py-8">
+	              <div className="lg:border-r border-gray-200 flex-1 flex flex-col justify-end p-5 sm:p-8 2xl:px-9 2xl:py-8">
 	                <div className="relative w-full h-full overflow-hidden">
 	                  <div className="relative w-full h-full min-h-[190px] sm:min-h-[170px] lg:min-h-auto flex flex-col justify-end">
 	                    <div className="flex flex-col gap-8 justify-end h-full">
 	                      <div className="flex flex-col gap-4">
-	                        <h4 className="font-af-foundary font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-[20px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 text-left text-neutral-900">
+	                        <h4 className="font-af-foundary font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-[24px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 text-left text-neutral-900">
 	                          Grow a Community Around Your Surveys
 	                        </h4>
 	                        <div className="flex flex-col gap-2">
 	                          <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700 [font-variant-numeric:lining-nums_proportional-nums]">
-	                            Launch a lightweight community where participants discuss, respond, and resurface insights — accelerating answers to your questions.
-	                          </p>
-	                          <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700 [font-variant-numeric:lining-nums_proportional-nums]">
-	                            Build engagement and get richer feedback by creating spaces for ongoing conversations around your surveys.
+	                            Launch a lightweight community where participants discuss, respond, and resurface insights.
 	                          </p>
 	                        </div>
 	                      </div>
@@ -396,14 +444,20 @@ export default function LandingPage() {
 	                  </div>
 	                </div>
 	              </div>
-	            </section>
+            </motion.section>
 	          </div>
 
 	          {/* Spacer section */}
 	          <div className="py-12"></div>
 
 	          {/* Integrations Section */}
-	          <section className="py-8 mx-auto w-full max-w-4xl flex flex-col justify-center items-center">
+          <motion.section
+            className="py-8 mx-auto w-full max-w-4xl flex flex-col justify-center items-center"
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+          >
 	            <h2 className="font-af-foundary font-medium tracking-15 text-neutral-900 text-center text-[20px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 mb-8">
 	              Connect the tools you already use
 	            </h2>
@@ -1103,7 +1157,259 @@ export default function LandingPage() {
 	                </div>
 	              </div>
 	            </div>
-	          </section>
+          </motion.section>
+
+	          {/* Results Section */}
+	          <div className="w-full">
+	            <section
+	              id="results"
+	              className="2xl:pb-[220px] xl:pb-[200px] md:pb-[160px] pb-[120px] 2xl:pt-[200px] xl:pt-[180px] md:pt-[140px] pt-[120px] 2xl:px-30 xl:px-12 md:px-8 px-5 w-full max-w-[1920px] mx-auto"
+	            >
+	              <div className="flex flex-col lg:flex-row gap-30 sm:gap-23 lg:gap-8 items-center">
+	                <div className="flex flex-col flex-1 gap-8 lg:gap-15 text-center lg:text-left">
+	                  <div className="flex flex-col">
+	                    <p className="font-mondwest font-normal text-[54px] sm:text-[64px] md:text-[54px] lg:text-[64px] text-neutral-900 leading-[130%] tracking-[-1.28px]">
+	                      15,847
+	                    </p>
+	                    <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
+	                      surveys created with Surbee
+	                    </p>
+	                  </div>
+	                  <div className="flex flex-col">
+	                    <p className="font-mondwest font-normal text-[54px] sm:text-[64px] md:text-[54px] lg:text-[64px] text-neutral-900 leading-[130%] tracking-[-1.28px]">
+	                      2.3M+
+	                    </p>
+	                    <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
+	                      responses collected and analyzed
+	                    </p>
+	                  </div>
+	                  <div className="flex flex-col">
+	                    <p className="font-mondwest font-normal text-[54px] sm:text-[64px] md:text-[54px] lg:text-[64px] text-neutral-900 leading-[130%] tracking-[-1.28px]">
+	                      <span className="flex items-center lg:justify-start justify-center gap-1">
+	                        500{" "}
+	                        <svg
+	                          height="23"
+	                          width="23"
+	                          fill="none"
+	                          viewBox="0 0 23 23"
+	                          xmlns="http://www.w3.org/2000/svg"
+	                        >
+	                          <path
+	                            d="M13.4688 10.1087H22.6451V13.3826H13.4688V22.8816H10.1488V13.3826H0.972575V10.1087H10.1488V0.563566H13.4688V10.1087Z"
+	                            fill="#2C2C2C"
+	                          />
+	                        </svg>
+	                      </span>
+	                    </p>
+	                    <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
+	                      active researchers using Surbee
+	                    </p>
+	                  </div>
+	                </div>
+	                <div className="flex flex-col flex-1 gap-8 items-center lg:items-start">
+	                  <div className="w-full max-w-[600px]">
+	                    <div className="relative w-full h-full overflow-hidden">
+	                      <div className="relative w-full h-full flex flex-col justify-end">
+	                        <div className="relative h-full opacity-0 pointer-events-none overflow-hidden">
+	                          <div className="flex w-full h-full flex-row flex-no-wrap">
+	                            <div
+	                              className="flex-shrink-0 w-full h-full"
+	                              style={{ minWidth: "100%" }}
+	                            >
+	                              <div className="flex flex-col gap-8 justify-end items-center lg:items-start h-full pl-1 py-1">
+	                                <img
+	                                  className="rounded-md base-box-shadow"
+	                                  height={104}
+	                                  width={91}
+	                                  alt="User"
+	                                  src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_861e01b6-89f3-4d0f-aad6-6192ba927e14.png?raw=true"
+                                  style={{
+                                    WebkitUserDrag: "none",
+                                    userSelect: "none",
+                                    boxShadow:
+                                      "rgba(0, 0, 0, 0.14) 0px 2px 2px, rgba(0, 0, 0, 0) 0px 6px 6px, rgba(0, 0, 0, 0.06) 0px 0px 0px 3px",
+                                    color: "transparent",
+                                  } as React.CSSProperties & { WebkitUserDrag: string }}
+	                                />
+	                                <p className="font-af-foundary font-medium text-[24px] md:text-[28px] text-center lg:text-left max-w-[504px] lg:max-w-[520px] leading-[130%] tracking-48">
+                                  <span
+                                    className="relative"
+                                    style={{
+                                      background: "#c2185b", // Darker red
+                                      padding: "0 4px",
+                                      borderRadius: "2px",
+                                    }}
+                                  >
+	                                    "Surbee's AI-powered survey creation has
+	                                    completely transformed our research workflow.
+	                                  </span>{" "}
+	                                  It automatically generates sophisticated surveys
+	                                  from simple descriptions, analyzes responses with
+	                                  incredible accuracy, and saves us countless hours of manual work."
+	                                </p>
+	                                <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700">
+	                                  Dr. Sarah Martinez, Research Director at Insight Analytics
+	                                </p>
+	                              </div>
+	                            </div>
+	                            <div
+	                              className="flex-shrink-0 w-full h-full"
+	                              style={{ minWidth: "100%" }}
+	                            >
+	                              <div className="flex flex-col gap-8 justify-end items-center lg:items-start h-full pl-1 py-1">
+	                                <img
+	                                  className="rounded-md base-box-shadow"
+	                                  height={104}
+	                                  width={91}
+	                                  alt="User"
+	                                  src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__496a7873-dd10-4e60-a067-a2c0bc0ef982.png?raw=true"
+                                  style={{
+                                    WebkitUserDrag: "none",
+                                    userSelect: "none",
+                                    boxShadow:
+                                      "rgba(0, 0, 0, 0.14) 0px 2px 2px, rgba(0, 0, 0, 0) 0px 6px 6px, rgba(0, 0, 0, 0.06) 0px 0px 0px 3px",
+                                    color: "transparent",
+                                  } as React.CSSProperties & { WebkitUserDrag: string }}
+	                                />
+	                                <p className="font-af-foundary font-medium text-[24px] md:text-[28px] text-center lg:text-left max-w-[504px] lg:max-w-[520px] leading-[130%] tracking-48">
+	                                  "As a market researcher, Surbee has revolutionized
+	                                  how we conduct studies. The AI generates nuanced
+	                                  questions automatically, detects response quality
+	                                  issues in real-time, and{" "}
+                                  <span
+                                    className="relative"
+                                    style={{
+                                      background: "#c2185b", // Darker red
+                                      padding: "0 4px",
+                                      borderRadius: "2px",
+                                    }}
+                                  >
+	                                    delivers insights 10x faster than traditional methods."
+	                                  </span>
+	                                </p>
+	                                <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700">
+	                                  Michael Chen, Head of UX Research at TechFlow
+	                                </p>
+	                              </div>
+	                            </div>
+	                          </div>
+	                        </div>
+	                        <div
+	                          className="absolute inset-0 w-full h-full cursor-pointer"
+	                          style={{
+	                            transition: "none",
+	                            opacity: 1,
+	                            filter: "blur(0px)",
+	                            clipPath: "inset(0px)",
+	                            pointerEvents: "auto",
+	                          }}
+	                        >
+	                          <div className="flex flex-col gap-8 justify-end items-center lg:items-start h-full pl-1 py-1">
+	                            <img
+	                              className="rounded-md base-box-shadow"
+	                              height={104}
+	                              width={91}
+	                              alt="Results"
+	                              src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_861e01b6-89f3-4d0f-aad6-6192ba927e14.png?raw=true"
+                                  style={{
+                                    WebkitUserDrag: "none",
+                                    userSelect: "none",
+                                    boxShadow:
+                                      "rgba(0, 0, 0, 0.14) 0px 2px 2px, rgba(0, 0, 0, 0) 0px 6px 6px, rgba(0, 0, 0, 0.06) 0px 0px 0px 3px",
+                                    color: "transparent",
+                                  } as React.CSSProperties & { WebkitUserDrag: string }}
+	                            />
+	                            <p className="font-af-foundary font-medium text-[24px] md:text-[28px] text-center lg:text-left max-w-[504px] lg:max-w-[520px] leading-[130%] tracking-48">
+                                  <span
+                                    className="relative"
+                                    style={{
+                                      background: "#c2185b", // Darker red
+                                      padding: "0 4px",
+                                      borderRadius: "2px",
+                                    }}
+                                  >
+	                                "Integrating GIC into my daily operations has been a
+	                                complete game-changer for my efficiency.
+	                              </span>{" "}
+	                              Their swarm of agents seamlessly handles tasks that
+	                              used to consume hours of my time, allowing me to focus
+	                              on decision-making. I love it– huge time save and
+	                              efficiency boost."
+	                            </p>
+	                            <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700">
+	                              Blaine Davis at Superconnector
+	                            </p>
+	                          </div>
+	                        </div>
+	                        <div
+	                          className="absolute inset-0 w-full h-full cursor-pointer"
+	                          style={{
+	                            transition: "none",
+	                            opacity: 0,
+	                            filter: "blur(4px)",
+	                            clipPath: "inset(0px)",
+	                            pointerEvents: "none",
+	                          }}
+	                        >
+	                          <div className="flex flex-col gap-8 justify-end items-center lg:items-start h-full pl-1 py-1">
+	                            <img
+	                              className="rounded-md base-box-shadow"
+	                              height={104}
+	                              width={91}
+	                              alt="Results"
+	                              src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__496a7873-dd10-4e60-a067-a2c0bc0ef982.png?raw=true"
+                                  style={{
+                                    WebkitUserDrag: "none",
+                                    userSelect: "none",
+                                    boxShadow:
+                                      "rgba(0, 0, 0, 0.14) 0px 2px 2px, rgba(0, 0, 0, 0) 0px 6px 6px, rgba(0, 0, 0, 0.06) 0px 0px 0px 3px",
+                                    color: "transparent",
+                                  } as React.CSSProperties & { WebkitUserDrag: string }}
+	                            />
+	                            <p className="font-af-foundary font-medium text-[24px] md:text-[28px] text-center lg:text-left max-w-[504px] lg:max-w-[520px] leading-[130%] tracking-48">
+	                              "As a solo founder, Cofounder has opened up my time
+	                              from responding and coordinating user interviews to
+	                              being able to work on the product full time and ship
+	                              faster than just working solo or even with an EA.{" "}
+                                  <span
+                                    className="relative"
+                                    style={{
+                                      background: "#c2185b", // Darker red
+                                      padding: "0 4px",
+                                      borderRadius: "2px",
+                                    }}
+                                  >
+	                                Truly couldn't function without it."
+	                              </span>
+	                            </p>
+	                            <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700">
+	                              Sabina Cabrera at Pogidraw
+	                            </p>
+	                          </div>
+	                        </div>
+	                      </div>
+	                      <div className="mt-8 w-full flex justify-center lg:justify-start">
+	                        <div className="h-3 flex items-center gap-1 border border-neutral-300 rounded-full py-1 px-1.25">
+	                          <div className="relative h-1 flex">
+	                            <button
+	                              className="relative transition-all duration-300 ease-out w-[7px] h-1 bg-neutral-900 rounded-[4px]"
+	                              aria-label="Go to slide 1"
+	                            />
+	                          </div>
+	                          <div className="relative h-1 flex">
+	                            <button
+	                              className="relative transition-all duration-300 ease-out w-1 h-1 bg-neutral-600 hover:bg-white/75 rounded-full"
+	                              aria-label="Go to slide 2"
+	                            />
+	                          </div>
+	                        </div>
+	                      </div>
+	                    </div>
+	                  </div>
+	                </div>
+	              </div>
+	            </section>
+	          </div>
         </main>
       </div>
     </div>
