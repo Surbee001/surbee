@@ -1,5 +1,7 @@
 import React from "react";
-import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
+const RevealSection = dynamic(() => import("@/components/landing/Reveal").then(m => m.RevealSection), { ssr: false });
+const RevealDiv = dynamic(() => import("@/components/landing/Reveal").then(m => m.RevealDiv), { ssr: false });
 import localFont from "next/font/local";
 import TypingOverlay from "@/components/landing/TypingOverlay";
 
@@ -116,12 +118,8 @@ export default function LandingPage() {
         {/* Main Content - occupies the rest of the page width */}
         <main className={`ml-56 w-full pt-20`}> {/* ml must equal sidebar width; pt offset for navbar */}
           {/* Title and description (hero header) */}
-          <motion.section
+          <RevealSection
             className="w-full max-w-[1920px] mx-auto px-5 md:px-8 xl:px-12 2xl:px-30 pb-8 pt-8 xl:pb-20 xl:pt-20"
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
           >
             <div className="flex flex-col gap-12">
               <h1 className='text-[#171717] font-semibold leading-none tracking-[-0.96px] text-[48px] max-w-[520px] sm:text-[54px] sm:leading-[110%] sm:tracking-[-1.08px] sm:max-w-[620px] xl:text-[70px] xl:leading-none xl:tracking-[-1.4px] xl:max-w-[720px] 3xl:text-[90px] 3xl:leading-none 3xl:tracking-[-1.8px] 3xl:max-w-[820px]'>
@@ -134,25 +132,17 @@ export default function LandingPage() {
                 </p>
               </div>
             </div>
-          </motion.section>
+          </RevealSection>
 
           {/* Divider spanning full content width and touching sidebar border */}
           <div className="mt-10 h-px w-full bg-neutral-200" />
 
           {/* Picture/Hero area with rounded corners and padding like before + centered overlay card */}
-	          <motion.section
+	          <RevealSection
               className="mt-8 w-full px-6"
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.35 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
             >
-	            <motion.div
+	            <RevealDiv
                 className="relative h-[60vh] w-full overflow-hidden rounded-md"
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.35 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
             >
               <img
                 src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png?raw=true"
@@ -161,23 +151,15 @@ export default function LandingPage() {
               />
 
               {/* Centered overlay prompt card */}
-	              <motion.div
+	              <RevealDiv
                   className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
-                  initial={{ opacity: 0, y: 18 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.35 }}
-                  transition={{ duration: 0.28, ease: "easeOut", delay: 0.05 }}
               >
 	                <a
 	                  className="cursor-pointer pointer-events-auto group"
 	                  href="/test-login"
                 >
-	                  <motion.div
+	                  <RevealDiv
                       className="relative inline-block"
-                      initial={{ opacity: 0, y: 8 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, amount: 0.35 }}
-                      transition={{ duration: 0.25, ease: "easeOut", delay: 0.1 }}
                   >
                     <div className="rounded-lg px-4 pt-3 pb-2 backdrop-blur-lg max-w-[calc(100vw_-_64px)] w-[640px] flex flex-col items-start justify-between gap-2 h-[140px] bg-gradient-to-b from-[rgba(255,255,255,0.80)] to-[rgba(255,255,255,0.16)] shadow-[0px_4px_12px_0px_rgba(255,255,255,0.10)_inset,0px_0px_0px_6px_rgba(255,255,255,0.40),0px_1px_8px_0px_rgba(0,0,0,0.13),0px_2px_6px_0px_rgba(0,0,0,0.20)]">
                       {/* Typing overlay at top */}
@@ -214,26 +196,22 @@ export default function LandingPage() {
                       </div>
                       <div className="absolute left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent top-full border-t-[6px] border-t-neutral-900" />
 	                    </div>
-	                  </motion.div>
+	                  </RevealDiv>
                 </a>
-	              </motion.div>
-	            </motion.div>
-	          </motion.section>
+	              </RevealDiv>
+	            </RevealDiv>
+	          </RevealSection>
 
           {/* Centered description text */}
-          <motion.section
+          <RevealSection
             className="mt-8 mb-6 px-6"
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
           >
             <div className="text-center">
               <p className="text-[15px] text-neutral-600 leading-[140%] max-w-2xl mx-auto">
                 Describe what you want, and Surbee drafts complete surveys — questions, options, and logic — instantly. Iterate with plain English.
               </p>
             </div>
-          </motion.section>
+          </RevealSection>
 
           {/* Features title */}
           <section className="px-6 pt-12 pb-8 text-center">
@@ -247,12 +225,8 @@ export default function LandingPage() {
 
 	          {/* Post-hero section */}
 	          <div className="w-full border-t border-b border-gray-200">
-            <motion.section
+            <RevealSection
               className="px-0 w-full max-w-[1920px] mx-auto flex flex-col lg:flex-row"
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.25 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
             >
 	              <div className="p-2 md:p-4 2xl:p-8 flex border-b lg:border-b-0 items-center justify-center lg:max-w-[60%] xl:max-w-[68%] lg:min-h-[630px] w-full overflow-hidden">
 	                <div className="relative w-full h-full flex items-center justify-center p-8">
@@ -343,17 +317,13 @@ export default function LandingPage() {
 	                  </div>
 	                </div>
 	              </div>
-            </motion.section>
+            </RevealSection>
 	          </div>
 
 	          {/* Second card section */}
 	          <div className="w-full border-b border-gray-200">
-            <motion.section
+            <RevealSection
               className="px-0 w-full max-w-[1920px] mx-auto flex flex-col lg:flex-row-reverse"
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.25 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
             >
 	              <div className="p-2 md:p-4 2xl:p-8 flex border-b lg:border-b-0 items-center justify-center lg:max-w-[60%] xl:max-w-[68%] lg:min-h-[630px] w-full overflow-hidden">
 	                <div className="relative w-full h-full flex items-center justify-center p-8">
@@ -444,19 +414,15 @@ export default function LandingPage() {
 	                  </div>
 	                </div>
 	              </div>
-            </motion.section>
+            </RevealSection>
 	          </div>
 
 	          {/* Spacer section */}
 	          <div className="py-12"></div>
 
 	          {/* Integrations Section */}
-          <motion.section
+          <RevealSection
             className="py-8 mx-auto w-full max-w-4xl flex flex-col justify-center items-center"
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
           >
 	            <h2 className="font-af-foundary font-medium tracking-15 text-neutral-900 text-center text-[20px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 mb-8">
 	              Connect the tools you already use
@@ -1157,7 +1123,7 @@ export default function LandingPage() {
 	                </div>
 	              </div>
 	            </div>
-          </motion.section>
+          </RevealSection>
 
 	          {/* Results Section */}
 	          <div className="w-full">
