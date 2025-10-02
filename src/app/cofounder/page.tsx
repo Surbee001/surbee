@@ -214,46 +214,101 @@ export default function CofounderPage() {
             </section>
           </div>
           <div className="w-full">
-            <section className="pb-[180px] pt-[140px] px-4 w-full max-w-[1920px] mx-auto" id="use-cases">
-              <div className="flex flex-col md:gap-6 items-center">
-                <h2 className="font-af-foundary font-medium tracking-15 text-neutral-900 text-center text-[20px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 mb-10 sm:mb-13.5 max-w-[320px] sm:max-w-none">
-                  Here's some of the things Cofounder can do for you
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <a className="group flex flex-col rounded-2xl border border-[#DEE2DE] bg-neutral-50 shadow-[0_2px_2px_0_rgba(0,0,0,0.06),_0_6px_6px_0_rgba(0,0,0,0.00)] transition-all hover:shadow-[0_2px_2px_0_rgba(0,0,0,0.06),_0_6px_6px_0_rgba(0,0,0,0.00),_0_0_0_5px_rgba(0,0,0,0.04)] p-4 sm:pt-5 sm:px-6 gap-4 justify-between group max-w-[332px] cursor-pointer" href="https://app.cofounder.co/replay/df83f210-d59e-47bc-8057-b4ace0d29520" rel="noopener noreferrer" target="_blank">
-                    <div className="flex flex-col gap-2">
-                      <h3 className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-900">
-                        Analyze this startup (Cofounder)
-                      </h3>
-                      <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700">
-                        Run a VC-style startup deep dive: build an analysis
-                        spreadsheet, research online, benchmark
-                        competitors, and enrich staff profiles.
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex flex-wrap gap-2">
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center p-[7px] h-7 w-7 rounded-full bg-neutral-300">
-                            <img alt="Other" className="w-full" decoding="async" height={37} loading="lazy" src="/cofounder-assets/other-tool.dd5a1084.avif" style={{color: 'transparent'}} width={37} />
+            <section className="2xl:pb-[220px] xl:pb-[200px] md:pb-[160px] pb-[120px] 2xl:pt-[200px] xl:pt-[180px] md:pt-[140px] pt-[120px] 2xl:px-30 xl:px-12 md:px-8 px-5 w-full max-w-[1920px] mx-auto" id="results">
+              <div className="flex flex-col lg:flex-row gap-30 sm:gap-23 lg:gap-8 items-center">
+                <div className="flex flex-col flex-1 gap-8 lg:gap-15 text-center lg:text-left">
+                  <div className="flex flex-col">
+                    <p className="font-mondwest font-normal text-[54px] sm:text-[64px] md:text-[54px] lg:text-[64px] text-neutral-900 leading-[130%] tracking-[-1.28px]">
+                      59,191
+                    </p>
+                    <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
+                      tasks automated by Cofounder
+                    </p>
+                  </div>
+                  <div className="flex flex-col">
+                    <p className="font-mondwest font-normal text-[54px] sm:text-[64px] md:text-[54px] lg:text-[64px] text-neutral-900 leading-[130%] tracking-[-1.28px]">
+                      &gt;18 billion
+                    </p>
+                    <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
+                      tokens processed by our agents each month
+                    </p>
+                  </div>
+                  <div className="flex flex-col">
+                    <p className="font-mondwest font-normal text-[54px] sm:text-[64px] md:text-[54px] lg:text-[64px] text-neutral-900 leading-[130%] tracking-[-1.28px]">
+                      <span className="flex items-center lg:justify-start justify-center gap-1">
+                        100
+                        <svg fill="none" height={23} viewBox="0 0 23 23" width={23} xmlns="http://www.w3.org/2000/svg">
+                          <path d="M13.4688 10.1087H22.6451V13.3826H13.4688V22.8816H10.1488V13.3826H0.972575V10.1087H10.1488V0.563566H13.4688V10.1087Z" fill="#2C2C2C">
+                          </path>
+                        </svg>
+                      </span>
+                    </p>
+                    <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-800">
+                      uptime in 2024
+                    </p>
+                  </div>
+                </div>
+                <div className="flex justify-center lg:justify-end flex-1 w-full lg:w-auto">
+                  <div className="flex flex-col gap-8 lg:gap-12 items-center w-full lg:max-w-[520px] min-h-[400px] group">
+                    <div className="flex flex-col transition-transform duration-300 group-hover:scale-105">
+                      <div className="p-4 bg-neutral-50 rounded-lg base-box-shadow">
+                        <div className="flex flex-col-reverse items-center lg:items-start gap-4">
+                          <div className="flex flex-col gap-4">
+                            <div className="flex items-center justify-center lg:justify-start gap-4">
+                              <div className="rounded-md relative overflow-hidden base-box-shadow">
+                                <img alt="Results" className="rounded-md base-box-shadow" decoding="async" height={103} loading="lazy" src="/cofounder-assets/blaine-davis.png" style={{color: 'transparent'}} width={91} />
+                              </div>
+                              <p className="font-af-foundary font-medium text-[24px] md:text-[28px] text-center lg:text-left max-w-[504px] lg:max-w-[520px] leading-[130%] tracking-48">
+                                <span className="bg-gradient-highlight-text">
+                                    "Integrating
+                                    GIC into my daily operations has been a
+                                    complete game-changer for my
+                                    productivity."
+                                  </span>
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-900 text-center lg:text-left">
+                                Blaine Davis
+                              </p>
+                              <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700 text-center lg:text-left">
+                                Product Manager
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
-                      <div className="opacity-0 group-hover:opacity-100 group-hover:blur-none transition-opacity ease-out duration-220">
-                        <button className="flex items-center gap-[6px] px-[10px] py-1 rounded-[100px] border border-[rgba(255,255,255,0.60)] bg-neutral-900 shadow-[0_4px_12px_0_rgba(255,255,255,0.10)_inset,0_2px_6px_0_rgba(0,0,0,0.20)] backdrop-blur-[20px] cursor-pointer hover:[&>svg]:translate-x-[2px]">
-                          <span className="text-[#FFF] font-af-foundary text-[13px] font-medium leading-[130%] tracking-[-0.13px]">
-                            See it work
-                          </span>
-                          <svg className="text-neutral-600 transition-transform duration-200" fill="none" height={13} viewBox="0 0 7 10" width={11} xmlns="http://www.w3.org/2000/svg">
-                            <rect fill="currentColor" height="1.41526" width="1.41526" x="4.36621" y="4.43835">
-                            </rect>
-                            <rect fill="currentColor" height="1.41526" width="1.41526" x="1.55078" y="1.61774">
-                            </rect>
-                            <rect fill="currentColor" height="1.41526" width="1.41526" x="1.55078" y="7.2619">
-                            </rect>
-                            <rect fill="currentColor" height="4.24579" width="1.41526" x="2.95117" y="3.02307">
-                            </rect>
-                          </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+          </section>
+          <div className="w-full">
+            <footer className="px-4 w-full max-w-[1920px] mx-auto flex flex-col items-center gap-16 pb-12 overflow-hidden" id="page-footer">
+              <div className="fixed pointer-events-none z-50" style={{left: '-70px', top: '-70px'}}>
+                <div style={{borderRadius: 999, border: '1px solid var(--neutral-400-stroke-light, #DEE2DE)', background: 'var(--CF-grad-neutral, linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.48) 100%))', boxShadow: '0 4px 12px 0 rgba(255, 255, 255, 0.10) inset, 0 1px 4px 0 rgba(0, 0, 0, 0.05), 0 3px 8px 0 rgba(0, 0, 0, 0.08)', backdropFilter: 'blur(5px)', display: 'flex', width: 140, height: 140, padding: 4, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 16, opacity: 0, transition: 'opacity 0.3s ease-out'}}>
+                  <img alt="Cursor" decoding="async" height={132} loading="lazy" src="/cofounder-assets/cursor.png" style={{color: 'transparent'}} width={132} />
+                </div>
+              </div>
+              <div className="flex flex-col gap-8 w-full">
+                <div className="flex flex-col items-start md:items-center gap-4">
+                  <p className="font-af-foundary font-medium text-[13px] tracking-13 leading-[130%] text-neutral-600">
+                    <span className="font-mondwest leading-[100%] tracking-48 text-[36px] md:text-[48px]">
+                      100K
+                      <span className="text-neutral-900">
+                        +
+                      </span>
+                    </span>
+                    <span className="text-neutral-900">
+                      workflows and counting
+                    </span>
+                  </p>
+                </div>
+                <div className="flex flex-col gap-4 items-center w-full md:max-w-[640px]">
+                  <a className="flex flex-col items-center gap-9 hover:cursor-none" href="https://app.cofounder.co" rel="noopener noreferrer" target="_blank">
                         </button>
                       </div>
                     </div>
@@ -2232,3 +2287,5 @@ export default function CofounderPage() {
     </div>
   );
 }
+
+
