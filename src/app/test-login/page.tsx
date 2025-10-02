@@ -1,18 +1,8 @@
 import React from "react";
-import localFont from "next/font/local";
-
-const epilogue = localFont({
-  src: [
-    { path: "../../../Font/Epilogue_Complete/Fonts/WEB/fonts/Epilogue-Variable.woff2", weight: "100 900", style: "normal" },
-    { path: "../../../Font/Epilogue_Complete/Fonts/WEB/fonts/Epilogue-VariableItalic.woff2", weight: "100 900", style: "italic" },
-  ],
-  variable: "--font-epilogue",
-  display: "swap",
-});
 
 export default function TestLoginPage() {
   return (
-    <div className={`${epilogue.variable} min-h-screen w-full`} style={{ backgroundColor: "#0A0A0A", color: "#EEF1ED", fontFamily: "var(--font-epilogue)" }}>
+    <div className="min-h-screen w-full" style={{ backgroundColor: "#0A0A0A", color: "#EEF1ED", fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" }}>
       <div className="grid min-h-screen grid-cols-1 md:grid-cols-2">
         {/* Left: form and copy */}
         <div className="relative flex items-center justify-center p-6 md:p-10">
