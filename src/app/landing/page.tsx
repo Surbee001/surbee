@@ -149,7 +149,7 @@ export default function LandingPage() {
                 className="relative h-[60vh] w-full overflow-hidden rounded-md"
             >
               <IKImage
-                src="/webimg/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png"
+                src="/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png"
                 alt="Surbee hero landscape"
                 width={1920}
                 height={1080}
@@ -241,7 +241,7 @@ export default function LandingPage() {
 	                  <IKImage
 	                    className="absolute inset-0 object-cover rounded-lg"
 	                    alt="Drone view colorful landscape"
-	                    src="/webimg/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_38ad15d7-b5a3-4398-b147-29c92e90c780.png"
+	                    src="/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_38ad15d7-b5a3-4398-b147-29c92e90c780.png"
                       width={1600}
                       height={900}
                       transformation={[{ width: 800, quality: 80 }]}
@@ -341,7 +341,7 @@ export default function LandingPage() {
 	                  <IKImage
 	                    className="absolute inset-0 object-cover rounded-lg"
 	                    alt="Drone view colorful landscape 2"
-	                    src="/webimg/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_abf323ce-3d0a-417d-8ce7-b307c8e84258.png"
+	                    src="/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_abf323ce-3d0a-417d-8ce7-b307c8e84258.png"
                       width={1600}
                       height={900}
                       transformation={[{ width: 800, quality: 80 }]}
@@ -1176,7 +1176,7 @@ export default function LandingPage() {
 	          <RevealSection className="mt-8 w-full px-6 pb-8">
 	            <RevealDiv className="relative h-[50vh] w-full overflow-hidden rounded-md">
 	              <IKImage
-	                src="/webimg/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__423e2f06-d2d7-4c2c-bd7b-9aec2b6c1fbe.png"
+	                src="/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__423e2f06-d2d7-4c2c-bd7b-9aec2b6c1fbe.png"
 	                alt="Join our community"
                   width={1920}
                   height={1080}
