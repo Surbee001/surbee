@@ -2,6 +2,7 @@ import React from "react";
 import { RevealSection, RevealDiv } from "@/components/landing/Reveal";
 import localFont from "next/font/local";
 import TypingOverlay from "@/components/landing/TypingOverlay";
+import { ImageKitProvider, Image as IKImage } from "@imagekit/next";
 
 const epilogue = localFont({
   src: [
@@ -23,13 +24,14 @@ const epilogue = localFont({
 export default function LandingPage() {
   const sidebarWidthClass = "w-56"; // 14rem ~ 224px
   return (
+    <ImageKitProvider urlEndpoint="https://surbee.dev">
     <div className={`min-h-screen w-full ${epilogue.variable}`} style={{ backgroundColor: "#FEFFFC", fontFamily: "var(--font-epilogue)" }}>
 	  {/* Top Navigation (full-width) with blur */}
 	  <nav className="fixed left-0 right-0 top-0 z-40 w-full bg-[#FEFFFC]/70 backdrop-blur supports-[backdrop-filter]:bg-[#FEFFFC]/70">
 		<div className="flex h-16 items-center justify-between gap-4 pl-56 pr-6">
 		  <div className="text-2xl text-[#171717] font-semibold tracking-[-0.02em] pl-5 md:pl-8 xl:pl-12 2xl:pl-30">surbee</div>
-		  <div className="flex items-center gap-4">
-			<a href="#pricing" className="text-sm text-[#171717] hover:text-neutral-800 transition-all duration-300 ease-out">
+          <div className="flex items-center gap-4">
+            <a href="/pricing" className="text-sm text-[#171717] hover:text-neutral-800 transition-all duration-300 ease-out">
             Pricing
           </a>
           <a
@@ -145,10 +147,12 @@ export default function LandingPage() {
 	            <RevealDiv
                 className="relative h-[60vh] w-full overflow-hidden rounded-md"
             >
-              <img
-                src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png?raw=true"
+              <IKImage
+                src="/webimg/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png"
                 alt="Surbee hero landscape"
                 className="h-full w-full object-cover"
+                transformation={[{ width: 960, quality: 80 }]}
+                loading="lazy"
               />
 
               {/* Centered overlay prompt card */}
@@ -231,11 +235,12 @@ export default function LandingPage() {
             >
 	              <div className="p-2 md:p-4 2xl:p-8 flex border-b lg:border-b-0 items-center justify-center lg:max-w-[60%] xl:max-w-[68%] lg:min-h-[630px] w-full overflow-hidden">
 	                <div className="relative w-full h-full flex items-center justify-center p-8">
-	                  <img
+	                  <IKImage
 	                    className="absolute inset-0 object-cover rounded-lg"
 	                    alt="Drone view colorful landscape"
-	                    sizes="100vw"
-	                    src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_38ad15d7-b5a3-4398-b147-29c92e90c780.png?raw=true"
+	                    src="/webimg/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_38ad15d7-b5a3-4398-b147-29c92e90c780.png"
+                      transformation={[{ width: 800, quality: 80 }]}
+                      loading="lazy"
 	                    style={{
 	                      color: "transparent",
 	                      inset: "0px",
@@ -328,11 +333,12 @@ export default function LandingPage() {
             >
 	              <div className="p-2 md:p-4 2xl:p-8 flex border-b lg:border-b-0 items-center justify-center lg:max-w-[60%] xl:max-w-[68%] lg:min-h-[630px] w-full overflow-hidden">
 	                <div className="relative w-full h-full flex items-center justify-center p-8">
-	                  <img
+	                  <IKImage
 	                    className="absolute inset-0 object-cover rounded-lg"
 	                    alt="Drone view colorful landscape 2"
-	                    sizes="100vw"
-	                    src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_abf323ce-3d0a-417d-8ce7-b307c8e84258.png?raw=true"
+	                    src="/webimg/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_abf323ce-3d0a-417d-8ce7-b307c8e84258.png"
+                      transformation={[{ width: 800, quality: 80 }]}
+                      loading="lazy"
 	                    style={{
 	                      color: "transparent",
 	                      inset: "0px",
@@ -1162,10 +1168,12 @@ export default function LandingPage() {
 	          {/* Footer Section */}
 	          <RevealSection className="mt-8 w-full px-6 pb-8">
 	            <RevealDiv className="relative h-[50vh] w-full overflow-hidden rounded-md">
-	              <img
-	                src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__423e2f06-d2d7-4c2c-bd7b-9aec2b6c1fbe.png?raw=true"
+	              <IKImage
+	                src="/webimg/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__423e2f06-d2d7-4c2c-bd7b-9aec2b6c1fbe.png"
 	                alt="Join our community"
 	                className="h-full w-full object-cover"
+                  transformation={[{ width: 960, quality: 80 }]}
+                  loading="lazy"
 	              />
 	              
 	              {/* Centered overlay card */}
@@ -1209,6 +1217,7 @@ export default function LandingPage() {
         </main>
       </div>
     </div>
+    </ImageKitProvider>
   );
 }
 
