@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import localFont from "next/font/local";
 import { motion, AnimatePresence } from "framer-motion";
+import { ImageKitProvider, Image as IKImage } from "@imagekit/next";
 
 const epilogue = localFont({
   src: [
@@ -23,6 +24,7 @@ const epilogue = localFont({
 
 export default function PricingPage() {
   return (
+    <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
     <div className={`min-h-screen w-full ${epilogue.variable}`} style={{ backgroundColor: "#FEFFFC", fontFamily: "var(--font-epilogue)" }}>
       {/* Top Navigation (full-width) with blur */}
       <nav className="fixed left-0 right-0 top-0 z-40 w-full bg-[#FEFFFC]/70 backdrop-blur supports-[backdrop-filter]:bg-[#FEFFFC]/70">
@@ -71,7 +73,7 @@ export default function PricingPage() {
             period="/ month"
             includes="500 credits / month"
             ctaHref="/test-login"
-            imageSrc="https://cofounder.co/_next/image?url=/images/pricing-img-1.png&w=1920&q=75"
+            imageSrc="/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__4ce65e66-d621-45c5-bf0a-fbb5ca988ffc.png"
             features={[
               "Core features",
               "Community support",
@@ -87,7 +89,7 @@ export default function PricingPage() {
             period="/ month"
             includes="4000 credits / month"
             ctaHref="/test-login"
-            imageSrc="https://cofounder.co/_next/image?url=/images/pricing-img-2.png&w=1920&q=75"
+            imageSrc="/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__a251fdff-9dfc-4ba5-ae7b-fc45b9e25c11.png"
             features={[
               "Everything from Trial",
               "Higher usage limits",
@@ -103,7 +105,7 @@ export default function PricingPage() {
             period=""
             includes="Unlimited teams & SSO"
             ctaHref="/test-login"
-            imageSrc="https://cofounder.co/_next/image?url=/images/pricing-img-3.png&w=1920&q=75"
+            imageSrc="/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__eaaaa7a6-e50c-45e5-b7b9-d04871dae055.png"
             features={[
               "Everything in Pro",
               "Dedicated support",
@@ -149,6 +151,7 @@ export default function PricingPage() {
         </div>
       </main>
     </div>
+    </ImageKitProvider>
   );
 }
 
@@ -255,12 +258,14 @@ function PlanCard({ title, price, period, includes, imageSrc, ctaHref, features 
       <div className="flex-1 flex flex-col">
         <div className="flex flex-col sm:flex-row lg:flex-col lg:gap-0 gap-4">
           <div className="relative lg:w-full w-full sm:w-1/2 h-[230px] sm:h-[222px] aspect-square [border-radius:16px] [border:1px_solid_#DEE2DE] overflow-hidden">
-            <img
+            <IKImage
               className="object-cover absolute inset-0 h-full w-full select-none"
               alt={title}
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               src={imageSrc}
-              draggable={false}
+              width={600}
+              height={600}
+              transformation={[{ width: 480, quality: 85 }]}
+              loading="lazy"
             />
                       </div>
           <div className="flex flex-col flex-1">

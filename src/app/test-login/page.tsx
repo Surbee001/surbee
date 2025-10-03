@@ -1,5 +1,6 @@
 import React from "react";
 import localFont from "next/font/local";
+import { ImageKitProvider, Image as IKImage } from "@imagekit/next";
 
 const epilogue = localFont({
   src: [
@@ -12,6 +13,7 @@ const epilogue = localFont({
 
 export default function TestLoginPage() {
   return (
+    <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
     <div className={`${epilogue.variable} min-h-screen w-full`} style={{ backgroundColor: "#0A0A0A", color: "#EEF1ED", fontFamily: "var(--font-epilogue)" }}>
       <div className="grid min-h-screen grid-cols-1 md:grid-cols-2">
         {/* Left: form and copy */}
@@ -62,15 +64,20 @@ export default function TestLoginPage() {
         {/* Right: image - remove heavy border, keep subtle rounding */}
         <div className="hidden md:block p-6 md:p-10">
           <div className="h-full w-full overflow-hidden rounded-lg">
-            <img
-              src="https://github.com/Surbee001/webimg/blob/main/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__496a7873-dd10-4e60-a067-a2c0bc0ef982.png?raw=true"
+            <IKImage
+              src="/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__496a7873-dd10-4e60-a067-a2c0bc0ef982.png"
               alt="login hero"
+              width={1200}
+              height={1600}
               className="h-full w-full object-cover"
+              transformation={[{ width: 960, quality: 85 }]}
+              loading="lazy"
             />
           </div>
         </div>
       </div>
     </div>
+    </ImageKitProvider>
   );
 }
 
