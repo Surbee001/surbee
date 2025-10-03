@@ -70,7 +70,7 @@ export default function TestLoginPage() {
               width={1200}
               height={1600}
               className="h-full w-full object-cover"
-              transformation={[{ width: 960, quality: 85 }]}
+              transformation={[{ width: 1200, quality: 90 }]}
               loading="lazy"
             />
           </div>
