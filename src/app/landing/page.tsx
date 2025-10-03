@@ -154,7 +154,7 @@ export default function LandingPage() {
                 width={1920}
                 height={1080}
                 className="h-full w-full object-cover"
-                transformation={[{ width: 960, quality: 80 }]}
+                transformation={[{ width: 1536, quality: 85 }]}
                 loading="lazy"
               />
 
@@ -244,7 +244,7 @@ export default function LandingPage() {
 	                    src="/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_38ad15d7-b5a3-4398-b147-29c92e90c780.png"
                       width={1600}
                       height={900}
-                      transformation={[{ width: 800, quality: 80 }]}
+                      transformation={[{ width: 1280, quality: 85 }]}
                       loading="lazy"
 	                    style={{
 	                      color: "transparent",
@@ -344,7 +344,7 @@ export default function LandingPage() {
 	                    src="/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_abf323ce-3d0a-417d-8ce7-b307c8e84258.png"
                       width={1600}
                       height={900}
-                      transformation={[{ width: 800, quality: 80 }]}
+                      transformation={[{ width: 1280, quality: 85 }]}
                       loading="lazy"
 	                    style={{
 	                      color: "transparent",
@@ -1181,7 +1181,7 @@ export default function LandingPage() {
                   width={1920}
                   height={1080}
 	                className="h-full w-full object-cover"
-                  transformation={[{ width: 960, quality: 80 }]}
+                  transformation={[{ width: 1536, quality: 85 }]}
                   loading="lazy"
 	              />
 	              
