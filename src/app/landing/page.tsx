@@ -2,6 +2,7 @@ import React from "react";
 import { RevealSection, RevealDiv } from "@/components/landing/Reveal";
 import localFont from "next/font/local";
 import TypingOverlay from "@/components/landing/TypingOverlay";
+import ColorfulText from "@/components/landing/ColorfulText";
 import { ImageKitProvider, Image as IKImage } from "@imagekit/next";
 
 const epilogue = localFont({
@@ -59,7 +60,11 @@ export default function LandingPage() {
 	        >
           {/* add top padding to avoid overlapping the nav items while border still cuts through */}
           <div className="flex h-full flex-col p-4 pt-20">
-            <div className="flex-1 flex flex-col">
+            {/* Spacer to push content to bottom */}
+            <div className="flex-1"></div>
+            
+            {/* Logo and menu at bottom */}
+            <div className="flex flex-col">
               <div className="px-1 mb-5">
                 <img
                   src="https://raw.githubusercontent.com/Surbee001/webimg/c120f0dfd46532bb149db06425090559998d97d5/New%20SVG.svg"
@@ -105,7 +110,7 @@ export default function LandingPage() {
               </div>
             </div>
             
-            <div className="flex items-center gap-3 px-1 pb-4">
+            <div className="flex items-center gap-3 px-1 pb-4 mt-6">
               <a href="https://twitter.com/surbee" target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-[#171717] transition-colors" aria-label="X">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
               </a>
@@ -127,7 +132,7 @@ export default function LandingPage() {
           >
             <div className="flex flex-col gap-12">
               <h1 className='text-[#171717] font-semibold leading-none tracking-[-0.96px] text-[48px] max-w-[520px] sm:text-[54px] sm:leading-[110%] sm:tracking-[-1.08px] sm:max-w-[620px] xl:text-[70px] xl:leading-none xl:tracking-[-1.4px] xl:max-w-[720px] 3xl:text-[90px] 3xl:leading-none 3xl:tracking-[-1.8px] 3xl:max-w-[820px]'>
-                Automate your surveys with natural language
+                <ColorfulText text="Automate your surveys with natural language" />
               </h1>
               <div className="flex flex-col gap-6">
                 <p className="text-[#171717] text-[15px] leading-[140%] max-w-[482px]">
@@ -1151,8 +1156,8 @@ export default function LandingPage() {
 	              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
 	                {/* Left Testimonial */}
 	                <div className="flex flex-col gap-6 p-8 bg-neutral-50 rounded-lg">
-	                  <p className="font-af-foundary font-medium text-[18px] md:text-[20px] text-[#171717] leading-[140%]">
-	                    "Surbee will help my students collect reliable results quickly, it's definitely going to raise the quality of their work. The automated validation catches issues I used to spend hours explaining."
+	                  <p className="font-af-foundary font-medium text-[18px] md:text-[20px] leading-[140%]">
+	                    <ColorfulText text='"Surbee will help my students collect reliable results quickly, it's definitely going to raise the quality of their work. The automated validation catches issues I used to spend hours explaining."' />
 	                  </p>
 	                  <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-[#171717]">
 	                    — Prelaunch testimonial
@@ -1161,8 +1166,8 @@ export default function LandingPage() {
 	                
 	                {/* Right Testimonial */}
 	                <div className="flex flex-col gap-6 p-8 bg-neutral-50 rounded-lg">
-	                  <p className="font-af-foundary font-medium text-[18px] md:text-[20px] text-[#171717] leading-[140%]">
-	                    "I've been waiting for something like this. Creating surveys used to take me days, now I can prototype in minutes and iterate based on real feedback. It's going to change how we do research."
+	                  <p className="font-af-foundary font-medium text-[18px] md:text-[20px] leading-[140%]">
+	                    <ColorfulText text='"I've been waiting for something like this. Creating surveys used to take me days, now I can prototype in minutes and iterate based on real feedback. It's going to change how we do research."' />
 	                  </p>
 	                  <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-[#171717]">
 	                    — Prelaunch testimonial
