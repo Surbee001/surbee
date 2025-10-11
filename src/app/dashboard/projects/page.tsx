@@ -8,13 +8,26 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  MoreHorizontal,
+  Copy,
+  Share,
+  Settings,
+  Archive,
+  Trash2,
 } from 'lucide-react';
+import { ImageKitProvider } from '@imagekit/next';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import type { Project } from '@/types/database';
@@ -25,6 +38,8 @@ interface ProjectWithStats extends Project {
   completionRate?: number;
   avgTimeToComplete?: number; // in minutes
   lastActivity?: Date;
+  previewImage?: string;
+  type?: string;
 }
 
 
@@ -48,24 +63,35 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
   placeholder = "Select..." 
 }) => {
   const selectedOption = options.find(opt => opt.value === value);
+  
+  // Calculate width based on longest text
+  const longestText = Math.max(
+    ...options.map(opt => opt.label.length),
+    placeholder.length
+  );
+  const dynamicWidth = Math.max(120, longestText * 8 + 60); // 8px per character + padding
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center justify-between gap-2 px-3 py-2 text-sm font-medium border rounded-lg hover:bg-accent hover:text-accent-foreground min-w-[8rem]" 
+        <button className="flex items-center justify-between gap-2 px-3 py-2 text-sm font-medium border rounded-xl transition-colors hover:bg-gray-800/50 cursor-pointer" 
                 style={{ 
-                  color: 'var(--surbee-fg-primary)', 
-                  borderColor: 'var(--surbee-border-primary)' 
+                  color: '#ffffff', 
+                  backgroundColor: 'transparent',
+                  borderColor: 'var(--surbee-border-accent)',
+                  fontFamily: 'var(--font-inter), sans-serif',
+                  width: `${dynamicWidth}px`
                 }}>
           <span>{selectedOption?.label || placeholder}</span>
-          <ChevronDown size={16} />
+          <ChevronDown size={16} className="text-gray-400" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-48">
+      <DropdownMenuContent align="start" className="rounded-xl border" style={{ borderColor: 'var(--surbee-border-accent)', backgroundColor: '#141414', width: `${dynamicWidth}px` }}>
         {options.map((option) => (
           <DropdownMenuItem
             key={option.value}
             onClick={() => onChange(option.value)}
+            className="rounded-lg text-white hover:bg-gray-800 cursor-pointer"
           >
             {option.label}
           </DropdownMenuItem>
@@ -75,44 +101,88 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
   );
 };
 
-// Skeleton Loading Component - Updated for new project card design
-const SkeletonCard: React.FC = () => (
-  <div className="project-card-container">
-    {/* Survey Preview Card Skeleton */}
-    <div className="project-card-preview-section">
-      <div className="skeleton-image" style={{ height: '11rem', borderRadius: 'calc(0.5rem * 1.5)' }}></div>
-    </div>
-    
-    {/* User Info and Actions Skeleton */}
-    <div className="project-card-info-section">
-      {/* User Avatar Skeleton */}
-      <div className="project-card-avatar-wrapper">
-        <div className="skeleton-circle" style={{ width: '2.25rem', height: '2.25rem' }}></div>
-      </div>
+// Info Icon Component
+const InfoIcon: React.FC = () => (
+  <span aria-labelledby="info-tooltip">
+    <span>
+      <svg
+        className="h-4.5 w-4.5 text-grey-500 cursor-pointer"
+        fill="none"
+        viewBox="0 0 16 16"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          clipRule="evenodd"
+          d="M2 5.6A3.6 3.6 0 0 1 5.6 2h4.8A3.6 3.6 0 0 1 14 5.6v4.8a3.6 3.6 0 0 1-3.6 3.6H5.6A3.6 3.6 0 0 1 2 10.4zm6.667-.933H7.334V6h1.333zm0 2.666H7.334v4h1.333z"
+          fill="currentColor"
+          fillRule="evenodd"
+        />
+      </svg>
+    </span>
+  </span>
+);
 
-      {/* Title, Status, and Actions Skeleton */}
-      <div className="project-card-content-wrapper">
-        <div className="project-card-text-section">
-          {/* Title and Status Badge Skeleton */}
-          <div className="project-card-title-row">
-            <div className="skeleton-text" style={{ width: '60%', height: '1rem' }}></div>
-            <div className="skeleton-badge"></div>
-          </div>
-          
-          {/* Last Edited Skeleton */}
-          <div className="project-card-meta-row" style={{ marginTop: '0.25rem' }}>
-            <div className="skeleton-text" style={{ width: '40%', height: '0.75rem' }}></div>
+// Skeleton Loading Component - Updated to match exact ProjectCard layout
+const SkeletonCard: React.FC = () => (
+  <div
+    className="group w-full p-[5px] rounded-[12px] relative border flex flex-col gap-[5px] h-full"
+    style={{ 
+      backgroundColor: "#141414",
+      borderColor: 'var(--surbee-border-accent)'
+    }}
+  >
+    {/* Header with avatar, title, and edit button */}
+    <div className="w-full flex justify-between">
+      <div className="flex gap-[5px]">
+        {/* User Avatar Skeleton */}
+        <div 
+          className="rounded-[8px] bg-gray-800 animate-pulse"
+          style={{ height: '35px', width: '35px' }}
+        />
+        
+        {/* Title and response count skeleton */}
+        <div className="text-sm flex flex-col justify-center h-[35px] gap-1">
+          <div 
+            className="bg-gray-800 animate-pulse rounded"
+            style={{ height: '14px', width: '120px' }}
+          />
+          <div className="flex items-center gap-1">
+            <div 
+              className="bg-gray-800 animate-pulse rounded"
+              style={{ height: '12px', width: '12px' }}
+            />
+            <div 
+              className="bg-gray-800 animate-pulse rounded"
+              style={{ height: '12px', width: '30px' }}
+            />
           </div>
         </div>
-
-        {/* 3 Dots Menu Skeleton */}
-        <div className="skeleton-circle" style={{ width: '1.75rem', height: '1.75rem' }}></div>
       </div>
+      
+      {/* Edit Button Skeleton */}
+      <div
+        className="w-[66px] h-[35px] bg-gray-800 animate-pulse rounded-lg"
+      />
+    </div>
+    
+    {/* Preview Image Skeleton */}
+    <div className="w-full rounded-[8px] aspect-[210/119] mt-auto overflow-hidden">
+      <div className="w-full h-full bg-gray-800 animate-pulse" />
     </div>
   </div>
 );
 
-const OldProjectCard: any = ({ 
+const OldProjectCard: React.FC<{
+  project: ProjectWithStats;
+  onLike?: () => void;
+  onSettings?: () => void;
+  onDuplicate?: () => void;
+  onDelete?: () => void;
+  onShare?: () => void;
+  onArchive?: () => void;
+  isPinned?: boolean;
+  onTogglePin?: () => void;
+}> = ({ 
   project, 
   onLike, 
   onSettings, 
@@ -122,6 +192,16 @@ const OldProjectCard: any = ({
   onArchive,
   isPinned,
   onTogglePin,
+}: {
+  project: ProjectWithStats;
+  onLike?: () => void;
+  onSettings?: () => void;
+  onDuplicate?: () => void;
+  onDelete?: () => void;
+  onShare?: () => void;
+  onArchive?: () => void;
+  isPinned?: boolean;
+  onTogglePin?: () => void;
 }) => {
   const router = useRouter();
 
@@ -322,86 +402,102 @@ const Pagination: React.FC<{
 };
 
 // Sample project data with more entries for pagination
-const sampleProjects = [
+const sampleProjects: ProjectWithStats[] = [
   {
     id: '1',
     title: 'Customer Satisfaction Survey 2024',
+    description: 'Annual customer satisfaction survey to measure service quality',
     user_id: 'user1',
     status: 'published' as const,
     created_at: '2024-01-15T10:00:00Z',
     updated_at: '2024-01-20T14:30:00Z',
     responseCount: 247,
-    type: 'Survey'
+    type: 'Survey',
+    previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png'
   },
   {
     id: '2',
     title: 'Employee Engagement Study',
+    description: 'Internal study to measure employee satisfaction and engagement',
     user_id: 'user1', 
     status: 'draft' as const,
     created_at: '2024-02-01T09:15:00Z',
     updated_at: '2024-02-05T11:45:00Z',
     responseCount: 89,
-    type: 'Study'
+    type: 'Study',
+    previewImage: '/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_38ad15d7-b5a3-4398-b147-29c92e90c780.png'
   },
   {
     id: '3',
     title: 'Product Feedback Collection',
+    description: 'Gathering user feedback on new product features',
     user_id: 'user1',
     status: 'published' as const,
     created_at: '2024-01-28T16:20:00Z',
     updated_at: '2024-02-02T09:10:00Z',
     responseCount: 156,
-    type: 'Feedback'
+    type: 'Feedback',
+    previewImage: '/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_abf323ce-3d0a-417d-8ce7-b307c8e84258.png'
   },
   {
     id: '4',
     title: 'Brand Awareness Research',
+    description: 'Market research to measure brand recognition and awareness',
     user_id: 'user1',
     status: 'published' as const,
     created_at: '2024-01-10T08:00:00Z',
     updated_at: '2024-01-25T16:20:00Z',
     responseCount: 312,
-    type: 'Survey'
+    type: 'Survey',
+    previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__423e2f06-d2d7-4c2c-bd7b-9aec2b6c1fbe.png'
   },
   {
     id: '5',
     title: 'User Experience Evaluation',
+    description: 'UX study to improve product usability and user satisfaction',
     user_id: 'user1',
     status: 'draft' as const,
     created_at: '2024-02-10T14:30:00Z',
     updated_at: '2024-02-12T10:15:00Z',
     responseCount: 45,
-    type: 'Study'
+    type: 'Study',
+    previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png'
   },
   {
     id: '6',
     title: 'Market Research Analysis',
+    description: 'Comprehensive market analysis for strategic planning',
     user_id: 'user1',
     status: 'published' as const,
     created_at: '2024-01-05T12:00:00Z',
     updated_at: '2024-01-30T09:45:00Z',
     responseCount: 198,
-    type: 'Survey'
+    type: 'Survey',
+    previewImage: '/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_38ad15d7-b5a3-4398-b147-29c92e90c780.png'
   },
   {
     id: '7',
     title: 'Customer Journey Mapping',
+    description: 'Mapping customer touchpoints and experience journey',
     user_id: 'user1',
     status: 'archived' as const,
     created_at: '2023-12-15T16:30:00Z',
     updated_at: '2024-01-05T14:20:00Z',
     responseCount: 87,
-    type: 'Study'
+    type: 'Study',
+    previewImage: '/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_abf323ce-3d0a-417d-8ce7-b307c8e84258.png'
   },
   {
     id: '8',
     title: 'Website Usability Test',
+    description: 'Testing website usability and navigation patterns',
     user_id: 'user1',
     status: 'draft' as const,
     created_at: '2024-02-08T11:45:00Z',
     updated_at: '2024-02-10T08:30:00Z',
     responseCount: 23,
-    type: 'Feedback'
+    type: 'Feedback',
+    previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__423e2f06-d2d7-4c2c-bd7b-9aec2b6c1fbe.png'
   }
 ];
 
@@ -411,22 +507,15 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<ProjectWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published' | 'archived'>('all');
-  const [typeFilter, setTypeFilter] = useState<'Survey' | 'Study' | 'Feedback'>('Survey');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<'updated' | 'created' | 'title' | 'responses'>('updated');
   const itemsPerPage = 8;
 
   // Dropdown options
-  const typeOptions: DropdownOption[] = [
-    { value: 'Survey', label: 'Survey' },
-    { value: 'Study', label: 'Study' },
-    { value: 'Feedback', label: 'Feedback' }
-  ];
 
   const sortOptions: DropdownOption[] = [
-    { value: 'updated', label: 'Last Modified' },
+    { value: 'updated', label: 'Recent upload' },
     { value: 'created', label: 'Created Date' },
     { value: 'title', label: 'Name' },
     { value: 'responses', label: 'Responses' }
@@ -467,10 +556,8 @@ export default function ProjectsPage() {
 
   const filteredProjects = useMemo(() => {
     let filtered = projects.filter(project => {
-      const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-      const matchesType = project.type === typeFilter;
       const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesStatus && matchesType && matchesSearch;
+      return matchesSearch;
     });
 
     // Sort projects
@@ -493,7 +580,7 @@ export default function ProjectsPage() {
     });
 
     return filtered;
-  }, [projects, statusFilter, typeFilter, searchQuery, sortBy, pinnedIds]);
+  }, [projects, searchQuery, sortBy, pinnedIds]);
 
   // Pagination
   const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
@@ -505,11 +592,17 @@ export default function ProjectsPage() {
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, typeFilter, searchQuery, sortBy]);
+  }, [searchQuery, sortBy]);
+
+  // Handle search input changes
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+  };
 
   const handleCreateSurvey = async () => {
     if (!user) return;
-    router.push('/visual-builder');
+    // Navigate to dashboard and trigger chatbox glow
+    router.push('/dashboard?highlightChat=true');
   };
 
   const handleDuplicate = (projectId: string) => {
@@ -536,33 +629,79 @@ export default function ProjectsPage() {
   // Show loading state while authenticating
   if (authLoading || loading) {
     return (
-      <div className="flex flex-col h-full">
+      <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
+        <div className="flex flex-col h-full">
         <div className="flex flex-col gap-6 p-6 mx-auto w-full max-w-[1280px] md:px-8">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="projects-title">Projects</h1>
-            <button className="px-6 py-2.5 bg-white text-black flex items-center gap-2 text-sm font-medium" style={{ borderRadius: '0.38rem' }}>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <h1 className="projects-title">Projects</h1>
+              <div className="flex items-center justify-center">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center justify-center">
+                        <InfoIcon />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent 
+                      side="bottom" 
+                      align="start"
+                      className="max-w-xs p-0 border-0 rounded-lg [&>svg]:!hidden [&>div>svg]:!hidden [&_svg]:!hidden"
+                      style={{ backgroundColor: 'rgba(108, 108, 108, 0.8)' }}
+                      sideOffset={8}
+                      hideWhenDetached={false}
+                    >
+                      <div className="text-sm text-white p-3">
+                        <p className="font-medium mb-2">Here you'll find all your projects.</p>
+                        <p>To apply changes, rename, see more info, or view analytics, click on the <span className="font-medium">Edit</span> button that appears when you hover over a project card.</p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </div>
+            <button className="px-6 py-2.5 bg-white text-black flex items-center gap-2 text-sm font-medium rounded-xl border" style={{ borderColor: 'var(--surbee-border-accent)' }}>
               <Plus className="w-4 h-4" />
               New Project
             </button>
           </div>
 
-          <div className="flex items-center justify-between mb-4">
-            <nav className="flex items-center">
-              <ul className="flex items-center gap-6">
-                <li><span className="text-lg font-medium">All</span></li>
-                <li><span className="text-lg text-gray-500">Published</span></li>
-                <li><span className="text-lg text-gray-500">Drafts</span></li>
-                <li><span className="text-lg text-gray-500">Archived</span></li>
-              </ul>
-            </nav>
-            <div className="flex items-center gap-4">
-              <div className="search-input opacity-50">
-                <Search className="w-4 h-4" />
+          {/* Loading state filter section */}
+          <div className="flex flex-row items-center justify-between mb-2">
+            <div className="flex items-center border border-solid transition-colors text-global-text h-10 rounded-lg px-4 gap-1 border-grey-400 focus-within:border-global-text hover:border-grey-500 hover:focus-within:border-global-text w-[240px] opacity-50">
+                <svg
+                  className="flex-shrink-0 text-grey-500 h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 16 16"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M13.4 3a.6.6 0 0 1 .6.6v.8a.6.6 0 0 1-.6.6H2.6a.6.6 0 0 1-.6-.6v-.8a.6.6 0 0 1 .6-.6zM11.4 7a.6.6 0 0 1 .6.6v.8a.6.6 0 0 1-.6.6H4.6a.6.6 0 0 1-.6-.6v-.8a.6.6 0 0 1 .6-.6zM9.4 11a.6.6 0 0 1 .6.6v.8a.6.6 0 0 1-.6.6H6.6a.6.6 0 0 1-.6-.6v-.8a.6.6 0 0 1 .6-.6z"
+                    fill="currentColor"
+                  />
+                </svg>
+                <input
+                  className="h-full w-full border-none bg-transparent outline-none read-only:select-all disabled:cursor-not-allowed text-global-text placeholder:text-grey-500 read-only:truncate text-body2"
+                  placeholder="Filter by project name"
+                  disabled
+                  style={{
+                    color: '#ffffff',
+                    fontFamily: 'var(--font-inter), sans-serif'
+                  }}
+                />
               </div>
-              <button className="filter-button opacity-50">
-                <Filter className="w-4 h-4" />
-                Filter
-              </button>
+            
+            <div>
+              <div className="flex items-center gap-x-3">
+                <p className="text-subtitle3" style={{ color: '#ffffff', fontWeight: 300 }}>Sort by</p>
+                <div className="opacity-50">
+                  <FilterDropdown
+                    options={sortOptions}
+                    value="updated"
+                    onChange={() => {}}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -575,6 +714,7 @@ export default function ProjectsPage() {
           </div>
         </div>
       </div>
+      </ImageKitProvider>
     );
   }
 
@@ -585,104 +725,94 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
+      <div className="flex flex-col h-full">
       {/* Fixed Header */}
       <div className="projects-header">
         <div className="flex flex-col gap-6 p-6 mx-auto w-full max-w-[1280px] md:px-8">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="projects-title">Projects</h1>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <h1 className="projects-title">Projects</h1>
+              <div className="flex items-center justify-center">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center justify-center">
+                        <InfoIcon />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent 
+                      side="bottom" 
+                      align="start"
+                      className="max-w-xs p-0 border-0 rounded-lg [&>svg]:!hidden [&>div>svg]:!hidden [&_svg]:!hidden"
+                      style={{ backgroundColor: 'rgba(108, 108, 108, 0.8)' }}
+                      sideOffset={8}
+                      hideWhenDetached={false}
+                    >
+                      <div className="text-sm text-white p-3">
+                        <p className="font-medium mb-2">Here you'll find all your projects.</p>
+                        <p>To apply changes, rename, see more info, or view analytics, click on the <span className="font-medium">Edit</span> button that appears when you hover over a project card.</p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </div>
             <button
               onClick={handleCreateSurvey}
-              className="px-6 py-2.5 bg-white text-black flex items-center gap-2 text-sm font-medium transition-all hover:bg-gray-100"
-              style={{ borderRadius: '0.38rem' }}
+              className="px-6 py-2.5 bg-white text-black flex items-center gap-2 text-sm font-medium transition-all hover:bg-gray-100 rounded-xl border cursor-pointer"
+              style={{ 
+                borderColor: 'var(--surbee-border-accent)',
+                fontFamily: 'var(--font-inter), sans-serif'
+              }}
             >
               <Plus className="w-4 h-4" />
               New Project
             </button>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-            {/* Navigation Tabs */}
-            <nav className="flex items-center">
-              <ul className="flex items-center gap-6">
-                <li>
-                  <button
-                    onClick={() => setStatusFilter('all')}
-                    className={`text-lg transition-colors hover:text-[var(--surbee-fg-primary)] cursor-pointer ${
-                      statusFilter === 'all' 
-                        ? 'text-[var(--surbee-fg-primary)] font-medium' 
-                        : 'text-[var(--surbee-fg-muted)] font-normal'
-                    }`}
-                  >
-                    All
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => setStatusFilter('published')}
-                    className={`text-lg transition-colors hover:text-[var(--surbee-fg-primary)] cursor-pointer ${
-                      statusFilter === 'published' 
-                        ? 'text-[var(--surbee-fg-primary)] font-medium' 
-                        : 'text-[var(--surbee-fg-muted)] font-normal'
-                    }`}
-                  >
-                    Published
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => setStatusFilter('draft')}
-                    className={`text-lg transition-colors hover:text-[var(--surbee-fg-primary)] cursor-pointer ${
-                      statusFilter === 'draft' 
-                        ? 'text-[var(--surbee-fg-primary)] font-medium' 
-                        : 'text-[var(--surbee-fg-muted)] font-normal'
-                    }`}
-                  >
-                    Drafts
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => setStatusFilter('archived')}
-                    className={`text-lg transition-colors hover:text-[var(--surbee-fg-primary)] cursor-pointer ${
-                      statusFilter === 'archived' 
-                        ? 'text-[var(--surbee-fg-primary)] font-medium' 
-                        : 'text-[var(--surbee-fg-muted)] font-normal'
-                    }`}
-                  >
-                    Archived
-                  </button>
-                </li>
-              </ul>
-            </nav>
-            
-            {/* Search and Filters */}
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--surbee-input-placeholder)' }} />
+          {/* New Filter and Sort Section */}
+          <div className="flex flex-row items-center justify-between mb-2">
+            {/* Filter Input */}
+            <div className="flex items-center border border-solid transition-colors text-global-text h-10 rounded-lg px-4 gap-1 border-grey-400 focus-within:border-global-text hover:border-grey-500 hover:focus-within:border-global-text w-[240px] cursor-pointer">
+                <svg
+                  className="flex-shrink-0 text-grey-500 h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 16 16"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M13.4 3a.6.6 0 0 1 .6.6v.8a.6.6 0 0 1-.6.6H2.6a.6.6 0 0 1-.6-.6v-.8a.6.6 0 0 1 .6-.6zM11.4 7a.6.6 0 0 1 .6.6v.8a.6.6 0 0 1-.6.6H4.6a.6.6 0 0 1-.6-.6v-.8a.6.6 0 0 1 .6-.6zM9.4 11a.6.6 0 0 1 .6.6v.8a.6.6 0 0 1-.6.6H6.6a.6.6 0 0 1-.6-.6v-.8a.6.6 0 0 1 .6-.6z"
+                    fill="currentColor"
+                  />
+                </svg>
                 <input
-                  type="text"
-                  placeholder="Search projects..."
+                  className="h-full w-full border-none bg-transparent outline-none read-only:select-all disabled:cursor-not-allowed text-global-text placeholder:text-grey-500 read-only:truncate text-body2"
+                  placeholder="Filter by project name"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="search-input pl-10"
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  style={{
+                    color: '#ffffff',
+                    fontFamily: 'var(--font-inter), sans-serif'
+                  }}
                 />
               </div>
-              <FilterDropdown
-                options={typeOptions}
-                value={typeFilter}
-                onChange={(value) => setTypeFilter(value as any)}
-              />
-              <FilterDropdown
-                options={sortOptions}
-                value={sortBy}
-                onChange={(value) => setSortBy(value as any)}
-              />
+            
+            {/* Sort Dropdown */}
+            <div>
+              <div className="flex items-center gap-x-3">
+                <p className="text-subtitle3" style={{ color: '#ffffff', fontWeight: 300 }}>Sort by</p>
+                <FilterDropdown
+                  options={sortOptions}
+                  value={sortBy}
+                  onChange={(value) => setSortBy(value as any)}
+                />
+              </div>
             </div>
           </div>
 
           {/* Divider Line */}
-          <div className="w-full h-px bg-gray-200/10"></div>
+          <div className="w-full h-px" style={{ backgroundColor: 'var(--surbee-border-accent)' }}></div>
         </div>
       </div>
 
@@ -702,6 +832,7 @@ export default function ProjectsPage() {
                 title={project.title}
                 status={project.status}
                 updatedAt={project.updated_at}
+                previewImage={project.previewImage}
                 onSettings={() => console.log('Settings for project:', project.id)}
                 onDuplicate={() => handleDuplicate(project.id)}
                 onDelete={() => handleDelete(project.id)}
@@ -725,11 +856,11 @@ export default function ProjectsPage() {
                 No projects found
               </h3>
               <p className="text-[14px] mb-6" style={{ color: 'var(--surbee-fg-muted)' }}>
-                {statusFilter !== 'all' || typeFilter !== 'all' || searchQuery
-                  ? 'Try adjusting your filters or search query' 
+                {searchQuery
+                  ? 'Try adjusting your search query' 
                   : 'Create your first project to get started'}
               </p>
-              {statusFilter === 'all' && typeFilter === 'all' && !searchQuery && (
+              {!searchQuery && (
                 <button
                   onClick={handleCreateSurvey}
                   className="px-6 py-3 rounded-lg text-[14px] font-medium transition-colors"
@@ -748,7 +879,8 @@ export default function ProjectsPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </ImageKitProvider>
   );
 }
 
