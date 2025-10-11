@@ -5,12 +5,12 @@ import localFont from "next/font/local";
 const epilogue = localFont({
   src: [
     {
-      path: "../../../public/fonts/Epilogue-Variable.woff2",
+      path: "../../../../public/fonts/Epilogue-Variable.woff2",
       weight: "100 900",
       style: "normal",
     },
     {
-      path: "../../../public/fonts/Epilogue-VariableItalic.woff2",
+      path: "../../../../public/fonts/Epilogue-VariableItalic.woff2",
       weight: "100 900",
       style: "italic",
     },
@@ -19,7 +19,7 @@ const epilogue = localFont({
   display: "swap",
 });
 
-export default function PrivacyPage() {
+export default function TermsPage() {
   const sidebarWidthClass = "w-56";
 
   return (
@@ -83,12 +83,6 @@ export default function PrivacyPage() {
                 </a>
                 <a
                   className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
-                  href="/landing#product"
-                >
-                  Product
-                </a>
-                <a
-                  className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
                   href="/landing#students"
                 >
                   Students
@@ -98,6 +92,12 @@ export default function PrivacyPage() {
                   href="/landing/blog"
                 >
                   Blog
+                </a>
+                <a
+                  className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
+                  href="/landing/privacy"
+                >
+                  Privacy
                 </a>
               </div>
             </div>
@@ -121,7 +121,7 @@ export default function PrivacyPage() {
           <RevealSection className="w-full max-w-4xl mx-auto px-5 md:px-8 xl:px-12 2xl:px-30 py-12">
             <div className="prose prose-lg max-w-none">
               <h1 className="text-[#171717] font-semibold text-[48px] leading-none tracking-[-0.96px] mb-8">
-                Privacy Policy
+                Terms of Service
               </h1>
 
               <p className="text-[15px] text-neutral-600 mb-8">
@@ -129,59 +129,75 @@ export default function PrivacyPage() {
               </p>
 
               <h2 className="text-[32px] font-semibold leading-tight mt-12 mb-6">
-                1. Information We Collect
+                1. Acceptance of Terms
               </h2>
 
               <p className="text-[17px] leading-[170%] mb-6 text-justify">
-                We collect information you provide directly to us, such as when you create an account, use our services, or contact us for support. This may include your name, email address, and other contact information.
+                By accessing and using Surbee ("Service"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
               </p>
 
               <h2 className="text-[32px] font-semibold leading-tight mt-12 mb-6">
-                2. How We Use Your Information
+                2. Description of Service
               </h2>
 
               <p className="text-[17px] leading-[170%] mb-6 text-justify">
-                We use the information we collect to provide, maintain, and improve our services, process transactions, communicate with you, and personalize your experience.
+                Surbee is an AI-powered survey creation and distribution platform that helps users create professional surveys, collect responses, and analyze data with advanced accuracy checking systems.
               </p>
 
               <h2 className="text-[32px] font-semibold leading-tight mt-12 mb-6">
-                3. Information Sharing
+                3. User Accounts and Registration
               </h2>
 
               <p className="text-[17px] leading-[170%] mb-6 text-justify">
-                We do not sell, trade, or otherwise transfer your personal information to third parties without your consent, except as described in this privacy policy.
+                To access certain features of the Service, you may be required to create an account. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account.
               </p>
 
               <h2 className="text-[32px] font-semibold leading-tight mt-12 mb-6">
-                4. Data Security
+                4. Acceptable Use
               </h2>
 
               <p className="text-[17px] leading-[170%] mb-6 text-justify">
-                We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.
+                You agree to use the Service only for lawful purposes and in accordance with these Terms. You may not use the Service to violate any applicable laws or regulations, to create surveys that are harmful, offensive, or discriminatory, to collect personal information without proper consent, or to interfere with or disrupt the Service or servers.
               </p>
 
               <h2 className="text-[32px] font-semibold leading-tight mt-12 mb-6">
-                5. Your Rights
+                5. Privacy and Data Protection
               </h2>
 
               <p className="text-[17px] leading-[170%] mb-6 text-justify">
-                You have the right to access, update, or delete your personal information. You may also opt out of certain communications from us.
+                Your privacy is important to us. Please review our Privacy Policy, which also governs your use of the Service, to understand our practices.
               </p>
 
               <h2 className="text-[32px] font-semibold leading-tight mt-12 mb-6">
-                6. Changes to This Policy
+                6. Intellectual Property
               </h2>
 
               <p className="text-[17px] leading-[170%] mb-6 text-justify">
-                We may update this privacy policy from time to time. We will notify you of any changes by posting the new privacy policy on this page and updating the "Last updated" date.
+                The Service and its original content, features, and functionality are and will remain the exclusive property of Surbee and its licensors. The Service is protected by copyright, trademark, and other laws.
               </p>
 
               <h2 className="text-[32px] font-semibold leading-tight mt-12 mb-6">
-                7. Contact Us
+                7. Limitation of Liability
               </h2>
 
               <p className="text-[17px] leading-[170%] mb-6 text-justify">
-                If you have any questions about this privacy policy, please contact us at privacy@surbee.com.
+                In no event shall Surbee, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses.
+              </p>
+
+              <h2 className="text-[32px] font-semibold leading-tight mt-12 mb-6">
+                8. Changes to Terms
+              </h2>
+
+              <p className="text-[17px] leading-[170%] mb-6 text-justify">
+                We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will try to provide at least 30 days notice prior to any new terms taking effect.
+              </p>
+
+              <h2 className="text-[32px] font-semibold leading-tight mt-12 mb-6">
+                9. Contact Information
+              </h2>
+
+              <p className="text-[17px] leading-[170%] mb-6 text-justify">
+                If you have any questions about these Terms of Service, please contact us at legal@surbee.com.
               </p>
             </div>
           </RevealSection>

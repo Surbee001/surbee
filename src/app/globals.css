@@ -26,8 +26,55 @@ body {
   -ms-overflow-style: none;
 }
 
+/* Blog post content styles */
+.prose {
+  @apply text-[#171717];
+}
+
+.prose h2 {
+  @apply text-[32px] font-semibold leading-tight mt-12 mb-6;
+  color: #171717;
+}
+
+.prose h3 {
+  @apply text-[24px] font-semibold leading-tight mt-8 mb-4;
+  color: #171717;
+}
+
+.prose p {
+  @apply text-[17px] leading-[170%] mb-6 text-justify;
+  color: #171717;
+}
+
+.prose ul {
+  @apply list-disc space-y-3 mb-6 ml-6;
+}
+
+.prose ul li {
+  @apply text-[17px] leading-[170%];
+  color: #171717;
+}
+
+.prose ul li strong {
+  @apply font-semibold;
+  color: #171717;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-neutral-300 pl-6 py-2 my-8 bg-neutral-50 rounded-r-lg;
+}
+
+.prose blockquote p {
+  @apply text-[19px] leading-[160%] italic mb-2 text-center;
+  color: #404040;
+}
+
+.prose blockquote footer {
+  @apply text-[15px] text-neutral-600 text-center not-italic;
+}
+
 @font-face {
-  font-family: 'Tobias';
+  font-family: var(--font-inter);
   src: url('/fonts/Tobias-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
@@ -35,7 +82,7 @@ body {
 }
 
 @font-face {
-  font-family: 'Sohne';
+  font-family: var(--font-inter);
   src: url('/fonts/Sohne-Book.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
@@ -43,7 +90,7 @@ body {
 }
 
 @font-face {
-  font-family: 'Sohne';
+  font-family: var(--font-inter);
   src: url('/fonts/Sohne-BookItalic.woff2') format('woff2');
   font-weight: 400;
   font-style: italic;
@@ -51,7 +98,7 @@ body {
 }
 
 @font-face {
-  font-family: 'Sohne';
+  font-family: var(--font-inter);
   src: url('/fonts/Sohne-Medium.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
@@ -59,7 +106,7 @@ body {
 }
 
 @font-face {
-  font-family: 'Sohne';
+  font-family: var(--font-inter);
   src: url('/fonts/Sohne-MediumItalic.woff2') format('woff2');
   font-weight: 500;
   font-style: italic;
@@ -67,7 +114,7 @@ body {
 }
 
 @font-face {
-  font-family: 'Sohne';
+  font-family: var(--font-inter);
   src: url('/fonts/Sohne-Bold.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
@@ -75,7 +122,7 @@ body {
 }
 
 @font-face {
-  font-family: 'Sohne Breit';
+  font-family: var(--font-inter);
   src: url('/fonts/SohneBreit-Book.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
@@ -83,7 +130,7 @@ body {
 }
 
 @font-face {
-  font-family: 'Sohne Breit';
+  font-family: var(--font-inter);
   src: url('/fonts/SohneBreit-Medium.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
@@ -91,7 +138,7 @@ body {
 }
 
 @font-face {
-  font-family: 'Styrene';
+  font-family: var(--font-inter);
   src: url('/fonts/Styrene-Regular.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
@@ -99,7 +146,7 @@ body {
 }
 
 @font-face {
-  font-family: 'Surbee';
+  font-family: var(--font-inter);
   src: url('/fonts/StyreneA-Bold-Trial-BF63f6cbda1877f.otf') format('opentype');
   font-weight: 700;
   font-style: normal;
@@ -107,7 +154,7 @@ body {
 }
 
 @font-face {
-  font-family: 'Sohne Schmal';
+  font-family: var(--font-inter);
   src: url('/fonts/test-soehne-schmal-buch.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
@@ -115,7 +162,7 @@ body {
 }
 
 @font-face {
-  font-family: 'PP Editorial';
+  font-family: var(--font-inter);
   src: url('/fonts/PPEditorialNew-Regular.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
@@ -123,7 +170,7 @@ body {
 }
 
 @font-face {
-  font-family: 'FK Grotesk';
+  font-family: var(--font-inter);
   src: url('/fonts/FKGroteskTrial-Regular.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
@@ -131,7 +178,7 @@ body {
 }
 
 @font-face {
-  font-family: 'FK Grotesk';
+  font-family: var(--font-inter);
   src: url('/fonts/FKGroteskTrial-Medium.otf') format('opentype');
   font-weight: 500;
   font-style: normal;
@@ -139,7 +186,7 @@ body {
 }
 
 @font-face {
-  font-family: 'FK Grotesk';
+  font-family: var(--font-inter);
   src: url('/fonts/FKGroteskTrial-Bold.otf') format('opentype');
   font-weight: 700;
   font-style: normal;
@@ -147,7 +194,7 @@ body {
 }
 
 @font-face {
-  font-family: 'PP Editorial';
+  font-family: var(--font-inter);
   src: url('/fonts/PPEditorialNew-Italic.otf') format('opentype');
   font-weight: 400;
   font-style: italic;
@@ -155,7 +202,7 @@ body {
 }
 
 @font-face {
-  font-family: 'PP Editorial';
+  font-family: var(--font-inter);
   src: url('/fonts/PPEditorialNew-Ultralight.otf') format('opentype');
   font-weight: 200;
   font-style: normal;
@@ -163,16 +210,58 @@ body {
 }
 
 @font-face {
-  font-family: 'PP Editorial';
+  font-family: var(--font-inter);
   src: url('/fonts/PPEditorialNew-UltralightItalic.otf') format('opentype');
   font-weight: 200;
   font-style: italic;
   font-display: swap;
 }
 
+/* Inter Font - Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
+
+/* Inter font family definitions */
+:root {
+  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
 /* Theme System - Professional Light/Dark Mode */
 :root {
   --radius: 0.625rem;
+
+  /* Legacy shadcn token aliases */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 
   /* Light Theme Variables (Default) */
   --surbee-bg-primary: #FCFBF8;
@@ -221,6 +310,40 @@ body {
 }
 
 .dark {
+  /* Legacy shadcn token aliases */
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.145 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
+
   /* Dark Theme Variables */
   --surbee-bg-primary: #1C1C1C;
   --surbee-bg-secondary: #242424;
@@ -235,6 +358,7 @@ body {
   --surbee-border-primary: rgba(255, 255, 255, 0.08);
   --surbee-border-secondary: rgba(255, 255, 255, 0.05);
   --surbee-border-focus: #9ca3af;
+  --surbee-border-accent: rgba(42, 42, 42, 0.65);
 
   --surbee-card-bg: #242424;
   --surbee-card-border: rgba(255, 255, 255, 0.08);
@@ -285,7 +409,7 @@ body {
 @theme inline {
   --color-background: var(--surbee-bg-primary);
   --color-foreground: var(--surbee-fg-primary);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
   --color-card: var(--surbee-card-bg);
   --color-card-foreground: var(--surbee-fg-primary);
@@ -340,7 +464,7 @@ body {
   body {
     background-color: var(--surbee-bg-primary);
     color: var(--surbee-fg-primary);
-    font-family: 'Sohne', sans-serif;
+    font-family: var(--font-inter), sans-serif;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
 
@@ -442,7 +566,7 @@ body {
   align-items: center;
   justify-content: center;
   color: var(--surbee-fg-primary);
-  font-family: 'Styrene', sans-serif;
+  font-family: var(--font-inter), sans-serif;
   font-weight: 400;
   font-size: 12px;
 }
@@ -507,7 +631,7 @@ body {
   font-weight: 500;
   font-size: 14px;
   line-height: 1.375rem;
-  font-family: 'Styrene', sans-serif;
+  font-family: var(--font-inter), sans-serif;
   text-decoration: inherit;
   cursor: pointer;
   transition: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter 0.15s linear;
@@ -521,7 +645,7 @@ body {
 
 .user-plan-text {
   color: var(--surbee-fg-muted);
-  font-family: 'Styrene', sans-serif;
+  font-family: var(--font-inter), sans-serif;
   font-size: 14px;
   font-weight: 400;
   padding: 8px 12px;
@@ -543,7 +667,7 @@ body {
   -webkit-text-fill-color: transparent;
   color: transparent;
   position: relative;
-  font-family: 'Surbee', sans-serif;
+  font-family: var(--font-inter), sans-serif;
   font-weight: 700;
   animation: proShimmer 10s infinite;
 }
@@ -601,7 +725,7 @@ body {
   font-weight: 500;
   font-size: 14px;
   line-height: 1.375rem;
-  font-family: 'Styrene', sans-serif;
+  font-family: var(--font-inter), sans-serif;
   text-decoration: inherit;
   cursor: pointer;
   transition: color 0.15s linear;
@@ -615,7 +739,7 @@ body {
   padding: 1px 4px;
   border-radius: 3px;
   margin-left: 8px;
-  font-family: 'Styrene', sans-serif;
+  font-family: var(--font-inter), sans-serif;
   white-space: nowrap;
 }
 
@@ -764,7 +888,7 @@ body {
   font-weight: 100;
   color: var(--surbee-fg-primary);
   margin: 0;
-  font-family: 'PP Editorial', serif;
+  font-family: var(--font-inter), serif;
   letter-spacing: -0.02em;
 }
 
@@ -1081,169 +1205,14 @@ body {
 
 /* Projects Page Styles */
 .projects-title {
-  font-family: 'PP Editorial', sans-serif;
-  font-weight: 200;
-  font-size: 50px;
+  font-family: var(--font-inter), sans-serif;
+  font-weight: 500;
+  font-size: 42px;
+  line-height: 40px;
+  letter-spacing: -0.05em;
   color: var(--surbee-fg-primary);
 }
 
-.project-card {
-  background-color: var(--surbee-card-bg);
-  border: 1px solid var(--surbee-border-primary);
-  border-radius: 1rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.3s ease;
-  overflow: hidden;
-  max-width: 24rem;
-}
-
-.project-card:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-}
-
-.project-card-image {
-  height: 12rem;
-  width: 100%;
-  cursor: pointer;
-  position: relative;
-}
-
-.project-card-bottom {
-  padding: 1rem;
-  background-color: var(--surbee-bg-secondary);
-  color: var(--surbee-fg-primary);
-}
-
-.project-card-title {
-  font-weight: 600;
-  font-size: 16px;
-  line-height: 1.25;
-  color: var(--surbee-fg-primary);
-  margin-bottom: 0.75rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: block;
-}
-
-.project-card-meta {
-  font-size: 0.75rem;
-  color: var(--surbee-fg-secondary);
-  margin-bottom: 0.75rem;
-}
-
-.project-card-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.project-card-indicators {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.project-card-indicator-circles {
-  display: flex;
-  margin-left: -0.5rem;
-}
-
-/* Hide old decorative circles in favor of chips */
-.project-card-indicator-circles {
-  display: none;
-}
-
-.project-card-indicator-circles > * + * {
-  margin-left: -0.5rem;
-}
-
-.project-indicator-circle {
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.project-response-count {
-  font-size: 0.875rem;
-  color: var(--surbee-fg-secondary);
-}
-
-.project-action-buttons {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.project-action-btn {
-  padding: 0.375rem;
-  border-radius: 50%;
-  transition: color 0.2s ease;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.project-heart-btn {
-  color: var(--surbee-fg-muted);
-}
-
-.project-heart-btn:hover {
-  color: #ef4444;
-}
-
-.project-heart-btn.liked {
-  color: #ef4444;
-}
-
-.project-settings-btn {
-  color: var(--surbee-fg-muted);
-}
-
-.project-settings-btn:hover {
-  color: var(--surbee-fg-primary);
-}
-
-.project-dropdown {
-  position: fixed;
-  width: 10rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  border: 1px solid var(--surbee-border-primary);
-  background-color: var(--surbee-card-bg);
-  backdrop-filter: blur(8px);
-  z-index: 1000;
-  padding: 0.5rem;
-}
-
-.project-dropdown-item {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  text-align: left;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  border-radius: 0.5rem;
-  transition: all 0.2s ease;
-  color: var(--surbee-fg-primary);
-  background: none;
-  border: none;
-  cursor: pointer;
-  margin-bottom: 0.25rem;
-}
-
-.project-dropdown-item:hover {
-  background-color: var(--surbee-bg-secondary);
-  transform: translateX(2px);
-}
-
-.project-dropdown-item:last-child {
-  margin-bottom: 0;
-}
 
 .search-input {
   background-color: var(--surbee-input-bg);
@@ -1689,7 +1658,7 @@ body {
 }
 
 .upgrade-plan-title {
-  font-family: 'PP Editorial', serif;
+  font-family: var(--font-inter), serif;
   font-weight: 200;
   font-size: 2.5rem;
   line-height: 1.2;
@@ -1786,7 +1755,7 @@ body {
 
 .plan-toggle-text {
   padding: 0 2px;
-  font-family: "fkGroteskNeue",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica Neue,Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji",Hiragino Sans,PingFang SC,Apple SD Gothic Neo,Yu Gothic,Microsoft YaHei,Microsoft JhengHei,Meiryo;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica Neue, Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", Hiragino Sans, PingFang SC, Apple SD Gothic Neo, Yu Gothic, Microsoft YaHei, Microsoft JhengHei, Meiryo;
   font-size: 0.875rem;
   line-height: 1.125rem;
   transition: color, background-color, border-color, text-decoration-color, fill, stroke 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1869,7 +1838,7 @@ body {
 }
 
 .plan-name {
-  font-family: 'PP Editorial', serif;
+  font-family: var(--font-inter), serif;
   font-size: 1.25rem;
   line-height: 1.5rem;
   color: oklch(92.96% .007 106.53);
@@ -1886,7 +1855,7 @@ body {
 }
 
 .popular-text {
-  font-family: "fkGroteskNeue",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica Neue,Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji",Hiragino Sans,PingFang SC,Apple SD Gothic Neo,Yu Gothic,Microsoft YaHei,Microsoft JhengHei,Meiryo;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica Neue, Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", Hiragino Sans, PingFang SC, Apple SD Gothic Neo, Yu Gothic, Microsoft YaHei, Microsoft JhengHei, Meiryo;
   font-size: 0.75rem;
   line-height: 1rem;
   color: oklch(71.92% .112 205.51 / 1);
@@ -1904,7 +1873,7 @@ body {
 }
 
 .price-amount {
-  font-family: "fkGroteskNeue",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica Neue,Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji",Hiragino Sans,PingFang SC,Apple SD Gothic Neo,Yu Gothic,Microsoft YaHei,Microsoft JhengHei,Meiryo;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica Neue, Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", Hiragino Sans, PingFang SC, Apple SD Gothic Neo, Yu Gothic, Microsoft YaHei, Microsoft JhengHei, Meiryo;
   font-size: 1rem;
   line-height: 1.5rem;
   color: oklch(92.96% .007 106.53);
@@ -1913,7 +1882,7 @@ body {
 
 .price-period {
   padding-bottom: 4px;
-  font-family: "fkGroteskNeue",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica Neue,Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji",Hiragino Sans,PingFang SC,Apple SD Gothic Neo,Yu Gothic,Microsoft YaHei,Microsoft JhengHei,Meiryo;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica Neue, Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", Hiragino Sans, PingFang SC, Apple SD Gothic Neo, Yu Gothic, Microsoft YaHei, Microsoft JhengHei, Meiryo;
   font-size: 0.75rem;
   line-height: 1rem;
   color: oklch(92.96% .007 106.53);
@@ -1927,7 +1896,7 @@ body {
 }
 
 .annual-price {
-  font-family: "fkGroteskNeue",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica Neue,Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji",Hiragino Sans,PingFang SC,Apple SD Gothic Neo,Yu Gothic,Microsoft YaHei,Microsoft JhengHei,Meiryo;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica Neue, Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", Hiragino Sans, PingFang SC, Apple SD Gothic Neo, Yu Gothic, Microsoft YaHei, Microsoft JhengHei, Meiryo;
   font-size: 0.75rem;
   line-height: 1rem;
   color: oklch(92.96% .007 106.53);
@@ -1935,7 +1904,7 @@ body {
 }
 
 .annual-text {
-  font-family: "fkGroteskNeue",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica Neue,Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji",Hiragino Sans,PingFang SC,Apple SD Gothic Neo,Yu Gothic,Microsoft YaHei,Microsoft JhengHei,Meiryo;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica Neue, Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", Hiragino Sans, PingFang SC, Apple SD Gothic Neo, Yu Gothic, Microsoft YaHei, Microsoft JhengHei, Meiryo;
   font-size: 0.75rem;
   line-height: 1rem;
   color: oklch(92.96% .007 106.53 / .55);
@@ -1950,7 +1919,7 @@ body {
 }
 
 .description-text {
-  font-family: "fkGroteskNeue",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica Neue,Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji",Hiragino Sans,PingFang SC,Apple SD Gothic Neo,Yu Gothic,Microsoft YaHei,Microsoft JhengHei,Meiryo;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica Neue, Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", Hiragino Sans, PingFang SC, Apple SD Gothic Neo, Yu Gothic, Microsoft YaHei, Microsoft JhengHei, Meiryo;
   font-size: 0.75rem;
   line-height: 1rem;
   color: oklch(92.96% .007 106.53);
@@ -1984,7 +1953,7 @@ body {
   border-radius: 0.5rem;
   padding: 0 0.75rem;
   text-align: center;
-  font-family: "fkGroteskNeue",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica Neue,Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji",Hiragino Sans,PingFang SC,Apple SD Gothic Neo,Yu Gothic,Microsoft YaHei,Microsoft JhengHei,Meiryo;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica Neue, Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", Hiragino Sans, PingFang SC, Apple SD Gothic Neo, Yu Gothic, Microsoft YaHei, Microsoft JhengHei, Meiryo;
   font-size: 1rem;
   line-height: 1.5rem;
   outline: transparent solid 2px;
@@ -2074,7 +2043,7 @@ body {
 }
 
 .feature-text {
-  font-family: "fkGroteskNeue",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica Neue,Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji",Hiragino Sans,PingFang SC,Apple SD Gothic Neo,Yu Gothic,Microsoft YaHei,Microsoft JhengHei,Meiryo;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica Neue, Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", Hiragino Sans, PingFang SC, Apple SD Gothic Neo, Yu Gothic, Microsoft YaHei, Microsoft JhengHei, Meiryo;
   font-size: 0.75rem;
   line-height: 1rem;
   color: oklch(92.96% .007 106.53 / .55);
@@ -2088,7 +2057,7 @@ body {
 }
 
 .footer-text {
-  font-family: "fkGroteskNeue",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica Neue,Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji",Hiragino Sans,PingFang SC,Apple SD Gothic Neo,Yu Gothic,Microsoft YaHei,Microsoft JhengHei,Meiryo;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica Neue, Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", Hiragino Sans, PingFang SC, Apple SD Gothic Neo, Yu Gothic, Microsoft YaHei, Microsoft JhengHei, Meiryo;
   font-size: 0.75rem;
   line-height: 1rem;
   color: oklch(92.96% .007 106.53 / .55);
@@ -2114,378 +2083,22 @@ body {
   }
 }
 
-/* Project Card Styles */
-.project-card-container {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  border-color: hsl(60 3% 15%);
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  font-synthesis: none;
+/* Project Card Styles - Updated design */
+/* Colorful text effect */
+.colorful-text {
+  display: inline;
+  white-space: pre-wrap;
 }
 
-.project-card-container:hover .project-card-menu-button {
-  opacity: 1;
-}
-
-.project-card-preview-section {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  border-color: hsl(60 3% 15%);
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  position: relative;
-  margin-bottom: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  font-synthesis: none;
-}
-
-.project-card-preview-link {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  border-color: hsl(60 3% 15%);
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  text-decoration: inherit;
-  color: inherit;
-  position: relative;
-  aspect-ratio: 16 / 9;
-  width: 100%;
-  overflow: hidden;
-  border-radius: calc(0.5rem * 1.5);
-  background-color: rgb(24, 24, 27);
-  border: 1px solid rgb(39, 39, 42);
-  cursor: pointer;
-  font-synthesis: none;
-}
-
-.project-card-preview-inner {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  border-color: hsl(60 3% 15%);
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  position: relative;
-  height: 100%;
-  width: 100%;
-  font-synthesis: none;
-}
-
-.project-card-preview-image {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  display: block;
-  vertical-align: middle;
-  max-width: 100%;
-  border-radius: calc(0.5rem * 1.5);
-  border-width: 1px;
-  border-color: hsl(60 1% 25%);
-  position: absolute;
-  inset: 0px;
-  height: 100%;
-  width: 100%;
-  object-fit: cover;
-  object-position: center top;
-  color: transparent;
-  font-synthesis: none;
-}
-
-.project-card-preview-placeholder {
-  position: absolute;
-  inset: 0;
-  background-color: rgb(24, 24, 27);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.project-card-preview-placeholder-text {
-  color: rgb(115, 115, 115);
-  font-size: 0.875rem;
-}
-
-.project-card-info-section {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  border-color: hsl(60 3% 15%);
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-synthesis: none;
-}
-
-.project-card-avatar-wrapper {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  border-color: hsl(60 3% 15%);
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  text-decoration: inherit;
-  color: inherit;
-  transition-property: opacity;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 0.15s;
-  font-synthesis: none;
-}
-
-.project-card-avatar-wrapper:hover {
-  opacity: 0.8;
-}
-
-.project-card-avatar {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  position: relative;
-  display: flex;
-  height: 2.25rem;
-  width: 2.25rem;
-  flex-shrink: 0;
-  overflow: hidden;
-  border-radius: 9999px;
-  border-width: 1px;
-  border-color: transparent;
-  font-size: 0.75rem;
-  font-synthesis: none;
-}
-
-.project-card-avatar-image {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  border-color: hsl(60 3% 15%);
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  display: block;
-  vertical-align: middle;
-  max-width: 100%;
-  aspect-ratio: auto;
-  height: 100%;
-  width: 100%;
-  object-fit: cover;
-  font-synthesis: none;
-}
-
-.project-card-avatar-gradient {
-  height: 100%;
-  width: 100%;
-  background: linear-gradient(to bottom right, rgb(59, 130, 246), rgb(147, 51, 234));
-}
-
-.project-card-content-wrapper {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  border-color: hsl(60 3% 15%);
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  display: flex;
-  width: 100%;
-  min-width: 0px;
-  justify-content: space-between;
-  font-synthesis: none;
-}
-
-.project-card-text-section {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  border-color: hsl(60 3% 15%);
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  display: flex;
-  min-width: 0px;
-  flex-direction: column;
-  font-synthesis: none;
-}
-
-.project-card-title-row {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  border-color: hsl(60 3% 15%);
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  font-synthesis: none;
-}
-
-.project-card-title {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  border-color: hsl(60 3% 15%);
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  margin: 0px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-synthesis: none;
-}
-
-.project-card-status-badge {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  border-color: hsl(60 3% 15%);
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  margin-right: 0.5rem;
+.colorful-text__letter {
   display: inline-block;
-  border-radius: calc(0.5rem - 2px);
-  background-color: hsl(217 33% 22%);
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-  padding-top: 0.125rem;
-  padding-bottom: 0.125rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: hsl(209 100% 85%);
-  font-synthesis: none;
+  transition: color 200ms ease;
 }
 
-.project-card-meta-row {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  border-color: hsl(60 3% 15%);
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: hsl(40 9% 75%);
-  font-synthesis: none;
+.colorful-text:hover .colorful-text__letter {
+  filter: brightness(1.05);
 }
 
-.project-card-meta-text {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  border-color: hsl(60 3% 15%);
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  margin: 0px;
-  font-synthesis: none;
-}
-
-.project-card-menu-button {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  border-color: hsl(60 3% 15%);
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  margin: 0px;
-  padding: 0px;
-  font-family: inherit;
-  font-feature-settings: inherit;
-  font-variation-settings: inherit;
-  line-height: inherit;
-  letter-spacing: inherit;
-  color: inherit;
-  text-transform: none;
-  appearance: button;
-  background-color: transparent;
-  background-image: none;
-  cursor: pointer;
-  margin-bottom: auto;
-  display: inline-flex;
-  aspect-ratio: 1 / 1;
-  height: 1.75rem;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  white-space: nowrap;
-  border-radius: calc(0.5rem - 2px);
-  padding-left: 0.25rem;
-  padding-right: 0.25rem;
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition-property: opacity;
-  transition-duration: 0.1s;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  animation-duration: 0.1s;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  opacity: 0;
-  font-synthesis: none;
-}
-
-.project-card-menu-button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.project-card-menu-button:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 1px rgb(255, 255, 255, 0.5);
-}
-
-.project-card-menu-icon {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  border-color: hsl(60 3% 15%);
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
-  display: block;
-  vertical-align: middle;
-  height: 1rem;
-  width: 1rem;
-  flex-shrink: 0;
-  pointer-events: none;
-  font-synthesis: none;
-}
-
-@media (min-width: 640px) {
-  .project-card-menu-button {
-    opacity: 0;
-  }
-  
-  .project-card-container:hover .project-card-menu-button {
-    opacity: 1;
-  }
+body {
+  touch-action: pan-x pan-y;
 }

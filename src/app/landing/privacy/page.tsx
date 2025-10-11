@@ -5,12 +5,12 @@ import localFont from "next/font/local";
 const epilogue = localFont({
   src: [
     {
-      path: "../../../public/fonts/Epilogue-Variable.woff2",
+      path: "../../../../public/fonts/Epilogue-Variable.woff2",
       weight: "100 900",
       style: "normal",
     },
     {
-      path: "../../../public/fonts/Epilogue-VariableItalic.woff2",
+      path: "../../../../public/fonts/Epilogue-VariableItalic.woff2",
       weight: "100 900",
       style: "italic",
     },
@@ -83,12 +83,6 @@ export default function PrivacyPage() {
                 </a>
                 <a
                   className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
-                  href="/landing#product"
-                >
-                  Product
-                </a>
-                <a
-                  className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
                   href="/landing#students"
                 >
                   Students
@@ -98,6 +92,11 @@ export default function PrivacyPage() {
                   href="/landing/blog"
                 >
                   Blog
+                </a>
+                <a
+                  className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-[#171717] font-medium bg-neutral-100 rounded px-2 py-1 -ml-1"
+                >
+                  Privacy
                 </a>
               </div>
             </div>

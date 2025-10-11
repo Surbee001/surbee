@@ -1,13 +1,18 @@
 import { Queue, Worker, QueueEvents, JobsOptions } from 'bullmq'
 import IORedis from 'ioredis'
 
-// Guard Redis connection - only connect if Redis URL is explicitly provided
-const connection = process.env.REDIS_URL ? new IORedis(process.env.REDIS_URL, {
-  maxRetriesPerRequest: null,
-  retryDelayOnFailover: 100,
-  enableReadyCheck: false,
-  lazyConnect: true,
-}) : null
+// Guard Redis connection - only connect if explicitly enabled
+const shouldUseRedis =
+  process.env.REDIS_URL && process.env.DISABLE_REDIS !== 'true'
+
+const connection = shouldUseRedis
+  ? new IORedis(process.env.REDIS_URL!, {
+      maxRetriesPerRequest: null,
+      retryDelayOnFailover: 100,
+      enableReadyCheck: false,
+      lazyConnect: true,
+    })
+  : null
 
 export const surveyQueue = connection ? new Queue('survey-generation', {
   connection,
@@ -46,4 +51,3 @@ export function createSurveyWorker(
   )
   return worker
 }
-

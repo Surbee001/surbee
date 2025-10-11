@@ -459,7 +459,7 @@ export const PromptBox = React.forwardRef<
                 <button
                   type="button"
                   onClick={handlePlusClick}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-[#1a1a1a] active:bg-[#1a1a1a] focus:bg-[#1a1a1a] focus-visible:outline-none"
+                  className="flex items-center justify-center text-zinc-400 transition-colors hover:text-white"
                 >
                   <PlusIcon className="h-6 w-6 text-zinc-400" />
                   <span className="sr-only">Attach file</span>
@@ -469,47 +469,6 @@ export const PromptBox = React.forwardRef<
                 <p>Attach image</p>
               </TooltipContent>{' '}
             </Tooltip>
-
-            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className="flex h-8 items-center gap-2 rounded-full p-2 text-sm text-zinc-400 transition-colors hover:bg-[#1a1a1a] active:bg-[#1a1a1a] focus:bg-[#1a1a1a] focus-visible:outline-none focus-visible:ring-0"
-                    >
-                      <Settings2Icon className="h-4 w-4 text-zinc-400" />
-                      {!selectedTool && 'Tools'}
-                    </button>
-                  </PopoverTrigger>
-                </TooltipTrigger>
-                <TooltipContent side="top" showArrow={true}>
-                  <p>Explore Tools</p>
-                </TooltipContent>
-              </Tooltip>
-              <PopoverContent side="top" align="start">
-                <div className="flex flex-col gap-1">
-                  {toolsList.map((tool) => (
-                    <button
-                      key={tool.id}
-                      onClick={() => {
-                        setSelectedTool(tool.id);
-                        setIsPopoverOpen(false);
-                      }}
-                      className="flex w-full items-center gap-2 rounded-md p-2 text-left text-sm hover:bg-accent dark:hover:bg-[#515151]"
-                    >
-                      {' '}
-                      <tool.icon className="h-4 w-4" /> <span>{tool.name}</span>{' '}
-                      {tool.extra && (
-                        <span className="ml-auto text-xs text-muted-foreground dark:text-gray-400">
-                          {tool.extra}
-                        </span>
-                      )}{' '}
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
 
             {activeTool && (
               <>

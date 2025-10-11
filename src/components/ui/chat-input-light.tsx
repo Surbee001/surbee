@@ -18,6 +18,7 @@ interface ChatInputLightProps {
   theme?: 'dark' | 'white';
   showSettings?: boolean;
   tokenPercent?: number; // optional, shows token usage next to send
+  shouldGlow?: boolean; // optional, adds glow effect to border
 }
 
 export default function ChatInputLight({ 
@@ -33,7 +34,8 @@ export default function ChatInputLight({
   onClearSelection,
   theme = 'dark',
   showSettings = true,
-  tokenPercent
+  tokenPercent,
+  shouldGlow = false
 }: ChatInputLightProps) {
   const [chatText, setChatText] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -170,15 +172,15 @@ export default function ChatInputLight({
   }, [chatText]);
 
   return (
-    <div className={`w-full ${className}`}>
+    <div className={`w-full max-w-xl mx-auto ${className}`}>
       <div 
         ref={chatboxContainerRef}
-        className={`relative flex flex-col max-h-[40rem] min-h-[122px] z-10 rounded-3xl border ${
-          theme === 'white' ? 'border-gray-300' : 'border-zinc-700/40'
-        }`}
+        className={`relative flex flex-col max-h-[40rem] min-h-[122px] z-10 transition-all duration-500`}
         style={{ 
+          borderRadius: '32px',
+          border: shouldGlow ? '1px solid rgba(255, 255, 255, 0.8)' : '1px solid var(--surbee-border-accent)',
           backgroundColor: theme === 'white' ? '#FFFFFF' : '#2C2C2C',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06)' 
+          boxShadow: shouldGlow ? '0 0 20px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.2)' : 'none'
         }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -244,7 +246,7 @@ export default function ChatInputLight({
         
         {/* Main content area with consistent height */}
         <div className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 min-h-0 px-3.5" style={{ paddingTop: (files.length > 0 || selectedElement) ? '0.5rem' : '0.75rem' }}>
+          <div className="flex-1 min-h-0 px-6" style={{ paddingTop: (files.length > 0 || selectedElement) ? '0.75rem' : '1rem' }}>
           <form id="prompt">
             <div className={`w-full leading-[22px] text-sm max-sm:text-[14px] resize-none bg-transparent focus:outline-none border-none ${theme === 'white' ? 'placeholder:text-gray-500' : 'placeholder:text-gray-400'}`}>
               <div className={
@@ -285,12 +287,12 @@ export default function ChatInputLight({
             </div>
           </form>
           </div>
-          <div className="flex-shrink-0 px-3 pb-3">
+          <div className="flex-shrink-0 px-6 pb-4">
           <div className="flex flex-row items-center justify-between w-full gap-2 relative">
             <div className="flex flex-row gap-1 items-center min-w-0 flex-1">
               <button
                 onClick={() => uploadInputRef.current?.click()}
-                className={`inline-flex items-center justify-center rounded-md transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer border h-[28px] w-7 ${theme === 'white' ? 'border-gray-300 text-gray-700 hover:text-black hover:bg-black/5' : 'border-zinc-700/40 text-gray-300 hover:text-white hover:bg-white/5'}`}
+                className={`inline-flex items-center justify-center rounded-md transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-[28px] w-7 ${theme === 'white' ? 'text-gray-700 hover:text-black hover:bg-black/5' : 'text-gray-300 hover:text-white hover:bg-white/5'}`}
                 type="button"
                 disabled={isInputDisabled}
                 title="Add"
@@ -310,19 +312,6 @@ export default function ChatInputLight({
                   accept="image/*"
                 />
               </button>
-              {showSettings && (
-                <button
-                  className={`inline-flex items-center gap-2 font-semibold justify-center whitespace-nowrap rounded-md text-sm transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 h-7 w-7 relative cursor-pointer border ${theme === 'white' ? 'border-gray-300 text-gray-700 hover:text-black hover:bg-black/5' : 'border-zinc-700/40 text-gray-300 hover:text-white hover:bg-white/5'}`}
-                  type="button"
-                  disabled={isInputDisabled}
-                  ref={settingsButtonRef}
-                  onClick={() => setIsSettingsOpen((v) => !v)}
-                  title="Settings"
-                >
-                  <Settings2 className={`h-[14px] w-[14px] -rotate-90 transform transition-transform`} />
-                  <span className="absolute top-1 right-0.5 h-[5px] w-[5px] rounded-full bg-blue-500" />
-                </button>
-              )}
               {onToggleEditMode && (
                 <button
                   className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer border ${
@@ -363,13 +352,6 @@ export default function ChatInputLight({
                   <Lightbulb className="h-3 w-3" />
                   <span>Ask</span>
                 </button>
-              )}
-              {showSettings && isSettingsOpen && (
-                <ChatSettingsMenu
-                  ref={settingsMenuRef}
-                  className="absolute top-full left-0 mt-1 z-[60]"
-                  onClose={() => setIsSettingsOpen(false)}
-                />
               )}
             </div>
             <div className="flex flex-row items-center gap-2 flex-shrink-0">

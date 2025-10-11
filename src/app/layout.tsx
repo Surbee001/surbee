@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import React from 'react'
+import Script from 'next/script'
 import Providers from './providers'
 
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["500"],
+  weight: ["400", "500"],
   variable: "--font-inter",
 });
 
@@ -52,6 +53,11 @@ export default function RootLayout({
             `,
           }}
         />
+        <Script
+          src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
+          strategy="afterInteractive"
+          async
+        />
       </head>
       <body
         className={`${inter.variable} antialiased min-h-screen bg-background font-sans`}
@@ -65,3 +71,4 @@ export default function RootLayout({
     </html>
   );
 }
+

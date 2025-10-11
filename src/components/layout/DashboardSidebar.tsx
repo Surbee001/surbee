@@ -5,28 +5,32 @@ import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from "@/lib/trpc/react";
-import { HelpCircle, Check, ChevronUp, ChevronDown, Gift, X, Copy } from "lucide-react";
+import { HelpCircle, Check, ChevronUp, ChevronDown, Gift, X, Copy, ArrowRight, ExternalLink } from "lucide-react";
 
 const SidebarItem = ({ 
   label, 
   isActive = false, 
   onClick,
-  comingSoon = false
+  comingSoon = false,
+  icon = null
 }: {
   label: string;
   isActive?: boolean;
   onClick?: () => void;
   comingSoon?: boolean;
+  icon?: 'arrow' | 'external' | null;
 }) => (
   <div 
-    className={`sidebar-item ${isActive ? 'active' : ''}`}
+    className={`sidebar-item group ${isActive ? 'active' : ''}`}
     onClick={onClick}
   >
-    <span className="sidebar-item-label">
+    <span className="sidebar-item-label justify-between">
       <span>{label}</span>
       {comingSoon && (
         <span className="coming-soon-label">Coming Soon</span>
       )}
+      {icon === 'arrow' && <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
+      {icon === 'external' && <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
     </span>
   </div>
 );
@@ -98,6 +102,7 @@ export default function DashboardSidebar() {
             label="Projects"
             isActive={pathname.startsWith('/dashboard/projects')}
             onClick={() => handleNavigation('/dashboard/projects')}
+            icon="arrow"
           />
           {false && (
             <SidebarItem
@@ -110,9 +115,9 @@ export default function DashboardSidebar() {
             label="Community"
             isActive={pathname.startsWith('/dashboard/marketplace')}
             onClick={() => handleNavigation('/dashboard/marketplace')}
+            icon="arrow"
           />
-          <SidebarItem label="Notebook" onClick={() => {}} comingSoon={true} />
-          <SidebarItem label="Get Help" onClick={() => {}} />
+          <SidebarItem label="Get Help" onClick={() => {}} icon="external" />
         </nav>
 
         {/* Bottom account/settings trigger */}

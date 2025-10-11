@@ -1,108 +1,238 @@
 import React, { useState } from 'react';
-import { ChevronDown, Search, Star, TrendingUp, Briefcase, GraduationCap, Heart, Calendar, DollarSign, Target, BookOpen, List, Lightbulb, Users, Folder, PenTool, Rocket, Home, BarChart3, FileText } from 'lucide-react';
-import HorizontalScroller from '@/components/ui/HorizontalScroller';
-import { SkeletonHeroCard, SkeletonCard, SkeletonAvatar, SkeletonText } from '@/components/ui/skeleton';
+import { Search, Star, Users, FileText, Zap, TrendingUp, Clock, Tag } from 'lucide-react';
+import { ImageKitProvider } from '@imagekit/next';
+import { CommunitySurveyCard } from '@/components/community/CommunitySurveyCard';
+import { CommunityTemplateCard } from '@/components/community/CommunityTemplateCard';
 
-// Image constants - replace these with your actual image URLs
-const img6B8F021A90728209476Afbe585471C29Png = "/api/placeholder/825/300";
-const imgVickyChris = "/api/placeholder/120/120";
-const imgDesktopJpg = "/api/placeholder/400/250";
-const imgSentele = "/api/placeholder/22/22";
-const imgDesktopJpg1 = "/api/placeholder/400/250";
-const imgOli = "/api/placeholder/22/22";
-const imgDesktopJpg2 = "/api/placeholder/400/250";
-const imgDesktopJpg3 = "/api/placeholder/400/250";
-const imgDesktopJpg4 = "/api/placeholder/400/250";
-const imgEaslo = "/api/placeholder/22/22";
-const imgDesktopPng = "/api/placeholder/400/250";
-const imgNotion = "/api/placeholder/22/22";
-const imgDesktopJpg5 = "/api/placeholder/252/180";
-const imgDesktopJpg6 = "/api/placeholder/252/180";
-const imgDesktopJpg7 = "/api/placeholder/252/180";
-const imgDesktopJpg8 = "/api/placeholder/252/180";
-const imgDesktopPng1 = "/api/placeholder/252/180";
-const imgSimpleContentPlannerPalashLalwaniDesktopPng = "/api/placeholder/252/180";
-const imgProfessionalResumeNotionDesktopPng = "/api/placeholder/252/180";
-const imgD02C3Ec8357Bbaa790B06243De09Ab4DPng = "/api/placeholder/327/298";
-const img6708Add48658A0B793977A2154F325E6Png = "/api/placeholder/327/298";
-const imgDesktopJpg9 = "/api/placeholder/400/250";
-const imgDesktopJpg10 = "/api/placeholder/400/250";
-const imgProfileCoverImage = "/api/placeholder/60/60";
-const imgTtoki = "/api/placeholder/60/60";
-const imgRodro = "/api/placeholder/60/60";
-const imgSheNotions = "/api/placeholder/60/60";
-const imgTristan = "/api/placeholder/60/60";
-const imgProfileCoverImage1 = "/api/placeholder/60/60";
-const imgJade = "/api/placeholder/60/60";
-const imgProfileCoverImage2 = "/api/placeholder/60/60";
-const imgDelusional = "/api/placeholder/60/60";
-const imgLeBureau = "/api/placeholder/60/60";
-const imgProfileCoverImage3 = "/api/placeholder/60/60";
-const imgMoniasoup = "/api/placeholder/60/60";
-const imgDesktopJpg11 = "/api/placeholder/400/250";
-const imgBrookeProductivity = "/api/placeholder/22/22";
-const imgDesktopJpg12 = "/api/placeholder/400/250";
-const imgAntonioMarroffino = "/api/placeholder/22/22";
-const imgDesktopJpg13 = "/api/placeholder/400/250";
-const imgNoFi = "/api/placeholder/22/22";
-const imgDesktopJpg14 = "/api/placeholder/400/250";
-const imgAshley = "/api/placeholder/22/22";
-const imgDesktopJpg15 = "/api/placeholder/400/250";
-const imgShepherd = "/api/placeholder/22/22";
-const imgDesktopJpg16 = "/api/placeholder/400/250";
-const imgMadeByJacob = "/api/placeholder/22/22";
-const img525417Ca19463D2B07Ca1C95375F6A02Png = "/api/placeholder/22/22";
-const imgDesktopJpg17 = "/api/placeholder/400/250";
-const imgAbdullahs = "/api/placeholder/22/22";
-const imgDesktopJpg18 = "/api/placeholder/400/250";
-const imgMyHueDesigns = "/api/placeholder/22/22";
-const imgDesktopJpg19 = "/api/placeholder/400/250";
-const imgDesktopJpg20 = "/api/placeholder/400/250";
-const imgByMrnm = "/api/placeholder/22/22";
-const imgDesktopJpg21 = "/api/placeholder/400/250";
-const imgYusufSolmaz = "/api/placeholder/22/22";
-const imgDesktopJpg22 = "/api/placeholder/400/250";
-const imgSadatSayem = "/api/placeholder/22/22";
-const imgDesktopJpg23 = "/api/placeholder/400/250";
-const imgDesktopJpg24 = "/api/placeholder/400/250";
-const imgDesktopJpg25 = "/api/placeholder/400/250";
-const imgDesktopJpg26 = "/api/placeholder/400/250";
-const imgDesktopJpg27 = "/api/placeholder/400/250";
-const imgResonanceAtelier = "/api/placeholder/22/22";
-const imgDesktopJpg28 = "/api/placeholder/400/250";
-const imgDesktopJpg29 = "/api/placeholder/400/250";
-const imgVasco = "/api/placeholder/22/22";
-const imgDesktopJpg30 = "/api/placeholder/400/250";
-const imgStructra = "/api/placeholder/22/22";
-const imgDesktopJpg31 = "/api/placeholder/400/250";
-const imgTestAce = "/api/placeholder/22/22";
-const imgDesktopJpg32 = "/api/placeholder/400/250";
-const imgAriadneAdresteia = "/api/placeholder/22/22";
-const imgDesktopJpg33 = "/api/placeholder/400/250";
-const imgMilesDobrenski = "/api/placeholder/22/22";
-const imgBecomeCreatorDarkPng = "/api/placeholder/400/300";
+interface CommunitySurvey {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  responseCount: number;
+  createdAt: string;
+  previewImage?: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  estimatedTime: string;
+}
+
+interface CommunityTemplate {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  remixCount: number;
+  createdAt: string;
+  previewImage?: string;
+  tags: string[];
+  framework: string;
+}
 
 export default function NotionMarketplace() {
-  const [viewAll, setViewAll] = useState<null | 'featured' | 'collections' | 'popular'>(null);
+  const [activeTab, setActiveTab] = useState<'surveys' | 'templates'>('surveys');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
 
-  // Only show loading on first visit, not on navigation
+  // Sample data for surveys
+  const sampleSurveys: CommunitySurvey[] = [
+    {
+      id: '1',
+      title: 'Customer Satisfaction Survey',
+      description: 'Comprehensive survey to measure customer satisfaction across multiple touchpoints',
+      category: 'Business',
+      responseCount: 1247,
+      createdAt: '2024-01-15T10:00:00Z',
+      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
+      difficulty: 'beginner',
+      estimatedTime: '5 min'
+    },
+    {
+      id: '2',
+      title: 'Employee Engagement Assessment',
+      description: 'Measure team engagement and identify areas for improvement',
+      category: 'HR',
+      responseCount: 892,
+      createdAt: '2024-01-20T14:30:00Z',
+      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
+      difficulty: 'intermediate',
+      estimatedTime: '8 min'
+    },
+    {
+      id: '3',
+      title: 'Product Feedback Form',
+      description: 'Collect detailed feedback on product features and user experience',
+      category: 'Product',
+      responseCount: 2156,
+      createdAt: '2024-01-25T09:15:00Z',
+      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
+      difficulty: 'beginner',
+      estimatedTime: '6 min'
+    },
+    {
+      id: '4',
+      title: 'Market Research Study',
+      description: 'Comprehensive market analysis and consumer behavior insights',
+      category: 'Research',
+      responseCount: 3421,
+      createdAt: '2024-02-01T16:45:00Z',
+      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
+      difficulty: 'advanced',
+      estimatedTime: '12 min'
+    },
+    {
+      id: '5',
+      title: 'Event Feedback Survey',
+      description: 'Post-event evaluation and attendee satisfaction measurement',
+      category: 'Events',
+      responseCount: 567,
+      createdAt: '2024-02-05T11:20:00Z',
+      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
+      difficulty: 'beginner',
+      estimatedTime: '4 min'
+    },
+    {
+      id: '6',
+      title: 'Brand Perception Study',
+      description: 'Deep dive into brand awareness and perception metrics',
+      category: 'Marketing',
+      responseCount: 1834,
+      createdAt: '2024-02-10T13:10:00Z',
+      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
+      difficulty: 'intermediate',
+      estimatedTime: '10 min'
+    }
+  ];
+
+  // Sample data for templates
+  const sampleTemplates: CommunityTemplate[] = [
+    {
+      id: 't1',
+      title: 'NPS Survey Template',
+      description: 'Net Promoter Score survey with advanced analytics and follow-up questions',
+      category: 'Customer Success',
+      remixCount: 2847,
+      createdAt: '2024-01-10T08:00:00Z',
+      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
+      tags: ['NPS', 'Customer', 'Analytics'],
+      framework: 'Customer Success'
+    },
+    {
+      id: 't2',
+      title: 'Employee Onboarding Framework',
+      description: 'Complete onboarding experience with progress tracking and feedback loops',
+      category: 'HR',
+      remixCount: 1923,
+      createdAt: '2024-01-12T10:30:00Z',
+      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
+      tags: ['Onboarding', 'HR', 'Process'],
+      framework: 'Human Resources'
+    },
+    {
+      id: 't3',
+      title: 'Product Launch Survey Kit',
+      description: 'Comprehensive survey suite for product launches with A/B testing',
+      category: 'Product',
+      remixCount: 3456,
+      createdAt: '2024-01-18T14:15:00Z',
+      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
+      tags: ['Product', 'Launch', 'A/B Testing'],
+      framework: 'Product Management'
+    },
+    {
+      id: 't4',
+      title: 'Customer Journey Mapping',
+      description: 'Multi-touchpoint customer experience analysis framework',
+      category: 'UX',
+      remixCount: 1789,
+      createdAt: '2024-01-22T16:45:00Z',
+      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
+      tags: ['UX', 'Journey', 'Experience'],
+      framework: 'User Experience'
+    },
+    {
+      id: 't5',
+      title: 'Market Research Toolkit',
+      description: 'Complete market research framework with competitive analysis',
+      category: 'Research',
+      remixCount: 2134,
+      createdAt: '2024-01-28T09:30:00Z',
+      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
+      tags: ['Market Research', 'Competitive', 'Analysis'],
+      framework: 'Market Research'
+    },
+    {
+      id: 't6',
+      title: 'Event Planning Survey Suite',
+      description: 'End-to-end event planning with pre, during, and post-event surveys',
+      category: 'Events',
+      remixCount: 987,
+      createdAt: '2024-02-02T12:20:00Z',
+      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
+      tags: ['Events', 'Planning', 'Management'],
+      framework: 'Event Management'
+    }
+  ];
+
+  const categories = [
+    { value: 'all', label: 'All Categories' },
+    { value: 'Business', label: 'Business' },
+    { value: 'HR', label: 'HR' },
+    { value: 'Product', label: 'Product' },
+    { value: 'Research', label: 'Research' },
+    { value: 'Marketing', label: 'Marketing' },
+    { value: 'Events', label: 'Events' },
+    { value: 'Customer Success', label: 'Customer Success' },
+    { value: 'UX', label: 'UX' }
+  ];
+
   React.useEffect(() => {
-    const hasLoaded = sessionStorage.getItem('dashboard_loaded');
-    if (hasLoaded) {
-      setLoading(false);
-    } else {
+    // Simulate loading
       const timer = setTimeout(() => {
         setLoading(false);
-        sessionStorage.setItem('dashboard_loaded', 'true');
-      }, 1500);
+    }, 1000);
       return () => clearTimeout(timer);
-    }
   }, []);
 
-  // Skeleton loading state
+  const filteredSurveys = sampleSurveys.filter(survey => {
+    const matchesCategory = categoryFilter === 'all' || survey.category === categoryFilter;
+    const matchesSearch = survey.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         survey.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  const filteredTemplates = sampleTemplates.filter(template => {
+    const matchesCategory = categoryFilter === 'all' || template.category === categoryFilter;
+    const matchesSearch = template.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         template.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         template.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesCategory && matchesSearch;
+  });
+
+  const handleTakeSurvey = (surveyId: string) => {
+    // Navigate to survey page
+    window.location.href = `/survey/${surveyId}`;
+  };
+
+  const handleRemixTemplate = (templateId: string) => {
+    // Navigate to dashboard with template remix
+    window.location.href = `/dashboard?remixTemplate=${templateId}`;
+  };
+
   if (loading) {
     return (
+      <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
+        <div className="flex flex-col h-full">
+          <div className="flex-1 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          </div>
+        </div>
+      </ImageKitProvider>
+    );
+  }
+
+  return (
+    <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
       <div className="flex flex-col h-full">
         {/* Fixed Header */}
         <div className="projects-header" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>
@@ -112,512 +242,189 @@ export default function NotionMarketplace() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-              {/* Navigation Tabs */}
-              <div className="flex items-center gap-5">
-                <div className="text-[16px] font-medium" style={{ color: 'var(--surbee-fg-primary)' }}>
-                  Discover
+              {/* Tab Navigation */}
+              <div className="flex items-center gap-1 bg-gray-800 p-1 rounded-xl">
+                <button
+                  onClick={() => setActiveTab('surveys')}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    activeTab === 'surveys'
+                      ? 'bg-white text-black shadow-sm'
+                      : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Surveys
                 </div>
-                <div className="text-[16px] font-medium opacity-60" style={{ color: 'var(--surbee-fg-muted)' }}>
+                </button>
+                <button
+                  onClick={() => setActiveTab('templates')}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    activeTab === 'templates'
+                      ? 'bg-white text-black shadow-sm'
+                      : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Star className="w-4 h-4" />
                   Templates
                 </div>
+                </button>
               </div>
               
-              {/* Search Skeleton */}
+              {/* Search and Filter */}
+              <div className="flex items-center gap-4">
               <div className="relative">
-                <div className="skeleton-form-input" style={{ width: '296px', height: '2.5rem' }}></div>
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 pr-4 py-2 text-sm rounded-xl border transition-colors focus:outline-none focus:ring-2 focus:ring-white/20 placeholder:text-gray-400"
+                    style={{ 
+                      borderColor: 'var(--surbee-border-accent)',
+                      backgroundColor: '#141414',
+                      color: 'var(--surbee-fg-primary)',
+                      fontFamily: 'var(--font-inter), sans-serif'
+                    }}
+                  />
+                </div>
+                
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="px-4 py-2 text-sm rounded-xl border transition-colors focus:outline-none focus:ring-2 focus:ring-white/20"
+                  style={{ 
+                    borderColor: 'var(--surbee-border-accent)',
+                    backgroundColor: '#141414',
+                    color: 'var(--surbee-fg-primary)',
+                    fontFamily: 'var(--font-inter), sans-serif'
+                  }}
+                >
+                  {categories.map(category => (
+                    <option key={category.value} value={category.value}>
+                      {category.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
             {/* Divider Line */}
-            <div className="w-full h-px bg-gray-200/10"></div>
+            <div className="w-full h-px" style={{ backgroundColor: 'var(--surbee-border-accent)' }}></div>
           </div>
         </div>
 
         {/* Scrollable Content Section */}
         <div className="projects-cards-container">
-          <div className="projects-cards-fade"></div>
-          
           <div className="projects-cards-content">
             <div className="mx-auto w-full max-w-[1280px] px-6 md:px-8">
 
-              {/* Hero Section Skeleton */}
-              <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <SkeletonHeroCard />
-                </div>
-                <div className="w-full">
-                  <SkeletonHeroCard />
-                </div>
+              {/* Hero Section */}
+              <div className="mt-8 mb-12">
+                <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-16 px-8 rounded-2xl overflow-hidden">
+                  <div className="relative z-10 text-center">
+                    <div className="flex items-center justify-center gap-2 mb-6">
+                      <Users className="w-6 h-6 text-white" />
+                      <span className="text-white/80 text-sm font-medium">Community</span>
               </div>
 
-              {/* Featured Templates Section Skeleton */}
-              <div className="mt-8">
-                <div className="flex items-center justify-between mb-11">
-                  <div className="flex items-center">
-                    <div className="w-3.5 h-3.5 mr-2 skeleton-base" style={{ borderRadius: '50%' }}></div>
-                    <SkeletonText width="120px" height="0.75rem" />
+                    <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
+                      Discover & Create
+                      <span className="block bg-gradient-to-r from-orange-400 to-pink-500 bg-clip-text text-transparent">
+                        Together
+                      </span>
+                    </h1>
+                    
+                    <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto leading-relaxed">
+                      Join thousands of creators sharing surveys and templates. Take surveys, remix frameworks, 
+                      and build amazing experiences with our community.
+                    </p>
+
+                    {/* Stats */}
+                    <div className="flex flex-wrap items-center justify-center gap-8">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-orange-500/20 rounded-full flex items-center justify-center">
+                          <FileText className="w-5 h-5 text-orange-400" />
                   </div>
-                  <SkeletonText width="60px" height="0.75rem" />
-                </div>
-                
-                <HorizontalScroller>
-                  {Array.from({ length: 6 }).map((_, index) => (
-                    <div key={index} className="w-[260px] md:w-[280px] flex-shrink-0 group cursor-pointer">
-                      <div className="relative h-[220px] md:h-[240px] rounded-xl overflow-hidden">
-                        <div className="skeleton-image w-full h-full"></div>
+                        <div className="text-left">
+                          <div className="text-xl font-bold text-white">12.5K+</div>
+                          <div className="text-white/60 text-xs">Active Surveys</div>
                       </div>
-                      <div className="mt-3 flex items-start gap-2">
-                        <div className="skeleton-circle" style={{ width: '22px', height: '22px' }}></div>
-                        <div className="flex-1">
-                          <SkeletonText height="0.875rem" className="mb-1" />
-                          <div className="flex items-center gap-1">
-                            <div className="skeleton-circle" style={{ width: '10px', height: '10px' }}></div>
-                            <SkeletonText width="30px" height="0.75rem" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </HorizontalScroller>
               </div>
 
-              {/* Survey Collections Section Skeleton */}
-              <div className="mt-8">
-                <div className="flex items-center justify-between mb-11">
-                  <div className="flex items-center">
-                    <div className="w-3.5 h-3.5 mr-2 skeleton-base" style={{ borderRadius: '50%' }}></div>
-                    <SkeletonText width="100px" height="0.75rem" />
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-pink-500/20 rounded-full flex items-center justify-center">
+                          <Zap className="w-5 h-5 text-pink-400" />
                   </div>
-                  <SkeletonText width="70px" height="0.75rem" />
+                        <div className="text-left">
+                          <div className="text-xl font-bold text-white">3.2K+</div>
+                          <div className="text-white/60 text-xs">Templates</div>
                 </div>
-                
-                <HorizontalScroller>
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <div key={index} className="w-[240px] md:w-[252px] flex-shrink-0 bg-[rgba(255,255,255,0.05)] rounded-xl overflow-hidden">
-                      <div className="skeleton-image h-24"></div>
-                      <div className="p-4">
-                        <SkeletonText height="0.875rem" className="mb-2" />
-                        <div className="flex items-center gap-1">
-                          <div className="skeleton-circle" style={{ width: '16px', height: '16px' }}></div>
-                          <SkeletonText width="60px" height="0.75rem" />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </HorizontalScroller>
               </div>
 
-              {/* Popular This Week Skeleton */}
-              <div className="mt-8">
-                <div className="flex items-center justify-between mb-11">
-                  <div className="flex items-center">
-                    <div className="w-3.5 h-3.5 mr-2 skeleton-base" style={{ borderRadius: '50%' }}></div>
-                    <SkeletonText width="110px" height="0.75rem" />
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
+                          <TrendingUp className="w-5 h-5 text-blue-400" />
                   </div>
-                  <SkeletonText width="60px" height="0.75rem" />
-                </div>
-                
-                <HorizontalScroller>
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <div key={index} className="w-[260px] md:w-[280px] flex-shrink-0 group cursor-pointer">
-                      <div className="relative h-[220px] md:h-[240px] rounded-xl overflow-hidden">
-                        <div className="skeleton-image w-full h-full"></div>
-                      </div>
-                      <div className="mt-3 flex items-start gap-2">
-                        <div className="skeleton-circle" style={{ width: '22px', height: '22px' }}></div>
-                        <div className="flex-1">
-                          <SkeletonText height="0.875rem" className="mb-1" />
-                          <div className="flex items-center gap-1">
-                            <div className="skeleton-circle" style={{ width: '10px', height: '10px' }}></div>
-                            <SkeletonText width="30px" height="0.75rem" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </HorizontalScroller>
-              </div>
-
-              {/* Top Survey Creators Skeleton */}
-              <div className="mt-10 mb-20">
-                <div className="flex items-center justify-between mb-11">
-                  <div className="flex items-center">
-                    <div className="w-3.5 h-3.5 mr-2 skeleton-base" style={{ borderRadius: '50%' }}></div>
-                    <SkeletonText width="130px" height="0.75rem" />
-                  </div>
-                  <SkeletonText width="60px" height="0.75rem" />
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-[22.67px] gap-y-8">
-                  {Array.from({ length: 12 }).map((_, index) => (
-                    <div key={index} className="text-center cursor-pointer">
-                      <div className="w-[60px] h-[60px] mx-auto mb-3 skeleton-circle"></div>
-                      <SkeletonText height="0.875rem" className="mb-1" />
-                      <SkeletonText width="80%" height="0.75rem" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
+                        <div className="text-left">
+                          <div className="text-xl font-bold text-white">98.7%</div>
+                          <div className="text-white/60 text-xs">Success Rate</div>
             </div>
           </div>
         </div>
       </div>
-    );
-  }
-  
-  return (
-    <div className="flex flex-col h-full">
-      {/* Fixed Header */}
-      <div className="projects-header" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>
-        <div className="flex flex-col gap-6 p-6 mx-auto w-full max-w-[1280px] md:px-8">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="projects-title">
-              Community
-            </h1>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-            {/* Navigation Tabs */}
-            <div className="flex items-center gap-5">
-              <div className="text-[16px] font-medium" style={{ color: 'var(--surbee-fg-primary)' }}>
-                Discover
-              </div>
-              <div className="text-[16px] font-medium hover:text-[#EA6E5F] transition-colors cursor-pointer" style={{ color: 'var(--surbee-fg-muted)' }}>
-                Templates
               </div>
             </div>
             
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--surbee-input-placeholder)' }} />
-              <input 
-                type="text" 
-                placeholder="Search community surveys..." 
-                className="search-input"
-                style={{ paddingLeft: '2.5rem', width: '296px' }}
-              />
+              {/* Content Sections */}
+              {activeTab === 'surveys' && (
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-semibold text-white">Take a Survey</h2>
+                    <div className="text-white/60 text-sm">
+                      {filteredSurveys.length} surveys available
             </div>
           </div>
 
-          {/* Divider Line */}
-          <div className="w-full h-px bg-gray-200/10"></div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {filteredSurveys.map(survey => (
+                      <CommunitySurveyCard
+                        key={survey.id}
+                        survey={survey}
+                        onTakeSurvey={handleTakeSurvey}
+                      />
+                    ))}
         </div>
       </div>
-
-      {/* Scrollable Content Section */}
-      <div className="projects-cards-container">
-        {/* Top Fade Effect */}
-        <div className="projects-cards-fade"></div>
-        
-        <div className="projects-cards-content">
-          <div className="mx-auto w-full max-w-[1280px] px-6 md:px-8">
-
-            {/* Hero Section */}
-            <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Featured Survey Templates card */}
-              <div className="lg:col-span-2 h-[220px] md:h-[260px] theme-card rounded-2xl relative overflow-hidden">
-                <div className="p-[29px] relative z-10">
-                  <div className="flex items-center gap-1.5 mb-7">
-                    <Star className="w-4 h-4 text-theme-muted" />
-                    <span className="text-[12px] font-semibold text-theme-muted">Featured</span>
-                  </div>
-                  <h2 className="text-[30px] font-semibold text-theme-primary leading-9 mb-4">
-                    Popular Community Surveys
-                  </h2>
-                  <p className="text-[14px] text-theme-primary leading-5">
-                    Discover surveys created and shared<br />
-                    by the Surbee community.
-                  </p>
-                </div>
-                <div className="absolute right-0 top-0 bottom-0 w-[413px] bg-theme-secondary rounded-r-2xl hidden md:block">
-                  <div className="w-full h-full rounded-r-2xl theme-card" />
-                </div>
-              </div>
-
-              {/* Top creator card */}
-              <div className="w-full h-[220px] md:h-[260px] theme-card rounded-2xl relative">
-                <div className="p-[29px]">
-                  <div className="flex items-center gap-1.5 mb-7">
-                    <TrendingUp className="w-4 h-4 text-theme-muted" />
-                    <span className="text-[12px] font-semibold text-theme-muted">Top creator</span>
-                  </div>
-                  <h2 className="text-[30px] font-semibold text-theme-primary leading-9 mb-4">
-                    Sarah Johnson
-                  </h2>
-                  <p className="text-[14px] text-theme-primary leading-5">
-                    Expert in customer satisfaction surveys<br />
-                    and market research templates
-                  </p>
-                </div>
-                <div className="absolute bottom-[23px] right-[29px] w-[120px] h-[120px] rounded-full theme-card border border-theme-primary">
-                  <div className="w-full h-full rounded-full theme-card" />
-                </div>
-              </div>
-            </div>
-
-            {/* Featured Templates Section */}
-            <div className="mt-8">
-              <div className="flex items-center justify-between mb-11">
-                <div className="flex items-center">
-                  <Lightbulb className="w-3.5 h-3.5 mr-2" />
-                  <span className="text-[12px] font-semibold text-theme-muted">Featured community surveys</span>
-                </div>
-                <button onClick={() => setViewAll(viewAll === 'featured' ? null : 'featured')} className="text-[12px] font-semibold text-theme-muted hover:text-theme-secondary flex items-center gap-1">
-                  See more
-                  <ChevronDown className="w-3 h-3 -rotate-90" />
-                </button>
-              </div>
-              {viewAll === 'featured' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {[
-                    { image: imgDesktopJpg, avatar: imgSentele, title: "Customer Satisfaction Survey", rating: "4.9", price: "Free", category: "Customer" },
-                    { image: imgDesktopJpg1, avatar: imgOli, title: "Employee Feedback Form", rating: "5.0", price: "Free", category: "HR" },
-                    { image: imgDesktopJpg2, avatar: imgOli, title: "Market Research Survey", rating: "5.0", price: "Free", category: "Research" },
-                    { image: imgDesktopJpg3, avatar: imgVickyChris, title: "Product Feedback Quiz", rating: "4.9", price: "Free", category: "Product" },
-                    { image: imgDesktopJpg4, avatar: imgEaslo, title: "Event Registration Form", rating: "4.8", price: "Free", category: "Events" },
-                    { image: imgDesktopPng, avatar: imgNotion, title: "Training Assessment", rating: "4.8", price: "Free", category: "Training" },
-                    { image: imgDesktopJpg11, avatar: imgBrookeProductivity, title: "Course Evaluation Survey", rating: "4.7", price: "Free", category: "Education" },
-                    { image: imgDesktopJpg12, avatar: imgAntonioMarroffino, title: "Brand Awareness Study", rating: "4.6", price: "Free", category: "Marketing" },
-                  ].map((template, index) => (
-                    <div key={index} className="group cursor-pointer">
-                      <div className="relative h-[220px] md:h-[240px] rounded-xl overflow-hidden theme-card">
-                        <div className="w-full h-full theme-card" />
-                        <div className="absolute bottom-3 right-3 theme-card backdrop-blur-lg rounded-md px-2 py-1">
-                          <span className="text-[14px] font-semibold text-theme-muted">{template.price}</span>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex items-start gap-2">
-                        <div className="w-[22px] h-[22px] rounded-full theme-card flex-shrink-0" />
-                        <div className="flex-1">
-                          <h3 className="text-[14px] font-semibold text-theme-primary">{template.title}</h3>
-                          <div className="flex items-center gap-1 mt-1">
-                            <Star className="w-2.5 h-2.5 fill-current text-yellow-500" />
-                            <span className="text-[12px] font-semibold text-theme-muted">{template.rating}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <HorizontalScroller>
-                  {[
-                    { image: imgDesktopJpg, avatar: imgSentele, title: "Customer Satisfaction Survey", rating: "4.9", price: "Free", category: "Customer" },
-                    { image: imgDesktopJpg1, avatar: imgOli, title: "Employee Feedback Form", rating: "5.0", price: "Free", category: "HR" },
-                    { image: imgDesktopJpg2, avatar: imgOli, title: "Market Research Survey", rating: "5.0", price: "Free", category: "Research" },
-                    { image: imgDesktopJpg3, avatar: imgVickyChris, title: "Product Feedback Quiz", rating: "4.9", price: "Free", category: "Product" },
-                    { image: imgDesktopJpg4, avatar: imgEaslo, title: "Event Registration Form", rating: "4.8", price: "Free", category: "Events" },
-                    { image: imgDesktopPng, avatar: imgNotion, title: "Training Assessment", rating: "4.8", price: "Free", category: "Training" },
-                    { image: imgDesktopJpg11, avatar: imgBrookeProductivity, title: "Course Evaluation Survey", rating: "4.7", price: "Free", category: "Education" },
-                    { image: imgDesktopJpg12, avatar: imgAntonioMarroffino, title: "Brand Awareness Study", rating: "4.6", price: "Free", category: "Marketing" },
-                  ].map((template, index) => (
-                    <div key={index} className="w-[260px] md:w-[280px] flex-shrink-0 group cursor-pointer">
-                      <div className="relative h-[220px] md:h-[240px] rounded-xl overflow-hidden theme-card">
-                        <div className="w-full h-full theme-card" />
-                        <div className="absolute bottom-3 right-3 theme-card backdrop-blur-lg rounded-md px-2 py-1">
-                          <span className="text-[14px] font-semibold text-theme-muted">{template.price}</span>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex items-start gap-2">
-                        <div className="w-[22px] h-[22px] rounded-full bg-neutral-700" />
-                        <div className="flex-1">
-                          <h3 className="text-[14px] font-semibold text-theme-primary">{template.title}</h3>
-                          <div className="flex items-center gap-1 mt-1">
-                            <Star className="w-2.5 h-2.5 fill-current text-yellow-500" />
-                            <span className="text-[12px] font-semibold text-theme-muted">{template.rating}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </HorizontalScroller>
               )}
-            </div>
 
-            {/* Survey Collections Section */}
-            <div className="mt-8">
-              <div className="flex items-center justify-between mb-11">
-                <div className="flex items-center">
-                  <Folder className="w-3.5 h-3.5 mr-2" />
-                  <span className="text-[12px] font-semibold text-theme-muted">Survey collections</span>
+              {activeTab === 'templates' && (
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-semibold text-white">Remix a Template</h2>
+                    <div className="text-white/60 text-sm">
+                      {filteredTemplates.length} templates available
                 </div>
-                <button onClick={() => setViewAll(viewAll === 'collections' ? null : 'collections')} className="text-[12px] font-semibold text-theme-muted hover:text-theme-secondary flex items-center gap-1">
-                  Browse all
-                  <ChevronDown className="w-3 h-3 -rotate-90" />
-                </button>
-              </div>
-              {viewAll === 'collections' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {[
-                    { title: "Customer Experience Pack", count: "12 surveys", color: "#2a2a2a", image: imgDesktopJpg5 },
-                    { title: "Employee Engagement Suite", count: "8 surveys", color: "#2a2a2a", image: imgDesktopJpg6 },
-                    { title: "Market Research Toolkit", count: "15 surveys", color: "#2a2a2a", image: imgDesktopJpg7 },
-                    { title: "Academic Research Forms", count: "10 surveys", color: "#2a2a2a", image: imgDesktopJpg8 },
-                    { title: "Event Feedback Collection", count: "6 surveys", color: "#2a2a2a", image: imgDesktopPng1 },
-                    { title: "Health & Wellness Surveys", count: "9 surveys", color: "#2a2a2a", image: imgSimpleContentPlannerPalashLalwaniDesktopPng },
-                    { title: "Training Assessment Suite", count: "7 surveys", color: "#2a2a2a", image: imgProfessionalResumeNotionDesktopPng },
-                    { title: "Customer Experience Pack 2", count: "10 surveys", color: "#2a2a2a", image: imgDesktopJpg5 },
-                  ].map((collection, index) => (
-                    <div key={index} className="w-full theme-card rounded-xl overflow-hidden cursor-pointer group">
-                      <div className="h-24 theme-card" />
-                      <div className="p-4 border-t border-theme-primary">
-                        <h3 className="text-[14px] font-semibold text-theme-primary mb-2 line-clamp-2">
-                          {collection.title}
-                        </h3>
-                        <div className="flex items-center gap-1 text-[12px] text-theme-muted">
-                          <Folder className="w-4 h-4" />
-                          <span>{collection.count}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <HorizontalScroller>
-                  {[
-                    { title: "Customer Experience Pack", count: "12 surveys", color: "#2a2a2a", image: imgDesktopJpg5 },
-                    { title: "Employee Engagement Suite", count: "8 surveys", color: "#2a2a2a", image: imgDesktopJpg6 },
-                    { title: "Market Research Toolkit", count: "15 surveys", color: "#2a2a2a", image: imgDesktopJpg7 },
-                    { title: "Academic Research Forms", count: "10 surveys", color: "#2a2a2a", image: imgDesktopJpg8 },
-                    { title: "Event Feedback Collection", count: "6 surveys", color: "#2a2a2a", image: imgDesktopPng1 },
-                    { title: "Health & Wellness Surveys", count: "9 surveys", color: "#2a2a2a", image: imgSimpleContentPlannerPalashLalwaniDesktopPng },
-                    { title: "Training Assessment Suite", count: "7 surveys", color: "#2a2a2a", image: imgProfessionalResumeNotionDesktopPng },
-                  ].map((collection, index) => (
-                    <div key={index} className="w-[240px] md:w-[252px] flex-shrink-0 bg-[rgba(255,255,255,0.05)] rounded-xl overflow-hidden cursor-pointer group">
-                      <div className="h-24 bg-neutral-800" />
-                      <div className="p-4 border-t border-theme-primary">
-                        <h3 className="text-[14px] font-semibold text-theme-primary mb-2 line-clamp-2">
-                          {collection.title}
-                        </h3>
-                        <div className="flex items-center gap-1 text-[12px] text-theme-muted">
-                          <Folder className="w-4 h-4" />
-                          <span>{collection.count}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </HorizontalScroller>
-              )}
-            </div>
-
-            {/* Popular This Week */}
-            <div className="mt-8">
-              <div className="flex items-center justify-between mb-11">
-                <div className="flex items-center">
-                  <Rocket className="w-3.5 h-3.5 mr-2" />
-                  <span className="text-[12px] font-semibold text-theme-muted">Popular this week</span>
-                </div>
-                <button onClick={() => setViewAll(viewAll === 'popular' ? null : 'popular')} className="text-[12px] font-semibold text-theme-muted hover:text-theme-secondary flex items-center gap-1">
-                  See more
-                  <ChevronDown className="w-3 h-3 -rotate-90" />
-                </button>
-              </div>
-              {viewAll === 'popular' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {[
-                    { image: imgDesktopJpg8, title: "Net Promoter Score Survey", avatar: imgNotion, rating: "4.8", price: "Free" },
-                    { image: imgDesktopJpg9, title: "Exit Interview Form", avatar: imgNotion, rating: "4.8", price: "Free" },
-                    { image: imgDesktopJpg10, title: "Product Launch Feedback", avatar: imgNotion, rating: "4.9", price: "Free" },
-                    { image: imgDesktopJpg11, title: "Course Evaluation Survey", avatar: imgBrookeProductivity, rating: "4.7", price: "Free" },
-                    { image: imgDesktopJpg12, title: "Brand Awareness Study", avatar: imgAntonioMarroffino, rating: "4.6", price: "Free" },
-                    { image: imgDesktopJpg8, title: "Net Promoter Score Survey 2", avatar: imgNotion, rating: "4.8", price: "Free" },
-                    { image: imgDesktopJpg9, title: "Exit Interview Form 2", avatar: imgNotion, rating: "4.8", price: "Free" },
-                    { image: imgDesktopJpg10, title: "Product Launch Feedback 2", avatar: imgNotion, rating: "4.9", price: "Free" },
-                  ].map((template, index) => (
-                    <div key={index} className="group cursor-pointer">
-                      <div className="relative h-[220px] md:h-[240px] rounded-xl overflow-hidden theme-card">
-                        <div className="w-full h-full theme-card" />
-                        <div className="absolute bottom-3 right-3 theme-card backdrop-blur-lg rounded-md px-2 py-1">
-                          <span className="text-[14px] font-semibold text-theme-muted">{template.price}</span>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex items-start gap-2">
-                        <div className="w-[22px] h-[22px] rounded-full theme-card flex-shrink-0" />
-                        <div className="flex-1">
-                          <h3 className="text-[14px] font-semibold text-theme-primary">{template.title}</h3>
-                          <div className="flex items-center gap-1 mt-1">
-                            <Star className="w-2.5 h-2.5 fill-current text-yellow-500" />
-                            <span className="text-[12px] font-semibold text-theme-muted">{template.rating}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <HorizontalScroller>
-                  {[
-                    { image: imgDesktopJpg8, title: "Net Promoter Score Survey", avatar: imgNotion, rating: "4.8", price: "Free" },
-                    { image: imgDesktopJpg9, title: "Exit Interview Form", avatar: imgNotion, rating: "4.8", price: "Free" },
-                    { image: imgDesktopJpg10, title: "Product Launch Feedback", avatar: imgNotion, rating: "4.9", price: "Free" },
-                    { image: imgDesktopJpg11, title: "Course Evaluation Survey", avatar: imgBrookeProductivity, rating: "4.7", price: "Free" },
-                    { image: imgDesktopJpg12, title: "Brand Awareness Study", avatar: imgAntonioMarroffino, rating: "4.6", price: "Free" },
-                  ].map((template, index) => (
-                    <div key={index} className="w-[260px] md:w-[280px] flex-shrink-0 group cursor-pointer">
-                      <div className="relative h-[220px] md:h-[240px] rounded-xl overflow-hidden theme-card">
-                        <div className="w-full h-full theme-card" />
-                        <div className="absolute bottom-3 right-3 theme-card backdrop-blur-lg rounded-md px-2 py-1">
-                          <span className="text-[14px] font-semibold text-theme-muted">{template.price}</span>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex items-start gap-2">
-                        <div className="w-[22px] h-[22px] rounded-full theme-card flex-shrink-0" />
-                        <div className="flex-1">
-                          <h3 className="text-[14px] font-semibold text-theme-primary">{template.title}</h3>
-                          <div className="flex items-center gap-1 mt-1">
-                            <Star className="w-2.5 h-2.5 fill-current text-yellow-500" />
-                            <span className="text-[12px] font-semibold text-theme-muted">{template.rating}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </HorizontalScroller>
-              )}
-            </div>
-
-            {/* Top Survey Creators Section */}
-            <div className="mt-10 mb-20">
-              <div className="flex items-center justify-between mb-11">
-                <div className="flex items-center">
-                  <Users className="w-3.5 h-3.5 mr-2" />
-                  <span className="text-[12px] font-semibold text-theme-muted">Top survey creators</span>
-                </div>
-                <button className="text-[12px] font-semibold text-theme-muted hover:text-theme-secondary">
-                  See more
-                </button>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-[22.67px] gap-y-8">
-                {[
-                  { avatar: imgProfileCoverImage, name: "Sarah Johnson", followers: "142K followers" },
-                  { avatar: imgTtoki, name: "Mike Chen", followers: "53K followers" },
-                  { avatar: imgRodro, name: "Lisa Rodriguez", followers: "52K followers" },
-                  { avatar: imgSheNotions, name: "Emma Wilson", followers: "48K followers" },
-                  { avatar: imgTristan, name: "David Kim", followers: "37K followers" },
-                  { avatar: imgProfileCoverImage1, name: "Anna Foster", followers: "36K followers" },
-                  { avatar: imgJade, name: "Tom Green", followers: "32K followers" },
-                  { avatar: imgProfileCoverImage2, name: "Maya Patel", followers: "31K followers" },
-                  { avatar: imgDelusional, name: "Alex Rivera", followers: "31K followers" },
-                  { avatar: imgLeBureau, name: "Le Bureau", followers: "30K followers" },
-                  { avatar: imgProfileCoverImage3, name: "Izzy Simpson", followers: "30K followers" },
-                  { avatar: imgMoniasoup, name: "Monica Soup", followers: "28K followers" },
-                ].map((creator, index) => (
-                  <div key={index} className="text-center cursor-pointer group">
-                    <div className="w-[60px] h-[60px] mx-auto mb-3 rounded-full overflow-hidden border-2 border-transparent group-hover:border-theme-muted transition-all">
-                      <div className="w-full h-full theme-card" />
-                    </div>
-                    <h4 className="text-[14px] font-semibold text-theme-primary mb-1">{creator.name}</h4>
-                    <p className="text-[12px] text-theme-muted">{creator.followers}</p>
-                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {filteredTemplates.map(template => (
+                      <CommunityTemplateCard
+                        key={template.id}
+                        template={template}
+                        onRemixTemplate={handleRemixTemplate}
+                      />
                 ))}
               </div>
             </div>
+              )}
 
           </div>
         </div>
       </div>
     </div>
+    </ImageKitProvider>
   );
 }

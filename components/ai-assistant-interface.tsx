@@ -784,13 +784,6 @@ These foundational papers remain the most influential in the history of gravitat
                                   >
                                     Add this page
                                   </button>
-                                  <button
-                                    type="button"
-                                    className="px-4 py-2 border border-[#444444] rounded-lg text-[#e8e8e6] text-sm hover:bg-[#2d2f2f] transition-colors"
-                                    style={{ fontFamily: 'DM Sans' }}
-                                  >
-                                    Save to notebook
-                                  </button>
                                 </div>
                               </div>
                             )}

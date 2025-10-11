@@ -7,6 +7,7 @@ import { Component as AnimatedBackground } from '../open-ai-codex-animated-backg
 import ChatInputLight from '@/components/ui/chat-input-light';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import EndlessTools from './EndlessTools';
 import localFont from "next/font/local";
 
 const epilogue = localFont({
@@ -286,6 +287,8 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
         </div>
         </div>
       </section>
+
+      <EndlessTools />
 
       {/* Technology Section */}
       <section className="py-28 bg-white">

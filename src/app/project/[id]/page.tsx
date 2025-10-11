@@ -10,7 +10,6 @@ import { File, Folder, Tree } from "@/components/ui/file-tree";
 import AIResponseActions from "@/components/ui/ai-response-actions";
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import ChatInputLight from "@/components/ui/chat-input-light";
-import { TextShimmerWave } from "@/components/ui/text-shimmer-wave";
 import dynamic from 'next/dynamic'
 import { MODELS } from "@/lib/deepsite/providers";
 import { useDeepSite } from "./deepsite-integration/hooks/useDeepSite";
@@ -22,7 +21,15 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealtime } from '@/contexts/RealtimeContext';
-import type { Project } from '@/types/database';
+interface Project {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  title: string;
+  description: string | null;
+  user_id: string;
+  status: 'draft' | 'published' | 'archived';
+}
 
 const InviteModal = dynamic(() => import('@/components/referrals/InviteModal'), { ssr: false })
 
@@ -488,7 +495,9 @@ export default function ProjectPage() {
 
   const runSurveyBuild = useCallback(async (prompt: string, images?: string[]) => {
     const trimmed = prompt.trim();
-    if (!trimmed) return false;
+    if (!trimmed) {
+      return false;
+    }
 
     if (activeRequestRef.current) {
       activeRequestRef.current.abort();
@@ -497,193 +506,84 @@ export default function ProjectPage() {
     const controller = new AbortController();
     activeRequestRef.current = controller;
 
-    setIsInputDisabled(true);
+    applyBuilderStatus('thinking', 'Engaging Surbee agent...');
+    setIsBuilderPanelOpen(true);
+    setBuilderThinkingText('');
+    setBuilderThinkingDuration(0);
+    setLatestUsage(null);
+
     setIsThinking(true);
+    setIsInputDisabled(true);
     deepSite.setIsAiWorking(true);
     deepSite.setIsThinking(true);
 
-    setBuilderThinkingText('');
-    setIsBuilderPanelOpen(true);
-    setBuilderThinkingDuration(0);
-    setLatestUsage(null);
-    thinkingStartRef.current = Date.now();
-    applyBuilderStatus('thinking', 'Grok 4 Fast is analyzing your request...');
-
-    let success = false;
-    let htmlBuffer = '';
-
-    const handleEvent = (evt: any) => {
-      switch (evt.type) {
-        case 'thinking': {
-          const delta = typeof evt.delta === 'string' ? evt.delta : '';
-          if (delta.trim().length > 0) {
-            appendThinkingChunk(delta);
-          }
-          break;
-        }
-        case 'status': {
-          const status = typeof evt.status === 'string' ? evt.status.toLowerCase() : '';
-          const detail = typeof evt.detail === 'string' ? evt.detail : undefined;
-          if (status === 'building') {
-            applyBuilderStatus('building', detail || 'Building beautiful survey HTML...');
-            setIsThinking(false);
-            deepSite.setIsThinking(false);
-          } else if (status === 'thinking') {
-            applyBuilderStatus('thinking', detail || 'Thinking through design...');
-          } else if (status === 'complete') {
-            applyBuilderStatus('complete', detail);
-            success = true;
-          }
-          break;
-        }
-        case 'htmlChunk': {
-          if (typeof evt.chunk === 'string' && evt.chunk.length > 0) {
-            htmlBuffer += evt.chunk;
-            // Extract and render clean HTML progressively
-            const previewHtml = extractPreviewHtml(htmlBuffer);
-            if (previewHtml && typeof deepSite.setHtml === 'function') {
-              deepSite.setHtml(previewHtml);
-            }
-            applyBuilderStatus('building', 'Streaming survey...');
-          }
-          break;
-        }
-        case 'usage': {
-          if (evt.usage && typeof evt.usage === 'object') {
-            setLatestUsage(evt.usage as Record<string, unknown>);
-          }
-          break;
-        }
-        case 'complete': {
-          // Extract final clean HTML
-          const finalHtml = extractPreviewHtml(htmlBuffer);
-          if (finalHtml) {
-            deepSite.updateHtml(finalHtml, trimmed);
-          }
-          
-          if (typeof deepSite.setPreviousPrompt === 'function') {
-            deepSite.setPreviousPrompt(trimmed);
-          }
-          
-          if (typeof evt.conversationId === 'string' && evt.conversationId.length > 0) {
-            conversationIdRef.current = evt.conversationId;
-          }
-          
-          const durationMs = thinkingStartRef.current ? Date.now() - thinkingStartRef.current : 0;
-          const seconds = durationMs > 0 ? Math.round((durationMs / 1000) * 10) / 10 : 0;
-          setBuilderThinkingDuration(seconds);
-          applyBuilderStatus('complete', `Created in ${seconds.toFixed(1)}s using Grok 4 Fast Reasoning.`);
-          
-          // Close thinking panel after 2 seconds
-          setTimeout(() => setIsBuilderPanelOpen(false), 2000);
-          
-          success = true;
-          
-          // Add AI suggestions message
-          const suggestionsText = typeof evt.suggestions === 'string' && evt.suggestions.trim()
-            ? evt.suggestions
-            : '✨ Survey created successfully! Let me know if you\'d like to make any changes.';
-
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: `assistant-${Date.now()}`,
-              text: suggestionsText,
-              isUser: false,
-              timestamp: new Date(),
-            },
-          ]);
-          break;
-        }
-        case 'error': {
-          const message = typeof evt.message === 'string' ? evt.message : 'Survey generation failed.';
-          throw new Error(message);
-        }
-        default:
-          break;
-      }
-    };
-
     try {
-      const response = await fetch('/api/grok-survey', {
+      const response = await fetch('/api/agents/surbee', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: trimmed,
-          conversationId: conversationIdRef.current,
-          images,
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ input: trimmed, images }),
         signal: controller.signal,
       });
 
-      if (!response.ok || !response.body) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'Failed to stream from Grok 4 Fast');
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || 'Failed to reach Surbee agent workflow');
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+      const data = await response.json();
+      const result = data?.result;
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (value) {
-          buffer += decoder.decode(value, { stream: true });
-          let newlineIndex = buffer.indexOf('\n');
-          while (newlineIndex !== -1) {
-            const chunk = buffer.slice(0, newlineIndex).trim();
-            buffer = buffer.slice(newlineIndex + 1);
-            if (chunk.length > 0) {
-              try {
-                handleEvent(JSON.parse(chunk));
-              } catch (err) {
-                console.warn('[Grok4Fast] Failed to parse event:', err, chunk.substring(0, 100));
-              }
-            }
-            newlineIndex = buffer.indexOf('\n');
-          }
-        }
-        if (done) {
-          const remaining = buffer.trim();
-          if (remaining.length > 0) {
-            try {
-              handleEvent(JSON.parse(remaining));
-            } catch (err) {
-              console.warn('[Grok4Fast] Failed to parse final event:', err);
-            }
-          }
-          break;
-        }
+      if (!result?.output_text) {
+        throw new Error('Agent response was empty.');
       }
 
-      if (!success) {
-        throw new Error('Stream ended without completion event.');
+      const aiMessage: ChatMessage = {
+        id: `${Date.now()}-agent`,
+        text: result.output_text,
+        isUser: false,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, aiMessage]);
+
+      if (result.stage === 'build' && result.output_text.trim().length > 0) {
+        deepSite.updateHtml(result.output_text, trimmed);
+        applyBuilderStatus('complete', 'Generated new survey HTML.');
+      } else if (result.stage === 'plan') {
+        applyBuilderStatus('complete', 'Planning notes ready.');
+      } else if (result.stage === 'fail') {
+        applyBuilderStatus('error', 'Guardrails prevented a response.');
+      } else {
+        applyBuilderStatus('complete');
       }
 
       return true;
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Survey generation failed.';
-      applyBuilderStatus('error', message);
-      setIsBuilderPanelOpen(true);
+      console.error('runSurveyBuild error', error);
+      const message = error instanceof Error ? error.message : 'Unexpected agent error.';
+      recordError(message);
       setMessages((prev) => [
         ...prev,
         {
-          id: `assistant-error-${Date.now()}`,
-          text: `❌ Error: ${message}`,
+          id: `${Date.now()}-error`,
+          text: `Error: ${message}`,
           isUser: false,
           timestamp: new Date(),
         },
       ]);
-      recordError(message);
+      applyBuilderStatus('error', message);
       return false;
     } finally {
-      activeRequestRef.current = null;
-      setIsInputDisabled(false);
       setIsThinking(false);
+      setIsInputDisabled(false);
+      setIsBuilderPanelOpen(false);
       deepSite.setIsAiWorking(false);
       deepSite.setIsThinking(false);
+      activeRequestRef.current = null;
     }
-  }, [deepSite, recordError]);
+  }, [applyBuilderStatus, deepSite, recordError]);
 
   const handleSendMessage = async (message?: string, images?: string[]) => {
     const textToSend = message || chatText.trim();
@@ -1063,71 +963,185 @@ export default function ProjectPage() {
             /* Chat Messages View */
             <div className="flex-1 overflow-y-auto px-4 py-4" ref={chatAreaRef}>
               <div className="space-y-4">
-                {messages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] rounded-lg px-4 py-2 ${
-                      msg.isUser 
-                        ? 'bg-blue-600 text-white' 
-                        : 'bg-zinc-800/50 text-gray-200'
-                    }`}>
-                      <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                        {msg.text}
-                      </div>
-                    </div>
+                {messages.length === 0 && !isThinking && (
+                  <div className="flex h-full items-center justify-center text-sm text-zinc-400">
+                    Start a conversation to see Surbee's responses.
                   </div>
-                ))}
+                )}
 
-                {/* Thinking Panel - Shows Grok 4 Fast Reasoning Process */}
-                {isBuilderPanelOpen && (
-                  <div className="rounded-lg bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-purple-500/30 p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-                        <span className="text-xs font-medium text-purple-300">
-                          {builderStatus === 'thinking' ? '🧠 Grok 4 Fast Reasoning' : 
-                           builderStatus === 'building' ? '🛠️ Building Survey' : 
-                           builderStatus === 'complete' ? '✅ Complete' : 
-                           '❌ Error'}
-                        </span>
-                      </div>
-                      {builderStatus === 'complete' && builderThinkingDuration > 0 && (
-                        <span className="text-xs text-gray-400">
-                          {builderThinkingDuration.toFixed(1)}s
-                        </span>
+                {messages.map((message, idx) => {
+                  const lastUserPrompt =
+                    [...messages].slice(0, idx).reverse().find((m) => m.isUser)?.text || "";
+                  return (
+                    <div
+                      key={message.id}
+                      className={message.isUser ? "flex justify-end" : "flex justify-start"}
+                    >
+                      {message.isUser ? (
+                        <div className="max-w-[85%] rounded-2xl bg-zinc-900 px-4 py-3 text-sm text-zinc-100 shadow-sm">
+                          {message.text}
+                        </div>
+                      ) : (
+                        <div className="group relative max-w-full flex-1 rounded-2xl bg-zinc-900/40 px-4 py-4 text-sm text-zinc-100 shadow-sm">
+                          <MarkdownRenderer content={message.text} className="prose-invert prose-sm max-w-none" />
+                          <div className="mt-2">
+                            <AIResponseActions
+                              message={message.text}
+                              onCopy={(content) => navigator.clipboard.writeText(content)}
+                              onRetry={() => {
+                                if (lastUserPrompt) {
+                                  void handleSendMessage(lastUserPrompt);
+                                }
+                              }}
+                              onCreateSurvey={() => {
+                                const prompt = lastUserPrompt || messages.find((m) => m.isUser)?.text || "";
+                                if (prompt) {
+                                  const newProjectId = `project_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+                                  try {
+                                    sessionStorage.setItem("surbee_initial_prompt", prompt);
+                                  } catch {}
+                                  window.location.href = `/project/${newProjectId}`;
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
                       )}
                     </div>
+                  );
+                })}
 
-                    {builderStatusDetail && (
-                      <div className="text-xs text-gray-400 italic">
-                        {builderStatusDetail}
-                      </div>
-                    )}
+                {isThinking && (
+                  <div className="flex justify-start">
+                    <div className="flex items-center gap-2 rounded-2xl bg-zinc-900/40 px-3 py-2 text-xs text-zinc-400">
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-zinc-400" />
+                      Surbee is thinking...
+                    </div>
+                  </div>
+                )}
 
-                    {builderThinkingText.trim().length > 0 && (
-                      <div className="mt-3 rounded-md bg-black/30 p-3 max-h-64 overflow-y-auto">
-                        <div className="text-xs text-gray-300 leading-relaxed break-words whitespace-pre-wrap font-mono">
-                          {builderThinkingText}
+
+
+                {/* Thinking Panel - Shows Reasoning Process */}
+                {isBuilderPanelOpen && (
+                  <div className="relative my-1 min-h-6">
+                    <div
+                      className="relative flex origin-top-left flex-col gap-2 overflow-x-clip"
+                      style={{ opacity: 1, transform: "none" }}
+                    >
+                      <span>
+                        <div className="relative w-full text-start">
+                          <div className="flex w-full flex-col items-start justify-between text-start">
+                            <button className="flex w-full items-center gap-0.5">
+                              <span>
+                                <span
+                                  className="flex items-center gap-1 truncate text-start align-middle text-token-text-secondary hover:text-token-text-primary dark:hover:text-token-text-primary dark:text-[var(--interactive-label-tertiary-default)]"
+                                  style={{ opacity: 1 }}
+                                >
+                                  Thought for {builderThinkingDuration > 0 ? `${builderThinkingDuration.toFixed(1)}s` : '14s'}
+                                </span>
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      </span>
+                      <div className="max-w-[calc(0.8*var(--thread-content-max-width,40rem))]">
+                        <div
+                          className="relative z-0"
+                          style={{ opacity: 1, height: "auto", overflowY: "hidden" }}
+                        >
+                          <div
+                            className="relative flex h-full flex-col"
+                            style={{ margin: "4px 0px" }}
+                          >
+                            {builderThinkingText.trim().length > 0 && (
+                              <>
+                                <div
+                                  className="text-token-text-secondary start-0 end-0 top-0 flex origin-left"
+                                  role="button"
+                                  style={{
+                                    zIndex: 0,
+                                    opacity: 1,
+                                    position: "static",
+                                    transform: "none",
+                                  }}
+                                >
+                                  <div className="relative flex w-full items-start gap-2 overflow-clip">
+                                    <div className="flex h-full w-4 shrink-0 flex-col items-center">
+                                      <div className="flex h-5 shrink-0 items-center justify-center">
+                                        <div className="bg-token-interactive-icon-tertiary-default h-[6px] w-[6px] rounded-full" />
+                                      </div>
+                                      <div
+                                        className="bg-token-border-heavy h-full w-[1px] rounded-full"
+                                        style={{ opacity: 1, transform: "none" }}
+                                      />
+                                    </div>
+                                    <div className="w-full" style={{ marginBottom: "12px" }}>
+                                      <div className="w-full" />
+                                      <div
+                                        className="_markdown_1frq2_10 text-token-text-secondary text-sm markdown prose dark:prose-invert w-full break-words dark markdown-new-styling"
+                                        style={{ maxWidth: "unset" }}
+                                      >
+                                        <p
+                                          style={{
+                                            marginBlock: "calc(.25rem*1)",
+                                            marginTop: "calc(.25rem*0)",
+                                            marginBottom: "0px",
+                                          }}
+                                        >
+                                          {builderThinkingText}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+
+                            {latestUsage && (
+                              <div
+                                className="text-token-text-secondary start-0 end-0 top-0 flex origin-left"
+                                role="button"
+                                style={{
+                                  zIndex: 1,
+                                  opacity: 1,
+                                  position: "static",
+                                  transform: "none",
+                                }}
+                              >
+                                <div className="relative flex w-full items-start gap-2 overflow-clip">
+                                  <div className="flex h-full w-4 shrink-0 flex-col items-center">
+                                    <div className="flex h-5 shrink-0 items-center justify-center">
+                                      <svg
+                                        className="h-[15px] w-[15px]"
+                                        height="20"
+                                        width="20"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                      >
+                                        <path d="M12.498 6.90887C12.7094 6.60867 13.1245 6.53642 13.4248 6.74774C13.7249 6.95913 13.7971 7.37424 13.5859 7.6745L9.62695 13.2995C9.51084 13.4644 9.32628 13.5681 9.125 13.5807C8.94863 13.5918 8.77583 13.5319 8.64453 13.4167L8.59082 13.364L6.50781 11.072L6.42773 10.9645C6.26956 10.6986 6.31486 10.3488 6.55273 10.1325C6.79045 9.91663 7.14198 9.9053 7.3916 10.0876L7.49219 10.1774L9.0166 11.8542L12.498 6.90887Z" />
+                                        <path
+                                          clipRule="evenodd"
+                                          d="M10.3333 2.08496C14.7046 2.08496 18.2483 5.62867 18.2483 10C18.2483 14.3713 14.7046 17.915 10.3333 17.915C5.96192 17.915 2.41821 14.3713 2.41821 10C2.41821 5.62867 5.96192 2.08496 10.3333 2.08496ZM10.3333 3.41504C6.69646 3.41504 3.74829 6.3632 3.74829 10C3.74829 13.6368 6.69646 16.585 10.3333 16.585C13.97 16.585 16.9182 13.6368 16.9182 10C16.9182 6.3632 13.97 3.41504 10.3333 3.41504Z"
+                                          fillRule="evenodd"
+                                        />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                  <div className="w-full" style={{ marginBottom: "0px" }}>
+                                    <div className="w-full" />
+                                    <div className="text-token-text-secondary text-sm">
+                                      {builderStatus === 'thinking' ? 'Thinking...' : builderStatus === 'building' ? 'Building...' : builderStatus === 'complete' ? 'Complete' : 'Error'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    )}
-
-                    {latestUsage && (
-                      <div className="mt-3 pt-3 border-t border-purple-500/20">
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div className="text-gray-400">
-                            <span className="text-gray-500">Prompt:</span> {latestPromptTokens !== null ? latestPromptTokens.toLocaleString() : 'n/a'}
-                          </div>
-                          <div className="text-gray-400">
-                            <span className="text-gray-500">Completion:</span> {latestCompletionTokens !== null ? latestCompletionTokens.toLocaleString() : 'n/a'}
-                          </div>
-                          {typeof (latestUsage?.completion_tokens_details as any)?.reasoning_tokens === 'number' && (
-                            <div className="text-purple-300 col-span-2">
-                              <span className="text-gray-500">Reasoning:</span> {((latestUsage?.completion_tokens_details as any).reasoning_tokens).toLocaleString()} tokens
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 )}
               </div>

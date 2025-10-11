@@ -59,7 +59,6 @@ import ReactMarkdown from 'react-markdown';
 import { TextShimmer } from './ui/text-shimmer';
 import { Brain } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { NotebookContent } from '@/components/notebook/notebook-content';
 import AIAssistantInterface from './ai-assistant-interface';
 
 interface Document {
@@ -82,7 +81,6 @@ interface Tab {
     | 'inbox'
     | 'surveys'
     | 'analytics'
-    | 'notebook'
     | 'knowledge-base'
     | 'table'
     | 'document';
@@ -848,13 +846,6 @@ export default function NewDashboard({
               >
                 <BarChart className="w-4 h-4 mr-2" /> Analytics
               </Button>
-              <Button
-                variant="ghost"
-                className="w-full flex items-center justify-start font-[Gambarino-Regular] text-base"
-                onClick={() => openTab('notebook', 'Notebook')}
-              >
-                <Book className="w-4 h-4 mr-2" /> Notebook
-              </Button>
             </div>
           </div>
         </SecondaryMenu>
@@ -962,8 +953,6 @@ export default function NewDashboard({
               <div className="flex flex-1 flex-col">
                 <AIAssistantInterface />
               </div>
-            ) : activeTabData?.type === 'notebook' ? (
-              <NotebookContent />
             ) : activeTabData?.type === 'knowledge-base' ? (
               // Knowledge Base Table View (existing implementation)
               <div

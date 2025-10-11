@@ -2,7 +2,6 @@ import React from "react";
 import { RevealSection, RevealDiv } from "@/components/landing/Reveal";
 import localFont from "next/font/local";
 import TypingOverlay from "@/components/landing/TypingOverlay";
-import ColorfulText from "@/components/landing/ColorfulText";
 import { ImageKitProvider, Image as IKImage } from "@imagekit/next";
 
 const epilogue = localFont({
@@ -89,21 +88,21 @@ export default function LandingPage() {
                 </a>
                 <a
                   className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
-                  href="#product"
-                >
-                  Product
-                </a>
-                <a
-                  className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
                   href="#students"
                 >
                   Students
                 </a>
-                
-               
                 <a
                   className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
-                  href="#blog"
+                  href="/landing/privacy"
+                >
+                  Privacy
+                </a>
+                
+  
+                <a
+                  className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
+                  href="/landing/blog"
                 >
                   Blog
                 </a>
@@ -132,7 +131,7 @@ export default function LandingPage() {
           >
             <div className="flex flex-col gap-12">
               <h1 className='text-[#171717] font-semibold leading-none tracking-[-0.96px] text-[48px] max-w-[520px] sm:text-[54px] sm:leading-[110%] sm:tracking-[-1.08px] sm:max-w-[620px] xl:text-[70px] xl:leading-none xl:tracking-[-1.4px] xl:max-w-[720px] 3xl:text-[90px] 3xl:leading-none 3xl:tracking-[-1.8px] 3xl:max-w-[820px]'>
-                <ColorfulText text="Automate your surveys with natural language" />
+                Automate your surveys with natural language
               </h1>
               <div className="flex flex-col gap-6">
                 <p className="text-[#171717] text-[15px] leading-[140%] max-w-[482px]">
@@ -1154,25 +1153,25 @@ export default function LandingPage() {
 	                What people are saying about Surbee
 	              </h2>
 	              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-	                {/* Left Testimonial */}
-	                <div className="flex flex-col gap-6 p-8 bg-neutral-50 rounded-lg">
-	                  <p className="font-af-foundary font-medium text-[18px] md:text-[20px] leading-[140%]">
-	                    <ColorfulText text='"Surbee will help my students collect reliable results quickly, it's definitely going to raise the quality of their work. The automated validation catches issues I used to spend hours explaining."' />
-	                  </p>
-	                  <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-[#171717]">
-	                    — Prelaunch testimonial
-	                  </p>
-	                </div>
-	                
-	                {/* Right Testimonial */}
-	                <div className="flex flex-col gap-6 p-8 bg-neutral-50 rounded-lg">
-	                  <p className="font-af-foundary font-medium text-[18px] md:text-[20px] leading-[140%]">
-	                    <ColorfulText text='"I've been waiting for something like this. Creating surveys used to take me days, now I can prototype in minutes and iterate based on real feedback. It's going to change how we do research."' />
-	                  </p>
-	                  <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-[#171717]">
-	                    — Prelaunch testimonial
-	                  </p>
-	                </div>
+                {/* Left Testimonial */}
+                <div className="flex flex-col gap-6 p-8 bg-neutral-50 rounded-lg">
+                  <p className="font-af-foundary font-medium text-[18px] md:text-[20px] text-[#171717] leading-[140%]">
+                    "Surbee will help my students collect reliable results quickly, it's definitely going to raise the quality of their work. The automated validation catches issues I used to spend hours explaining."
+                  </p>
+                  <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-[#171717]">
+                    — Prelaunch testimonial
+                  </p>
+                </div>
+                
+                {/* Right Testimonial */}
+                <div className="flex flex-col gap-6 p-8 bg-neutral-50 rounded-lg">
+                  <p className="font-af-foundary font-medium text-[18px] md:text-[20px] text-[#171717] leading-[140%]">
+                    "I've been waiting for something like this. Creating surveys used to take me days, now I can prototype in minutes and iterate based on real feedback. It's going to change how we do research."
+                  </p>
+                  <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-[#171717]">
+                    — Prelaunch testimonial
+                  </p>
+                </div>
 	              </div>
 	            </section>
 	          </div>

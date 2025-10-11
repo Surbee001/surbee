@@ -3,32 +3,24 @@ import { useRouter } from 'next/navigation';
 import { User } from 'lucide-react';
 import { Image as IKImage } from '@imagekit/next';
 
-interface ProjectCardProps {
+interface CommunityProjectCardProps {
   id: string;
   title: string;
   status: 'draft' | 'published' | 'archived';
   updatedAt: string;
   previewImage?: string;
   userAvatar?: string;
-  onDuplicate?: (id: string) => void;
-  onShare?: (id: string) => void;
-  onSettings?: (id: string) => void;
-  onArchive?: (id: string) => void;
-  onDelete?: (id: string) => void;
+  onRemix?: (id: string) => void;
 }
 
-export const ProjectCard: React.FC<ProjectCardProps> = ({
+export const CommunityProjectCard: React.FC<CommunityProjectCardProps> = ({
   id,
   title,
   status,
   updatedAt,
   previewImage,
   userAvatar,
-  onDuplicate,
-  onShare,
-  onSettings,
-  onArchive,
-  onDelete,
+  onRemix,
 }) => {
   const router = useRouter();
 
@@ -37,7 +29,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   };
 
   // Mock response count - in real implementation, this would come from props
-  const responseCount = 154;
+  const responseCount = Math.floor(Math.random() * 500) + 50;
 
   return (
     <div
@@ -72,11 +64,15 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             </div>
           </div>
         </div>
-        <div
+        <div 
           className="w-[66px] h-[35px] bg-white text-black opacity-0 group-hover:opacity-100 group-hover:border-white group-hover:pointer-events-auto duration-300 ease-in-out text-sm rounded-lg flex items-center justify-center font-medium cursor-pointer pointer-events-auto active:scale-95 transition"
           style={{ border: '1px solid var(--surbee-border-accent)' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemix?.(id);
+          }}
         >
-          Edit
+          Remix
         </div>
       </div>
       <div className="w-full rounded-[8px] aspect-[210/119] mt-auto overflow-hidden">

@@ -5,6 +5,7 @@ import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
   ArrowUp,
+  Plus,
   Paperclip,
   Square,
   X,
@@ -666,10 +667,10 @@ export const PromptInputBox = React.forwardRef(
               <PromptInputAction tooltip="Upload image">
                 <button
                   onClick={() => uploadInputRef.current?.click()}
-                  className="flex h-6 w-6 text-[#9CA3AF] cursor-pointer items-center justify-center rounded-full border border-zinc-600 transition-colors hover:bg-gray-600/30 hover:text-[#D1D5DB]"
+                  className="flex h-6 w-6 text-[#9CA3AF] cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-gray-600/30 hover:text-[#D1D5DB]"
                   disabled={isRecording}
                 >
-                  <Paperclip className="h-3 w-3 transition-colors" />
+                  <Plus className="h-4 w-4 transition-colors" />
                   <input
                     ref={uploadInputRef}
                     type="file"
@@ -683,92 +684,6 @@ export const PromptInputBox = React.forwardRef(
                   />
                 </button>
               </PromptInputAction>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => handleToggleChange('think')}
-                  className={cn(
-                    'rounded-full transition-all flex items-center gap-1 px-2 py-1 border h-6',
-                    showThink
-                      ? 'bg-[#8B5CF6]/15 border-[#8B5CF6] text-[#8B5CF6]'
-                      : 'bg-transparent border-zinc-600 text-[#9CA3AF] hover:text-[#D1D5DB] hover:bg-gray-600/30',
-                  )}
-                >
-                  <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
-                    <motion.div
-                      animate={{
-                        rotate: showThink ? 360 : 0,
-                        scale: showThink ? 1.1 : 1,
-                      }}
-                      whileHover={{
-                        rotate: showThink ? 360 : 15,
-                        scale: 1.1,
-                        transition: {
-                          type: 'spring',
-                          stiffness: 300,
-                          damping: 10,
-                        },
-                      }}
-                      transition={{
-                        type: 'spring',
-                        stiffness: 260,
-                        damping: 25,
-                      }}
-                    >
-                      <BrainCog
-                        className={cn(
-                          'w-3 h-3',
-                          showThink ? 'text-[#8B5CF6]' : 'text-inherit',
-                        )}
-                      />
-                    </motion.div>
-                  </div>
-                  <AnimatePresence>
-                    {showThink && (
-                      <motion.span
-                        initial={{ width: 0, opacity: 0 }}
-                        animate={{ width: 'auto', opacity: 1 }}
-                        exit={{ width: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="text-xs overflow-hidden whitespace-nowrap text-[#8B5CF6] flex-shrink-0"
-                      >
-                        Brainstorm
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleEditClick}
-                  className={cn(
-                    'rounded-full transition-all flex items-center gap-1 px-2 py-1 border h-6 cursor-pointer',
-                    isEditSelected
-                      ? 'bg-blue-600 border-blue-600 text-white'
-                      : 'bg-transparent border-zinc-600 text-[#9CA3AF] hover:text-[#D1D5DB] hover:bg-gray-600/30',
-                  )}
-                >
-                  <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
-                    <motion.div
-                      whileHover={{
-                        scale: 1.1,
-                        transition: {
-                          type: 'spring',
-                          stiffness: 300,
-                          damping: 10,
-                        },
-                      }}
-                      transition={{
-                        type: 'spring',
-                        stiffness: 260,
-                        damping: 25,
-                      }}
-                    >
-                      <Edit3 className="w-3 h-3 text-inherit" />
-                    </motion.div>
-                  </div>
-                  <span className="text-xs text-inherit">Edit</span>
-                </button>
-              </div>
             </div>
             <PromptInputAction
               tooltip={
