@@ -450,7 +450,7 @@ export default function LandingPage() {
 	            <h2 className="font-medium tracking-15 text-center text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 mb-8">
 	              Connect the tools you already use
 	            </h2>
-	            <div className="flex justify-center gap-3 sm:gap-4 pb-5 md:pb-6 border-t border-b border-gray-200 pt-3 md:pt-6 px-3 sm:px-4 flex-wrap">
+	            <div className="flex justify-center gap-3 sm:gap-4 pb-5 md:pb-6 pt-3 md:pt-6 px-3 sm:px-4 flex-wrap">
 	                <div className="flex relative flex-col items-center group">
 	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
 	                    <img
