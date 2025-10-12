@@ -1,430 +1,470 @@
-import React, { useState } from 'react';
-import { Search, Star, Users, FileText, Zap, TrendingUp, Clock, Tag } from 'lucide-react';
-import { ImageKitProvider } from '@imagekit/next';
-import { CommunitySurveyCard } from '@/components/community/CommunitySurveyCard';
-import { CommunityTemplateCard } from '@/components/community/CommunityTemplateCard';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { ImageKitProvider, Image as IKImage } from '@imagekit/next';
+import {
+  ArrowRight,
+  Compass,
+  Flame,
+  Gauge,
+  Search,
+  Sparkles,
+  FileText,
+  User,
+} from 'lucide-react';
 
-interface CommunitySurvey {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  responseCount: number;
-  createdAt: string;
-  previewImage?: string;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  estimatedTime: string;
+import {
+  communityCategories,
+  communitySurveys,
+  communityTemplates,
+  trendingSurveys,
+  trendingTemplates,
+} from '@/lib/community/data';
+import { CommunityCategoryCard } from '@/components/community/CommunityCategoryCard';
+import { CommunityTemplateCard } from '@/components/community/CommunityTemplateCard';
+import { CommunitySurveyCard } from '@/components/community/CommunitySurveyCard';
+
+const FILTER_OPTIONS = [
+  { label: 'All', value: 'all' },
+  { label: 'Trending', value: 'trending' },
+  { label: 'New', value: 'new' },
+  { label: 'Most Remixed', value: 'remixed' },
+];
+
+
+
+function FeaturedSlideshow({
+  templates,
+  onRemixTemplate
+}: {
+  templates: any[];
+  onRemixTemplate: (id: string) => void;
+}) {
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Calculate total number of slides (each slide shows 3 cards)
+  const totalSlides = Math.ceil(templates.length / 3);
+  const maxSlides = 4; // Show exactly 4 slides as requested
+
+  // Auto-advance slides every 5 seconds
+  useEffect(() => {
+    if (totalSlides <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % maxSlides);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [totalSlides, maxSlides]);
+
+  // Get templates for current slide
+  const getCurrentTemplates = () => {
+    const startIndex = currentSlide * 3;
+    return templates.slice(startIndex, startIndex + 3);
+  };
+
+  // Get all templates for mobile grid (up to 12 cards for 4 slides)
+  const getAllTemplates = () => {
+    return templates.slice(0, 12);
+  };
+
+  // Handle dot click
+  const handleDotClick = useCallback((slideIndex: number) => {
+    setCurrentSlide(slideIndex);
+  }, []);
+
+  return (
+    <div
+      className="featured-slider_container__ndMOX"
+      style={{ position: "relative", width: "100%" }}
+    >
+      <div
+        className="featured-slider_sliderContainer__6bQkM"
+        style={{
+          position: "relative",
+          display: "block",
+          willChange: "transform",
+        }}
+      >
+        <div
+          className="featured-slider_slidesWrapper__OxR84"
+          style={{
+            position: "relative",
+            width: "100%",
+            minHeight: "200px",
+            isolation: "isolate",
+          }}
+        >
+          {/* Fade transition container */}
+          <div
+            key={currentSlide} // Force re-render on slide change for smooth fade
+            className="featured-slider_slide__sji9b featured-slider_slideActive__UVuOd"
+            style={{
+              transition: "opacity 0.8s ease-in-out",
+              position: "absolute",
+              top: "0px",
+              left: "0px",
+              width: "100%",
+              opacity: 1,
+              pointerEvents: "all",
+              animation: "fadeIn 0.8s ease-in-out",
+            }}
+          >
+            <div
+              className="featured-slider_slideContent__V0XaH"
+              style={{
+                gap: "10px",
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+              }}
+            >
+              {getCurrentTemplates().map((template, index) => (
+                <ProjectStyleCard
+                  key={`${template.id}-${currentSlide}`}
+                  template={template}
+                  onRemixTemplate={onRemixTemplate}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Pagination Dots */}
+        <div
+          className="featured-slider_dotNavigation__7Mr0F"
+          style={{
+            gap: "5px",
+            position: "absolute",
+            zIndex: 10,
+            top: "-32px",
+            right: "0px",
+            display: "flex",
+          }}
+        >
+          {Array.from({ length: maxSlides }, (_, index) => (
+            <button
+              key={index}
+              className={`featured-slider_dot__vAqB5 ${
+                currentSlide === index ? 'featured-slider_dotActive__Qmmpm' : ''
+              }`}
+              style={{
+                border: "none",
+                borderRadius: "8px",
+                transition:
+                  "background-color ease 150ms,border-color ease 150ms,color 150ms ease",
+                position: "relative",
+                width: "5px",
+                height: "5px",
+                backgroundColor: currentSlide === index
+                  ? "#fff"
+                  : "rgb(from #fff r g b/40%)",
+                cursor: "pointer",
+              }}
+              onClick={() => handleDotClick(index)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Mobile Grid (hidden on desktop) */}
+      <div
+        className="featured-slider_mobileGrid__STVyM"
+        style={{
+          gap: "20px 10px",
+          gridTemplateColumns: "repeat(2, 1fr)",
+          display: "none",
+        }}
+      >
+        {getAllTemplates().map((template, index) => (
+          <ProjectStyleCard
+            key={template.id}
+            template={template}
+            onRemixTemplate={onRemixTemplate}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
-interface CommunityTemplate {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  remixCount: number;
-  createdAt: string;
-  previewImage?: string;
-  tags: string[];
-  framework: string;
+function ProjectStyleCard({
+  template,
+  onRemixTemplate
+}: {
+  template: any;
+  onRemixTemplate: (id: string) => void;
+}) {
+  // Determine the type based on template properties
+  const getType = () => {
+    if (template.category?.toLowerCase().includes('survey')) return 'Survey';
+    if (template.category?.toLowerCase().includes('template')) return 'Template';
+    return 'Component';
+  };
+
+  const getButtonText = () => {
+    const type = getType();
+    if (type === 'Survey') return 'Try Survey';
+    return 'Remix';
+  };
+
+  // Mock response count - in real implementation, this would come from template data
+  const responseCount = template.responseCount || 154;
+
+  return (
+    <div
+      className="group w-full p-[5px] rounded-[12px] relative border transition-all duration-300 ease-in-out flex flex-col gap-[5px] h-full"
+      style={{
+        cursor: "pointer",
+        backgroundColor: "#141414",
+        borderColor: 'var(--surbee-border-accent)'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = 'white';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = 'var(--surbee-border-accent)';
+      }}
+    >
+      <div className="w-full flex justify-between">
+        <div className="flex gap-[5px]">
+          <img
+            className="rounded-[8px]"
+            height={35}
+            width={35}
+            src="https://endlesstools.io/_next/image?url=/embeds/avatars/4.png&w=96&q=75"
+            alt="User avatar"
+          />
+          <div className="text-sm flex flex-col justify-center h-[35px]">
+            <p className="text-white font-medium truncate max-w-[120px]" title={template.title}>
+              {template.title}
+            </p>
+            <div className="flex items-center gap-1 text-gray-400 text-xs">
+              <User className="w-3 h-3" />
+              <span>{responseCount}</span>
+            </div>
+          </div>
+        </div>
+        <div
+          className="w-[66px] h-[35px] bg-white text-black opacity-0 group-hover:opacity-100 group-hover:border-white group-hover:pointer-events-auto duration-300 ease-in-out text-sm rounded-lg flex items-center justify-center font-medium cursor-pointer pointer-events-auto active:scale-95 transition"
+          style={{ border: '1px solid var(--surbee-border-accent)' }}
+        >
+          Edit
+        </div>
+      </div>
+      <div className="w-full rounded-[8px] aspect-[210/119] mt-auto overflow-hidden">
+        {template.previewImage ? (
+          <IKImage
+            src={template.previewImage}
+            alt={template.title}
+            width={210}
+            height={119}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <img
+            src="https://endlesstools.io/embeds/4.png"
+            alt={template.title}
+            className="w-full h-full object-cover"
+          />
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function NotionMarketplace() {
-  const [activeTab, setActiveTab] = useState<'surveys' | 'templates'>('surveys');
+  const [templateFilter, setTemplateFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [loading, setLoading] = useState(true);
 
-  // Sample data for surveys
-  const sampleSurveys: CommunitySurvey[] = [
-    {
-      id: '1',
-      title: 'Customer Satisfaction Survey',
-      description: 'Comprehensive survey to measure customer satisfaction across multiple touchpoints',
-      category: 'Business',
-      responseCount: 1247,
-      createdAt: '2024-01-15T10:00:00Z',
-      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
-      difficulty: 'beginner',
-      estimatedTime: '5 min'
-    },
-    {
-      id: '2',
-      title: 'Employee Engagement Assessment',
-      description: 'Measure team engagement and identify areas for improvement',
-      category: 'HR',
-      responseCount: 892,
-      createdAt: '2024-01-20T14:30:00Z',
-      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
-      difficulty: 'intermediate',
-      estimatedTime: '8 min'
-    },
-    {
-      id: '3',
-      title: 'Product Feedback Form',
-      description: 'Collect detailed feedback on product features and user experience',
-      category: 'Product',
-      responseCount: 2156,
-      createdAt: '2024-01-25T09:15:00Z',
-      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
-      difficulty: 'beginner',
-      estimatedTime: '6 min'
-    },
-    {
-      id: '4',
-      title: 'Market Research Study',
-      description: 'Comprehensive market analysis and consumer behavior insights',
-      category: 'Research',
-      responseCount: 3421,
-      createdAt: '2024-02-01T16:45:00Z',
-      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
-      difficulty: 'advanced',
-      estimatedTime: '12 min'
-    },
-    {
-      id: '5',
-      title: 'Event Feedback Survey',
-      description: 'Post-event evaluation and attendee satisfaction measurement',
-      category: 'Events',
-      responseCount: 567,
-      createdAt: '2024-02-05T11:20:00Z',
-      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
-      difficulty: 'beginner',
-      estimatedTime: '4 min'
-    },
-    {
-      id: '6',
-      title: 'Brand Perception Study',
-      description: 'Deep dive into brand awareness and perception metrics',
-      category: 'Marketing',
-      responseCount: 1834,
-      createdAt: '2024-02-10T13:10:00Z',
-      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
-      difficulty: 'intermediate',
-      estimatedTime: '10 min'
+  const normalize = (value: string) => value.toLowerCase();
+  const query = normalize(searchQuery);
+
+  const templateMatches = useMemo(() => {
+    const base =
+      templateFilter === 'trending'
+        ? trendingTemplates
+        : templateFilter === 'new'
+        ? [...communityTemplates].sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          )
+        : templateFilter === 'remixed'
+        ? [...communityTemplates].sort((a, b) => b.remixCount - a.remixCount)
+        : communityTemplates;
+
+    if (!query) {
+      return base.slice(0, 4);
     }
-  ];
 
-  // Sample data for templates
-  const sampleTemplates: CommunityTemplate[] = [
-    {
-      id: 't1',
-      title: 'NPS Survey Template',
-      description: 'Net Promoter Score survey with advanced analytics and follow-up questions',
-      category: 'Customer Success',
-      remixCount: 2847,
-      createdAt: '2024-01-10T08:00:00Z',
-      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
-      tags: ['NPS', 'Customer', 'Analytics'],
-      framework: 'Customer Success'
-    },
-    {
-      id: 't2',
-      title: 'Employee Onboarding Framework',
-      description: 'Complete onboarding experience with progress tracking and feedback loops',
-      category: 'HR',
-      remixCount: 1923,
-      createdAt: '2024-01-12T10:30:00Z',
-      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
-      tags: ['Onboarding', 'HR', 'Process'],
-      framework: 'Human Resources'
-    },
-    {
-      id: 't3',
-      title: 'Product Launch Survey Kit',
-      description: 'Comprehensive survey suite for product launches with A/B testing',
-      category: 'Product',
-      remixCount: 3456,
-      createdAt: '2024-01-18T14:15:00Z',
-      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
-      tags: ['Product', 'Launch', 'A/B Testing'],
-      framework: 'Product Management'
-    },
-    {
-      id: 't4',
-      title: 'Customer Journey Mapping',
-      description: 'Multi-touchpoint customer experience analysis framework',
-      category: 'UX',
-      remixCount: 1789,
-      createdAt: '2024-01-22T16:45:00Z',
-      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
-      tags: ['UX', 'Journey', 'Experience'],
-      framework: 'User Experience'
-    },
-    {
-      id: 't5',
-      title: 'Market Research Toolkit',
-      description: 'Complete market research framework with competitive analysis',
-      category: 'Research',
-      remixCount: 2134,
-      createdAt: '2024-01-28T09:30:00Z',
-      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
-      tags: ['Market Research', 'Competitive', 'Analysis'],
-      framework: 'Market Research'
-    },
-    {
-      id: 't6',
-      title: 'Event Planning Survey Suite',
-      description: 'End-to-end event planning with pre, during, and post-event surveys',
-      category: 'Events',
-      remixCount: 987,
-      createdAt: '2024-02-02T12:20:00Z',
-      previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png',
-      tags: ['Events', 'Planning', 'Management'],
-      framework: 'Event Management'
-    }
-  ];
+    return base
+      .filter((template) => {
+        const haystack = [
+          template.title,
+          template.description,
+          template.category,
+          template.tags.join(' '),
+          template.framework,
+        ]
+          .join(' ')
+          .toLowerCase();
+        return haystack.includes(query);
+      })
+      .slice(0, 6);
+  }, [templateFilter, query]);
 
-  const categories = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'Business', label: 'Business' },
-    { value: 'HR', label: 'HR' },
-    { value: 'Product', label: 'Product' },
-    { value: 'Research', label: 'Research' },
-    { value: 'Marketing', label: 'Marketing' },
-    { value: 'Events', label: 'Events' },
-    { value: 'Customer Success', label: 'Customer Success' },
-    { value: 'UX', label: 'UX' }
-  ];
 
-  React.useEffect(() => {
-    // Simulate loading
-      const timer = setTimeout(() => {
-        setLoading(false);
-    }, 1000);
-      return () => clearTimeout(timer);
-  }, []);
-
-  const filteredSurveys = sampleSurveys.filter(survey => {
-    const matchesCategory = categoryFilter === 'all' || survey.category === categoryFilter;
-    const matchesSearch = survey.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         survey.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
-
-  const filteredTemplates = sampleTemplates.filter(template => {
-    const matchesCategory = categoryFilter === 'all' || template.category === categoryFilter;
-    const matchesSearch = template.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         template.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         template.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesCategory && matchesSearch;
-  });
-
-  const handleTakeSurvey = (surveyId: string) => {
-    // Navigate to survey page
-    window.location.href = `/survey/${surveyId}`;
-  };
+  const filteredCategories = useMemo(() => {
+    if (!query) return communityCategories;
+    return communityCategories.filter((category) =>
+      [category.title, category.description, category.slug].some((value) =>
+        value.toLowerCase().includes(query),
+      ),
+    );
+  }, [query]);
 
   const handleRemixTemplate = (templateId: string) => {
-    // Navigate to dashboard with template remix
-    window.location.href = `/dashboard?remixTemplate=${templateId}`;
+    console.log('Remix template', templateId);
   };
 
-  if (loading) {
-    return (
-      <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
-        <div className="flex flex-col h-full">
-          <div className="flex-1 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-          </div>
-        </div>
-      </ImageKitProvider>
-    );
-  }
+  const handleTakeSurvey = (surveyId: string) => {
+    console.log('Take survey', surveyId);
+  };
 
   return (
-    <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
-      <div className="flex flex-col h-full">
-        {/* Fixed Header */}
-        <div className="projects-header" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>
-          <div className="flex flex-col gap-6 p-6 mx-auto w-full max-w-[1280px] md:px-8">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="projects-title">Community</h1>
+      <div
+        className="min-h-full w-full pb-24"
+        style={{ backgroundColor: 'var(--surbee-bg-primary)' }}
+      >
+        <main
+          className="page_main__UgkPO"
+          style={{
+            padding: "0px 20px",
+            margin: "auto",
+            gap: "100px",
+            display: "flex",
+            maxWidth: "1240px",
+            flexDirection: "column",
+          }}
+        >
+          <div
+            className="page_hero__OC_yx"
+            style={{
+              gap: "20px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              paddingTop: "100px",
+            }}
+          >
+            <div
+              className="page_heroText__u8zUU"
+              style={{
+                gap: "10px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <h1
+                className="text-h1"
+                style={{ fontSize: "62px", letterSpacing: "-0.05em" }}
+              >
+                Marketplace
+              </h1>
+              <p
+                className="text-lead text-balance"
+                style={{
+                  fontVariationSettings: '"opsz" 30',
+                  fontSize: "20px",
+                  textWrap: "balance",
+                  maxWidth: "520px",
+                  textAlign: "center",
+                  lineHeight: "1.4",
+                }}
+              >
+                Discover ready-to-use survey templates, take community polls, and find the perfect starting point for your research.
+              </p>
             </div>
-
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-              {/* Tab Navigation */}
-              <div className="flex items-center gap-1 bg-gray-800 p-1 rounded-xl">
-                <button
-                  onClick={() => setActiveTab('surveys')}
-                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                    activeTab === 'surveys'
-                      ? 'bg-white text-black shadow-sm'
-                      : 'text-white/70 hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Surveys
-                </div>
-                </button>
-                <button
-                  onClick={() => setActiveTab('templates')}
-                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                    activeTab === 'templates'
-                      ? 'bg-white text-black shadow-sm'
-                      : 'text-white/70 hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4" />
-                  Templates
-                </div>
-                </button>
+            <form
+              className="styles_form__nIod2"
+              style={{
+                overflow: "visible",
+                display: "flex",
+                width: "100%",
+                justifyContent: "center",
+                color: "#fff",
+              }}
+            >
+              <div
+                className="styles_input__k1E0f"
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  maxWidth: "220px",
+                  fontSize: "15px",
+                  fontVariationSettings: '"opsz" 16, "wght" 480',
+                }}
+              >
+              <div
+                className="styles_overlay__GJHy0"
+                style={{
+                  padding: "12px 12px 12px 14px",
+                  gap: "10px",
+                  inset: "0px auto",
+                  position: "absolute",
+                  display: "flex",
+                  width: "100%",
+                  flexGrow: 0,
+                  alignItems: "center",
+                  justifyContent: "start",
+                  color: "rgb(119, 119, 119)",
+                  fontSize: "14px",
+                  pointerEvents: "none",
+                  transition: "color 0.1s",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  zIndex: 1,
+                }}
+              >
+                <Search className="h-4 w-4" />
               </div>
-              
-              {/* Search and Filter */}
-              <div className="flex items-center gap-4">
-              <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 py-2 text-sm rounded-xl border transition-colors focus:outline-none focus:ring-2 focus:ring-white/20 placeholder:text-gray-400"
-                    style={{ 
-                      borderColor: 'var(--surbee-border-accent)',
-                      backgroundColor: '#141414',
-                      color: 'var(--surbee-fg-primary)',
-                      fontFamily: 'var(--font-inter), sans-serif'
-                    }}
-                  />
-                </div>
-                
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="px-4 py-2 text-sm rounded-xl border transition-colors focus:outline-none focus:ring-2 focus:ring-white/20"
-                  style={{ 
-                    borderColor: 'var(--surbee-border-accent)',
-                    backgroundColor: '#141414',
-                    color: 'var(--surbee-fg-primary)',
-                    fontFamily: 'var(--font-inter), sans-serif'
+              <input
+                  id="search"
+                  className="appearance-none [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden [&::-webkit-search-results-decoration]:hidden"
+                  name="search"
+                  type="search"
+                  autoComplete="off"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search…"
+                  style={{
+                    appearance: "none",
+                    padding: "12px 12px 12px 40px",
+                    borderRadius: "100px",
+                    transition: "box-shadow 0.2s, background-color 0.2s",
+                    width: "100%",
+                    height: "44px",
+                    backgroundColor: "#181818",
+                    boxShadow: "rgba(0, 153, 255, 0) 0px 0px 0px 1px inset",
+                    caretColor: "#fff",
                   }}
-                >
-                  {categories.map(category => (
-                    <option key={category.value} value={category.value}>
-                      {category.label}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
+            </form>
+          </div>
+
+          {/* Featured Slideshow */}
+          <section className="space-y-6">
+            <div className="products-section_experimentalHeader__gIYKf">
+              <h2 className="products-section_headerHeading__hSnK_" style={{ fontSize: '20px' }}>Featured</h2>
             </div>
 
-            {/* Divider Line */}
-            <div className="w-full h-px" style={{ backgroundColor: 'var(--surbee-border-accent)' }}></div>
-          </div>
-        </div>
+            <FeaturedSlideshow
+              templates={templateMatches}
+                  onRemixTemplate={handleRemixTemplate}
+                />
+          </section>
 
-        {/* Scrollable Content Section */}
-        <div className="projects-cards-container">
-          <div className="projects-cards-content">
-            <div className="mx-auto w-full max-w-[1280px] px-6 md:px-8">
-
-              {/* Hero Section */}
-              <div className="mt-8 mb-12">
-                <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-16 px-8 rounded-2xl overflow-hidden">
-                  <div className="relative z-10 text-center">
-                    <div className="flex items-center justify-center gap-2 mb-6">
-                      <Users className="w-6 h-6 text-white" />
-                      <span className="text-white/80 text-sm font-medium">Community</span>
-              </div>
-
-                    <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
-                      Discover & Create
-                      <span className="block bg-gradient-to-r from-orange-400 to-pink-500 bg-clip-text text-transparent">
-                        Together
-                      </span>
-                    </h1>
-                    
-                    <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto leading-relaxed">
-                      Join thousands of creators sharing surveys and templates. Take surveys, remix frameworks, 
-                      and build amazing experiences with our community.
-                    </p>
-
-                    {/* Stats */}
-                    <div className="flex flex-wrap items-center justify-center gap-8">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-orange-500/20 rounded-full flex items-center justify-center">
-                          <FileText className="w-5 h-5 text-orange-400" />
-                  </div>
-                        <div className="text-left">
-                          <div className="text-xl font-bold text-white">12.5K+</div>
-                          <div className="text-white/60 text-xs">Active Surveys</div>
-                      </div>
-              </div>
-
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-pink-500/20 rounded-full flex items-center justify-center">
-                          <Zap className="w-5 h-5 text-pink-400" />
-                  </div>
-                        <div className="text-left">
-                          <div className="text-xl font-bold text-white">3.2K+</div>
-                          <div className="text-white/60 text-xs">Templates</div>
-                </div>
-              </div>
-
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
-                          <TrendingUp className="w-5 h-5 text-blue-400" />
-                  </div>
-                        <div className="text-left">
-                          <div className="text-xl font-bold text-white">98.7%</div>
-                          <div className="text-white/60 text-xs">Success Rate</div>
-            </div>
-          </div>
-        </div>
+        </main>
       </div>
-              </div>
-            </div>
-            
-              {/* Content Sections */}
-              {activeTab === 'surveys' && (
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-semibold text-white">Take a Survey</h2>
-                    <div className="text-white/60 text-sm">
-                      {filteredSurveys.length} surveys available
-            </div>
-          </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredSurveys.map(survey => (
-                      <CommunitySurveyCard
-                        key={survey.id}
-                        survey={survey}
-                        onTakeSurvey={handleTakeSurvey}
-                      />
-                    ))}
-        </div>
-      </div>
-              )}
-
-              {activeTab === 'templates' && (
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-semibold text-white">Remix a Template</h2>
-                    <div className="text-white/60 text-sm">
-                      {filteredTemplates.length} templates available
-                </div>
-              </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredTemplates.map(template => (
-                      <CommunityTemplateCard
-                        key={template.id}
-                        template={template}
-                        onRemixTemplate={handleRemixTemplate}
-                      />
-                ))}
-              </div>
-            </div>
-              )}
-
-          </div>
-        </div>
-      </div>
-    </div>
-    </ImageKitProvider>
   );
 }
+
