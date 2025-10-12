@@ -3,6 +3,8 @@ import { RevealSection, RevealDiv } from "@/components/landing/Reveal";
 import localFont from "next/font/local";
 import TypingOverlay from "@/components/landing/TypingOverlay";
 import { ImageKitProvider, Image as IKImage } from "@imagekit/next";
+import CreatedWithSurbee from "@/components/landing/CreatedWithSurbee";
+import HeroSection from "@/components/landing/HeroSection";
 
 const epilogue = localFont({
   src: [
@@ -30,23 +32,27 @@ export default function LandingPage() {
 	  {/* Top Navigation (full-width) with blur */}
 	  <nav className="fixed left-0 right-0 top-0 z-40 w-full bg-[#FEFFFC]/70 backdrop-blur supports-[backdrop-filter]:bg-[#FEFFFC]/70">
 		<div className="flex h-16 items-center justify-between gap-4 pl-56 pr-6">
-		  <div className="text-2xl text-[#171717] font-semibold tracking-[-0.02em] pl-5 md:pl-8 xl:pl-12 2xl:pl-30">surbee</div>
-          <div className="flex items-center gap-4">
-            <a href="/pricing" className="text-sm text-[#171717] hover:text-neutral-800 transition-all duration-300 ease-out">
+		  <div className="text-2xl font-semibold tracking-[-0.02em] pl-5 md:pl-8 xl:pl-12 2xl:pl-30" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>surbee</div>
+          <div className="flex items-center gap-6">
+            <a href="/pricing" className="text-sm hover:text-neutral-800 transition-all duration-300 ease-out" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
             Pricing
           </a>
-          <a
+          <div className="flex items-center gap-2">
+            <a
               href="/test-login"
-            className="rounded-full border border-neutral-300 bg-white px-4 py-1.5 text-sm text-[#171717] hover:bg-neutral-100"
-          >
-            Log in
-          </a>
-          <a
+              className="px-4 py-1.5 text-sm font-medium border bg-white text-black hover:bg-neutral-50 transition-all duration-300 ease-out"
+              style={{ fontFamily: 'var(--font-inter), sans-serif', borderRadius: '12px', borderColor: '#e5e7eb' }}
+            >
+              Log in
+            </a>
+            <a
               href="/test-login"
-            className="rounded-full bg-neutral-900 px-4 py-1.5 text-sm text-white hover:bg-black"
-          >
-            Sign up
-          </a>
+              className="px-4 py-1.5 text-sm font-medium bg-black text-white hover:bg-neutral-800 transition-all duration-300 ease-out"
+              style={{ fontFamily: 'var(--font-inter), sans-serif', borderRadius: '12px' }}
+            >
+              Sign up
+            </a>
+          </div>
 		  </div>
         </div>
       </nav>
@@ -76,25 +82,29 @@ export default function LandingPage() {
                 style={{ width: "calc(100vw - calc(100vw - 100%))" }}
               >
                 <a
-                  className="inline-flex items-center gap-2 whitespace-nowrap shrink-0 outline-none underline-offset-4 hover:text-neutral-800 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-[#171717] font-medium bg-neutral-100 rounded px-2 py-1 -ml-1"
+                  className="inline-flex items-center gap-2 whitespace-nowrap shrink-0 outline-none underline-offset-4 hover:text-neutral-800 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out font-medium bg-neutral-100 rounded px-2 py-1 -ml-1"
+                  style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}
                 >
                   Surbee
                 </a>
                 <a
                   className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
                   href="#use-cases"
+                  style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                 >
                   Use cases
                 </a>
                 <a
                   className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
                   href="#students"
+                  style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                 >
                   Students
                 </a>
                 <a
                   className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
                   href="/landing/privacy"
+                  style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                 >
                   Privacy
                 </a>
@@ -103,6 +113,7 @@ export default function LandingPage() {
                 <a
                   className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
                   href="/landing/blog"
+                  style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                 >
                   Blog
                 </a>
@@ -110,13 +121,13 @@ export default function LandingPage() {
             </div>
             
             <div className="flex items-center gap-3 px-1 pb-4 mt-6">
-              <a href="https://twitter.com/surbee" target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-[#171717] transition-colors" aria-label="X">
+              <a href="https://twitter.com/surbee" target="_blank" rel="noopener noreferrer" className="text-neutral-400 transition-colors" style={{ fontFamily: 'var(--font-inter), sans-serif' }} aria-label="X">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
               </a>
-              <a href="https://discord.gg/surbee" target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-[#171717] transition-colors" aria-label="Discord">
+              <a href="https://discord.gg/surbee" target="_blank" rel="noopener noreferrer" className="text-neutral-400 transition-colors" style={{ fontFamily: 'var(--font-inter), sans-serif' }} aria-label="Discord">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 127.14 96"><path d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0a105.89 105.89 0 0 0-26.25 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15zM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69z"/></svg>
               </a>
-              <a href="https://instagram.com/surbee" target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-[#171717] transition-colors" aria-label="Instagram">
+              <a href="https://instagram.com/surbee" target="_blank" rel="noopener noreferrer" className="text-neutral-400 transition-colors" style={{ fontFamily: 'var(--font-inter), sans-serif' }} aria-label="Instagram">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
               </a>
             </div>
@@ -129,17 +140,7 @@ export default function LandingPage() {
           <RevealSection
             className="w-full max-w-[1920px] mx-auto px-5 md:px-8 xl:px-12 2xl:px-30 pb-8 pt-8 xl:pb-20 xl:pt-20"
           >
-            <div className="flex flex-col gap-12">
-              <h1 className='text-[#171717] font-semibold leading-none tracking-[-0.96px] text-[48px] max-w-[520px] sm:text-[54px] sm:leading-[110%] sm:tracking-[-1.08px] sm:max-w-[620px] xl:text-[70px] xl:leading-none xl:tracking-[-1.4px] xl:max-w-[720px] 3xl:text-[90px] 3xl:leading-none 3xl:tracking-[-1.8px] 3xl:max-w-[820px]'>
-                Automate your surveys with natural language
-              </h1>
-              <div className="flex flex-col gap-6">
-                <p className="text-[#171717] text-[15px] leading-[140%] max-w-[482px]">
-                  Surbee plugs into your research workflow, automates survey building, and organizes responses.
-                  Empowering you with the tools you already use.
-                </p>
-              </div>
-            </div>
+            <HeroSection />
           </RevealSection>
 
           {/* Divider spanning full content width and touching sidebar border */}
@@ -186,7 +187,7 @@ export default function LandingPage() {
                           <path d="M12.374 6.58264L6.19085 12.8682C5.97358 13.092 5.85309 13.3924 5.85544 13.7043C5.85779 14.0162 5.98278 14.3147 6.2034 14.5352C6.42403 14.7558 6.72256 14.8806 7.03449 14.8828C7.34642 14.885 7.6467 14.7644 7.87042 14.5471L15.2411 7.07471C15.6865 6.62926 15.9368 6.0251 15.9368 5.39514C15.9368 4.76518 15.6865 4.16102 15.2411 3.71557C14.7956 3.27012 14.1915 3.01987 13.5615 3.01987C12.9316 3.01987 12.3274 3.27012 11.8819 3.71557L4.51128 11.1887C3.85217 11.8586 3.48448 12.7618 3.48831 13.7016C3.49214 14.6414 3.86717 15.5416 4.53171 16.2062C5.19626 16.8707 6.09647 17.2458 7.03628 17.2496C7.97608 17.2534 8.87932 16.8857 9.54925 16.2266L15.6396 10.1451" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                         {/* Send button at bottom-right */}
-                        <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-[#FEFFFC] text-[#171717] border border-neutral-300 text-[15px] tracking-15 leading-[140%] rounded-full cursor-pointer h-8 w-8">
+                        <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-[#FEFFFC] border border-neutral-300 text-[15px] tracking-15 leading-[140%] rounded-full cursor-pointer h-8 w-8" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
                           <svg height="13" width="11" fill="none" viewBox="0 0 11 13" xmlns="http://www.w3.org/2000/svg">
                             <path d="M10.2392 6.0143C10.1938 6.0597 10.14 6.09571 10.0807 6.12028C10.0214 6.14485 9.95791 6.15749 9.89375 6.15749C9.82959 6.15749 9.76606 6.14485 9.70679 6.12028C9.64752 6.09571 9.59368 6.0597 9.54833 6.0143L5.98795 2.45331V12.0158C5.98795 12.1453 5.93651 12.2695 5.84495 12.361C5.75339 12.4526 5.6292 12.504 5.49972 12.504C5.37023 12.504 5.24605 12.4526 5.15449 12.361C5.06293 12.2695 5.01149 12.1453 5.01149 12.0158V2.45331L1.4511 6.0143C1.35949 6.10592 1.23524 6.15738 1.10568 6.15738C0.976127 6.15738 0.851876 6.10592 0.760265 6.0143C0.668654 5.92269 0.617188 5.79844 0.617188 5.66888C0.617187 5.53933 0.668654 5.41507 0.760265 5.32346L5.1543 0.92943C5.19964 0.884036 5.25349 0.848025 5.31276 0.823456C5.37203 0.798886 5.43556 0.78624 5.49972 0.78624C5.56388 0.78624 5.62741 0.798886 5.68668 0.823456C5.74595 0.848025 5.7998 0.884036 5.84514 0.92943L10.2392 5.32346C10.2846 5.36881 10.3206 5.42265 10.3451 5.48192C10.3697 5.54119 10.3824 5.60472 10.3824 5.66888C10.3824 5.73304 10.3697 5.79658 10.3451 5.85584C10.3206 5.91511 10.2846 5.96896 10.2392 6.0143Z" fill="currentColor" />
                           </svg>
@@ -194,7 +195,7 @@ export default function LandingPage() {
                       </div>
                     </div>
 	                    {/* Hover tooltip */}
-	                    <div className="absolute z-50 bg-neutral-900 backdrop-blur-[20px] flex flex-col gap-1.5 px-3 py-1 w-min rounded-full whitespace-nowrap text-[#EEF1ED] text-xs font-medium leading-[130%] tracking-[-0.12px] left-1/2 transform -translate-x-1/2 bottom-full mb-4 opacity-0 translate-y-1 scale-95 pointer-events-none transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100">
+	                    <div className="absolute z-50 bg-neutral-900 backdrop-blur-[20px] flex flex-col gap-1.5 items-center justify-center px-3 py-1 w-min rounded-full whitespace-nowrap text-[#EEF1ED] text-xs font-medium leading-[130%] tracking-[-0.12px] left-1/2 transform -translate-x-1/2 bottom-full mb-4 opacity-0 translate-y-1 scale-95 pointer-events-none transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100">
                       <div className="flex items-center gap-1">
 	                        <p className="font-medium text-[13px] tracking-13 leading-[130%] text-neutral-50">
 	                          Try Surbee
@@ -207,19 +208,19 @@ export default function LandingPage() {
                         </svg>
                       </div>
                       <div className="absolute left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent top-full border-t-[6px] border-t-neutral-900" />
-	                    </div>
+                    </div>
 	                  </RevealDiv>
                 </a>
 	              </RevealDiv>
 	            </RevealDiv>
 	          </RevealSection>
 
-          {/* Centered description text */}
+          {/* Left-aligned description text */}
           <RevealSection
             className="mt-8 mb-6 px-6"
           >
-            <div className="text-center">
-              <p className="text-[15px] text-neutral-600 leading-[140%] max-w-2xl mx-auto">
+            <div className="text-left">
+              <p className="text-[15px] text-neutral-600 leading-[140%] max-w-2xl">
                 Describe what you want, and Surbee drafts complete surveys — questions, options, and logic — instantly. Iterate with plain English.
               </p>
             </div>
@@ -227,13 +228,10 @@ export default function LandingPage() {
 
           {/* Features title */}
           <section className="px-6 pt-24 pb-2 text-center">
-            <h2 className="font-af-foundary font-medium tracking-15 text-neutral-900 text-center text-[20px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 mb-8">
+            <h2 className="font-medium tracking-15 text-center text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 mb-8">
               Here's what Surbee can do for you
             </h2>
           </section>
-
-	          {/* Divider spanning full content width and touching sidebar border */}
-	          <div className="mt-2 h-px w-full bg-neutral-200" />
 
 	          {/* Post-hero section */}
 	          <div className="w-full border-t border-b border-gray-200">
@@ -319,11 +317,11 @@ export default function LandingPage() {
 	                  <div className="relative w-full h-full min-h-[190px] sm:min-h-[170px] lg:min-h-auto flex flex-col justify-end">
 	                    <div className="flex flex-col gap-8 justify-end h-full">
 	                      <div className="flex flex-col gap-4">
-	                        <h4 className="font-af-foundary font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-[24px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 text-left text-neutral-900">
+	                        <h4 className="font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 text-left">
 	                          Detect Odd Behaviors & Bad Data
 	                        </h4>
 	                        <div className="flex flex-col gap-2">
-	                          <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700 [font-variant-numeric:lining-nums_proportional-nums]">
+	                          <p className="font-medium text-[15px] tracking-15 leading-[140%] [font-variant-numeric:lining-nums_proportional-nums]" style={{ color: '#6B7280', fontFamily: 'var(--font-inter), sans-serif' }}>
 	                            Surbee flags suspicious patterns, bots, and inconsistent answers — like a data detective.
 	                          </p>
 	                        </div>
@@ -419,11 +417,11 @@ export default function LandingPage() {
 	                  <div className="relative w-full h-full min-h-[190px] sm:min-h-[170px] lg:min-h-auto flex flex-col justify-end">
 	                    <div className="flex flex-col gap-8 justify-end h-full">
 	                      <div className="flex flex-col gap-4">
-	                        <h4 className="font-af-foundary font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-[24px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 text-left text-neutral-900">
+	                        <h4 className="font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 text-left">
 	                          Grow a Community Around Your Surveys
 	                        </h4>
 	                        <div className="flex flex-col gap-2">
-	                          <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-neutral-700 [font-variant-numeric:lining-nums_proportional-nums]">
+	                          <p className="font-medium text-[15px] tracking-15 leading-[140%] [font-variant-numeric:lining-nums_proportional-nums]" style={{ color: '#6B7280', fontFamily: 'var(--font-inter), sans-serif' }}>
 	                            Launch a lightweight community where participants discuss, respond, and resurface insights.
 	                          </p>
 	                        </div>
@@ -442,546 +440,17 @@ export default function LandingPage() {
           <RevealSection
             className="py-8 mx-auto w-full max-w-[1400px] flex flex-col justify-center items-center"
           >
-            <h2 className="font-af-foundary font-medium tracking-15 text-[#171717] text-center text-[20px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 mb-8">
-              Created with
-              <br />
-              Surbee
-            </h2>
-            <div className="w-full aspect-[1440/692] relative overflow-hidden">
-              <div className="h-full">
-                <div className="relative h-full mx-auto">
-                  <div style={{ zIndex: 1, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/car.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "3.88889%",
-                        marginTop: "17%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 2, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/greenDays.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "8.88889%",
-                        marginTop: "5.85714%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 4, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/plant.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "16.6667%",
-                        marginTop: "2.64286%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 3, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/flowers.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "11.25%",
-                        marginTop: "21.0714%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 5, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/smile.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "25%",
-                        marginTop: "3.92857%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 6, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/fullMellowJacket.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "19.375%",
-                        marginTop: "25.9286%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 7, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/typography.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "30.4861%",
-                        marginTop: "7.92857%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 8, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/bullet.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "26.1806%",
-                        marginTop: "19.2143%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 9, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/anime.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "20.1389%",
-                        marginTop: "14.4286%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 10, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/poster.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "32.5%",
-                        marginTop: "29.2857%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 13, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/halftone.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "36.9444%",
-                        marginTop: "19.9286%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 11, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/girl.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "38.4028%",
-                        marginTop: "1.35714%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 12, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/pixelFlower.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "42.6389%",
-                        marginTop: "13.3571%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 10, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/blueTree.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "45.5556%",
-                        marginTop: "4.85714%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 11, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/ancient.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "43.9583%",
-                        marginTop: "27.7857%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 12, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/a.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "48.6111%",
-                        marginTop: "34.3571%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 9, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/makeGreat.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "51.4583%",
-                        marginTop: "22.7857%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 11, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/hand.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "52.5694%",
-                        marginTop: "2.92857%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 12, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/nerd.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "61.1111%",
-                        marginTop: "4.85714%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 8, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/girlOnChair.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "55.2778%",
-                        marginTop: "13.7857%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 13, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/greenBoy.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "58.4722%",
-                        marginTop: "30.1429%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 12, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/hammer.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "62.5694%",
-                        marginTop: "12.2857%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 11, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/squaredGirl.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "63.6111%",
-                        marginTop: "23.5714%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 9, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/eyes.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "68.6111%",
-                        marginTop: "6.64286%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 10, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/sign.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "73.4028%",
-                        marginTop: "4%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 11, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/paintedFlowers.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "68.6111%",
-                        marginTop: "14.5%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 14, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/hola.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "70.9028%",
-                        marginTop: "33.3571%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 13, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/lolypop.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "74.0972%",
-                        marginTop: "22.2857%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 11, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/comeWithMe.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "80%",
-                        marginTop: "16.6429%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 8, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/bling.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "80.0694%",
-                        marginTop: "8%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 12, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/rabbit.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "80.625%",
-                        marginTop: "25.2143%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                  <div style={{ zIndex: 10, opacity: 1, transform: "none" }}>
-                    <img
-                      className="overflow-hidden object-cover"
-                      src="https://endlesstools.io/examples/cap.jpg"
-                      style={{
-                        borderRadius: "8px",
-                        position: "absolute",
-                        marginLeft: "87.1528%",
-                        marginTop: "13.3571%",
-                        width: "10vw",
-                        maxWidth: "128px",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <CreatedWithSurbee />
           </RevealSection>
 
           {/* Integrations Section */}
           <RevealSection
             className="py-8 mx-auto w-full max-w-4xl flex flex-col justify-center items-center"
           >
-	            <h2 className="font-af-foundary font-medium tracking-15 text-neutral-900 text-center text-[20px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 mb-8">
+	            <h2 className="font-medium tracking-15 text-center text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 mb-8">
 	              Connect the tools you already use
 	            </h2>
 	            <div className="flex justify-center gap-3 sm:gap-4 pb-5 md:pb-6 border-t border-b border-gray-200 pt-3 md:pt-6 px-3 sm:px-4 flex-wrap">
-	              <div className="flex justify-center gap-3 sm:gap-4 pb-5 md:pb-6 border-t border-gray-200 pt-3 md:pt-6 border-b px-3 sm:px-4">
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={24}
-	                      width={30}
-	                      alt="Airtable"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/airtable.f153f282.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fairtable.f153f282.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fairtable.f153f282.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Airtable
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={30}
-	                      width={30}
-	                      alt="Attio"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/attio.bb561be4.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fattio.bb561be4.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fattio.bb561be4.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Attio
-	                    </span>
-	                  </div>
-	                </div>
 	                <div className="flex relative flex-col items-center group">
 	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
 	                    <img
@@ -1063,65 +532,6 @@ export default function LandingPage() {
 	                    <img
 	                      height={30}
 	                      width={30}
-	                      alt="Calendar"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/google-calendar.2438840b.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-calendar.2438840b.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-calendar.2438840b.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Calendar
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={23}
-	                      width={30}
-	                      alt="Gmail"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/gmail.e5bdc0e4.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgmail.e5bdc0e4.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgmail.e5bdc0e4.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Gmail
-	                    </span>
-	                  </div>
-	                </div>
-	              </div>
-	              <div className="flex justify-center gap-3 sm:gap-4 pb-5 md:pb-6 border-b border-gray-200 px-3 sm:px-4">
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={30}
-	                      width={30}
-	                      alt="Intercom"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/intercom.64399410.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fintercom.64399410.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fintercom.64399410.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Intercom
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={30}
-	                      width={30}
 	                      alt="Notion"
 	                      src="https://cofounder.co/_next/image?url=/_next/static/media/notion.f18f0582.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
 	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fnotion.f18f0582.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fnotion.f18f0582.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
@@ -1136,507 +546,6 @@ export default function LandingPage() {
 	                    </span>
 	                  </div>
 	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={30}
-	                      width={30}
-	                      alt="Limitless"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/limitless.70cd9c81.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flimitless.70cd9c81.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flimitless.70cd9c81.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Limitless
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={30}
-	                      width={30}
-	                      alt="Linear"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/linear.1c44320d.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flinear.1c44320d.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flinear.1c44320d.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Linear
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={30}
-	                      width={30}
-	                      alt="Loops"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/loops.66c08dd0.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Floops.66c08dd0.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Floops.66c08dd0.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Loops
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={30}
-	                      width={30}
-	                      alt="Metabase"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/metabase.d38bb0ee.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fmetabase.d38bb0ee.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fmetabase.d38bb0ee.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Metabase
-	                    </span>
-	                  </div>
-	                </div>
-	              </div>
-	              <div className="flex justify-center gap-3 sm:gap-4 pb-5 md:pb-6 border-b border-gray-200 px-3 sm:px-4">
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={27}
-	                      width={30}
-	                      alt="PDL"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/people-data-labs.9aafd8bf.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fpeople-data-labs.9aafd8bf.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fpeople-data-labs.9aafd8bf.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      PDL
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={30}
-	                      width={30}
-	                      alt="PostHog"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/posthog.0fe60258.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fposthog.0fe60258.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fposthog.0fe60258.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      PostHog
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={30}
-	                      width={30}
-	                      alt="Slack"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/slack.b35ec1a3.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fslack.b35ec1a3.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fslack.b35ec1a3.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Slack
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={30}
-	                      width={30}
-	                      alt="Github"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/github.0fa38615.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgithub.0fa38615.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgithub.0fa38615.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Github
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={41}
-	                      width={30}
-	                      alt="Slides"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/google-slides.b68e7a05.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-slides.b68e7a05.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-slides.b68e7a05.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Slides
-	                    </span>
-	                  </div>
-	                </div>
-	              </div>
-	            </div>
-	            <div className="space-y-6 min-[365px]:hidden">
-	              <div className="flex justify-center flex-wrap gap-y-6 gap-x-3 pb-6">
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="Airtable"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/airtable.f153f282.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fairtable.f153f282.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fairtable.f153f282.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Airtable
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="Attio"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/attio.bb561be4.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fattio.bb561be4.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fattio.bb561be4.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Attio
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="Sheets"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/google-sheets.0ca29299.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-sheets.0ca29299.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-sheets.0ca29299.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Sheets
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="Docs"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/google-docs.f7ba532d.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-docs.f7ba532d.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-docs.f7ba532d.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Docs
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="Calendar"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/google-calendar.2438840b.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-calendar.2438840b.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-calendar.2438840b.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Calendar
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="Gmail"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/gmail.e5bdc0e4.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgmail.e5bdc0e4.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgmail.e5bdc0e4.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Gmail
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="Intercom"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/intercom.64399410.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fintercom.64399410.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fintercom.64399410.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Intercom
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="Notion"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/notion.f18f0582.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fnotion.f18f0582.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fnotion.f18f0582.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Notion
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="Limitless"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/limitless.70cd9c81.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flimitless.70cd9c81.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flimitless.70cd9c81.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Limitless
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="Linear"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/linear.1c44320d.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flinear.1c44320d.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flinear.1c44320d.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Linear
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="Loops"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/loops.66c08dd0.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Floops.66c08dd0.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Floops.66c08dd0.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Loops
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="Metabase"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/metabase.d38bb0ee.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fmetabase.d38bb0ee.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fmetabase.d38bb0ee.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Metabase
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="PDL"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/people-data-labs.9aafd8bf.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fpeople-data-labs.9aafd8bf.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fpeople-data-labs.9aafd8bf.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      PDL
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="PostHog"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/posthog.0fe60258.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fposthog.0fe60258.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fposthog.0fe60258.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      PostHog
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="Slack"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/slack.b35ec1a3.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fslack.b35ec1a3.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fslack.b35ec1a3.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Slack
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="Github"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/github.0fa38615.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgithub.0fa38615.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgithub.0fa38615.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Github
-	                    </span>
-	                  </div>
-	                </div>
-	                <div className="flex relative flex-col items-center group">
-	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={64}
-	                      width={64}
-	                      alt="Slides"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/google-slides.b68e7a05.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-slides.b68e7a05.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-slides.b68e7a05.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
-	                    />
-	                  </div>
-	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Slides
-	                    </span>
-	                  </div>
-	                </div>
-	              </div>
 	            </div>
           </RevealSection>
 
@@ -1646,26 +555,26 @@ export default function LandingPage() {
 	              id="results"
 	              className="2xl:pb-[120px] xl:pb-[100px] md:pb-[80px] pb-[60px] 2xl:pt-[120px] xl:pt-[100px] md:pt-[80px] pt-[60px] 2xl:px-30 xl:px-12 md:px-8 px-5 w-full max-w-[1920px] mx-auto"
 	            >
-	              <h2 className="font-af-foundary font-medium tracking-15 text-[#171717] text-center text-[20px] leading-[130%] tracking-24 sm:text-[24px] sm:tracking-48 mb-12">
+	              <h2 className="font-medium tracking-15 text-center text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 mb-12">
 	                What people are saying about Surbee
 	              </h2>
 	              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
                 {/* Left Testimonial */}
                 <div className="flex flex-col gap-6 p-8 bg-neutral-50 rounded-lg">
-                  <p className="font-af-foundary font-medium text-[18px] md:text-[20px] text-[#171717] leading-[140%]">
+                  <p className="font-medium text-[18px] md:text-[20px] leading-[140%]" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
                     "Surbee will help my students collect reliable results quickly, it's definitely going to raise the quality of their work. The automated validation catches issues I used to spend hours explaining."
                   </p>
-                  <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-[#171717]">
+                  <p className="font-medium text-[15px] tracking-15 leading-[140%]" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
                     — Prelaunch testimonial
                   </p>
                 </div>
                 
                 {/* Right Testimonial */}
                 <div className="flex flex-col gap-6 p-8 bg-neutral-50 rounded-lg">
-                  <p className="font-af-foundary font-medium text-[18px] md:text-[20px] text-[#171717] leading-[140%]">
+                  <p className="font-medium text-[18px] md:text-[20px] leading-[140%]" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
                     "I've been waiting for something like this. Creating surveys used to take me days, now I can prototype in minutes and iterate based on real feedback. It's going to change how we do research."
                   </p>
-                  <p className="font-af-foundary font-medium text-[15px] tracking-15 leading-[140%] text-[#171717]">
+                  <p className="font-medium text-[15px] tracking-15 leading-[140%]" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
                     — Prelaunch testimonial
                   </p>
                 </div>
@@ -1696,29 +605,29 @@ export default function LandingPage() {
 	                >
 	                  <RevealDiv className="relative inline-block">
 	                    <div className="rounded-lg px-8 py-6 backdrop-blur-lg max-w-[calc(100vw_-_64px)] w-[500px] flex flex-col items-center justify-center gap-3 bg-gradient-to-b from-[rgba(255,255,255,0.80)] to-[rgba(255,255,255,0.16)] shadow-[0px_4px_12px_0px_rgba(255,255,255,0.10)_inset,0px_0px_0px_6px_rgba(255,255,255,0.40),0px_1px_8px_0px_rgba(0,0,0,0.13),0px_2px_6px_0px_rgba(0,0,0,0.20)]">
-	                      <h3 className="text-[#171717] font-semibold text-[28px] leading-[130%] tracking-[-0.56px] text-center">
+	                      <h3 className="font-semibold text-title-secondary md:text-title-primary leading-[130%] tracking-[-0.56px] text-center">
 	                        Join Our Community
 	                      </h3>
-	                      <p className="text-[#171717] text-[15px] leading-[140%] text-center">
+	                      <p className="text-[15px] leading-[140%] text-center" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
 	                        Connect with researchers, share insights, and stay updated on Surbee
 	                      </p>
 	                    </div>
 	                    
 	                    {/* Hover tooltip */}
-	                    <div className="absolute z-50 bg-neutral-900 backdrop-blur-[20px] flex flex-col gap-1.5 px-3 py-1 w-min rounded-full whitespace-nowrap text-[#EEF1ED] text-xs font-medium leading-[130%] tracking-[-0.12px] left-1/2 transform -translate-x-1/2 bottom-full mb-4 opacity-0 translate-y-1 scale-95 pointer-events-none transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100">
+	                    <div className="absolute z-50 bg-neutral-900 backdrop-blur-[20px] flex flex-col gap-1.5 items-center justify-center px-3 py-1 w-min rounded-full whitespace-nowrap text-[#EEF1ED] text-xs font-medium leading-[130%] tracking-[-0.12px] left-1/2 transform -translate-x-1/2 bottom-full mb-4 opacity-0 translate-y-1 scale-95 pointer-events-none transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100">
 	                      <div className="flex items-center gap-1">
 	                        <p className="font-medium text-[13px] tracking-13 leading-[130%] text-neutral-50">
 	                          Join Discord
-	                        </p>
-	                        <svg className="text-neutral-600 -mt-0.25" height="12" width="7" fill="none" viewBox="0 0 6 9" xmlns="http://www.w3.org/2000/svg">
-	                          <rect height="1.41526" width="1.41526" fill="currentColor" x="3.7002" y="3.79085" />
-	                          <rect height="1.41526" width="1.41526" fill="currentColor" x="0.884766" y="0.97023" />
-	                          <rect height="1.41526" width="1.41526" fill="currentColor" x="0.884766" y="6.6144" />
-	                          <rect height="4.24579" width="1.41526" fill="currentColor" x="2.28467" y="2.37558" />
-	                        </svg>
-	                      </div>
-	                      <div className="absolute left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent top-full border-t-[6px] border-t-neutral-900" />
-	                    </div>
+                        </p>
+                        <svg className="text-neutral-600 -mt-0.25" height="12" width="7" fill="none" viewBox="0 0 6 9" xmlns="http://www.w3.org/2000/svg">
+                          <rect height="1.41526" width="1.41526" fill="currentColor" x="3.7002" y="3.79085" />
+                          <rect height="1.41526" width="1.41526" fill="currentColor" x="0.884766" y="0.97023" />
+                          <rect height="1.41526" width="1.41526" fill="currentColor" x="0.884766" y="6.6144" />
+                          <rect height="4.24579" width="1.41526" fill="currentColor" x="2.28467" y="2.37558" />
+                        </svg>
+                      </div>
+                      <div className="absolute left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent top-full border-t-[6px] border-t-neutral-900" />
+                    </div>
 	                  </RevealDiv>
 	                </a>
 	              </RevealDiv>
