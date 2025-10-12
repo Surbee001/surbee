@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Users, Star, FileText } from 'lucide-react';
+import { Clock, Users, FileText } from 'lucide-react';
 import { Image as IKImage } from '@imagekit/next';
 
 interface CommunitySurvey {
@@ -36,99 +36,105 @@ export const CommunitySurveyCard: React.FC<CommunitySurveyCardProps> = ({
     }
   };
 
-  const getDifficultyIcon = (difficulty: string) => {
+  const getDifficultyIndicator = (difficulty: string) => {
     switch (difficulty) {
       case 'beginner':
-        return '🟢';
+        return '•';
       case 'intermediate':
-        return '🟡';
+        return '••';
       case 'advanced':
-        return '🔴';
+        return '•••';
       default:
-        return '⚪';
+        return '•';
     }
   };
 
   return (
     <div
-      className="group w-full p-[5px] rounded-[12px] relative border transition-all duration-300 ease-in-out flex flex-col gap-[5px] h-full"
-      style={{ 
-        cursor: "pointer",
-        backgroundColor: "#141414",
-        borderColor: 'var(--surbee-border-accent)'
+      className="group relative flex h-full w-full flex-col gap-2 overflow-hidden rounded-[12px] border p-[5px] transition-all duration-300 ease-in-out"
+      style={{
+        cursor: 'pointer',
+        backgroundColor: '#141414',
+        borderColor: 'var(--surbee-border-accent)',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = 'white';
+        e.currentTarget.style.borderColor = '#f8f8f8';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.borderColor = 'var(--surbee-border-accent)';
       }}
     >
-      {/* Header */}
-      <div className="w-full flex justify-between items-start">
-        <div className="flex gap-[5px] flex-1 min-w-0">
-          <div className="text-sm flex flex-col justify-start gap-1">
-            <p className="text-white font-medium text-sm leading-tight truncate" title={survey.title}>
-              {survey.title}
-            </p>
-            <p className="text-gray-400 text-xs leading-tight line-clamp-2" title={survey.description}>
-              {survey.description}
-            </p>
-          </div>
+      <div className="flex w-full items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <p
+            className="truncate text-sm font-medium text-white"
+            title={survey.title}
+          >
+            {survey.title}
+          </p>
+          <p
+            className="text-xs leading-tight text-gray-400 line-clamp-2"
+            title={survey.description}
+          >
+            {survey.description}
+          </p>
         </div>
-        
-        {/* Take Survey Button */}
-        <div
-          className="w-[80px] h-[32px] bg-white text-black opacity-0 group-hover:opacity-100 group-hover:border-white group-hover:pointer-events-auto duration-300 ease-in-out text-xs rounded-lg flex items-center justify-center font-medium cursor-pointer pointer-events-auto active:scale-95 transition"
-          style={{ border: '1px solid var(--surbee-border-accent)' }}
-          onClick={(e) => {
-            e.stopPropagation();
+        <button
+          type="button"
+          className="pointer-events-auto flex h-8 w-[80px] items-center justify-center rounded-lg border bg-white text-xs font-medium text-black opacity-0 transition-all duration-300 ease-in-out group-hover:opacity-100 group-hover:border-[#f8f8f8]"
+          style={{ borderColor: 'var(--surbee-border-accent)' }}
+          onClick={(event) => {
+            event.stopPropagation();
             onTakeSurvey(survey.id);
           }}
         >
           Take
-        </div>
+        </button>
       </div>
 
-      {/* Category and Difficulty */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs px-2 py-1 rounded-md bg-gray-700 text-gray-300">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="rounded-md bg-gray-700 px-2 py-1 text-xs text-gray-300">
           {survey.category}
         </span>
-        <span className={`text-xs px-2 py-1 rounded-md ${getDifficultyColor(survey.difficulty)} flex items-center gap-1`}>
-          <span>{getDifficultyIcon(survey.difficulty)}</span>
+        <span
+          className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs uppercase tracking-wide ${getDifficultyColor(
+            survey.difficulty,
+          )}`}
+        >
+          <span className="text-sm font-semibold leading-none">
+            {getDifficultyIndicator(survey.difficulty)}
+          </span>
           {survey.difficulty}
         </span>
       </div>
 
-      {/* Stats */}
       <div className="flex items-center gap-4 text-xs text-gray-400">
         <div className="flex items-center gap-1">
-          <Users className="w-3 h-3" />
+          <Users className="h-3 w-3" />
           <span>{survey.responseCount.toLocaleString()}</span>
         </div>
         <div className="flex items-center gap-1">
-          <Clock className="w-3 h-3" />
+          <Clock className="h-3 w-3" />
           <span>{survey.estimatedTime}</span>
         </div>
       </div>
 
-      {/* Preview Image */}
-      <div className="w-full rounded-[8px] aspect-[210/119] mt-auto overflow-hidden">
+      <div className="mt-auto aspect-[210/119] w-full overflow-hidden rounded-[8px]">
         {survey.previewImage ? (
           <IKImage
             src={survey.previewImage}
             alt={survey.title}
             width={210}
             height={119}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
-            <FileText className="w-8 h-8 text-gray-500" />
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800">
+            <FileText className="h-8 w-8 text-gray-500" />
           </div>
         )}
       </div>
     </div>
   );
 };
+

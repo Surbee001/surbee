@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ImageKitProvider, Image as IKImage } from '@imagekit/next';
 import {
   ArrowRight,
   Compass,
@@ -43,23 +42,16 @@ function FeaturedSlideshow({
 
   // Calculate total number of slides (each slide shows 3 cards)
   const totalSlides = Math.ceil(templates.length / 3);
-  const maxSlides = 4; // Show exactly 4 slides as requested
+  const maxSlides = Math.min(4, totalSlides); // Show up to 4 slides or total available
 
-  // Auto-advance slides every 5 seconds
-  useEffect(() => {
-    if (totalSlides <= 1) return;
-
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % maxSlides);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [totalSlides, maxSlides]);
+  // Auto-advance disabled as requested
 
   // Get templates for current slide
   const getCurrentTemplates = () => {
     const startIndex = currentSlide * 3;
-    return templates.slice(startIndex, startIndex + 3);
+    const currentTemplates = templates.slice(startIndex, startIndex + 3);
+    console.log('Current slide templates:', currentSlide, currentTemplates.map(t => t.title));
+    return currentTemplates;
   };
 
   // Get all templates for mobile grid (up to 12 cards for 4 slides)
@@ -94,25 +86,19 @@ function FeaturedSlideshow({
             isolation: "isolate",
           }}
         >
-          {/* Fade transition container */}
+          {/* Slide container */}
           <div
-            key={currentSlide} // Force re-render on slide change for smooth fade
+            key={currentSlide}
             className="featured-slider_slide__sji9b featured-slider_slideActive__UVuOd"
             style={{
-              transition: "opacity 0.8s ease-in-out",
-              position: "absolute",
-              top: "0px",
-              left: "0px",
+              position: "relative",
               width: "100%",
-              opacity: 1,
-              pointerEvents: "all",
-              animation: "fadeIn 0.8s ease-in-out",
             }}
           >
             <div
               className="featured-slider_slideContent__V0XaH"
               style={{
-                gap: "10px",
+                gap: "12px",
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 1fr)",
               }}
@@ -149,8 +135,6 @@ function FeaturedSlideshow({
               style={{
                 border: "none",
                 borderRadius: "8px",
-                transition:
-                  "background-color ease 150ms,border-color ease 150ms,color 150ms ease",
                 position: "relative",
                 width: "5px",
                 height: "5px",
@@ -168,11 +152,11 @@ function FeaturedSlideshow({
       {/* Mobile Grid (hidden on desktop) */}
       <div
         className="featured-slider_mobileGrid__STVyM"
-        style={{
-          gap: "20px 10px",
-          gridTemplateColumns: "repeat(2, 1fr)",
-          display: "none",
-        }}
+          style={{
+            gap: "20px 12px",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            display: "none",
+          }}
       >
         {getAllTemplates().map((template, index) => (
           <ProjectStyleCard
@@ -211,14 +195,14 @@ function ProjectStyleCard({
 
   return (
     <div
-      className="group w-full p-[5px] rounded-[12px] relative border transition-all duration-300 ease-in-out flex flex-col gap-[5px] h-full"
+      className="group w-full p-[5px] rounded-[12px] relative border flex flex-col gap-[5px] h-full"
       style={{
         cursor: "pointer",
         backgroundColor: "#141414",
         borderColor: 'var(--surbee-border-accent)'
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = 'white';
+        e.currentTarget.style.borderColor = '#f8f8f8';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.borderColor = 'var(--surbee-border-accent)';
@@ -228,13 +212,13 @@ function ProjectStyleCard({
         <div className="flex gap-[5px]">
           <img
             className="rounded-[8px]"
-            height={35}
-            width={35}
+            height={42}
+            width={42}
             src="https://endlesstools.io/_next/image?url=/embeds/avatars/4.png&w=96&q=75"
             alt="User avatar"
           />
-          <div className="text-sm flex flex-col justify-center h-[35px]">
-            <p className="text-white font-medium truncate max-w-[120px]" title={template.title}>
+          <div className="text-sm flex flex-col justify-center h-[42px]">
+            <p className="text-white font-medium truncate max-w-[140px]" title={template.title}>
               {template.title}
             </p>
             <div className="flex items-center gap-1 text-gray-400 text-xs">
@@ -244,28 +228,22 @@ function ProjectStyleCard({
           </div>
         </div>
         <div
-          className="w-[66px] h-[35px] bg-white text-black opacity-0 group-hover:opacity-100 group-hover:border-white group-hover:pointer-events-auto duration-300 ease-in-out text-sm rounded-lg flex items-center justify-center font-medium cursor-pointer pointer-events-auto active:scale-95 transition"
+          className="w-[70px] h-[42px] bg-white text-black opacity-0 group-hover:opacity-100 group-hover:border-[#f8f8f8] group-hover:pointer-events-auto text-sm rounded-lg flex items-center justify-center font-medium cursor-pointer pointer-events-auto"
           style={{ border: '1px solid var(--surbee-border-accent)' }}
         >
           Edit
         </div>
       </div>
-      <div className="w-full rounded-[8px] aspect-[210/119] mt-auto overflow-hidden">
-        {template.previewImage ? (
-          <IKImage
-            src={template.previewImage}
-            alt={template.title}
-            width={210}
-            height={119}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <img
-            src="https://endlesstools.io/embeds/4.png"
-            alt={template.title}
-            className="w-full h-full object-cover"
-          />
-        )}
+      <div className="w-full rounded-[8px] aspect-[210/130] mt-auto overflow-hidden">
+        <img
+          src={template.previewImage || "https://endlesstools.io/embeds/4.png"}
+          alt={template.title}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            console.log('Image failed to load:', template.previewImage);
+            e.currentTarget.src = "https://endlesstools.io/embeds/4.png";
+          }}
+        />
       </div>
     </div>
   );
@@ -290,11 +268,7 @@ export default function NotionMarketplace() {
         ? [...communityTemplates].sort((a, b) => b.remixCount - a.remixCount)
         : communityTemplates;
 
-    if (!query) {
-      return base.slice(0, 4);
-    }
-
-    return base
+    const result = !query ? base.slice(0, 12) : base
       .filter((template) => {
         const haystack = [
           template.title,
@@ -307,7 +281,10 @@ export default function NotionMarketplace() {
           .toLowerCase();
         return haystack.includes(query);
       })
-      .slice(0, 6);
+      .slice(0, 12);
+
+    console.log('Template matches:', result.length, result.slice(0, 3).map(t => ({ id: t.id, title: t.title, previewImage: t.previewImage })));
+    return result;
   }, [templateFilter, query]);
 
 
@@ -329,127 +306,170 @@ export default function NotionMarketplace() {
   };
 
   return (
+    <div
+      className="min-h-full w-full pb-24"
+      style={{ backgroundColor: 'var(--surbee-bg-primary)' }}
+    >
+      {/* Full Width Hero Image Section */}
       <div
-        className="min-h-full w-full pb-24"
-        style={{ backgroundColor: 'var(--surbee-bg-primary)' }}
+        className="hero-image-full-width"
+        style={{
+          width: "100vw",
+          position: "relative",
+          left: "50%",
+          right: "50%",
+          marginLeft: "-50vw",
+          marginRight: "-50vw",
+          backgroundColor: "#1a1a1a",
+          padding: "60px 0 40px 0",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
       >
-        <main
-          className="page_main__UgkPO"
+        <div
+          className="hero-image-wrapper"
           style={{
-            padding: "0px 20px",
-            margin: "auto",
-            gap: "100px",
+            position: "relative",
+            padding: "5px",
+            backgroundColor: "#1a1a1a",
+            borderRadius: "12px",
+            border: "1px solid var(--surbee-border-accent)",
+            maxWidth: "1200px",
+            width: "90%",
+          }}
+        >
+          <img
+            src="/cofounder-assets/hero-anim-bg-2.png"
+            alt="Marketplace Hero"
+            style={{
+              width: "100%",
+              height: "auto",
+              borderRadius: "8px",
+              display: "block",
+            }}
+          />
+        </div>
+      </div>
+
+      <main
+        className="page_main__UgkPO"
+        style={{
+          padding: "0px 20px",
+          margin: "auto",
+          gap: "100px",
+          display: "flex",
+          maxWidth: "1300px",
+          flexDirection: "column",
+        }}
+      >
+        {/* Marketplace Content */}
+        <div
+          className="page_hero__OC_yx"
+          style={{
+            gap: "20px",
             display: "flex",
-            maxWidth: "1240px",
             flexDirection: "column",
+            alignItems: "center",
+            paddingTop: "60px",
           }}
         >
           <div
-            className="page_hero__OC_yx"
+            className="page_heroText__u8zUU"
             style={{
-              gap: "20px",
+              gap: "10px",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              paddingTop: "100px",
+            }}
+          >
+            <h1
+              className="text-h1"
+              style={{ fontSize: "62px", letterSpacing: "-0.05em" }}
+            >
+              Marketplace
+            </h1>
+            <p
+              className="text-lead text-balance"
+              style={{
+                fontVariationSettings: '"opsz" 30',
+                fontSize: "20px",
+                textWrap: "balance",
+                maxWidth: "520px",
+                textAlign: "center",
+                lineHeight: "1.4",
+              }}
+            >
+              Discover ready-to-use survey templates, take community polls, and find the perfect starting point for your research.
+            </p>
+          </div>
+          <form
+            className="styles_form__nIod2"
+            style={{
+              overflow: "visible",
+              display: "flex",
+              width: "100%",
+              justifyContent: "center",
+              color: "#fff",
             }}
           >
             <div
-              className="page_heroText__u8zUU"
+              className="styles_input__k1E0f"
               style={{
-                gap: "10px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
+                position: "relative",
+                width: "100%",
+                maxWidth: "220px",
+                fontSize: "15px",
+                fontVariationSettings: '"opsz" 16, "wght" 480',
               }}
             >
-              <h1
-                className="text-h1"
-                style={{ fontSize: "62px", letterSpacing: "-0.05em" }}
-              >
-                Marketplace
-              </h1>
-              <p
-                className="text-lead text-balance"
-                style={{
-                  fontVariationSettings: '"opsz" 30',
-                  fontSize: "20px",
-                  textWrap: "balance",
-                  maxWidth: "520px",
-                  textAlign: "center",
-                  lineHeight: "1.4",
-                }}
-              >
-                Discover ready-to-use survey templates, take community polls, and find the perfect starting point for your research.
-              </p>
-            </div>
-            <form
-              className="styles_form__nIod2"
+            <div
+              className="styles_overlay__GJHy0"
               style={{
-                overflow: "visible",
+                padding: "12px 12px 12px 14px",
+                gap: "10px",
+                inset: "0px auto",
+                position: "absolute",
                 display: "flex",
                 width: "100%",
-                justifyContent: "center",
-                color: "#fff",
+                flexGrow: 0,
+                alignItems: "center",
+                justifyContent: "start",
+                color: "rgb(119, 119, 119)",
+                fontSize: "14px",
+                pointerEvents: "none",
+                transition: "color 0.1s",
+                left: "50%",
+                transform: "translateX(-50%)",
+                zIndex: 1,
               }}
             >
-              <div
-                className="styles_input__k1E0f"
+              <Search className="h-4 w-4" />
+            </div>
+            <input
+                id="search"
+                className="appearance-none [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden [&::-webkit-search-results-decoration]:hidden"
+                name="search"
+                type="search"
+                autoComplete="off"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search…"
                 style={{
-                  position: "relative",
+                  appearance: "none",
+                  padding: "12px 12px 12px 40px",
+                  borderRadius: "100px",
+                  transition: "box-shadow 0.2s, background-color 0.2s",
                   width: "100%",
-                  maxWidth: "220px",
-                  fontSize: "15px",
-                  fontVariationSettings: '"opsz" 16, "wght" 480',
+                  height: "44px",
+                  backgroundColor: "#181818",
+                  boxShadow: "rgba(0, 153, 255, 0) 0px 0px 0px 1px inset",
+                  caretColor: "#fff",
                 }}
-              >
-              <div
-                className="styles_overlay__GJHy0"
-                style={{
-                  padding: "12px 12px 12px 14px",
-                  gap: "10px",
-                  inset: "0px auto",
-                  position: "absolute",
-                  display: "flex",
-                  width: "100%",
-                  flexGrow: 0,
-                  alignItems: "center",
-                  justifyContent: "start",
-                  color: "rgb(119, 119, 119)",
-                  fontSize: "14px",
-                  pointerEvents: "none",
-                  transition: "color 0.1s",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  zIndex: 1,
-                }}
-              >
-                <Search className="h-4 w-4" />
-              </div>
-              <input
-                  id="search"
-                  className="appearance-none [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden [&::-webkit-search-results-decoration]:hidden"
-                  name="search"
-                  type="search"
-                  autoComplete="off"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search…"
-                  style={{
-                    appearance: "none",
-                    padding: "12px 12px 12px 40px",
-                    borderRadius: "100px",
-                    transition: "box-shadow 0.2s, background-color 0.2s",
-                    width: "100%",
-                    height: "44px",
-                    backgroundColor: "#181818",
-                    boxShadow: "rgba(0, 153, 255, 0) 0px 0px 0px 1px inset",
-                    caretColor: "#fff",
-                  }}
-                />
-              </div>
-            </form>
-          </div>
+              />
+            </div>
+          </form>
+        </div>
 
           {/* Featured Slideshow */}
           <section className="space-y-6">

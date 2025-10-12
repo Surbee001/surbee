@@ -17,11 +17,13 @@ interface CommunityTemplate {
 interface CommunityTemplateCardProps {
   template: CommunityTemplate;
   onRemixTemplate: (templateId: string) => void;
+  onSelectTemplate?: (templateId: string) => void;
 }
 
 export const CommunityTemplateCard: React.FC<CommunityTemplateCardProps> = ({
   template,
   onRemixTemplate,
+  onSelectTemplate,
 }) => {
   return (
     <div
@@ -32,10 +34,13 @@ export const CommunityTemplateCard: React.FC<CommunityTemplateCardProps> = ({
         borderColor: 'var(--surbee-border-accent)'
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = 'white';
+        e.currentTarget.style.borderColor = '#f8f8f8';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.borderColor = 'var(--surbee-border-accent)';
+      }}
+      onClick={() => {
+        onSelectTemplate?.(template.id);
       }}
     >
       {/* Header */}
@@ -53,7 +58,7 @@ export const CommunityTemplateCard: React.FC<CommunityTemplateCardProps> = ({
         
         {/* Remix Button */}
         <div
-          className="w-[80px] h-[32px] bg-white text-black opacity-0 group-hover:opacity-100 group-hover:border-white group-hover:pointer-events-auto duration-300 ease-in-out text-xs rounded-lg flex items-center justify-center font-medium cursor-pointer pointer-events-auto active:scale-95 transition"
+          className="w-[80px] h-[32px] bg-white text-black opacity-0 group-hover:opacity-100 group-hover:border-[#f8f8f8] group-hover:pointer-events-auto duration-300 ease-in-out text-xs rounded-lg flex items-center justify-center font-medium cursor-pointer pointer-events-auto active:scale-95 transition"
           style={{ border: '1px solid var(--surbee-border-accent)' }}
           onClick={(e) => {
             e.stopPropagation();
