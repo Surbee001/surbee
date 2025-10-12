@@ -1203,6 +1203,31 @@ body {
   }
 }
 
+/* Landing Page Typography */
+.text-title-secondary {
+  font-family: var(--font-inter), sans-serif;
+  font-weight: 500;
+  font-size: 2.5rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--surbee-fg-primary);
+}
+
+.text-title-primary {
+  font-family: var(--font-inter), sans-serif;
+  font-weight: 500;
+  font-size: 3.5rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--surbee-fg-primary);
+}
+
+@media (max-width: 768px) {
+  .text-title-primary {
+    font-size: 2.5rem;
+  }
+}
+
 /* Projects Page Styles */
 .projects-title {
   font-family: var(--font-inter), sans-serif;
