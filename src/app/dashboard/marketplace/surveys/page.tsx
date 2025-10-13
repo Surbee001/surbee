@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ImageKitProvider } from "@imagekit/next";
@@ -40,7 +40,7 @@ const surveyCategories = communityCategories.filter(
   (category) => category.contentType !== "templates"
 );
 
-export default function CommunitySurveysPage() {
+function CommunitySurveysContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -341,6 +341,52 @@ export default function CommunitySurveysPage() {
         </div>
       </div>
     </ImageKitProvider>
+  );
+}
+
+// Main component with Suspense boundary
+export default function CommunitySurveysPage() {
+  return (
+    <Suspense fallback={
+      <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
+        <div
+          className="min-h-full w-full pb-20"
+          style={{ backgroundColor: "var(--surbee-bg-primary)" }}
+        >
+          <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-12 px-6 pb-16 pt-10 md:px-8">
+            <header className="space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
+                <Link
+                  href="/dashboard/marketplace"
+                  className="flex items-center gap-2 text-white/60 transition hover:text-white"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to Community
+                </Link>
+                <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-white/50">
+                  <Clock className="h-4 w-4 text-orange-400" />
+                  Community Surveys
+                </div>
+              </div>
+              <div className="max-w-3xl space-y-3">
+                <h1 className="text-4xl font-semibold text-white md:text-5xl">
+                  Take surveys and share your perspective
+                </h1>
+                <p className="text-base text-white/60 md:text-lg">
+                  Support builders by giving feedback. Discover trending surveys
+                  looking for responses right now.
+                </p>
+              </div>
+            </header>
+            <div className="flex items-center justify-center py-20">
+              <div className="text-white/60">Loading surveys...</div>
+            </div>
+          </div>
+        </div>
+      </ImageKitProvider>
+    }>
+      <CommunitySurveysContent />
+    </Suspense>
   );
 }
 

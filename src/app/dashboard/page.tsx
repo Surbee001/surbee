@@ -4,7 +4,7 @@ import { ChevronDown, ChevronLeft, Plus, Home, Library, Search, MessageSquare, F
 import dynamic from 'next/dynamic'
 import { ImageKitProvider } from '@imagekit/next';
 const InviteModal = dynamic(() => import('@/components/referrals/InviteModal'), { ssr: false })
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { File, Folder, Tree } from "@/components/ui/file-tree";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
@@ -235,7 +235,8 @@ const sampleCommunityProjects: CommunityProject[] = [
   }
 ];
 
-export default function Dashboard() {
+// Component that handles search params
+function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, userProfile, loading: authLoading } = useAuth();
@@ -751,5 +752,67 @@ export default function Dashboard() {
 
       </div>
     </ImageKitProvider>
+  );
+}
+
+// Main Dashboard component with Suspense boundary
+export default function Dashboard() {
+  return (
+    <Suspense fallback={
+      <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
+        <div className="flex flex-col h-full">
+          {/* Only skeleton for main content area - no sidebar */}
+          <div className="w-full max-w-2xl flex flex-col mx-auto flex-1 justify-center">
+            {/* Greeting Text Skeleton */}
+            <div className="text-center mb-4">
+              <div className="skeleton-text mx-auto mb-6" style={{
+                width: '350px',
+                height: '3rem',
+                borderRadius: '0.5rem',
+                fontFamily: 'var(--font-inter), sans-serif'
+              }}></div>
+              <div className="skeleton-text mx-auto mb-4" style={{
+                width: '500px',
+                height: '1.5rem',
+                borderRadius: '0.375rem',
+                fontFamily: 'var(--font-inter), sans-serif'
+              }}></div>
+              <div className="skeleton-text mx-auto" style={{
+                width: '400px',
+                height: '1.5rem',
+                borderRadius: '0.375rem',
+                fontFamily: 'var(--font-inter), sans-serif'
+              }}></div>
+            </div>
+
+            {/* Chat Input Skeleton */}
+            <div className="mt-8 px-4">
+              <div className="relative">
+                <div className="skeleton-form-input" style={{
+                  height: '3rem',
+                  borderRadius: '0.75rem',
+                  marginBottom: '1rem',
+                  fontFamily: 'var(--font-inter), sans-serif'
+                }}></div>
+
+                {/* Quick Actions Skeleton */}
+                <div className="flex flex-wrap gap-2 justify-center mt-4">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="skeleton-base" style={{
+                      width: '120px',
+                      height: '2rem',
+                      borderRadius: '1rem',
+                      fontFamily: 'var(--font-inter), sans-serif'
+                    }}></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ImageKitProvider>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }
