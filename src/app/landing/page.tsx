@@ -30,8 +30,12 @@ export default function LandingPage() {
     <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
     <div className={`min-h-screen w-full ${epilogue.variable}`} style={{ backgroundColor: "#FEFFFC", fontFamily: "var(--font-epilogue)" }}>
 	  {/* Top Navigation (full-width) with blur */}
-	  <nav className="fixed left-0 right-0 top-0 z-40 w-full bg-[#FEFFFC]/70 backdrop-blur supports-[backdrop-filter]:bg-[#FEFFFC]/70">
-		<div className="flex h-16 items-center justify-between gap-4 pl-56 pr-6">
+	  <nav className="sticky inset-x-0 top-0 nav-gradient z-50"
+        style={{
+          background: "linear-gradient(#FEFFFC 40%, rgba(254, 255, 252, 0))",
+        }}
+      >
+		<div className="flex h-20 items-center justify-between gap-4 pl-56 pr-6">
 		  <div className="text-2xl font-semibold tracking-[-0.02em] pl-5 md:pl-8 xl:pl-12 2xl:pl-30" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>surbee</div>
           <div className="flex items-center gap-6">
             <a href="/pricing" className="text-sm hover:text-neutral-800 transition-all duration-300 ease-out" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
@@ -219,7 +223,7 @@ export default function LandingPage() {
           <RevealSection
             className="mt-8 mb-6 px-6"
           >
-            <div className="text-left">
+            <div className="text-center w-full flex justify-center">
               <p className="text-[15px] text-neutral-600 leading-[140%] max-w-2xl">
                 Describe what you want, and Surbee drafts complete surveys — questions, options, and logic — instantly. Iterate with plain English.
               </p>
@@ -453,15 +457,13 @@ export default function LandingPage() {
 	            <div className="flex justify-center gap-3 sm:gap-4 pb-5 md:pb-6 pt-3 md:pt-6 px-3 sm:px-4 flex-wrap">
 	                <div className="flex relative flex-col items-center group">
 	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={41}
-	                      width={30}
+	                    <IKImage
+	                      src="https://ik.imagekit.io/on0moldgr/SurbeeIcons/Sheets?updatedAt=1760287548067"
 	                      alt="Sheets"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/google-sheets.0ca29299.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-sheets.0ca29299.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-sheets.0ca29299.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
+	                      width={30}
+	                      height={41}
+	                      className="w-full h-full object-contain"
+	                      style={{ color: "transparent" }}
 	                    />
 	                  </div>
 	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
@@ -472,34 +474,30 @@ export default function LandingPage() {
 	                </div>
 	                <div className="flex relative flex-col items-center group">
 	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={30}
+	                    <IKImage
+	                      src="https://ik.imagekit.io/on0moldgr/SurbeeIcons/typeform?updatedAt=1760287565909"
+	                      alt="Typeform"
 	                      width={30}
-	                      alt="Google Forms"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/google-forms.12345678.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-forms.12345678.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-forms.12345678.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
+	                      height={30}
+	                      className="w-full h-full object-contain"
+	                      style={{ color: "transparent" }}
 	                    />
 	                  </div>
 	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
 	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Google Forms
+	                      Typeform
 	                    </span>
 	                  </div>
 	                </div>
 	                <div className="flex relative flex-col items-center group">
 	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={30}
-	                      width={30}
+	                    <IKImage
+	                      src="https://ik.imagekit.io/on0moldgr/SurbeeIcons/monkey?updatedAt=1760287596302"
 	                      alt="SurveyMonkey"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/surveymonkey.87654321.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fsurveymonkey.87654321.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fsurveymonkey.87654321.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
+	                      width={40}
+	                      height={40}
+	                      className="w-full h-full object-contain"
+	                      style={{ color: "transparent" }}
 	                    />
 	                  </div>
 	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
@@ -510,39 +508,52 @@ export default function LandingPage() {
 	                </div>
 	                <div className="flex relative flex-col items-center group">
 	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={41}
+	                    <IKImage
+	                      src="https://ik.imagekit.io/on0moldgr/SurbeeIcons/forms?updatedAt=1760287609080"
+	                      alt="Forms"
 	                      width={30}
-	                      alt="Docs"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/google-docs.f7ba532d.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-docs.f7ba532d.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-docs.f7ba532d.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
+	                      height={41}
+	                      className="w-full h-full object-contain"
+	                      style={{ color: "transparent" }}
 	                    />
 	                  </div>
 	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
 	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
-	                      Docs
+	                      Forms
 	                    </span>
 	                  </div>
 	                </div>
 	                <div className="flex relative flex-col items-center group">
 	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
-	                    <img
-	                      height={30}
-	                      width={30}
+	                    <IKImage
+	                      src="https://ik.imagekit.io/on0moldgr/SurbeeIcons/notion?updatedAt=1760287621171"
 	                      alt="Notion"
-	                      src="https://cofounder.co/_next/image?url=/_next/static/media/notion.f18f0582.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD"
-	                      srcSet="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fnotion.f18f0582.avif&w=64&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 1x, /_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fnotion.f18f0582.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD 2x"
-                      style={{
-                        color: "transparent",
-                      }}
+	                      width={40}
+	                      height={40}
+	                      className="w-full h-full object-contain"
+	                      style={{ color: "transparent" }}
 	                    />
 	                  </div>
 	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
 	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
 	                      Notion
+	                    </span>
+	                  </div>
+	                </div>
+	                <div className="flex relative flex-col items-center group">
+	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
+	                    <IKImage
+	                      src="https://ik.imagekit.io/on0moldgr/SurbeeIcons/docs?updatedAt=1760287634920"
+	                      alt="Docs"
+	                      width={30}
+	                      height={41}
+	                      className="w-full h-full object-contain"
+	                      style={{ color: "transparent" }}
+	                    />
+	                  </div>
+	                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+	                    <span className="text-xs font-medium text-center text-gray-700 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100 group-hover:blur-none">
+	                      Docs
 	                    </span>
 	                  </div>
 	                </div>

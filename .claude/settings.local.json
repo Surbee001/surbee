@@ -54,6 +54,7 @@
       "Bash(git remote set-url:*)",
       "Bash(git branch:*)",
       "WebFetch(domain:21st.dev)"
+      
     ],
     "deny": [],
     "ask": [],
@@ -64,4 +65,5 @@
       "E:\\e\\Surbee_Lyra_v1"
     ]
   }
+  
 }

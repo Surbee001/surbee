@@ -195,7 +195,7 @@ function ProjectStyleCard({
 
   return (
     <div
-      className="group w-full p-[5px] rounded-[12px] relative border flex flex-col gap-[5px] h-full"
+      className="group w-full p-[2px] rounded-[12px] relative border flex flex-col gap-[5px] h-full"
       style={{
         cursor: "pointer",
         backgroundColor: "#141414",
@@ -249,6 +249,120 @@ function ProjectStyleCard({
   );
 }
 
+function TemplatesGridSection({
+  templates,
+  onRemixTemplate
+}: {
+  templates: any[];
+  onRemixTemplate: (id: string) => void;
+}) {
+  // Show first 8 templates in a 4x2 grid
+  const displayTemplates = templates.slice(0, 8);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="products-section_headerHeading__hSnK_" style={{ fontSize: '20px' }}>
+          Templates
+        </h2>
+        <a
+          className="products-section_experimentalCta__OdkJr text-label"
+          href="#"
+          style={{
+            color: '#7F7F7F',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            textDecoration: 'none',
+            transition: 'color 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#ffffff';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = '#7F7F7F';
+          }}
+        >
+          See All
+          <ArrowRight className="w-4 h-4" />
+        </a>
+      </div>
+
+      <div
+        className="grid gap-4"
+        style={{
+          gridTemplateColumns: "repeat(4, 1fr)",
+        }}
+      >
+        {displayTemplates.map((template, index) => (
+          <ProjectStyleCard
+            key={template.id}
+            template={template}
+            onRemixTemplate={onRemixTemplate}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SurveysGridSection({
+  surveys,
+  onTakeSurvey
+}: {
+  surveys: any[];
+  onTakeSurvey: (id: string) => void;
+}) {
+  // Show first 8 surveys in a 4x2 grid
+  const displaySurveys = surveys.slice(0, 8);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="products-section_headerHeading__hSnK_" style={{ fontSize: '20px' }}>
+          Surveys
+        </h2>
+        <a
+          className="products-section_experimentalCta__OdkJr text-label"
+          href="#"
+          style={{
+            color: '#7F7F7F',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            textDecoration: 'none',
+            transition: 'color 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#ffffff';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = '#7F7F7F';
+          }}
+        >
+          See All
+          <ArrowRight className="w-4 h-4" />
+        </a>
+      </div>
+
+      <div
+        className="grid gap-4"
+        style={{
+          gridTemplateColumns: "repeat(4, 1fr)",
+        }}
+      >
+        {displaySurveys.map((survey, index) => (
+          <ProjectStyleCard
+            key={survey.id}
+            template={survey}
+            onRemixTemplate={onTakeSurvey}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function NotionMarketplace() {
   const [templateFilter, setTemplateFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -287,6 +401,38 @@ export default function NotionMarketplace() {
     return result;
   }, [templateFilter, query]);
 
+  const surveyMatches = useMemo(() => {
+    const base =
+      templateFilter === 'trending'
+        ? trendingSurveys
+        : templateFilter === 'new'
+        ? [...communitySurveys].sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          )
+        : templateFilter === 'remixed'
+        ? [...communitySurveys].sort((a, b) => b.responseCount - a.responseCount)
+        : communitySurveys;
+
+    const result = !query ? base.slice(0, 12) : base
+      .filter((survey) => {
+        const haystack = [
+          survey.title,
+          survey.description,
+          survey.category,
+          survey.tags?.join(' ') || '',
+          survey.difficulty,
+          survey.estimatedTime,
+        ]
+          .join(' ')
+          .toLowerCase();
+        return haystack.includes(query);
+      })
+      .slice(0, 12);
+
+    console.log('Survey matches:', result.length, result.slice(0, 3).map(s => ({ id: s.id, title: s.title, previewImage: s.previewImage })));
+    return result;
+  }, [templateFilter, query]);
+
 
   const filteredCategories = useMemo(() => {
     if (!query) return communityCategories;
@@ -310,52 +456,158 @@ export default function NotionMarketplace() {
       className="min-h-full w-full pb-24"
       style={{ backgroundColor: 'var(--surbee-bg-primary)' }}
     >
-      {/* Full Width Hero Image Section */}
+      {/* Community Container with Title, Description, and Search */}
       <div
-        className="hero-image-full-width"
+        className="community-container"
         style={{
-          width: "100vw",
-          position: "relative",
-          left: "50%",
-          right: "50%",
-          marginLeft: "-50vw",
-          marginRight: "-50vw",
-          backgroundColor: "#1a1a1a",
-          padding: "60px 0 40px 0",
+          width: "100%",
+          margin: "1px 0px",
+          padding: "5px",
+          backgroundColor: "var(--surbee-bg-secondary)",
+          border: "1px solid var(--surbee-border-accent)",
+          borderRadius: "12px",
+          minHeight: "550px",
+          height: "550px",
           display: "flex",
-          justifyContent: "center",
           alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+          overflow: "hidden",
         }}
       >
+        {/* Background Image */}
+        <img
+          src="https://ik.imagekit.io/on0moldgr/Surbee%20Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__4a8dc23f-9086-4342-9ca7-0038174eb594.png?updatedAt=1760297488747"
+          alt="Marketplace Background"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            zIndex: 1,
+          }}
+        />
+        
+        {/* Black Gradient Overlay */}
         <div
-          className="hero-image-wrapper"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            background: "linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.7) 30%, rgba(0, 0, 0, 0) 70%)",
+            zIndex: 2,
+          }}
+        />
+        
+        {/* Content */}
+        <div
+          className="hero-content-overlay"
           style={{
             position: "relative",
-            padding: "5px",
-            backgroundColor: "#1a1a1a",
-            borderRadius: "12px",
-            border: "1px solid var(--surbee-border-accent)",
-            maxWidth: "1200px",
-            width: "90%",
+            zIndex: 3,
+            textAlign: "center",
+            color: "white",
+            maxWidth: "800px",
+            padding: "0 20px",
           }}
         >
-          <img
-            src="/cofounder-assets/hero-anim-bg-2.png"
-            alt="Marketplace Hero"
+          <h1
+            className="text-h1"
             style={{
-              width: "100%",
-              height: "auto",
-              borderRadius: "8px",
-              display: "block",
+              fontSize: "62px",
+              letterSpacing: "-0.05em",
+              marginBottom: "20px",
             }}
-          />
+          >
+            Marketplace
+          </h1>
+          <p
+            className="text-lead text-balance"
+            style={{
+              fontVariationSettings: '"opsz" 30',
+              fontSize: "20px",
+              textWrap: "balance",
+              maxWidth: "520px",
+              margin: "0 auto 30px auto",
+              lineHeight: "1.4",
+            }}
+          >
+            Discover ready-to-use survey templates, take community polls, and find the perfect starting point for your research.
+          </p>
+          <form
+            className="search-form-overlay"
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              width: "100%",
+            }}
+          >
+            <div
+              className="search-input-wrapper"
+              style={{
+                position: "relative",
+                width: "100%",
+                maxWidth: "300px",
+              }}
+            >
+              <div
+                className="search-icon-overlay"
+                style={{
+                  position: "absolute",
+                  left: "14px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "rgb(119, 119, 119)",
+                  fontSize: "14px",
+                  pointerEvents: "none",
+                  zIndex: 1,
+                }}
+              >
+                <Search className="h-4 w-4" />
+              </div>
+              <input
+                id="search"
+                className="search-input-overlay"
+                name="search"
+                type="search"
+                autoComplete="off"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search…"
+                style={{
+                  width: "100%",
+                  height: "48px",
+                  padding: "12px 12px 12px 44px",
+                  borderRadius: "100px",
+                  backgroundColor: "rgba(24, 24, 24, 0.9)",
+                  border: "none",
+                  color: "#fff",
+                  fontSize: "15px",
+                  fontVariationSettings: '"opsz" 16, "wght" 480',
+                  outline: "none",
+                  backdropFilter: "blur(10px)",
+                }}
+              />
+            </div>
+            <style jsx>{`
+              input[type="search"]::-webkit-search-cancel-button {
+                -webkit-appearance: none;
+                color: #ffffff;
+                cursor: pointer;
+              }
+            `}</style>
+          </form>
         </div>
       </div>
 
       <main
         className="page_main__UgkPO"
         style={{
-          padding: "0px 20px",
+          padding: "80px 20px 0px 20px",
           margin: "auto",
           gap: "100px",
           display: "flex",
@@ -363,113 +615,6 @@ export default function NotionMarketplace() {
           flexDirection: "column",
         }}
       >
-        {/* Marketplace Content */}
-        <div
-          className="page_hero__OC_yx"
-          style={{
-            gap: "20px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            paddingTop: "60px",
-          }}
-        >
-          <div
-            className="page_heroText__u8zUU"
-            style={{
-              gap: "10px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
-          >
-            <h1
-              className="text-h1"
-              style={{ fontSize: "62px", letterSpacing: "-0.05em" }}
-            >
-              Marketplace
-            </h1>
-            <p
-              className="text-lead text-balance"
-              style={{
-                fontVariationSettings: '"opsz" 30',
-                fontSize: "20px",
-                textWrap: "balance",
-                maxWidth: "520px",
-                textAlign: "center",
-                lineHeight: "1.4",
-              }}
-            >
-              Discover ready-to-use survey templates, take community polls, and find the perfect starting point for your research.
-            </p>
-          </div>
-          <form
-            className="styles_form__nIod2"
-            style={{
-              overflow: "visible",
-              display: "flex",
-              width: "100%",
-              justifyContent: "center",
-              color: "#fff",
-            }}
-          >
-            <div
-              className="styles_input__k1E0f"
-              style={{
-                position: "relative",
-                width: "100%",
-                maxWidth: "220px",
-                fontSize: "15px",
-                fontVariationSettings: '"opsz" 16, "wght" 480',
-              }}
-            >
-            <div
-              className="styles_overlay__GJHy0"
-              style={{
-                padding: "12px 12px 12px 14px",
-                gap: "10px",
-                inset: "0px auto",
-                position: "absolute",
-                display: "flex",
-                width: "100%",
-                flexGrow: 0,
-                alignItems: "center",
-                justifyContent: "start",
-                color: "rgb(119, 119, 119)",
-                fontSize: "14px",
-                pointerEvents: "none",
-                transition: "color 0.1s",
-                left: "50%",
-                transform: "translateX(-50%)",
-                zIndex: 1,
-              }}
-            >
-              <Search className="h-4 w-4" />
-            </div>
-            <input
-                id="search"
-                className="appearance-none [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden [&::-webkit-search-results-decoration]:hidden"
-                name="search"
-                type="search"
-                autoComplete="off"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search…"
-                style={{
-                  appearance: "none",
-                  padding: "12px 12px 12px 40px",
-                  borderRadius: "100px",
-                  transition: "box-shadow 0.2s, background-color 0.2s",
-                  width: "100%",
-                  height: "44px",
-                  backgroundColor: "#181818",
-                  boxShadow: "rgba(0, 153, 255, 0) 0px 0px 0px 1px inset",
-                  caretColor: "#fff",
-                }}
-              />
-            </div>
-          </form>
-        </div>
 
           {/* Featured Slideshow */}
           <section className="space-y-6">
@@ -483,8 +628,19 @@ export default function NotionMarketplace() {
                 />
           </section>
 
+          {/* Templates Grid Section */}
+          <TemplatesGridSection
+            templates={templateMatches}
+            onRemixTemplate={handleRemixTemplate}
+          />
+
+          {/* Surveys Grid Section */}
+          <SurveysGridSection
+            surveys={surveyMatches}
+            onTakeSurvey={handleTakeSurvey}
+          />
+
         </main>
       </div>
   );
 }
-

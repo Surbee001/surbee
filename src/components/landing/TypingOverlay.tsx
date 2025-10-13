@@ -49,7 +49,7 @@ export default function TypingOverlay({ prompts = DEFAULT_PROMPTS }: TypingOverl
   };
 
   return (
-    <div className="relative flex flex-col gap-1.5 tracking-15 leading-[140%] text-neutral-800 min-h-[60px] w-full pt-1" style={{ fontFamily: "var(--font-epilogue)" }}>
+    <div className="relative flex flex-col gap-1.5 tracking-15 leading-[140%] text-neutral-800 min-h-[60px] w-full pt-1" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
       <AnimatePresence mode="wait" onExitComplete={handleExitComplete}>
         {show && (
           <motion.div
@@ -61,11 +61,11 @@ export default function TypingOverlay({ prompts = DEFAULT_PROMPTS }: TypingOverl
               filter: "blur(12px)",
               transition: { duration: 0.5, ease: "easeOut" }
             }}
-            className="z-10 text-left text-[#171717] w-full"
-            style={{ opacity: 0.92 }}
+            className="z-10 text-left w-full"
+            style={{ opacity: 0.92, color: '#0A0A0A' }}
           >
             <span className="font-medium">{display}</span>
-            <span className="ml-0.5 inline-block h-3 w-[2px] translate-y-[1px] bg-[#171717] animate-[blink_1s_ease-in-out_infinite]" style={{ opacity: 0.92 }} />
+            <span className="ml-0.5 inline-block h-3 w-[2px] translate-y-[1px] animate-[blink_1s_ease-in-out_infinite]" style={{ opacity: 0.92, backgroundColor: '#0A0A0A' }} />
           </motion.div>
         )}
       </AnimatePresence>

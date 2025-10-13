@@ -1207,26 +1207,42 @@ body {
 .text-title-secondary {
   font-family: var(--font-inter), sans-serif;
   font-weight: 500;
-  font-size: 2.5rem;
+  font-size: 40px;
   line-height: 1.2;
   letter-spacing: -0.02em;
-  color: var(--surbee-fg-primary);
+  color: #0A0A0A;
 }
 
 .text-title-primary {
   font-family: var(--font-inter), sans-serif;
   font-weight: 500;
-  font-size: 3.5rem;
-  line-height: 1.1;
+  font-size: 40px;
+  line-height: 1.2;
   letter-spacing: -0.02em;
-  color: var(--surbee-fg-primary);
+  color: #0A0A0A;
 }
 
-@media (max-width: 768px) {
-  .text-title-primary {
-    font-size: 2.5rem;
-  }
+.text-subtitle {
+  font-family: var(--font-inter), sans-serif;
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: #0A0A0A;
 }
+
+.text-body-secondary {
+  font-family: var(--font-inter), sans-serif;
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: #0A0A0A;
+}
+
+.text-grey-4 {
+  color: #6B7280;
+}
+
+/* Responsive design handled by Tailwind responsive classes */
 
 /* Projects Page Styles */
 .projects-title {
@@ -2126,4 +2142,14 @@ body {
 
 body {
   touch-action: pan-x pan-y;
+}
+
+/* Featured Slider Animations */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
