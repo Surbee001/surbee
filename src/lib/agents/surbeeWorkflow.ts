@@ -1,4 +1,4 @@
-import { tool, webSearchTool, Agent, AgentInputItem, Runner } from "@openai/agents";
+import { tool, webSearchTool, Agent, AgentInputItem, Runner, RunItem } from "@openai/agents";
 import { z } from "zod";
 import { OpenAI } from "openai";
 import { runGuardrails } from "@openai/guardrails";
@@ -73,6 +73,202 @@ const guardrailsConfig = {
 };
 
 const context = { guardrailLlm: client };
+
+type SerializedRunItem =
+  | {
+      type: "message";
+      text: string;
+      agent?: string;
+      isHtml?: boolean;
+    }
+  | {
+      type: "reasoning";
+      text: string;
+      agent?: string;
+    }
+  | {
+      type: "tool_call";
+      name: string;
+      arguments: unknown;
+      agent?: string;
+    }
+  | {
+      type: "tool_result";
+      name: string;
+      output: unknown;
+      agent?: string;
+      html?: string | null;
+    }
+  | {
+      type: "handoff";
+      from?: string;
+      to?: string;
+      agent?: string;
+      description?: string;
+    }
+  | {
+      type: "tool_approval";
+      name?: string;
+      status?: string;
+      agent?: string;
+    };
+
+const HTML_LIKE_MARKERS = ["<!doctype", "<html", "<body", "<head", "<section", "<main", "<form", "<div"];
+
+function looksLikeHtml(input: unknown): boolean {
+  if (typeof input !== "string") return false;
+  const trimmed = input.trim();
+  if (!trimmed) return false;
+  const lower = trimmed.toLowerCase();
+  if (HTML_LIKE_MARKERS.some((marker) => lower.startsWith(marker))) return true;
+  // Heuristic: contains both opening and closing angle brackets with tag-like pattern
+  return /<[^>]+>/.test(trimmed) && /<\/[^>]+>/.test(trimmed);
+}
+
+function safeJsonParse(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+function extractAgentName(item: any): string | undefined {
+  return item?.agent?.name ?? item?.agent?.id ?? undefined;
+}
+
+function extractReasoningText(rawItem: any): string {
+  const segments: string[] = [];
+  if (Array.isArray(rawItem?.content)) {
+    for (const part of rawItem.content) {
+      if (part?.type === "input_text" && typeof part?.text === "string") {
+        segments.push(part.text);
+      }
+    }
+  }
+  if (Array.isArray(rawItem?.rawContent)) {
+    for (const part of rawItem.rawContent) {
+      if (typeof part?.text === "string") {
+        segments.push(part.text);
+      }
+    }
+  }
+  return segments.join("\n").trim();
+}
+
+function extractHtmlFromToolOutput(output: unknown): string | null {
+  if (!output) return null;
+  if (typeof output === "string") {
+    const trimmed = output.trim();
+    if (!trimmed) return null;
+    if (looksLikeHtml(trimmed)) return trimmed;
+    const parsed = safeJsonParse(trimmed);
+    if (parsed !== trimmed) {
+      return extractHtmlFromToolOutput(parsed);
+    }
+    return null;
+  }
+  if (typeof output === "object") {
+    const obj = output as Record<string, unknown>;
+    if (typeof obj.html === "string" && obj.html.trim()) {
+      return obj.html;
+    }
+    if (typeof obj.code === "string" && obj.code.trim() && looksLikeHtml(obj.code)) {
+      return obj.code;
+    }
+    if (typeof obj.content === "string" && obj.content.trim() && looksLikeHtml(obj.content)) {
+      return obj.content;
+    }
+  }
+  return null;
+}
+
+function serializeRunItems(items: RunItem[]): SerializedRunItem[] {
+  const serialized: SerializedRunItem[] = [];
+
+  for (const item of items) {
+    const rawItem = (item as any)?.rawItem;
+    const agentName = extractAgentName(item);
+    const type = (item as any)?.type as string | undefined;
+
+    switch (type) {
+      case "message_output_item": {
+        const text = typeof (item as any)?.content === "string" ? (item as any).content : "";
+        serialized.push({
+          type: "message",
+          text,
+          agent: agentName,
+          isHtml: looksLikeHtml(text),
+        });
+        break;
+      }
+      case "reasoning_item": {
+        const reasoningText = extractReasoningText(rawItem);
+        if (reasoningText) {
+          serialized.push({
+            type: "reasoning",
+            text: reasoningText,
+            agent: agentName,
+          });
+        }
+        break;
+      }
+      case "tool_call_item": {
+        const name = rawItem?.name ?? "unknown_tool";
+        const parsedArgs = safeJsonParse(rawItem?.arguments);
+        serialized.push({
+          type: "tool_call",
+          name,
+          arguments: parsedArgs,
+          agent: agentName,
+        });
+        break;
+      }
+      case "tool_call_output_item": {
+        const name = rawItem?.name ?? "unknown_tool";
+        const output = (item as any)?.output ?? rawItem?.output;
+        serialized.push({
+          type: "tool_result",
+          name,
+          output,
+          agent: agentName,
+          html: extractHtmlFromToolOutput(output),
+        });
+        break;
+      }
+      case "handoff_call_item": {
+        serialized.push({
+          type: "handoff",
+          agent: agentName,
+          description: rawItem?.content ?? undefined,
+        });
+        break;
+      }
+      case "handoff_output_item": {
+        serialized.push({
+          type: "handoff",
+          agent: agentName,
+          description: rawItem?.content ?? undefined,
+        });
+        break;
+      }
+      case "tool_approval_item": {
+        serialized.push({
+          type: "tool_approval",
+          agent: agentName,
+          name: rawItem?.name,
+          status: rawItem?.status,
+        });
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  return serialized;
+}
 
 function guardrailsHasTripwire(results: GuardrailResult[] | undefined) {
   return (results ?? []).some((r) => r?.tripwireTriggered === true);
@@ -423,6 +619,8 @@ export interface WorkflowResult {
   output_text: string;
   stage: "fail" | "plan" | "build";
   guardrails: GuardrailOutput;
+  items: SerializedRunItem[];
+  html?: string;
 }
 
 export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResult> => {
@@ -465,6 +663,7 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
       output_text: surbeefailResultTemp.finalOutput,
       stage: "fail",
       guardrails: guardrailsOutput,
+      items: serializeRunItems(surbeefailResultTemp.newItems),
     };
   }
 
@@ -483,6 +682,18 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
   if (categorizeResult.output_parsed.mode === "BUILD") {
     const surbeebuilderResultTemp = await runner.run(surbeebuilder, [...conversationHistory]);
     conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
+    const serializedItems = serializeRunItems(surbeebuilderResultTemp.newItems);
+    const htmlFromTool =
+      serializedItems
+        .filter(
+          (item): item is Extract<SerializedRunItem, { type: "tool_result" }> =>
+            item.type === "tool_result" && item.name === "buildHtmlCode" && typeof item.html === "string"
+        )
+        .map((item) => item.html!)
+        .pop() ??
+      (typeof surbeebuilderResultTemp.finalOutput === "string" && looksLikeHtml(surbeebuilderResultTemp.finalOutput)
+        ? surbeebuilderResultTemp.finalOutput
+        : undefined);
 
     if (!surbeebuilderResultTemp.finalOutput) {
       throw new Error("Agent result is undefined");
@@ -492,12 +703,15 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
       output_text: surbeebuilderResultTemp.finalOutput,
       stage: "build",
       guardrails: guardrailsOutput,
+      items: serializedItems,
+      html: htmlFromTool,
     };
   }
 
   if (categorizeResult.output_parsed.mode === "ASK") {
     const surbeeplannerResultTemp = await runner.run(surbeeplanner, [...conversationHistory]);
     conversationHistory.push(...surbeeplannerResultTemp.newItems.map((item) => item.rawItem));
+    const serializedItems = serializeRunItems(surbeeplannerResultTemp.newItems);
 
     if (!surbeeplannerResultTemp.finalOutput) {
       throw new Error("Agent result is undefined");
@@ -506,6 +720,18 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
     if (approvalRequest("Should we proceed with this plan?")) {
       const surbeebuilderResultTemp = await runner.run(surbeebuilder, [...conversationHistory]);
       conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
+      const builderItems = serializeRunItems(surbeebuilderResultTemp.newItems);
+      const htmlFromTool =
+        builderItems
+          .filter(
+            (item): item is Extract<SerializedRunItem, { type: "tool_result" }> =>
+              item.type === "tool_result" && item.name === "buildHtmlCode" && typeof item.html === "string"
+          )
+          .map((item) => item.html!)
+          .pop() ??
+        (typeof surbeebuilderResultTemp.finalOutput === "string" && looksLikeHtml(surbeebuilderResultTemp.finalOutput)
+          ? surbeebuilderResultTemp.finalOutput
+          : undefined);
 
       if (!surbeebuilderResultTemp.finalOutput) {
         throw new Error("Agent result is undefined");
@@ -515,6 +741,8 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
         output_text: surbeebuilderResultTemp.finalOutput,
         stage: "build",
         guardrails: guardrailsOutput,
+        items: [...serializedItems, ...builderItems],
+        html: htmlFromTool,
       };
     }
 
@@ -522,11 +750,13 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
       output_text: surbeeplannerResultTemp.finalOutput,
       stage: "plan",
       guardrails: guardrailsOutput,
+      items: serializedItems,
     };
   }
 
   const surbeeplannerResultTemp = await runner.run(surbeeplanner, [...conversationHistory]);
   conversationHistory.push(...surbeeplannerResultTemp.newItems.map((item) => item.rawItem));
+  const serializedItems = serializeRunItems(surbeeplannerResultTemp.newItems);
 
   if (!surbeeplannerResultTemp.finalOutput) {
     throw new Error("Agent result is undefined");
@@ -535,6 +765,18 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
   if (approvalRequest("Should we proceed with this plan?")) {
     const surbeebuilderResultTemp = await runner.run(surbeebuilder, [...conversationHistory]);
     conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
+    const builderItems = serializeRunItems(surbeebuilderResultTemp.newItems);
+    const htmlFromTool =
+      builderItems
+        .filter(
+          (item): item is Extract<SerializedRunItem, { type: "tool_result" }> =>
+            item.type === "tool_result" && item.name === "buildHtmlCode" && typeof item.html === "string"
+        )
+        .map((item) => item.html!)
+        .pop() ??
+      (typeof surbeebuilderResultTemp.finalOutput === "string" && looksLikeHtml(surbeebuilderResultTemp.finalOutput)
+        ? surbeebuilderResultTemp.finalOutput
+        : undefined);
 
     if (!surbeebuilderResultTemp.finalOutput) {
       throw new Error("Agent result is undefined");
@@ -544,6 +786,8 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
       output_text: surbeebuilderResultTemp.finalOutput,
       stage: "build",
       guardrails: guardrailsOutput,
+      items: [...serializedItems, ...builderItems],
+      html: htmlFromTool,
     };
   }
 
@@ -551,5 +795,6 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
     output_text: surbeeplannerResultTemp.finalOutput,
     stage: "plan",
     guardrails: guardrailsOutput,
+    items: serializedItems,
   };
 };

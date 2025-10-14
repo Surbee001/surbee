@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { ArrowUp, Plus, X, Settings2, Crosshair, Eye, Lightbulb } from "lucide-react";
 import ChatSettingsMenu from "@/components/ui/chat-settings-menu";
+import { ImageViewerModal } from "@/components/ui/image-viewer-modal";
 
 interface ChatInputLightProps {
   onSendMessage: (message: string, images?: string[]) => void;
@@ -19,6 +20,7 @@ interface ChatInputLightProps {
   showSettings?: boolean;
   tokenPercent?: number; // optional, shows token usage next to send
   shouldGlow?: boolean; // optional, adds glow effect to border
+  disableRotatingPlaceholders?: boolean; // optional, disables rotating placeholders
 }
 
 export default function ChatInputLight({ 
@@ -35,17 +37,92 @@ export default function ChatInputLight({
   theme = 'dark',
   showSettings = true,
   tokenPercent,
-  shouldGlow = false
+  shouldGlow = false,
+  disableRotatingPlaceholders = false
 }: ChatInputLightProps) {
   const [chatText, setChatText] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<{ [key: string]: string }>({});
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const contentEditableRef = useRef<HTMLDivElement>(null);
   const chatboxContainerRef = useRef<HTMLDivElement>(null);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const settingsMenuRef = useRef<HTMLDivElement>(null);
+
+  // Rotating placeholders for empty editor state
+  const rotatingPlaceholders = useRef<string[]>([
+    "Ask Surbee to draft a product survey…",
+    "Paste context and generate customer interview questions…",
+    "Upload screenshots and request UX feedback survey…",
+    "Summarize responses and propose next actions…",
+    "Create a churn analysis survey for Pro users…",
+  ]);
+  const [placeholderIndex, setPlaceholderIndex] = useState<number>(0);
+  const placeholderList = useMemo(() => {
+    const fromProp = (placeholder || '').trim();
+    const base = rotatingPlaceholders.current;
+    if (fromProp && !base.includes(fromProp)) {
+      return [fromProp, ...base];
+    }
+    return base;
+  }, [placeholder]);
+
+  // Keep the data-placeholder up to date and rotate while empty
+  useEffect(() => {
+    const node = contentEditableRef.current;
+    if (!node) return;
+
+    // If rotating placeholders are disabled, just use the static placeholder
+    if (disableRotatingPlaceholders) {
+      node.setAttribute("data-placeholder", placeholder);
+      return;
+    }
+
+    // Compute active placeholder from the rotating list (first item may be prop)
+    const activePlaceholder = placeholderList[placeholderIndex % placeholderList.length] || "";
+    node.setAttribute("data-placeholder", activePlaceholder);
+
+    if (chatText.trim().length > 0) return; // do not rotate while typing
+
+    const interval = setInterval(() => {
+      setPlaceholderIndex((idx) => {
+        const next = (idx + 1) % (placeholderList.length + 1); // +1 for the duplicate
+        // Update attribute immediately for snappy UX
+        const nextText = placeholderList[next % placeholderList.length] || "";
+        if (contentEditableRef.current) {
+          contentEditableRef.current.setAttribute("data-placeholder", nextText);
+        }
+        
+        // When we reach the duplicate (end), reset to 0 without animation
+        if (next === placeholderList.length) {
+          // Reset immediately without transition to create seamless loop
+          setTimeout(() => {
+            setPlaceholderIndex(0);
+          }, 0);
+          return placeholderList.length; // Show the duplicate item
+        }
+        
+        return next;
+      });
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [chatText, placeholderList, placeholderIndex, disableRotatingPlaceholders, placeholder]);
+
+  // Update is-editor-empty class based on content
+  useEffect(() => {
+    const node = contentEditableRef.current;
+    if (!node) return;
+
+    if (chatText.trim().length === 0 && files.length === 0) {
+      node.classList.add('is-editor-empty');
+    } else {
+      node.classList.remove('is-editor-empty');
+    }
+  }, [chatText, files]);
 
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
     const text = e.currentTarget.textContent || "";
@@ -101,6 +178,19 @@ export default function ChatInputLight({
       delete next[fileToRemove.name]
       setFilePreviews(next)
     }
+  };
+
+  const handleImageClick = (index: number) => {
+    setCurrentImageIndex(index);
+    setIsImageViewerOpen(true);
+  };
+
+  const handleCloseImageViewer = () => {
+    setIsImageViewerOpen(false);
+  };
+
+  const handleImageIndexChange = (index: number) => {
+    setCurrentImageIndex(index);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -192,7 +282,10 @@ export default function ChatInputLight({
             {files.map((file, index) => (
               <div key={index} className="relative group">
                 {file.type.startsWith("image/") && filePreviews[file.name] && (
-                  <div className="w-16 h-16 rounded-xl overflow-hidden cursor-pointer h-9 w-9 rounded-full border transition-all duration-300">
+                  <div 
+                    className="w-16 h-16 rounded-xl overflow-hidden cursor-pointer border transition-all duration-300 hover:scale-105"
+                    onClick={() => handleImageClick(index)}
+                  >
                     <img
                       src={filePreviews[file.name]}
                       alt={file.name}
@@ -203,7 +296,7 @@ export default function ChatInputLight({
                         e.stopPropagation();
                         handleRemoveFile(index);
                       }}
-                      className="absolute top-1 right-1 rounded-full bg-black/70 p-0.5 opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 rounded-full bg-black/70 p-0.5 opacity-100 transition-opacity hover:bg-black/90"
                     >
                       <X className="h-3 w-3 text-white" />
                     </button>
@@ -248,15 +341,47 @@ export default function ChatInputLight({
         <div className="flex flex-col flex-1 min-h-0">
           <div className="flex-1 min-h-0 px-6" style={{ paddingTop: (files.length > 0 || selectedElement) ? '0.75rem' : '1rem' }}>
           <form id="prompt">
-            <div className={`w-full leading-[22px] text-sm max-sm:text-[14px] resize-none bg-transparent focus:outline-none border-none ${theme === 'white' ? 'placeholder:text-gray-500' : 'placeholder:text-gray-400'}`}>
-              <div className={
-                `[&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[60px] [&_.ProseMirror.is-editor-empty]:before:content-[attr(data-placeholder)] [&_.ProseMirror.is-editor-empty]:before:float-left [&_.ProseMirror.is-editor-empty]:before:pointer-events-none [&_.ProseMirror.is-editor-empty]:before:h-0 [&_.ProseMirror.is-editor-empty]:before:absolute [&_.ProseMirror.is-editor-empty]:before:top-0 [&_.ProseMirror.is-editor-empty]:before:left-0` + 
-                (theme === 'white' 
-                  ? ' [&_.ProseMirror.is-editor-empty]:before:text-gray-500' 
-                  : ' [&_.ProseMirror.is-editor-empty]:before:text-gray-400')
-              }>
+            <div className={`relative w-full leading-[22px] text-sm max-sm:text-[14px] resize-none bg-transparent focus:outline-none border-none`}>
+              {/* Animated rotating placeholder overlay (shown only when empty and rotating enabled) */}
+              {chatText.trim().length === 0 && !disableRotatingPlaceholders && (
                 <div
-                  className="tiptap ProseMirror ProseMirror-focused"
+                  className={`pointer-events-none absolute left-0 top-0 w-full select-none px-0 pt-0 overflow-hidden ${theme === 'white' ? 'text-gray-500' : 'text-gray-400'}`}
+                  style={{
+                    letterSpacing: "-0.01em",
+                    fontWeight: 400,
+                    fontSize: "1rem",
+                    lineHeight: "1.5rem",
+                    height: "1.5rem", // Fixed height to contain one line
+                  }}
+                >
+                  <div
+                    className={`transition-transform ease-in-out duration-500 ${
+                      placeholderIndex === placeholderList.length ? 'transition-none' : ''
+                    }`}
+                    style={{
+                      transform: `translateY(calc(-${placeholderIndex} * 1.5rem))`,
+                    }}
+                  >
+                    {/* Render all placeholders plus one extra at the end for seamless loop */}
+                    {[...placeholderList, placeholderList[0]].map((text, i) => (
+                      <div
+                        key={`${text}-${i}`}
+                        className="overflow-hidden text-ellipsis whitespace-nowrap"
+                        style={{ 
+                          height: "1.5rem",
+                          display: "flex",
+                          alignItems: "center"
+                        }}
+                      >
+                        {text}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className={`[&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[60px]`}>
+                <div
+                  className={`tiptap ProseMirror ProseMirror-focused ${disableRotatingPlaceholders ? '[&.is-editor-empty]:before:content-[attr(data-placeholder)] [&.is-editor-empty]:before:text-gray-400 [&.is-editor-empty]:before:float-left [&.is-editor-empty]:before:pointer-events-none [&.is-editor-empty]:before:h-0 [&.is-editor-empty]:before:absolute [&.is-editor-empty]:before:top-0 [&.is-editor-empty]:before:left-0' : ''}`}
                   contentEditable={!isInputDisabled}
                   suppressContentEditableWarning
                   role="textbox"
@@ -278,6 +403,11 @@ export default function ChatInputLight({
                     pointerEvents: isInputDisabled ? "none" : "auto",
                     caretColor: theme === 'white' ? "rgb(0, 0, 0)" : "rgb(255, 255, 255)",
                     fontFamily: "var(--font-epilogue), sans-serif",
+                    // Additional subtle refinements to mirror provided textarea styles
+                    letterSpacing: "-0.01em",
+                    fontWeight: 400,
+                    fontSize: "1rem",
+                    lineHeight: "1.5rem",
                   }}
                   ref={contentEditableRef}
                   onInput={handleInput}
@@ -337,35 +467,8 @@ export default function ChatInputLight({
                   )}
                 </button>
               )}
-              {onToggleAskMode && (
-                <button
-                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer border ${
-                    isAskMode 
-                      ? (theme === 'white' ? 'border-gray-300 bg-black text-white' : 'border-zinc-700/40 bg-white text-black') 
-                      : (theme === 'white' ? 'border-gray-300 text-gray-700 hover:text-black hover:bg-black/5' : 'border-zinc-700/40 text-gray-300 hover:text-white hover:bg-white/5')
-                  }`}
-                  type="button"
-                  disabled={isInputDisabled}
-                  onClick={onToggleAskMode}
-                  title={isAskMode ? 'Ask mode: on' : 'Ask mode: off'}
-                >
-                  <Lightbulb className="h-3 w-3" />
-                  <span>Ask</span>
-                </button>
-              )}
             </div>
             <div className="flex flex-row items-center gap-2 flex-shrink-0">
-              {typeof tokenPercent === 'number' && !isNaN(tokenPercent) && (
-                <div className={`${theme === 'white' ? 'bg-black/5 border-gray-300 text-gray-700' : 'bg-white/5 border-white/10 text-gray-300'} flex items-center gap-2 px-2 py-1 rounded-md border`}
-                  title="Approximate context usage"
-                >
-                  <span className="text-xs" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>{tokenPercent.toFixed(1)}%</span>
-                  <div className="relative w-4 h-4">
-                    <div className={`${theme === 'white' ? 'border-gray-300/60' : 'border-white/20'} absolute inset-0 rounded-full border`} />
-                    <div className="absolute inset-0 rounded-full" style={{ background: `conic-gradient(#9ca3af ${Math.max(0, Math.min(100, tokenPercent)) * 3.6}deg, transparent 0deg)` }} />
-                  </div>
-                </div>
-              )}
               <button
                 className={`flex justify-center items-center ease-in transition-all duration-150 cursor-pointer rounded-full ${
                   chatText.trim() && !isInputDisabled 
@@ -387,6 +490,15 @@ export default function ChatInputLight({
           </div>
         </div>
       </div>
+      
+      {/* Image Viewer Modal */}
+      <ImageViewerModal
+        isOpen={isImageViewerOpen}
+        onClose={handleCloseImageViewer}
+        images={Object.values(filePreviews)}
+        currentIndex={currentImageIndex}
+        onIndexChange={handleImageIndexChange}
+      />
     </div>
   );
 }

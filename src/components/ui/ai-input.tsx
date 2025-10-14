@@ -35,6 +35,8 @@ export function AIInput({
   const [filePreviews, setFilePreviews] = useState<{ [key: string]: string }>({});
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
+	// Static placeholder for AIInput; rotation is handled in ChatInputLight
+
   const handleReset = () => {
     if (!inputValue.trim() && files.length === 0) return;
     onSubmit?.(inputValue, Object.values(filePreviews).slice(0, 10));
@@ -43,6 +45,8 @@ export function AIInput({
     setFilePreviews({});
     adjustHeight(true);
   };
+
+	// No placeholder rotation here; keep behavior simple for AIInput
 
   // Check for content overflow when input changes
   useEffect(() => {
@@ -155,12 +159,13 @@ export function AIInput({
         )}
 
         <div className="flex-1 min-h-0 overflow-hidden px-3.5 pt-3">
-            <Textarea
+				<Textarea
               id={id}
-              placeholder={placeholder}
+					placeholder={placeholder}
               className={cn(
-                "bg-transparent border-none rounded-full",
-                "placeholder:text-gray-400",
+						"bg-transparent border-none rounded-full",
+						// Requested placeholder style additions
+						"placeholder:text-primary-60 !text-base",
                 "text-theme-primary text-wrap",
                 "overflow-y-auto resize-none",
                 "focus-visible:ring-0 focus-visible:ring-offset-0",
@@ -170,19 +175,20 @@ export function AIInput({
                 !fixedHeight ? `max-h-[${maxHeight}px]` : "",
                 "[&::-webkit-resizer]:hidden"
               )}
-              style={{
-                position: "relative",
-                whiteSpace: "break-spaces",
-                overflowWrap: "break-word",
-                fontVariantLigatures: "none",
-                fontFeatureSettings: '"liga" 0',
-                minHeight: "60px",
-                outline: "transparent solid 2px",
-                outlineOffset: "2px",
-                color: "rgb(255, 255, 255)",
-                caretColor: "rgb(255, 255, 255)",
-                fontFamily: "Segoe UI, sans-serif",
-              }}
+					style={{
+						position: "relative",
+						whiteSpace: "break-spaces",
+						overflowWrap: "break-word",
+						fontVariantLigatures: "none",
+						fontFeatureSettings: '"liga" 0',
+						minHeight: "60px",
+						outline: "transparent solid 2px",
+						outlineOffset: "2px",
+						color: "rgb(255, 255, 255)",
+						caretColor: "rgb(255, 255, 255)",
+						fontFamily: "Segoe UI, sans-serif",
+						// Keep AIInput styles minimal; ChatInputLight mirrors the provided snippet
+					}}
               ref={textareaRef}
               value={inputValue}
               onChange={(e) => {
