@@ -1,4 +1,4 @@
-import { tool, webSearchTool, Agent, AgentInputItem, Runner, RunItem } from "@openai/agents";
+import { tool, webSearchTool, Agent, AgentInputItem, Runner, RunItem, RunStreamEvent } from "@openai/agents";
 import { z } from "zod";
 import { OpenAI } from "openai";
 import { runGuardrails } from "@openai/guardrails";
@@ -74,7 +74,7 @@ const guardrailsConfig = {
 
 const context = { guardrailLlm: client };
 
-type SerializedRunItem =
+export type SerializedRunItem =
   | {
       type: "message";
       text: string;
@@ -623,7 +623,15 @@ export interface WorkflowResult {
   html?: string;
 }
 
-export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResult> => {
+export interface WorkflowRunOptions {
+  onProgress?: (message: string) => void | Promise<void>;
+  onItemStream?: (item: SerializedRunItem) => void | Promise<void>;
+}
+
+export const runWorkflow = async (
+  workflow: WorkflowInput,
+  options: WorkflowRunOptions = {}
+): Promise<WorkflowResult> => {
   const conversationHistory: AgentInputItem[] = [
     {
       role: "user",
@@ -643,6 +651,72 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
     },
   });
 
+  const { onProgress, onItemStream } = options;
+  const seenRunItems = new Set<RunItem>();
+
+  const notifyProgress = async (message?: string | null) => {
+    if (!message || !onProgress) return;
+    await onProgress(message);
+  };
+
+  const emitRunItem = async (runItem: RunItem) => {
+    if (!onItemStream || seenRunItems.has(runItem)) return;
+    seenRunItems.add(runItem);
+    const serialized = serializeRunItems([runItem]);
+    for (const item of serialized) {
+      await onItemStream(item);
+    }
+  };
+
+  const executeAgent = async (
+    agent: Agent<any, any>,
+    input: AgentInputItem[],
+    progressLabel?: string
+  ) => {
+    if (progressLabel) {
+      await notifyProgress(progressLabel);
+    }
+
+    if (onItemStream) {
+      const streamResult = await runner.run(agent, input, { stream: true });
+      
+      // Process events in real-time as they arrive
+      for await (const event of streamResult as AsyncIterable<RunStreamEvent>) {
+        if (event?.type === "run_item_stream_event") {
+          await emitRunItem(event.item);
+        } else if (event?.type === "agent_updated_stream_event") {
+          const name = (event.agent as any)?.name;
+          if (name) {
+            await notifyProgress(`Switched to ${name}`);
+          }
+        }
+      }
+
+      if ("completed" in streamResult && streamResult.completed) {
+        try {
+          await streamResult.completed;
+        } catch {
+          // Ignore completion errors here; downstream logic will surface them via thrown exceptions.
+        }
+      }
+
+      // Emit any remaining items after stream completes
+      for (const item of streamResult.newItems ?? []) {
+        if (!seenRunItems.has(item)) {
+          await emitRunItem(item);
+        }
+      }
+
+      return streamResult;
+    }
+
+    const result = await runner.run(agent, input);
+    for (const item of result.newItems ?? []) {
+      await emitRunItem(item);
+    }
+    return result;
+  };
+
   const guardrailsInputtext = workflow.input_as_text;
   const guardrailsResult = await runGuardrails(guardrailsInputtext, guardrailsConfig, context);
   const guardrailsHastripwire = guardrailsHasTripwire(guardrailsResult as GuardrailResult[]);
@@ -652,7 +726,11 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
     : { safe_text: guardrailsAnonymizedtext ?? guardrailsInputtext };
 
   if (guardrailsHastripwire) {
-    const surbeefailResultTemp = await runner.run(surbeefail, []);
+    const surbeefailResultTemp = await executeAgent(
+      surbeefail,
+      [],
+      "Guardrail triggered - responding safely..."
+    );
     conversationHistory.push(...surbeefailResultTemp.newItems.map((item) => item.rawItem));
 
     if (!surbeefailResultTemp.finalOutput) {
@@ -667,7 +745,11 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
     };
   }
 
-  const categorizeResultTemp = await runner.run(categorize, [...conversationHistory]);
+  const categorizeResultTemp = await executeAgent(
+    categorize,
+    [...conversationHistory],
+    "Classifying request intent..."
+  );
   conversationHistory.push(...categorizeResultTemp.newItems.map((item) => item.rawItem));
 
   if (!categorizeResultTemp.finalOutput) {
@@ -680,7 +762,11 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
   };
 
   if (categorizeResult.output_parsed.mode === "BUILD") {
-    const surbeebuilderResultTemp = await runner.run(surbeebuilder, [...conversationHistory]);
+    const surbeebuilderResultTemp = await executeAgent(
+      surbeebuilder,
+      [...conversationHistory],
+      "Building survey experience..."
+    );
     conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
     const serializedItems = serializeRunItems(surbeebuilderResultTemp.newItems);
     const htmlFromTool =
@@ -709,7 +795,11 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
   }
 
   if (categorizeResult.output_parsed.mode === "ASK") {
-    const surbeeplannerResultTemp = await runner.run(surbeeplanner, [...conversationHistory]);
+    const surbeeplannerResultTemp = await executeAgent(
+      surbeeplanner,
+      [...conversationHistory],
+      "Drafting structured plan..."
+    );
     conversationHistory.push(...surbeeplannerResultTemp.newItems.map((item) => item.rawItem));
     const serializedItems = serializeRunItems(surbeeplannerResultTemp.newItems);
 
@@ -718,7 +808,11 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
     }
 
     if (approvalRequest("Should we proceed with this plan?")) {
-      const surbeebuilderResultTemp = await runner.run(surbeebuilder, [...conversationHistory]);
+      const surbeebuilderResultTemp = await executeAgent(
+        surbeebuilder,
+        [...conversationHistory],
+        "Building survey experience..."
+      );
       conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
       const builderItems = serializeRunItems(surbeebuilderResultTemp.newItems);
       const htmlFromTool =
@@ -754,7 +848,11 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
     };
   }
 
-  const surbeeplannerResultTemp = await runner.run(surbeeplanner, [...conversationHistory]);
+  const surbeeplannerResultTemp = await executeAgent(
+    surbeeplanner,
+    [...conversationHistory],
+    "Drafting structured plan..."
+  );
   conversationHistory.push(...surbeeplannerResultTemp.newItems.map((item) => item.rawItem));
   const serializedItems = serializeRunItems(surbeeplannerResultTemp.newItems);
 
@@ -763,7 +861,11 @@ export const runWorkflow = async (workflow: WorkflowInput): Promise<WorkflowResu
   }
 
   if (approvalRequest("Should we proceed with this plan?")) {
-    const surbeebuilderResultTemp = await runner.run(surbeebuilder, [...conversationHistory]);
+    const surbeebuilderResultTemp = await executeAgent(
+      surbeebuilder,
+      [...conversationHistory],
+      "Building survey experience..."
+    );
     conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
     const builderItems = serializeRunItems(surbeebuilderResultTemp.newItems);
     const htmlFromTool =

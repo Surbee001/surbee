@@ -182,7 +182,7 @@ export default function FramerBlogHero() {
                   }}
                 >
                   <h3
-                    className="framer-text framer-styles-preset-1fs9x8x font-medium leading-[130%] tracking-15"
+                    className="framer-text framer-styles-preset-1fs9x8x font-medium leading-[130%]"
                     style={{
                       boxSizing: "border-box",
                       WebkitFontSmoothing: "inherit",
@@ -195,7 +195,7 @@ export default function FramerBlogHero() {
                       fontWeight: 500,
                       color: '#0A0A0A',
                       fontSize: "32px",
-                      letterSpacing: '0.015em',
+                      letterSpacing: '-0.04em',
                       textTransform:
                         "var(--framer-blockquote-text-transform, var(--framer-text-transform, none))",
                       textDecorationLine:
@@ -246,6 +246,7 @@ export default function FramerBlogHero() {
                         fontWeight: 500,
                         color: '#0A0A0A',
                         fontSize: '32px',
+                        letterSpacing: '-0.04em',
                         textTransform:
                           "var(--framer-blockquote-text-transform, var(--framer-link-text-transform, var(--framer-text-transform, none)))",
                         cursor: "var(--framer-custom-cursors, pointer)",

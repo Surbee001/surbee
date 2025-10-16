@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronLeft, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, StopCircle, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy } from "lucide-react";
+import { ChevronDown, ChevronLeft, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, StopCircle, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy, Hammer } from "lucide-react";
 import UserNameBadge from "@/components/UserNameBadge";
 import UserMenu from "@/components/ui/user-menu";
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -22,6 +22,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealtime } from '@/contexts/RealtimeContext';
 import { ThinkingDisplay } from '../../../../components/ThinkingUi/components/thinking-display';
+import { ToolCall } from '../../../../components/ThinkingUi/components/tool-call';
 
 interface ThinkingStep {
   id: string;
@@ -151,6 +152,12 @@ export default function ProjectPage() {
   
   const [thinkingHtmlStream, setThinkingHtmlStream] = useState<string>('');
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
+  const [isBuilding, setIsBuilding] = useState(false);
+  const [buildingLabel, setBuildingLabel] = useState('Building survey experience...');
+  const buildingLabelRef = useRef(buildingLabel);
+  useEffect(() => {
+    buildingLabelRef.current = buildingLabel;
+  }, [buildingLabel]);
 
   const [errorBarVisible, setErrorBarVisible] = useState(false);
   const [errorCount, setErrorCount] = useState(0);
@@ -412,6 +419,10 @@ export default function ProjectPage() {
     setIsInputDisabled(false);
     deepSite.setIsAiWorking(false);
     deepSite.setIsThinking(false);
+    setIsBuilding(false);
+    const defaultBuildLabel = 'Building survey experience...';
+    setBuildingLabel(defaultBuildLabel);
+    buildingLabelRef.current = defaultBuildLabel;
   };
 
   const runSurveyBuild = useCallback(async (prompt: string, images?: string[]) => {
@@ -431,6 +442,29 @@ export default function ProjectPage() {
     setIsInputDisabled(true);
     deepSite.setIsAiWorking(true);
     deepSite.setIsThinking(true);
+
+    setIsBuilding(false);
+    const defaultBuildLabel = 'Building survey experience...';
+    setBuildingLabel(defaultBuildLabel);
+    buildingLabelRef.current = defaultBuildLabel;
+    setThinkingHtmlStream('');
+    // Start with empty thinking steps - real agent thinking will populate this in real-time
+    setThinkingSteps([]);
+
+    const appendUniqueStep = (id: string, content: string, status: "thinking" | "complete" = "thinking") => {
+      setThinkingSteps((prev) => {
+        // Check if step with this ID already exists
+        const existingIndex = prev.findIndex((step) => step.id === id);
+        if (existingIndex !== -1) {
+          // Update existing step
+          const updated = [...prev];
+          updated[existingIndex] = { ...updated[existingIndex], content, status };
+          return updated;
+        }
+        // Add new step
+        return [...prev, { id, content, status }];
+      });
+    };
 
     try {
       const response = await fetch('/api/agents/surbee', {
@@ -476,19 +510,47 @@ export default function ProjectPage() {
               try {
                 const ev = JSON.parse(payload);
                 if (ev.type === 'reasoning' && ev.text) {
-                  setThinkingSteps((prev) => [...prev, { id: ev.id || `${Date.now()}`, content: ev.text, status: 'thinking' }]);
+                  const text = String(ev.text).trim();
+                  if (text.length > 0) {
+                    const lower = text.toLowerCase();
+                    const stepId = ev.id || `reason-${Date.now()}`;
+                    
+                    // Check if this is a building/generation phase
+                    if (lower.includes('switched to surbeebuilder') || 
+                        lower.includes('building survey') ||
+                        lower.includes('generating html')) {
+                      setIsBuilding(true);
+                      setBuildingLabel(text);
+                      buildingLabelRef.current = text;
+                      appendUniqueStep(stepId, text, 'thinking');
+                    } else {
+                      // Add all reasoning steps directly as they stream in
+                      appendUniqueStep(stepId, text, 'thinking');
+                    }
+                  }
                 } else if (ev.type === 'html_chunk' && typeof ev.chunk === 'string') {
                   htmlBuf += ev.chunk;
-                  const improved = htmlBuf.length - lastPushedLen > 100;
-                  if (improved) {
+                  setIsBuilding(true);
+                  if (htmlBuf.length > lastPushedLen) {
                     lastPushedLen = htmlBuf.length;
                     deepSite.updateHtml(htmlBuf);
+                    setThinkingHtmlStream(htmlBuf);
                   }
                 } else if (ev.type === 'complete') {
-                  // push final buffer if any remainder
                   if (htmlBuf.length > lastPushedLen) {
                     deepSite.updateHtml(htmlBuf);
+                    setThinkingHtmlStream(htmlBuf);
                   }
+                  const finalLabel = 'Build complete.';
+                  setBuildingLabel(finalLabel);
+                  buildingLabelRef.current = finalLabel;
+                  // Mark all thinking steps as complete
+                  setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
+                  setIsBuilding(false);
+                } else if (ev.type === 'error' && ev.message) {
+                  const errorMessage = String(ev.message);
+                  appendUniqueStep(ev.id || `error-${Date.now()}`, `Error: ${errorMessage}`, 'thinking');
+                  setIsBuilding(false);
                 }
               } catch {
                 // ignore malformed line
@@ -504,6 +566,12 @@ export default function ProjectPage() {
     } catch (error) {
       console.error('runSurveyBuild error', error);
       const message = error instanceof Error ? error.message : 'Unexpected agent error.';
+      const failureLabel = 'Build interrupted.';
+      setIsBuilding(false);
+      setBuildingLabel(failureLabel);
+      buildingLabelRef.current = failureLabel;
+      // Mark all thinking steps as complete
+      setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
       recordError(message);
       setMessages((prev) => [
         ...prev,
@@ -520,6 +588,7 @@ export default function ProjectPage() {
       setIsInputDisabled(false);
       deepSite.setIsAiWorking(false);
       deepSite.setIsThinking(false);
+      setIsBuilding(false);
       activeRequestRef.current = null;
     }
   }, [deepSite, recordError]);
@@ -900,8 +969,8 @@ export default function ProjectPage() {
             </div>
           ) : (
             /* Chat Messages View */
-            <div className="flex-1 overflow-y-auto px-4 py-4" ref={chatAreaRef}>
-              <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto pl-12 pr-6 py-6" ref={chatAreaRef}>
+              <div className="space-y-6">
                 {messages.length === 0 && !isThinking && (
                   <div></div>
                 )}
@@ -947,15 +1016,26 @@ export default function ProjectPage() {
                     </div>
                   );
                 })}
-                {isThinking && <ThinkingDisplay steps={thinkingSteps} isThinking={isThinking} />}
+                {(isThinking || isBuilding) && (
+                  <>
+                    {isThinking && <ThinkingDisplay steps={thinkingSteps} isThinking={isThinking} />}
+                    {isBuilding && (
+                      <ToolCall
+                        icon={<Hammer className="h-4 w-4 text-muted-foreground" />}
+                        label={buildingLabel}
+                        isActive
+                      />
+                    )}
+                  </>
+                )}
               </div>
             </div>
           )}
           </div>
 
         {/* Chat Input */}
-        <div className="px-1 pr-0 pb-3">
-          <div className="relative ml-1 mr-0">
+        <div className="pl-12 pr-6 pb-4">
+          <div className="relative ml-0 mr-0">
             {/* Credits/Error bar exactly above chatbox */}
             {errorBarVisible && (
               <div className="mb-0.5 -mx-2 flex items-center justify-between rounded-t-[0.625rem] bg-red-900/70 border border-red-800 px-2 py-2" style={{ marginLeft: '-8px', marginRight: '-0px' }}>

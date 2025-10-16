@@ -3,6 +3,7 @@ import { RevealSection, RevealDiv } from "@/components/landing/Reveal";
 import FramerBlogHero from "@/components/landing/FramerBlogHero";
 import { ImageKitProvider, Image as IKImage } from "@imagekit/next";
 import Link from "next/link";
+import FramerBlogCard from "@/components/landing/FramerBlogCard";
 
 // Use Inter globally from RootLayout; ensure inline styles prefer Inter
 
@@ -195,44 +196,19 @@ export default function BlogPage() {
 
           {/* 3x3 Grid of Blog Posts */}
           <RevealSection className="mt-12 px-6 pb-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-              {blogPosts.map((post) => (
-                <Link key={post.id} href={`/landing/blog/${post.id}`} className="group">
-                  <div className="relative overflow-hidden rounded-lg bg-neutral-50 transition-all duration-300">
-                    <div className="aspect-[16/10] w-full overflow-hidden">
-                      <IKImage
-                        src={post.image}
-                        alt={post.title}
-                        width={640}
-                        height={400}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        transformation={[{ width: 640, quality: 85 }]}
-                        loading="lazy"
-                      />
-                    </div>
-                    <div className="p-5 md:p-6">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xs font-medium text-neutral-600 uppercase tracking-wider">
-                          {post.date}
-                        </span>
-                      </div>
-                      <h3 className="font-semibold text-lg md:text-xl leading-tight text-[#171717] mb-2 group-hover:text-neutral-700 transition-colors line-clamp-2">
-                        {post.title}
-                      </h3>
-                      <p className="text-sm text-neutral-600 line-clamp-3">
-                        {post.excerpt}
-                      </p>
-                      <div className="mt-4 flex items-center text-sm font-medium text-[#171717] group-hover:text-neutral-700 transition-colors">
-                        Read more
-                        <svg className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                {blogPosts.map((post) => (
+                  <FramerBlogCard
+                    key={post.id}
+                    href={`/landing/blog/${post.id}`}
+                    imageSrc={post.image}
+                    title={post.title}
+                    date={post.date}
+                  />
+                ))}
+              </div>
+            </ImageKitProvider>
           </RevealSection>
         </main>
       </div>

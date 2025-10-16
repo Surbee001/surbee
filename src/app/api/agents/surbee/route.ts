@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest } from "next/server";
-import { runWorkflow } from "@/lib/agents/surbeeWorkflow";
+import { runWorkflow, type SerializedRunItem } from "@/lib/agents/surbeeWorkflow";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,60 +49,113 @@ export async function POST(request: NextRequest) {
         )
       );
       await writeSSE(writer, encoder, { type: "start" });
-      // Early UX: emit immediate reasoning steps so UI updates right away
-      await writeSSE(writer, encoder, { type: "reasoning", id: `s-${Date.now()}`, text: "Analyzing your request..." });
-      await writeSSE(writer, encoder, { type: "reasoning", id: `s-${Date.now()}-c`, text: "Classifying intent (ASK vs BUILD)..." });
 
-      // Execute workflow (non-streaming) and then emit SSE events progressively
-      const onProgress = async (message: any) => { if (typeof message === "string") { await writeSSE(writer, encoder, { type: "reasoning", id: `prog-${Date.now()}-${Math.random()}`, text: message }); } }; const result = await runWorkflow({ input_as_text: input }, onProgress);
-      // Emit coarse stage information to improve perceived progress
-      try {
-        if (result?.stage === "plan") {
-          await writeSSE(writer, encoder, { type: "reasoning", id: `stage-${Date.now()}`, text: "Intent classified as ASK. Preparing plan..." });
-        } else if (result?.stage === "build") {
-          await writeSSE(writer, encoder, { type: "reasoning", id: `stage-${Date.now()}`, text: "Intent classified as BUILD. Generating HTML..." });
+      // Execute workflow with live streaming callbacks - no hardcoded steps
+      let streamedAny = false;
+      let htmlSent = false;
+      let latestHtml: string | undefined;
+
+      const sendReasoningLines = async (text: string, prefix: string = "r") => {
+        const lines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+        for (const line of lines) {
+          const id = `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
+          await writeSSE(writer, encoder, { type: "reasoning", id, text: line });
         }
-      } catch { /* ignore */ }
+      };
 
-      // Emit reasoning/message items first, skipping any HTML-like messages
-      for (const item of result.items || []) {
-        try {
-          if (item?.type === "reasoning" && typeof item?.text === "string" && item.text.trim()) {
-            // Break long reasoning into line-sized steps to simulate streaming
-            const lines = (item.text as string).split(/\n+/).filter(Boolean);
-            for (const line of lines) {
-              const id = `r-${Math.random().toString(36).slice(2, 9)}`;
-              await writeSSE(writer, encoder, { type: "reasoning", id, text: line });
+      const handleStreamItem = async (item: SerializedRunItem) => {
+        streamedAny = true;
+        if (!item) return;
+
+        if (item.type === "reasoning" && typeof item.text === "string") {
+          await sendReasoningLines(item.text, "reason");
+          return;
+        }
+
+        if (item.type === "message" && typeof item.text === "string" && !item.isHtml) {
+          await sendReasoningLines(item.text, "msg");
+          return;
+        }
+
+        if (item.type === "tool_result") {
+          const htmlCandidate =
+            typeof item.html === "string" && item.html.trim()
+              ? item.html
+              : typeof item.output === "string" && item.output.trim()
+                ? item.output
+                : undefined;
+          if (htmlCandidate && !htmlSent) {
+            latestHtml = htmlCandidate;
+            const chunks = splitIntoChunks(htmlCandidate, 2048);
+            for (let i = 0; i < chunks.length; i++) {
+              await writeSSE(writer, encoder, {
+                type: "html_chunk",
+                chunk: chunks[i],
+                final: i === chunks.length - 1,
+              });
             }
-          } else if (item?.type === "message" && typeof item?.text === "string" && !item?.isHtml) {
-            const lines = (item.text as string).split(/\n+/).filter(Boolean);
-            for (const line of lines) {
-              const id = `m-${Math.random().toString(36).slice(2, 9)}`;
-              await writeSSE(writer, encoder, { type: "reasoning", id, text: line });
-            }
+            htmlSent = true;
           }
-        } catch {
-          // ignore bad item
+        }
+      };
+
+      const result = await runWorkflow(
+        { input_as_text: input },
+        {
+          onProgress: async (message) => {
+            if (typeof message === "string" && message.trim()) {
+              streamedAny = true;
+              await writeSSE(writer, encoder, {
+                type: "reasoning",
+                id: `prog-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+                text: message.trim(),
+              });
+            }
+          },
+          onItemStream: handleStreamItem,
+        }
+      );
+
+      if (!streamedAny) {
+        for (const item of result.items || []) {
+          try {
+            if (item?.type === "reasoning" && typeof item?.text === "string" && item.text.trim()) {
+              await sendReasoningLines(item.text, "reason-fallback");
+            } else if (item?.type === "message" && typeof item?.text === "string" && !item?.isHtml) {
+              await sendReasoningLines(item.text, "msg-fallback");
+            }
+          } catch {
+            // ignore bad item
+          }
         }
       }
 
       // Determine HTML source: prefer tool_result.html; fallback to result.html
-      let html: string | undefined = undefined;
-      for (const item of result.items || []) {
-        if (item?.type === "tool_result" && typeof (item as any)?.html === "string" && (item as any).html.trim()) {
-          html = (item as any).html as string;
+      let html: string | undefined = latestHtml;
+      if (!html) {
+        for (const item of result.items || []) {
+          if (item?.type === "tool_result" && typeof (item as any)?.html === "string" && (item as any).html.trim()) {
+            html = (item as any).html as string;
+          }
         }
       }
       if (!html && typeof result.html === "string" && result.html.trim()) {
         html = result.html;
       }
 
-      if (html && html.trim()) {
-        // Stream HTML progressively in chunks so the client can render into iframe incrementally
+      if (html && !htmlSent) {
         const chunks = splitIntoChunks(html, 2048);
         for (let i = 0; i < chunks.length; i++) {
-          await writeSSE(writer, encoder, { type: "html_chunk", chunk: chunks[i], final: i === chunks.length - 1 });
+          await writeSSE(writer, encoder, {
+            type: "html_chunk",
+            chunk: chunks[i],
+            final: i === chunks.length - 1,
+          });
         }
+        htmlSent = true;
+        latestHtml = html;
+      } else if (!latestHtml && html) {
+        latestHtml = html;
       }
 
       await writeSSE(writer, encoder, { type: "complete" });

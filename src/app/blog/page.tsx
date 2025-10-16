@@ -23,7 +23,7 @@ export default async function BlogPage() {
             <div className="absolute inset-0 bg-black/30" />
             <div className="relative z-10 p-8 md:p-12 text-white max-w-2xl">
               <div className="text-sm uppercase tracking-wide text-white/80 mb-2" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Surbee Blog</div>
-              <h1 className="font-light leading-tight mb-3" style={{ fontSize: '32px', fontFamily: 'var(--font-inter), sans-serif' }}>{hero?.title || 'Surbee Blog'}</h1>
+              <h1 className="font-medium mb-3" style={{ fontSize: '32px', lineHeight: '130%', letterSpacing: '-0.02em', fontFamily: 'var(--font-inter), sans-serif' }}>{hero?.title || 'Surbee Blog'}</h1>
               <p className="text-white/90" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>{hero?.excerpt || 'Stories, product updates, and research on building better surveys and getting higher-quality answers.'}</p>
             </div>
           </div>
