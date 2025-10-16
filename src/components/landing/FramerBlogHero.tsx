@@ -197,8 +197,7 @@ export default function FramerBlogHero() {
                         "var(--framer-blockquote-font-weight, var(--framer-font-weight, 400))",
                       color:
                         "var(--framer-blockquote-text-color, var(--framer-text-color, #000))",
-                      fontSize:
-                        "calc(var(--framer-blockquote-font-size, var(--framer-font-size, 16px)) * var(--framer-font-size-scale, 1))",
+                      fontSize: "32px",
                       letterSpacing:
                         "var(--framer-blockquote-letter-spacing, var(--framer-letter-spacing, 0))",
                       textTransform:
@@ -245,14 +244,12 @@ export default function FramerBlogHero() {
                           "var(--framer-link-text-background-radius, initial)",
                         padding:
                           "var(--framer-link-text-background-padding, initial)",
-                        fontFamily:
-                          "var(--framer-blockquote-font-family, var(--framer-link-font-family, var(--framer-font-family, Inter, Inter Placeholder, sans-serif)))",
+                        fontFamily: 'var(--font-inter), sans-serif',
                         fontStyle:
                           "var(--framer-blockquote-font-style, var(--framer-link-font-style, var(--framer-font-style, normal)))",
                         fontWeight:
                           "var(--framer-blockquote-font-weight, var(--framer-link-font-weight, var(--framer-font-weight, 400)))",
-                        color:
-                          "var(--framer-blockquote-text-color, var(--framer-link-text-color, var(--framer-text-color, #000)))",
+                      color: "#171717",
                         fontSize:
                           "calc(var(--framer-blockquote-font-size, var(--framer-font-size, 16px)) * var(--framer-font-size-scale, 1))",
                         textTransform:
@@ -309,14 +306,12 @@ export default function FramerBlogHero() {
                       margin: "0px",
                       textWrap:
                         "var(--framer-text-wrap-override, var(--framer-text-wrap))",
-                      fontFamily:
-                        "var(--framer-blockquote-font-family, var(--framer-font-family, Inter, Inter Placeholder, sans-serif))",
+                      fontFamily: 'var(--font-inter), sans-serif',
                       fontStyle:
                         "var(--framer-blockquote-font-style, var(--framer-font-style, normal))",
                       fontWeight:
                         "var(--framer-blockquote-font-weight, var(--framer-font-weight, 400))",
-                      color:
-                        "var(--framer-blockquote-text-color, var(--framer-text-color, #000))",
+                      color: "#171717",
                       fontSize:
                         "calc(var(--framer-blockquote-font-size, var(--framer-font-size, 16px)) * var(--framer-font-size-scale, 1))",
                       letterSpacing:
@@ -391,7 +386,7 @@ export default function FramerBlogHero() {
                     }}
                   >
                     <a
-                      className="framer-aAmvA framer-Bizsg framer-13nfm42 framer-v-13nfm42 framer-4m9c82"
+                    className="framer-aAmvA framer-Bizsg framer-13nfm42 framer-v-13nfm42 framer-4m9c82"
                       href="https://www.perplexity.ai/hub/blog/comet-is-now-available-to-everyone-worldwide"
                       tabIndex={0}
                       style={{
@@ -408,12 +403,12 @@ export default function FramerBlogHero() {
                         width: "min-content",
                         display: "flex",
                         position: "relative",
-                        borderRadius: "24px",
-                        backgroundColor:
-                          "var(--token-e16b5190-2890-4417-9114-a85535cee7f9, rgb(251, 250, 244))",
+                        borderRadius: "12px",
+                        backgroundColor: "#0A0A0A",
                         height: "100%",
                         opacity: 1,
                         willChange: "auto",
+                        color: "#ffffff",
                       }}
                     >
                       <div
@@ -444,14 +439,12 @@ export default function FramerBlogHero() {
                             margin: "0px",
                             textWrap:
                               "var(--framer-text-wrap-override, var(--framer-text-wrap))",
-                            fontFamily:
-                              "var(--framer-blockquote-font-family, var(--framer-font-family, Inter, Inter Placeholder, sans-serif))",
+                            fontFamily: 'var(--font-inter), sans-serif',
                             fontStyle:
                               "var(--framer-blockquote-font-style, var(--framer-font-style, normal))",
                             fontWeight:
                               "var(--framer-blockquote-font-weight, var(--framer-font-weight, 400))",
-                            color:
-                              "var(--framer-blockquote-text-color, var(--framer-text-color, #000))",
+                            color: "#ffffff",
                             fontSize:
                               "calc(var(--framer-blockquote-font-size, var(--framer-font-size, 16px)) * var(--framer-font-size-scale, 1))",
                             letterSpacing:
