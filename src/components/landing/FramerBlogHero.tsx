@@ -182,24 +182,20 @@ export default function FramerBlogHero() {
                   }}
                 >
                   <h3
-                    className="framer-text framer-styles-preset-1fs9x8x"
+                    className="framer-text framer-styles-preset-1fs9x8x font-medium leading-[130%] tracking-15"
                     style={{
                       boxSizing: "border-box",
                       WebkitFontSmoothing: "inherit",
                       margin: "0px",
                       textWrap:
                         "var(--framer-text-wrap-override, var(--framer-text-wrap))",
-                      fontFamily:
-                        "var(--framer-blockquote-font-family, var(--framer-font-family, Inter, Inter Placeholder, sans-serif))",
+                      fontFamily: 'var(--font-inter), sans-serif',
                       fontStyle:
                         "var(--framer-blockquote-font-style, var(--framer-font-style, normal))",
-                      fontWeight:
-                        "var(--framer-blockquote-font-weight, var(--framer-font-weight, 400))",
-                      color:
-                        "var(--framer-blockquote-text-color, var(--framer-text-color, #000))",
+                      fontWeight: 500,
+                      color: '#0A0A0A',
                       fontSize: "32px",
-                      letterSpacing:
-                        "var(--framer-blockquote-letter-spacing, var(--framer-letter-spacing, 0))",
+                      letterSpacing: '0.015em',
                       textTransform:
                         "var(--framer-blockquote-text-transform, var(--framer-text-transform, none))",
                       textDecorationLine:
@@ -247,11 +243,9 @@ export default function FramerBlogHero() {
                         fontFamily: 'var(--font-inter), sans-serif',
                         fontStyle:
                           "var(--framer-blockquote-font-style, var(--framer-link-font-style, var(--framer-font-style, normal)))",
-                        fontWeight:
-                          "var(--framer-blockquote-font-weight, var(--framer-link-font-weight, var(--framer-font-weight, 400)))",
-                      color: "#171717",
-                        fontSize:
-                          "calc(var(--framer-blockquote-font-size, var(--framer-font-size, 16px)) * var(--framer-font-size-scale, 1))",
+                        fontWeight: 500,
+                        color: '#0A0A0A',
+                        fontSize: '32px',
                         textTransform:
                           "var(--framer-blockquote-text-transform, var(--framer-link-text-transform, var(--framer-text-transform, none)))",
                         cursor: "var(--framer-custom-cursors, pointer)",

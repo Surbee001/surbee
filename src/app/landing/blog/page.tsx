@@ -1,26 +1,10 @@
 import React from "react";
 import { RevealSection, RevealDiv } from "@/components/landing/Reveal";
 import FramerBlogHero from "@/components/landing/FramerBlogHero";
-import localFont from "next/font/local";
 import { ImageKitProvider, Image as IKImage } from "@imagekit/next";
 import Link from "next/link";
 
-const epilogue = localFont({
-  src: [
-    {
-      path: "../../../../public/fonts/Epilogue-Variable.woff2",
-      weight: "100 900",
-      style: "normal",
-    },
-    {
-      path: "../../../../public/fonts/Epilogue-VariableItalic.woff2",
-      weight: "100 900",
-      style: "italic",
-    },
-  ],
-  variable: "--font-epilogue",
-  display: "swap",
-});
+// Use Inter globally from RootLayout; ensure inline styles prefer Inter
 
 export default function BlogPage() {
   const sidebarWidthClass = "w-56";
@@ -94,27 +78,35 @@ export default function BlogPage() {
   ];
 
   return (
-    <div className={`min-h-screen w-full ${epilogue.variable}`} style={{ backgroundColor: "#FEFFFC", fontFamily: "var(--font-epilogue)" }}>
-      {/* Top Navigation (full-width) with blur */}
-      <nav className="fixed left-0 right-0 top-0 z-40 w-full bg-[#FEFFFC]/70 backdrop-blur supports-[backdrop-filter]:bg-[#FEFFFC]/70">
-        <div className="flex h-16 items-center justify-between gap-4 pl-56 pr-6">
-          <div className="text-2xl text-[#171717] font-semibold tracking-[-0.02em] pl-5 md:pl-8 xl:pl-12 2xl:pl-30">surbee</div>
-          <div className="flex items-center gap-4">
-            <a href="/pricing" className="text-sm text-[#171717] hover:text-neutral-800 transition-all duration-300 ease-out">
-            Pricing
-          </a>
-          <a
-              href="/test-login"
-            className="rounded-full border border-neutral-300 bg-white px-4 py-1.5 text-sm text-[#171717] hover:bg-neutral-100"
-          >
-            Log in
-          </a>
-          <a
-              href="/test-login"
-            className="rounded-full bg-neutral-900 px-4 py-1.5 text-sm text-white hover:bg-black"
-          >
-            Sign up
-          </a>
+    <div className={`min-h-screen w-full`} style={{ backgroundColor: "#FEFFFC", fontFamily: 'var(--font-inter), sans-serif' }}>
+      {/* Top Navigation (match landing) */}
+      <nav className="sticky inset-x-0 top-0 nav-gradient z-50"
+        style={{
+          background: "linear-gradient(#FEFFFC 40%, rgba(254, 255, 252, 0))",
+        }}
+      >
+        <div className="flex h-20 items-center justify-between gap-4 pl-56 pr-6">
+          <div className="text-2xl font-semibold tracking-[-0.02em] pl-5 md:pl-8 xl:pl-12 2xl:pl-30" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>surbee</div>
+          <div className="flex items-center gap-6">
+            <a href="/pricing" className="text-sm hover:text-neutral-800 transition-all duration-300 ease-out" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
+              Pricing
+            </a>
+            <div className="flex items-center gap-2">
+              <a
+                href="/test-login"
+                className="px-4 py-1.5 text-sm font-medium border bg-white text-black hover:bg-neutral-50 transition-all duration-300 ease-out"
+                style={{ fontFamily: 'var(--font-inter), sans-serif', borderRadius: '12px', borderColor: '#e5e7eb' }}
+              >
+                Log in
+              </a>
+              <a
+                href="/test-login"
+                className="px-4 py-1.5 text-sm font-medium bg-black text-white hover:bg-neutral-800 transition-all duration-300 ease-out"
+                style={{ fontFamily: 'var(--font-inter), sans-serif', borderRadius: '12px' }}
+              >
+                Sign up
+              </a>
+            </div>
           </div>
         </div>
       </nav>
@@ -141,31 +133,35 @@ export default function BlogPage() {
                 style={{ width: "calc(100vw - calc(100vw - 100%))" }}
               >
                 <a
-                  className="inline-flex items-center gap-2 whitespace-nowrap shrink-0 outline-none underline-offset-4 hover:text-neutral-800 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
-                  href="/landing"
+                  className="inline-flex items-center gap-2 whitespace-nowrap shrink-0 outline-none underline-offset-4 hover:text-neutral-800 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out font-medium bg-neutral-100 rounded px-2 py-1 -ml-1"
+                  style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}
                 >
                   Surbee
                 </a>
                 <a
                   className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
                   href="/landing#use-cases"
+                  style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                 >
                   Use cases
                 </a>
                 <a
                   className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
                   href="/landing#students"
+                  style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                 >
                   Students
                 </a>
                 <a
                   className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-neutral-400 hover:text-neutral-800 rounded px-2 py-1 -ml-1"
                   href="/landing/privacy"
+                  style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                 >
                   Privacy
                 </a>
                 <a
                   className="inline-flex items-center gap-2 whitespace-nowrap font-medium shrink-0 outline-none underline-offset-4 focus-visible:ring-0 focus-visible:text-neutral-900 p-0 text-[15px] leading-[140%] w-min justify-start h-5 transition-all duration-300 ease-out text-[#171717] font-medium bg-neutral-100 rounded px-2 py-1 -ml-1"
+                  style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                 >
                   Blog
                 </a>
