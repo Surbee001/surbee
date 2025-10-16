@@ -2124,6 +2124,20 @@ body {
   }
 }
 
+/* ThinkingUi shimmering support */
+@keyframes shine {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+.animate-shine {
+  animation: shine 2s linear infinite;
+}
+
 /* Project Card Styles - Updated design */
 /* Colorful text effect */
 .colorful-text {

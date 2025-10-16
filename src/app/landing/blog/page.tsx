@@ -1,5 +1,6 @@
 import React from "react";
 import { RevealSection, RevealDiv } from "@/components/landing/Reveal";
+import HeroBlogSection from "@/components/landing/HeroBlogSection";
 import localFont from "next/font/local";
 import { ImageKitProvider, Image as IKImage } from "@imagekit/next";
 import Link from "next/link";
@@ -93,7 +94,6 @@ export default function BlogPage() {
   ];
 
   return (
-    <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
     <div className={`min-h-screen w-full ${epilogue.variable}`} style={{ backgroundColor: "#FEFFFC", fontFamily: "var(--font-epilogue)" }}>
       {/* Top Navigation (full-width) with blur */}
       <nav className="fixed left-0 right-0 top-0 z-40 w-full bg-[#FEFFFC]/70 backdrop-blur supports-[backdrop-filter]:bg-[#FEFFFC]/70">
@@ -207,37 +207,14 @@ export default function BlogPage() {
           {/* Divider */}
           <div className="h-px w-full bg-neutral-200" />
 
-          {/* Main Blog Post */}
+          {/* Hero Blog Post */}
           <RevealSection className="mt-8 px-6">
-            <div className="relative w-full overflow-hidden rounded-lg">
-              <Link href={`/landing/blog/${mainBlogPost.id}`} className="group block">
-                <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg">
-                  <IKImage
-                    src={mainBlogPost.image}
-                    alt={mainBlogPost.title}
-                    width={1920}
-                    height={1080}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    transformation={[{ width: 1536, quality: 85 }]}
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  <div className="absolute bottom-0 left-0 p-6 md:p-8 text-white">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-sm font-medium text-white/90">Featured</span>
-                      <span className="text-sm text-white/60">•</span>
-                      <span className="text-sm text-white/90">{mainBlogPost.date}</span>
-                    </div>
-                    <h2 className="font-semibold text-2xl md:text-3xl lg:text-4xl leading-tight mb-3 group-hover:text-white/90 transition-colors">
-                      {mainBlogPost.title}
-                    </h2>
-                    <p className="text-base md:text-lg text-white/80 max-w-3xl">
-                      {mainBlogPost.excerpt}
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            </div>
+            <HeroBlogSection
+              post={{
+                ...mainBlogPost,
+                featured: true
+              }}
+            />
           </RevealSection>
 
           {/* Divider */}
@@ -287,6 +264,5 @@ export default function BlogPage() {
         </main>
       </div>
     </div>
-    </ImageKitProvider>
   );
 }

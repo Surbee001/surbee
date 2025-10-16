@@ -21,7 +21,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealtime } from '@/contexts/RealtimeContext';
-import { ThinkingDisplay } from '@/components/ui/thinking-ui';
+import { ThinkingDisplay } from '../../../../components/ThinkingUi/components/thinking-display';
 
 interface ThinkingStep {
   id: string;
@@ -454,6 +454,8 @@ export default function ProjectPage() {
 
       const decoder = new TextDecoder();
       let buffer = '';
+      let htmlBuf = '';
+      let lastPushedLen = 0;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -465,13 +467,32 @@ export default function ProjectPage() {
 
         let boundary = buffer.indexOf('\n');
         while (boundary !== -1) {
-          const chunk = buffer.slice(0, boundary);
+          const line = buffer.slice(0, boundary);
           buffer = buffer.slice(boundary + 1);
 
-          if (chunk.startsWith('data: ')) {
-            const data = JSON.parse(chunk.slice(6));
-            if (data.type === 'reasoning') {
-              setThinkingSteps((prev) => [...prev, { id: data.id, content: data.text, status: 'thinking' }]);
+          if (line.startsWith('data: ')) {
+            const payload = line.slice(6);
+            if (payload.trim().length > 0) {
+              try {
+                const ev = JSON.parse(payload);
+                if (ev.type === 'reasoning' && ev.text) {
+                  setThinkingSteps((prev) => [...prev, { id: ev.id || `${Date.now()}`, content: ev.text, status: 'thinking' }]);
+                } else if (ev.type === 'html_chunk' && typeof ev.chunk === 'string') {
+                  htmlBuf += ev.chunk;
+                  const improved = htmlBuf.length - lastPushedLen > 100;
+                  if (improved) {
+                    lastPushedLen = htmlBuf.length;
+                    deepSite.updateHtml(htmlBuf);
+                  }
+                } else if (ev.type === 'complete') {
+                  // push final buffer if any remainder
+                  if (htmlBuf.length > lastPushedLen) {
+                    deepSite.updateHtml(htmlBuf);
+                  }
+                }
+              } catch {
+                // ignore malformed line
+              }
             }
           }
 
