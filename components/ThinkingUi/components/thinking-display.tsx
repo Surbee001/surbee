@@ -2,7 +2,7 @@
 import { cn } from "@/lib/utils"
 
 import { ShiningText } from "./shining-text"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 
 interface ThinkingStep {
   id: string
@@ -17,14 +17,41 @@ interface ThinkingDisplayProps {
   className?: string
 }
 
-export function ThinkingDisplay({ steps, duration = 0, isThinking = false, className }: ThinkingDisplayProps) {
+export function ThinkingDisplay({ steps, isThinking = false, className }: ThinkingDisplayProps) {
   const [isOpen, setIsOpen] = useState(true)
+  const [elapsedTime, setElapsedTime] = useState(0)
+  const startTimeRef = useRef<number | null>(null)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
-    if (!isThinking) {
+    if (isThinking && !startTimeRef.current) {
+      // Start tracking time when thinking begins
+      startTimeRef.current = Date.now()
+      intervalRef.current = setInterval(() => {
+        if (startTimeRef.current) {
+          setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000))
+        }
+      }, 100)
+    } else if (!isThinking && startTimeRef.current) {
+      // Stop tracking when thinking ends
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+      const finalTime = Math.floor((Date.now() - startTimeRef.current) / 1000)
+      setElapsedTime(finalTime)
       setIsOpen(false)
     }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
+    }
   }, [isThinking])
+
+  // Combine all step content into one continuous text for shimmer effect
+  const combinedText = steps.map(step => step.content).join(" • ")
 
   return (
     <div className={cn("relative my-1 min-h-6", className)}>
@@ -36,7 +63,7 @@ export function ThinkingDisplay({ steps, duration = 0, isThinking = false, class
           {isThinking ? (
             <ShiningText text="Thinking..." className="text-sm" />
           ) : (
-            <span>{`Thought for ${duration}s`}</span>
+            <span>{`Thought for ${elapsedTime}s`}</span>
           )}
         </button>
 
@@ -48,15 +75,21 @@ export function ThinkingDisplay({ steps, duration = 0, isThinking = false, class
         >
           <div className="relative z-0">
             <div className="relative flex h-full flex-col" style={{ margin: "4px 0px" }}>
-              {steps.map((step, index) => (
-                <ThinkingStep
-                  key={step.id}
-                  content={step.content}
-                  status={step.status}
-                  isLast={index === steps.length - 1}
-                  zIndex={index}
-                />
-              ))}
+              {isThinking && combinedText ? (
+                <div className="text-sm text-muted-foreground break-words">
+                  <ShiningText text={combinedText} />
+                </div>
+              ) : (
+                steps.map((step, index) => (
+                  <ThinkingStep
+                    key={step.id}
+                    content={step.content}
+                    status={step.status}
+                    isLast={index === steps.length - 1}
+                    zIndex={index}
+                  />
+                ))
+              )}
             </div>
           </div>
         </div>

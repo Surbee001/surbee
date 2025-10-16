@@ -159,31 +159,8 @@ export default function ProjectPage() {
     buildingLabelRef.current = buildingLabel;
   }, [buildingLabel]);
 
-  const [errorBarVisible, setErrorBarVisible] = useState(false);
-  const [errorCount, setErrorCount] = useState(0);
-  const [lastErrors, setLastErrors] = useState<string[]>([]);
-  const lastTokenIncRef = useRef<number>(0);
-  const lastCreditChargeRef = useRef<number>(0);
-  const refundLastUsage = () => {
-    try {
-      if (lastTokenIncRef.current > 0) {
-        ctxTokensUsedRef.current = Math.max(0, ctxTokensUsedRef.current - lastTokenIncRef.current);
-        const limit = ctxLimitRef.current || GROK_CONTEXT_TOKENS;
-        const pct = ((ctxTokensUsedRef.current % limit) / limit) * 100;
-        setContextPercent(Math.max(0, Math.min(100, Math.round(pct * 10) / 10)));
-        lastTokenIncRef.current = 0;
-      }
-      if (lastCreditChargeRef.current === 1) {
-        setCreditsUsed(u => Math.max(0, u - 1));
-        lastCreditChargeRef.current = 0;
-      }
-    } catch {}
-  };
   const recordError = (err: string) => {
-    setErrorBarVisible(true);
-    setLastErrors(prev => [err, ...prev].slice(0, 5));
-    setErrorCount(c => c + 1);
-    refundLastUsage();
+    console.error('[Error]', err);
   };
 
   // Context usage meter for Grok-4 with 2 million token limit
@@ -395,16 +372,6 @@ export default function ProjectPage() {
 
 
 
-  // Fix errors helper for the error bar
-  const handleFixErrors = async () => {
-    try {
-      setErrorBarVisible(false);
-      const prompt = 'Please fix any errors in the current HTML, validate structure and accessibility, and ensure it renders without runtime errors.';
-      await handleSendMessage(prompt);
-    } catch {
-      // no-op
-    }
-  };
 
 
 
@@ -515,14 +482,13 @@ export default function ProjectPage() {
                     const lower = text.toLowerCase();
                     const stepId = ev.id || `reason-${Date.now()}`;
                     
-                    // Check if this is a building/generation phase
+                    // Check if this is a building/generation phase - set state but DON'T add to thinking steps
                     if (lower.includes('switched to surbeebuilder') || 
                         lower.includes('building survey') ||
                         lower.includes('generating html')) {
                       setIsBuilding(true);
                       setBuildingLabel(text);
                       buildingLabelRef.current = text;
-                      appendUniqueStep(stepId, text, 'thinking');
                     } else {
                       // Add all reasoning steps directly as they stream in
                       appendUniqueStep(stepId, text, 'thinking');
@@ -1034,22 +1000,8 @@ export default function ProjectPage() {
           </div>
 
         {/* Chat Input */}
-        <div className="pl-12 pr-6 pb-4">
+        <div className="pl-8 pr-4 pb-3">
           <div className="relative ml-0 mr-0">
-            {/* Credits/Error bar exactly above chatbox */}
-            {errorBarVisible && (
-              <div className="mb-0.5 -mx-2 flex items-center justify-between rounded-t-[0.625rem] bg-red-900/70 border border-red-800 px-2 py-2" style={{ marginLeft: '-8px', marginRight: '-0px' }}>
-                <div className="flex items-center gap-2 text-red-200 text-xs">
-                  <span>Errors detected</span>
-                  <span>{errorCount} {errorCount === 1 ? 'error' : 'errors'}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={handleFixErrors} className="px-2 py-0.5 rounded bg-white text-black text-xs font-medium hover:opacity-90">Fix for me</button>
-                  <button onClick={() => setErrorBarVisible(false)} className="text-red-200 hover:text-white text-xs">Close</button>
-                </div>
-              </div>
-            )}
-
             {/* Chat input container to anchor controls to the box itself */}
             <div className="relative">
               <ChatInputLight

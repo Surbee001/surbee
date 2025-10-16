@@ -42,20 +42,26 @@ export default function FramerBlogCard({ href, imageSrc, title, date }: FramerBl
   };
 
   return (
-    <a
-      href={href}
-      className="group flex w-full flex-col gap-5 rounded-2xl bg-[#FEFFFC] p-0 text-inherit no-underline transition-transform duration-300 hover:-translate-y-1"
-    >
+    <a href={href} className="group flex w-full flex-col gap-5 rounded-2xl bg-[#FEFFFC] p-0 text-inherit no-underline transition-transform duration-300">
       <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
         {renderImage()}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex translate-y-6 items-end px-6 pb-6 transition-all duration-300 group-hover:translate-y-0">
-          <span className="text-sm font-semibold uppercase tracking-widest text-white">Read me</span>
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/75 via-black/35 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <span
+            className="text-xl font-medium leading-[1.1] tracking-[-0.04em] text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            style={{ fontFamily: "var(--font-inter), sans-serif" }}
+          >
+            Read Me
+          </span>
         </div>
       </div>
 
       <div className="flex w-full flex-col gap-2 px-2">
-        <h4 className="text-lg font-semibold leading-tight text-neutral-900">{title}</h4>
+        <h4
+          className="text-[26px] font-medium leading-[1.15] tracking-[-0.03em] text-neutral-900"
+          style={{ fontFamily: "var(--font-inter), sans-serif" }}
+        >
+          {title}
+        </h4>
         <p className="text-sm font-medium text-neutral-600">{date}</p>
       </div>
     </a>

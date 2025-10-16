@@ -245,7 +245,7 @@ export default function FramerBlogHero() {
                           "var(--framer-blockquote-font-style, var(--framer-link-font-style, var(--framer-font-style, normal)))",
                         fontWeight: 500,
                         color: '#0A0A0A',
-                        fontSize: '32px',
+                        fontSize: '40px',
                         letterSpacing: '-0.04em',
                         textTransform:
                           "var(--framer-blockquote-text-transform, var(--framer-link-text-transform, var(--framer-text-transform, none)))",
