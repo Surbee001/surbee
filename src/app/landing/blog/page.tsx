@@ -1,6 +1,6 @@
 import React from "react";
 import { RevealSection, RevealDiv } from "@/components/landing/Reveal";
-import HeroBlogSection from "@/components/landing/HeroBlogSection";
+import FramerBlogHero from "@/components/landing/FramerBlogHero";
 import localFont from "next/font/local";
 import { ImageKitProvider, Image as IKImage } from "@imagekit/next";
 import Link from "next/link";
@@ -188,33 +188,10 @@ export default function BlogPage() {
 
         {/* Main Content */}
         <main className={`ml-56 w-full pt-20`}>
-          {/* Blog Title Section */}
-          <RevealSection
-            className="w-full max-w-[1920px] mx-auto px-5 md:px-8 xl:px-12 2xl:px-30 pb-8 pt-8 xl:pb-12 xl:pt-12"
-          >
-            <div className="flex flex-col gap-6">
-              <h1 className='text-[#171717] font-semibold leading-none tracking-[-0.96px] text-[48px] max-w-[520px] sm:text-[54px] sm:leading-[110%] sm:tracking-[-1.08px] sm:max-w-[620px] xl:text-[70px] xl:leading-none xl:tracking-[-1.4px] xl:max-w-[720px] 3xl:text-[90px] 3xl:leading-none 3xl:tracking-[-1.8px] 3xl:max-w-[820px]'>
-                Blog
-              </h1>
-              <div className="flex flex-col gap-4">
-                <p className="text-[#171717] text-[15px] leading-[140%] max-w-[482px]">
-                  Insights, tips, and best practices for better surveys and research.
-                </p>
-              </div>
-            </div>
-          </RevealSection>
 
-          {/* Divider */}
-          <div className="h-px w-full bg-neutral-200" />
-
-          {/* Hero Blog Post */}
-          <RevealSection className="mt-8 px-6">
-            <HeroBlogSection
-              post={{
-                ...mainBlogPost,
-                featured: true
-              }}
-            />
+          {/* Hero Blog Post (Framer exact markup) */}
+          <RevealSection className="mt-0 p-0">
+            <FramerBlogHero />
           </RevealSection>
 
           {/* Divider */}
