@@ -524,12 +524,11 @@ export default function ProjectPage() {
                           setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
                           setIsThinking(false);
                           
-                          // Start building phase
+                          // Start building phase - use random label, not reasoning text
                           setIsBuilding(true);
-                          setBuildingLabel(text);
-                          buildingLabelRef.current = text;
+                          // buildingLabel already set to random label in runSurveyBuild
                         } else {
-                          // Add reasoning step directly
+                          // Add reasoning step directly - use actual AI reasoning text as label
                           addReasoningStep(text);
                         }
                       }
@@ -570,12 +569,11 @@ export default function ProjectPage() {
                       setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
                       setIsThinking(false);
                       
-                      // Start building phase
+                      // Start building phase - use random label, not reasoning text
                       setIsBuilding(true);
-                      setBuildingLabel(text);
-                      buildingLabelRef.current = text;
+                      // buildingLabel already set to random label in runSurveyBuild
                     } else {
-                      // Add reasoning step directly
+                      // Add reasoning step directly - use actual AI reasoning text as label
                       addReasoningStep(text);
                     }
                   }

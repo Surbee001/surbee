@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils"
 
 import { ShiningText } from "./shining-text"
 import { useEffect, useState, useRef } from "react"
+import type React from "react"
 import { ChevronDown } from "lucide-react"
 
 interface ThinkingStep {
@@ -24,10 +25,13 @@ export function ThinkingDisplay({ steps, isThinking = false, className }: Thinki
   const startTimeRef = useRef<number | null>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Force open when thinking starts or when new steps arrive
+  // Force open when thinking starts, close when thinking stops
   useEffect(() => {
     if (isThinking) {
       setIsOpen(true)
+    } else if (!isThinking && steps.length > 0) {
+      // Close dropdown when thinking stops (but keep component visible)
+      setIsOpen(false)
     }
   }, [isThinking, steps.length])
 
@@ -132,6 +136,20 @@ interface ThinkingStepProps {
   isThinking: boolean
 }
 
+// Simple markdown bold formatter
+function formatMarkdownBold(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      // Remove ** and make bold
+      const boldText = part.slice(2, -2);
+      return <strong key={index} className="font-semibold text-foreground">{boldText}</strong>;
+    }
+    return <span key={index}>{part}</span>;
+  });
+}
+
 function ThinkingStep({ content, status, isLast, zIndex }: ThinkingStepProps) {
   const isComplete = status === "complete"
 
@@ -170,7 +188,7 @@ function ThinkingStep({ content, status, isLast, zIndex }: ThinkingStepProps) {
         </div>
         <div className="w-full" style={{ marginBottom: isLast ? "0px" : "12px" }}>
           <div className="text-sm w-full break-words whitespace-pre-wrap">
-            <span className="text-muted-foreground">{content}</span>
+            <span className="text-muted-foreground">{formatMarkdownBold(content)}</span>
           </div>
         </div>
       </div>
