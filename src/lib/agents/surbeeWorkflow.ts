@@ -678,7 +678,7 @@ Expected Output:
 - Always output step-by-step "reasoning" before the final survey plan.  
 - Survey plan and design specifications must be detailed, professional, and builder-ready.  
 - Maintain strict academic tone and neutrality; default to minimalist, professional design; and exclude any unrelated meta-text unless requested.`,
-  model: "gpt-5",
+  model: "gpt-5-mini",
   outputType: SurbeebuildplannerSchema,
   modelSettings: {
     reasoning: {
@@ -1030,9 +1030,20 @@ export const runWorkflow = async (
       if (onItemStream) {
         await onItemStream(summaryItem);
       }
+      
+      // Close thinking after showing plan summary
+      const closeThinkingItem: SerializedRunItem = {
+        type: 'thinking_control',
+        action: 'close',
+        agent: 'SurbeeBuildPlanner'
+      } as any;
+      streamedSerializedItems.push(closeThinkingItem);
+      if (onItemStream) {
+        await onItemStream(closeThinkingItem);
+      }
     }
 
-    // Extract and send reasoning steps if present
+    // Extract and send reasoning steps if present (this was for debugging, can be removed)
     if (Array.isArray(planOutput?.reasoning)) {
       for (const reasoningLine of planOutput.reasoning) {
         if (typeof reasoningLine === 'string' && reasoningLine.trim()) {
@@ -1047,6 +1058,17 @@ export const runWorkflow = async (
           }
         }
       }
+    }
+
+    // Re-open thinking for builder reasoning
+    const openThinkingItem: SerializedRunItem = {
+      type: 'thinking_control',
+      action: 'open',
+      agent: 'SurbeeBuilder'
+    } as any;
+    streamedSerializedItems.push(openThinkingItem);
+    if (onItemStream) {
+      await onItemStream(openThinkingItem);
     }
 
     const surbeebuilderResultTemp = await executeAgent(

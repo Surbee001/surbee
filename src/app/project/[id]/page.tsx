@@ -538,6 +538,17 @@ export default function ProjectPage() {
                       setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
                       setIsThinking(false);
                       setIsBuilding(true);
+                    } else if ((batchedEvent as any).type === 'thinking_control') {
+                      // Handle thinking control events
+                      const action = (batchedEvent as any).action;
+                      console.log('[Thinking Control - Batch]', action);
+                      if (action === 'close') {
+                        setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
+                        setIsThinking(false);
+                      } else if (action === 'open') {
+                        setIsThinking(true);
+                        setThinkingSteps([]); // Start fresh for builder reasoning
+                      }
                     }
                   }
                   boundary = buffer.indexOf('\n');
@@ -574,6 +585,17 @@ export default function ProjectPage() {
                   setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
                   setIsThinking(false);
                   setIsBuilding(true);
+                } else if ((ev as any).type === 'thinking_control') {
+                  // Handle thinking control events
+                  const action = (ev as any).action;
+                  console.log('[Thinking Control - Non-Batch]', action);
+                  if (action === 'close') {
+                    setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
+                    setIsThinking(false);
+                  } else if (action === 'open') {
+                    setIsThinking(true);
+                    setThinkingSteps([]); // Start fresh for builder reasoning
+                  }
                 } else if (ev.type === 'html_chunk' && typeof ev.chunk === 'string') {
                   htmlBuf += ev.chunk;
                   // First HTML chunk means thinking is done

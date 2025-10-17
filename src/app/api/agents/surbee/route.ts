@@ -14,6 +14,7 @@ type StreamEvent =
   | { type: "reasoning"; id: string; text: string }
   | { type: "message"; id: string; text: string }
   | { type: "tool_call"; name: string; arguments: unknown }
+  | { type: "thinking_control"; action: "open" | "close" }
   | { type: "html_chunk"; chunk: string; final?: boolean }
   | { type: "complete" }
   | { type: "error"; message: string }
@@ -228,6 +229,15 @@ export async function POST(request: NextRequest) {
             name: item.name,
             arguments: item.arguments 
           });
+          return;
+        }
+
+        if ((item as any).type === "thinking_control") {
+          // Send thinking control events to manage UI state
+          await batcher.addEvent({ 
+            type: "thinking_control", 
+            action: (item as any).action 
+          } as any);
           return;
         }
 
