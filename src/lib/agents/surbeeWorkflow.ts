@@ -1021,6 +1021,20 @@ export const runWorkflow = async (
       throw new Error("SurbeeBuildPlanner result is undefined");
     }
 
+    // Extract and send user_summary as a message if present
+    const planOutput = surbeebuildplannerResultTemp.finalOutput as any;
+    if (planOutput?.user_summary && typeof planOutput.user_summary === 'string') {
+      const summaryItem: SerializedRunItem = {
+        type: 'message',
+        text: planOutput.user_summary,
+        agent: 'SurbeeBuildPlanner'
+      };
+      streamedSerializedItems.push(summaryItem);
+      if (onItemStream) {
+        await onItemStream(summaryItem);
+      }
+    }
+
     const surbeebuilderResultTemp = await executeAgent(
       surbeebuilder,
       [...conversationHistory],
@@ -1069,6 +1083,19 @@ export const runWorkflow = async (
 
     if (!surbeeplannerResultTemp.finalOutput) {
       throw new Error("Agent result is undefined");
+    }
+
+    // Send planner output as a message
+    if (typeof surbeeplannerResultTemp.finalOutput === 'string') {
+      const plannerMessage: SerializedRunItem = {
+        type: 'message',
+        text: surbeeplannerResultTemp.finalOutput,
+        agent: 'SurbeePlanner'
+      };
+      streamedSerializedItems.push(plannerMessage);
+      if (onItemStream) {
+        await onItemStream(plannerMessage);
+      }
     }
 
     if (approvalRequest("Should we proceed with this plan?")) {

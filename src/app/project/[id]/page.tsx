@@ -415,9 +415,25 @@ export default function ProjectPage() {
     deepSite.setIsThinking(true);
 
     setIsBuilding(false);
-    const defaultBuildLabel = 'Building survey experience...';
-    setBuildingLabel(defaultBuildLabel);
-    buildingLabelRef.current = defaultBuildLabel;
+    
+    // Fun random building labels
+    const buildingLabels = [
+      'Doodling your survey...',
+      'Sketching questions...',
+      'Crafting something special...',
+      'Painting your survey...',
+      'Conjuring magic...',
+      'Weaving ideas together...',
+      'Sculpting the experience...',
+      'Drawing up something cool...',
+      'Creating survey vibes...',
+      'Mixing the perfect blend...',
+      'Composing your masterpiece...',
+      'Brewing survey magic...',
+    ];
+    const randomBuildLabel = buildingLabels[Math.floor(Math.random() * buildingLabels.length)];
+    setBuildingLabel(randomBuildLabel);
+    buildingLabelRef.current = randomBuildLabel;
     setThinkingHtmlStream('');
     setHasHtmlContent(false);
     
@@ -521,18 +537,8 @@ export default function ProjectPage() {
                       const messageText = String(batchedEvent.text).trim();
                       console.log('[Message] AI response received (batch):', messageText.substring(0, 100));
                       if (messageText.length > 0) {
-                        // Only close thinking if we have reasoning steps to show
-                        setThinkingSteps((prev) => {
-                          if (prev.length > 0) {
-                            // We have reasoning steps, mark them complete and close thinking
-                            setIsThinking(false);
-                            return prev.map((step) => ({ ...step, status: 'complete' }));
-                          }
-                          // No reasoning steps yet, keep thinking open
-                          return prev;
-                        });
-                        
-                        // Add AI response message to chat
+                        // Don't close thinking - just add the message to chat
+                        // Thinking stays open and can continue showing more reasoning after the message
                         setMessages((prev) => [
                           ...prev,
                           {
@@ -574,22 +580,12 @@ export default function ProjectPage() {
                     }
                   }
                 } else if (ev.type === 'message' && ev.text) {
-                  // Handle AI message responses - close thinking and add to chat
+                  // Handle AI message responses - add to chat but keep thinking open
                   const messageText = String(ev.text).trim();
                   console.log('[Message] AI response received:', messageText.substring(0, 100));
                   if (messageText.length > 0) {
-                    // Only close thinking if we have reasoning steps to show
-                    setThinkingSteps((prev) => {
-                      if (prev.length > 0) {
-                        // We have reasoning steps, mark them complete and close thinking
-                        setIsThinking(false);
-                        return prev.map((step) => ({ ...step, status: 'complete' }));
-                      }
-                      // No reasoning steps yet, keep thinking open
-                      return prev;
-                    });
-                    
-                    // Add AI response message to chat
+                    // Don't close thinking - just add the message to chat
+                    // Thinking stays open and can continue showing more reasoning after the message
                     setMessages((prev) => [
                       ...prev,
                       {
