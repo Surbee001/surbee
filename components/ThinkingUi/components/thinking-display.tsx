@@ -104,20 +104,16 @@ export function ThinkingDisplay({ steps, isThinking = false, className }: Thinki
         >
           <div className="relative z-0">
             <div className="relative flex h-full flex-col" style={{ margin: "4px 0px" }}>
-              {steps.length === 0 && isThinking ? (
-                <div className="text-sm text-muted-foreground animate-pulse">Processing...</div>
-              ) : (
-                steps.map((step, index) => (
-                  <ThinkingStep
-                    key={step.id}
-                    content={step.content}
-                    status={step.status}
-                    isLast={index === steps.length - 1}
-                    zIndex={index}
-                    isThinking={isThinking}
-                  />
-                ))
-              )}
+              {steps.map((step, index) => (
+                <ThinkingStep
+                  key={step.id}
+                  content={step.content}
+                  status={step.status}
+                  isLast={index === steps.length - 1}
+                  zIndex={index}
+                  isThinking={isThinking}
+                />
+              ))}
             </div>
           </div>
         </div>

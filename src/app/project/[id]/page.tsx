@@ -420,77 +420,21 @@ export default function ProjectPage() {
     setHasHtmlContent(false);
     setThinkingSteps([]);
 
-    // Track reasoning by agent to consolidate steps
-    let currentAgent = 'Initial';
-    const agentStepMap = new Map<string, { id: string; content: string }>();
-    const pendingUpdates = new Map<string, string>();
-    let flushTimer: NodeJS.Timeout | null = null;
+    // Simply track each reasoning line as it comes in
+    let reasoningCounter = 0;
 
-    const detectAgentFromMessage = (text: string): string | null => {
-      // Detect agent transitions from "Switched to X" pattern
-      const switchMatch = text.match(/switched to (\w+)/i);
-      if (switchMatch) {
-        return switchMatch[1];
-      }
+    const addReasoningStep = (text: string) => {
+      console.log('[Thinking] Adding reasoning:', text);
+      const stepId = `reasoning-${Date.now()}-${reasoningCounter++}`;
       
-      // Simple pattern matching without memo
-      if (/optimizing prompt/i.test(text)) return 'Prompt Optimizer';
-      if (/classifying|categorizing/i.test(text)) return 'Categorizer';
-      if (/creating.*plan|planning/i.test(text)) return 'Build Planner';
-      if (/drafting.*plan/i.test(text)) return 'Survey Planner';
-      if (/guardrail|checking/i.test(text)) return 'Safety Check';
-      
-      return null;
-    };
-
-    const flushPendingUpdates = () => {
-      if (flushTimer) {
-        clearTimeout(flushTimer);
-        flushTimer = null;
-      }
-
-      if (pendingUpdates.size === 0) return;
-
-      console.log(`[Thinking] Flushing ${pendingUpdates.size} pending updates`);
-      
-      setThinkingSteps((prev) => {
-        const updated = [...prev];
-        pendingUpdates.forEach((reasoning, agent) => {
-          const agentId = `agent-${agent.toLowerCase().replace(/\s+/g, '-')}`;
-          const content = reasoning; // Just use reasoning without agent prefix
-          const existing = updated.findIndex(s => s.id === agentId);
-          
-          console.log(`[Thinking] Flushing agent ${agent} (${agentId}), existing: ${existing !== -1}`);
-          
-          if (existing !== -1) {
-            updated[existing] = { ...updated[existing], content };
-          } else {
-            updated.push({ id: agentId, content, status: 'thinking' as const });
-          }
-          
-          agentStepMap.set(agentId, { id: agentId, content });
-        });
-        console.log(`[Thinking] Updated steps count: ${updated.length}`);
-        return updated;
-      });
-      
-      pendingUpdates.clear();
-    };
-
-    const addAgentStep = (agent: string, reasoning: string) => {
-      console.log(`[Thinking] Adding step for agent: ${agent}`, reasoning.substring(0, 100));
-      // Buffer the update instead of immediately updating state
-      const existingReasoning = pendingUpdates.get(agent) || '';
-      const updatedReasoning = existingReasoning 
-        ? `${existingReasoning}\n${reasoning}` 
-        : reasoning;
-      pendingUpdates.set(agent, updatedReasoning);
-      
-      // Debounce: flush updates every 30ms for more responsive UI
-      if (flushTimer) clearTimeout(flushTimer);
-      flushTimer = setTimeout(() => {
-        flushPendingUpdates();
-      }, 30);
+      setThinkingSteps((prev) => [
+        ...prev,
+        {
+          id: stepId,
+          content: text,
+          status: 'thinking' as const
+        }
+      ]);
     };
 
     try {
@@ -552,10 +496,6 @@ export default function ProjectPage() {
                             lower.includes('generating html') ||
                             lower.includes('builder agent') ||
                             lower.includes('building the survey')) {
-                          // Flush any pending thinking updates before closing
-                          if (flushTimer) clearTimeout(flushTimer);
-                          flushPendingUpdates();
-                          
                           // Mark all thinking steps as complete and close thinking display
                           setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
                           setIsThinking(false);
@@ -565,14 +505,8 @@ export default function ProjectPage() {
                           setBuildingLabel(text);
                           buildingLabelRef.current = text;
                         } else {
-                          // Detect which agent this reasoning is from
-                          const detectedAgent = detectAgentFromMessage(text);
-                          if (detectedAgent) {
-                            currentAgent = detectedAgent;
-                          }
-                          
-                          // Add or update the agent's step
-                          addAgentStep(currentAgent, text);
+                          // Add reasoning step directly
+                          addReasoningStep(text);
                         }
                       }
                     } else if (batchedEvent.type === 'message' && batchedEvent.text) {
@@ -605,10 +539,6 @@ export default function ProjectPage() {
                         lower.includes('generating html') ||
                         lower.includes('builder agent') ||
                         lower.includes('building the survey')) {
-                      // Flush any pending thinking updates before closing
-                      if (flushTimer) clearTimeout(flushTimer);
-                      flushPendingUpdates();
-                      
                       // Mark all thinking steps as complete and close thinking display
                       setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
                       setIsThinking(false);
@@ -618,14 +548,8 @@ export default function ProjectPage() {
                       setBuildingLabel(text);
                       buildingLabelRef.current = text;
                     } else {
-                      // Detect which agent this reasoning is from
-                      const detectedAgent = detectAgentFromMessage(text);
-                      if (detectedAgent) {
-                        currentAgent = detectedAgent;
-                      }
-                      
-                      // Add or update the agent's step
-                      addAgentStep(currentAgent, text);
+                      // Add reasoning step directly
+                      addReasoningStep(text);
                     }
                   }
                 } else if (ev.type === 'message' && ev.text) {
@@ -644,12 +568,8 @@ export default function ProjectPage() {
                   }
                 } else if (ev.type === 'html_chunk' && typeof ev.chunk === 'string') {
                   htmlBuf += ev.chunk;
-                  // First HTML chunk means thinking is done - flush any pending updates first
+                  // First HTML chunk means thinking is done
                   if (!htmlBuf || htmlBuf.length === ev.chunk.length) {
-                    // Flush pending updates immediately before closing thinking
-                    if (flushTimer) clearTimeout(flushTimer);
-                    flushPendingUpdates();
-                    
                     setIsThinking(false);
                     setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
                   }
@@ -692,12 +612,6 @@ export default function ProjectPage() {
         }
       }
 
-      // Flush any pending updates before completing
-      if (flushTimer) {
-        clearTimeout(flushTimer);
-      }
-      flushPendingUpdates();
-      
       return true;
     } catch (error) {
       console.error('runSurveyBuild error', error);
@@ -720,12 +634,6 @@ export default function ProjectPage() {
       ]);
       return false;
     } finally {
-      // Flush any remaining pending updates
-      if (flushTimer) {
-        clearTimeout(flushTimer);
-      }
-      flushPendingUpdates();
-      
       setIsThinking(false);
       setIsInputDisabled(false);
       deepSite.setIsAiWorking(false);
