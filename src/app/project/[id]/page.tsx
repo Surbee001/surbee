@@ -431,14 +431,18 @@ export default function ProjectPage() {
       console.log('[Thinking] Adding reasoning:', text);
       const stepId = `reasoning-${Date.now()}-${reasoningCounter++}`;
       
-      setThinkingSteps((prev) => [
-        ...prev,
-        {
-          id: stepId,
-          content: text,
-          status: 'thinking' as const
-        }
-      ]);
+      setThinkingSteps((prev) => {
+        const newSteps = [
+          ...prev,
+          {
+            id: stepId,
+            content: text,
+            status: 'thinking' as const
+          }
+        ];
+        console.log('[Thinking] Steps count:', newSteps.length);
+        return newSteps;
+      });
     };
 
     try {
@@ -517,9 +521,16 @@ export default function ProjectPage() {
                       const messageText = String(batchedEvent.text).trim();
                       console.log('[Message] AI response received (batch):', messageText.substring(0, 100));
                       if (messageText.length > 0) {
-                        // Close thinking when AI message arrives
-                        setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
-                        setIsThinking(false);
+                        // Only close thinking if we have reasoning steps to show
+                        setThinkingSteps((prev) => {
+                          if (prev.length > 0) {
+                            // We have reasoning steps, mark them complete and close thinking
+                            setIsThinking(false);
+                            return prev.map((step) => ({ ...step, status: 'complete' }));
+                          }
+                          // No reasoning steps yet, keep thinking open
+                          return prev;
+                        });
                         
                         // Add AI response message to chat
                         setMessages((prev) => [
@@ -567,9 +578,16 @@ export default function ProjectPage() {
                   const messageText = String(ev.text).trim();
                   console.log('[Message] AI response received:', messageText.substring(0, 100));
                   if (messageText.length > 0) {
-                    // Close thinking when AI message arrives
-                    setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
-                    setIsThinking(false);
+                    // Only close thinking if we have reasoning steps to show
+                    setThinkingSteps((prev) => {
+                      if (prev.length > 0) {
+                        // We have reasoning steps, mark them complete and close thinking
+                        setIsThinking(false);
+                        return prev.map((step) => ({ ...step, status: 'complete' }));
+                      }
+                      // No reasoning steps yet, keep thinking open
+                      return prev;
+                    });
                     
                     // Add AI response message to chat
                     setMessages((prev) => [

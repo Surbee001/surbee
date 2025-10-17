@@ -71,7 +71,7 @@ export function ThinkingDisplay({ steps, isThinking = false, className }: Thinki
     }
   }, [isThinking])
 
-  // Always show when thinking, even with no steps yet
+  // Show if thinking is active OR if there are steps to display
   if (!isThinking && steps.length === 0) {
     return null
   }
