@@ -511,7 +511,13 @@ export default function ProjectPage() {
                       }
                     } else if (batchedEvent.type === 'message' && batchedEvent.text) {
                       const messageText = String(batchedEvent.text).trim();
+                      console.log('[Message] AI response received (batch):', messageText.substring(0, 100));
                       if (messageText.length > 0) {
+                        // Close thinking when AI message arrives
+                        setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
+                        setIsThinking(false);
+                        
+                        // Add AI response message to chat
                         setMessages((prev) => [
                           ...prev,
                           {
@@ -553,9 +559,15 @@ export default function ProjectPage() {
                     }
                   }
                 } else if (ev.type === 'message' && ev.text) {
-                  // Handle AI message responses - add to chat
+                  // Handle AI message responses - close thinking and add to chat
                   const messageText = String(ev.text).trim();
+                  console.log('[Message] AI response received:', messageText.substring(0, 100));
                   if (messageText.length > 0) {
+                    // Close thinking when AI message arrives
+                    setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
+                    setIsThinking(false);
+                    
+                    // Add AI response message to chat
                     setMessages((prev) => [
                       ...prev,
                       {
