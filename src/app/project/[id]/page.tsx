@@ -407,7 +407,9 @@ export default function ProjectPage() {
     const controller = new AbortController();
     activeRequestRef.current = controller;
 
+    // Set thinking to true FIRST to keep UI visible
     setIsThinking(true);
+    
     setIsInputDisabled(true);
     deepSite.setIsAiWorking(true);
     deepSite.setIsThinking(true);
@@ -418,6 +420,8 @@ export default function ProjectPage() {
     buildingLabelRef.current = defaultBuildLabel;
     setThinkingHtmlStream('');
     setHasHtmlContent(false);
+    
+    // Now clear steps - thinking is already true so UI won't disappear
     setThinkingSteps([]);
 
     // Simply track each reasoning line as it comes in

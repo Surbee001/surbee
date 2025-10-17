@@ -907,7 +907,6 @@ export const runWorkflow = async (
       // Process events in real-time as they arrive
       try {
         for await (const event of streamResult as AsyncIterable<RunStreamEvent>) {
-          console.log('[Workflow] Stream event type:', event?.type);
           if (event?.type === "run_item_stream_event") {
             await emitRunItem(event.item);
           } else if (event?.type === "agent_updated_stream_event") {
