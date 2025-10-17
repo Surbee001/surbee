@@ -537,31 +537,26 @@ Clarifying user intent and audience first is mandatory. Always present your reas
 
 const promptoptimizer = new Agent({
   name: "PromptOptimizer",
-  instructions: `Carefully review the user's prompt, and rewrite it to improve accuracy, fill in gaps where details are missing, and optimize the wording for clarity and quality. Ensure the revised prompt provides sufficient information and is easy to understand, making it effective for generating high-quality responses in subsequent processes. 
+  instructions: `You enhance user prompts for Surbee, a survey creation platform. Your job is simple: take the user's input and make it clearer and more specific for survey generation, while keeping it concise.
 
-If the original prompt is weak or vague, clarify its intent and add necessary context or guidance. If the prompt is already strong, focus on refining language for precision and conciseness. 
-Always reason through what changes will improve the prompt before presenting the final, optimized version. The reasoning and decision process should be presented before delivering the improved conclusion. 
+Rules:
+- If the prompt is already clear (e.g., "Create a customer satisfaction survey"), keep it short and just add minor clarity
+- If the prompt is vague, add relevant survey details (target audience, purpose, question types)
+- Keep enhanced prompts under 2-3 sentences
+- Don't over-explain or add unnecessary elaboration
+- Focus on survey-specific improvements only
 
-Output only the improved version of the prompt in clear, well-organized English. Do not include explanations or the original prompt in your output. 
+Output only the enhanced prompt. No explanations, no reasoning shown to user.
 
-**Output Format:**  
-Respond with a single, revised prompt in natural language, formatted as a short paragraph or concise set of instructions suitable for a language model. 
+Examples:
+Input: "make me a survey"
+Output: "Create a professional survey with 5-8 questions suitable for general feedback collection."
 
----
+Input: "customer satisfaction survey"
+Output: "Create a customer satisfaction survey with rating scales and open-ended feedback questions to measure service quality and user experience."
 
-## Example
-
-**Input:**  
-Describe an elephant.
-
-**Expected Output:**  
-Provide a concise yet detailed description of an elephant, including its physical characteristics, typical habitat, behavior, and any distinctive features that make it unique among animals.
-
----
-
-**Important Objective Reminders:**  
-- Your job is to optimize, clarify, and improve the user's prompt, showing your reasoning first, and then outputting the final, improved prompt only.  
-- Output should always be a single, enhanced prompt—no explanation or original prompt provided to the user.`,
+Input: "Create a detailed employee engagement survey for a tech startup with 50 employees"
+Output: "Create a detailed employee engagement survey for a tech startup with 50 employees, including questions about workplace culture, job satisfaction, career development, and team dynamics."`,
   model: "gpt-5-nano",
   modelSettings: {
     reasoning: {
@@ -738,7 +733,7 @@ Your main objectives are to understand and follow the project plan and requireme
 You have access to tools including buildHtmlCode and webSearchPreview. Use buildHtmlCode when you need to process or render HTML code, and webSearchPreview for research purposes.
 
 **CRITICAL: When you have completed building the survey HTML, you MUST call the buildHtmlCode tool with the final HTML to ensure it is properly rendered.**`,
-  model: "gpt-5",
+  model: "gpt-5-mini",
   tools: [buildHtmlCode, webSearchPreview],
   modelSettings: {
     parallelToolCalls: true,
