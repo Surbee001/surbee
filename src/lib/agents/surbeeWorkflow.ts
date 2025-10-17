@@ -951,8 +951,7 @@ export const runWorkflow = async (
   console.log('[Workflow] Step 1: Optimizing prompt...');
   const promptoptimizerResultTemp = await executeAgent(
     promptoptimizer,
-    [...conversationHistory],
-    "Optimizing prompt..."
+    [...conversationHistory]
   );
   conversationHistory.push(...promptoptimizerResultTemp.newItems.map((item) => item.rawItem));
 
@@ -994,8 +993,7 @@ export const runWorkflow = async (
 
   const categorizeResultTemp = await executeAgent(
     categorize,
-    [...conversationHistory],
-    "Classifying request intent..."
+    [...conversationHistory]
   );
   conversationHistory.push(...categorizeResultTemp.newItems.map((item) => item.rawItem));
 
@@ -1012,8 +1010,7 @@ export const runWorkflow = async (
     // Build mode: first plan, then build
     const surbeebuildplannerResultTemp = await executeAgent(
       surbeebuildplanner,
-      [...conversationHistory],
-      "Creating detailed survey plan..."
+      [...conversationHistory]
     );
     conversationHistory.push(...surbeebuildplannerResultTemp.newItems.map((item) => item.rawItem));
 
@@ -1035,10 +1032,26 @@ export const runWorkflow = async (
       }
     }
 
+    // Extract and send reasoning steps if present
+    if (Array.isArray(planOutput?.reasoning)) {
+      for (const reasoningLine of planOutput.reasoning) {
+        if (typeof reasoningLine === 'string' && reasoningLine.trim()) {
+          const reasoningItem: SerializedRunItem = {
+            type: 'reasoning',
+            text: reasoningLine,
+            agent: 'SurbeeBuildPlanner'
+          };
+          streamedSerializedItems.push(reasoningItem);
+          if (onItemStream) {
+            await onItemStream(reasoningItem);
+          }
+        }
+      }
+    }
+
     const surbeebuilderResultTemp = await executeAgent(
       surbeebuilder,
-      [...conversationHistory],
-      "Building survey experience..."
+      [...conversationHistory]
     );
     conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
     
@@ -1073,8 +1086,7 @@ export const runWorkflow = async (
   if (categorizeResult.output_parsed.mode === "ASK") {
     const surbeeplannerResultTemp = await executeAgent(
       surbeeplanner,
-      [...conversationHistory],
-      "Drafting structured plan..."
+      [...conversationHistory]
     );
     conversationHistory.push(...surbeeplannerResultTemp.newItems.map((item) => item.rawItem));
     
@@ -1101,8 +1113,7 @@ export const runWorkflow = async (
     if (approvalRequest("Should we proceed with this plan?")) {
       const surbeebuilderResultTemp = await executeAgent(
         surbeebuilder,
-        [...conversationHistory],
-        "Building survey experience..."
+        [...conversationHistory]
       );
       conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
       

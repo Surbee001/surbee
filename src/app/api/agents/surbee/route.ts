@@ -13,6 +13,7 @@ type StreamEvent =
   | { type: "start" }
   | { type: "reasoning"; id: string; text: string }
   | { type: "message"; id: string; text: string }
+  | { type: "tool_call"; name: string; arguments: unknown }
   | { type: "html_chunk"; chunk: string; final?: boolean }
   | { type: "complete" }
   | { type: "error"; message: string }
@@ -217,6 +218,16 @@ export async function POST(request: NextRequest) {
           // Send messages as proper message events, not reasoning
           const id = `msg-${Math.random().toString(36).slice(2, 9)}`;
           await batcher.addEvent({ type: "message", id, text: item.text });
+          return;
+        }
+
+        if (item.type === "tool_call") {
+          // Send tool_call events so UI knows when building starts
+          await batcher.addEvent({ 
+            type: "tool_call", 
+            name: item.name,
+            arguments: item.arguments 
+          });
           return;
         }
 

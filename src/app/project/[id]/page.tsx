@@ -512,25 +512,8 @@ export default function ProjectPage() {
                     if (batchedEvent.type === 'reasoning' && batchedEvent.text) {
                       const text = String(batchedEvent.text).trim();
                       if (text.length > 0) {
-                        const lower = text.toLowerCase();
-                        
-                        // Check if this is a building/generation phase - close thinking and start building
-                        if (lower.includes('switched to surbeebuilder') || 
-                            lower.includes('building survey') ||
-                            lower.includes('generating html') ||
-                            lower.includes('builder agent') ||
-                            lower.includes('building the survey')) {
-                          // Mark all thinking steps as complete and close thinking display
-                          setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
-                          setIsThinking(false);
-                          
-                          // Start building phase - use random label, not reasoning text
-                          setIsBuilding(true);
-                          // buildingLabel already set to random label in runSurveyBuild
-                        } else {
-                          // Add reasoning step directly - use actual AI reasoning text as label
-                          addReasoningStep(text);
-                        }
+                        // Always add reasoning step - don't trigger building from reasoning text
+                        addReasoningStep(text);
                       }
                     } else if (batchedEvent.type === 'message' && batchedEvent.text) {
                       const messageText = String(batchedEvent.text).trim();
@@ -548,6 +531,12 @@ export default function ProjectPage() {
                           },
                         ]);
                       }
+                    } else if (batchedEvent.type === 'tool_call' && batchedEvent.name === 'buildHtmlCode') {
+                      // Tool call to buildHtmlCode means building phase is starting
+                      console.log('[Tool Call] buildHtmlCode starting - closing thinking, starting building');
+                      setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
+                      setIsThinking(false);
+                      setIsBuilding(true);
                     }
                   }
                   boundary = buffer.indexOf('\n');
@@ -557,25 +546,8 @@ export default function ProjectPage() {
                 if (ev.type === 'reasoning' && ev.text) {
                   const text = String(ev.text).trim();
                   if (text.length > 0) {
-                    const lower = text.toLowerCase();
-                    
-                    // Check if this is a building/generation phase - close thinking and start building
-                    if (lower.includes('switched to surbeebuilder') || 
-                        lower.includes('building survey') ||
-                        lower.includes('generating html') ||
-                        lower.includes('builder agent') ||
-                        lower.includes('building the survey')) {
-                      // Mark all thinking steps as complete and close thinking display
-                      setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
-                      setIsThinking(false);
-                      
-                      // Start building phase - use random label, not reasoning text
-                      setIsBuilding(true);
-                      // buildingLabel already set to random label in runSurveyBuild
-                    } else {
-                      // Add reasoning step directly - use actual AI reasoning text as label
-                      addReasoningStep(text);
-                    }
+                    // Always add reasoning step - don't trigger building from reasoning text
+                    addReasoningStep(text);
                   }
                 } else if (ev.type === 'message' && ev.text) {
                   // Handle AI message responses - add to chat but keep thinking open
@@ -594,6 +566,12 @@ export default function ProjectPage() {
                       },
                     ]);
                   }
+                } else if (ev.type === 'tool_call' && ev.name === 'buildHtmlCode') {
+                  // Tool call to buildHtmlCode means building phase is starting
+                  console.log('[Tool Call] buildHtmlCode starting - closing thinking, starting building');
+                  setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
+                  setIsThinking(false);
+                  setIsBuilding(true);
                 } else if (ev.type === 'html_chunk' && typeof ev.chunk === 'string') {
                   htmlBuf += ev.chunk;
                   // First HTML chunk means thinking is done

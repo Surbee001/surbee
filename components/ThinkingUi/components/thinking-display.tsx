@@ -142,9 +142,9 @@ function formatMarkdownBold(text: string): React.ReactNode {
   
   return parts.map((part, index) => {
     if (part.startsWith('**') && part.endsWith('**')) {
-      // Remove ** and make bold
+      // Remove ** and make bold (same color as reasoning text)
       const boldText = part.slice(2, -2);
-      return <strong key={index} className="font-semibold text-foreground">{boldText}</strong>;
+      return <strong key={index} className="font-semibold">{boldText}</strong>;
     }
     return <span key={index}>{part}</span>;
   });
