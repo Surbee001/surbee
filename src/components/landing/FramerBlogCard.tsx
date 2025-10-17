@@ -62,7 +62,7 @@ export default function FramerBlogCard({ href, imageSrc, title, date }: FramerBl
         >
           {title}
         </h4>
-        <p className="text-sm font-medium text-neutral-600">{date}</p>
+        <p className="text-sm font-normal text-neutral-500">{date}</p>
       </div>
     </a>
   );

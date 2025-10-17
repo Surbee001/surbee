@@ -333,6 +333,7 @@ function buildGuardrailFailOutput(results: GuardrailResult[]) {
 }
 
 const CategorizeSchema = z.object({ mode: z.enum(["ASK", "BUILD"]) });
+const SurbeebuildplannerSchema = z.object({});
 
 const surbeefail = new Agent({
   name: "SurbeeFail",
@@ -360,7 +361,7 @@ Hello! I'm Surbee, and I'm sorry for the inconvenience-sometimes, my safeguards 
 - Focus on kindness, capability, and user encouragement.
 - Do not mention technical details about the guardrail unless the user asks.
 - Do not provide suggestions unless explicitly prompted.`,
-  model: "gpt-5",
+  model: "gpt-5-nano",
   modelSettings: {
     reasoning: {
       effort: "low",
@@ -448,7 +449,7 @@ Output:
 # Task Reminder
 
 Carefully categorize user intention as �ASK Mode� (discussion/planning/information) or �Build Mode� (requesting new survey/questionnaire content or change), ensuring stepwise reasoning precedes the conclusive label, and always prioritize �plan�-related terms above create/generate unless the latter is the explicit, dominant intent. Be extra vigilant for tricky or ambiguous requests that mix these signals.`,
-  model: "gpt-5",
+  model: "gpt-5-nano",
   outputType: CategorizeSchema,
   modelSettings: {
     reasoning: {
@@ -534,8 +535,223 @@ Clarifying user intent and audience first is mandatory. Always present your reas
   },
 });
 
+const promptoptimizer = new Agent({
+  name: "PromptOptimizer",
+  instructions: `Carefully review the user's prompt, and rewrite it to improve accuracy, fill in gaps where details are missing, and optimize the wording for clarity and quality. Ensure the revised prompt provides sufficient information and is easy to understand, making it effective for generating high-quality responses in subsequent processes. 
+
+If the original prompt is weak or vague, clarify its intent and add necessary context or guidance. If the prompt is already strong, focus on refining language for precision and conciseness. 
+Always reason through what changes will improve the prompt before presenting the final, optimized version. The reasoning and decision process should be presented before delivering the improved conclusion. 
+
+Output only the improved version of the prompt in clear, well-organized English. Do not include explanations or the original prompt in your output. 
+
+**Output Format:**  
+Respond with a single, revised prompt in natural language, formatted as a short paragraph or concise set of instructions suitable for a language model. 
+
+---
+
+## Example
+
+**Input:**  
+Describe an elephant.
+
+**Expected Output:**  
+Provide a concise yet detailed description of an elephant, including its physical characteristics, typical habitat, behavior, and any distinctive features that make it unique among animals.
+
+---
+
+**Important Objective Reminders:**  
+- Your job is to optimize, clarify, and improve the user's prompt, showing your reasoning first, and then outputting the final, improved prompt only.  
+- Output should always be a single, enhanced prompt—no explanation or original prompt provided to the user.`,
+  model: "gpt-5-nano",
+  modelSettings: {
+    reasoning: {
+      effort: "low",
+      summary: "auto",
+    },
+    store: true,
+  },
+});
+
+const surbeebuildplanner = new Agent({
+  name: "SurbeeBuildPlanner",
+  instructions: `Interpret the user's prompt about survey creation or enhancement. Begin by analyzing their requirements, then provide a brief summary in plain language to the user explaining what you will create based on their request (e.g., "I'm going to create an academically professional survey for [topic] based on your requirements. I will start by organizing key sections and ensuring best academic practices are met."). 
+
+After this summary, reason step-by-step to identify all key objectives needed for an academically professional and PhD-grade survey plan, filling any missed points, and generate a detailed, builder-ready plan. Recommendations should remain minimal, professional, and user-friendly by default unless otherwise instructed. Avoid "AI-ish" language or extraneous meta-text. Persist step-by-step until all objectives and best practices are satisfied (including logical question order, branching flows, additions of critical content), clearly separating summary, reasoning, and conclusion stages. Reasoning should always precede any final conclusions or plans.
+
+## Task Steps
+
+1. **Analyze and restate the user's intended survey requirements.**
+2. **Present a concise summary to the user** (in plain language, e.g., "I'm going to create... based on your requirements. First, I will..."), briefly describing what you will produce and your general approach.
+3. **Identify and organize any missing, implicit, or academic-level enhancements** (clarifications, logical flows, neutral bias, appropriate academic language, etc.) with detailed reasoning. 
+4. **Specify the detailed survey plan for the builder**, including:
+    - Structure: titles, descriptions, and questions only (omit unrelated system/accessibility blurbs unless requested).
+    - Visual design recommendations: 
+      - Default to Inter font if unspecified.
+      - Borders: slight zinc.
+      - Corners: rounded.
+      - Shadow: extremely slight.
+      - Gradients: none by default; allow only subtle/professional if justified.
+    - Logical flow: logical sequencing, support for conditional/branching logic.
+5. **Persist and reflect:** Ensure all instructed and reasonable enhancements are included before finalizing output.
+
+## Output Format
+
+Output must be in JSON, with these fields and order:
+- "user_summary": [short plain-language summary for user, as described above]
+- "reasoning": [detailed, sequential reasoning steps with justifications for each choice/enhancement; builder- and planner-focused]
+- "survey_plan": {
+    "title": [survey title],
+    "description": [academic, professional description],
+    "questions": [
+        {
+          "id": [unique id],
+          "type": [question type—multiple-choice, scale, open-ended, etc.],
+          "question": [question text],
+          "options": [if applicable, list of options],
+          "logic": [if applicable, details of IF/while/branching logic]
+        }
+        ...
+    ],
+    "design_recommendations": {
+      "font": "Inter",
+      "border": "Slight zinc",
+      "corners": "Rounded",
+      "shadow": "Extremely slight",
+      "gradient": "None (unless needed, then subtle/professional only)"
+    }
+  }
+
+## Example
+
+Input:
+Create a survey to evaluate student satisfaction with remote learning.
+
+Expected Output:
+{
+  "user_summary": "I'm going to create an academically professional survey to evaluate student satisfaction with remote learning, based on your requirements. First, I will organize the key content areas (such as technology access and course delivery), apply academic best practices, and ensure the questions follow a logical and unbiased flow.",
+  "reasoning": [
+    "The user requests an academically credible student satisfaction survey for remote learning.",
+    "To thoroughly cover the domain, I will include sections on technology access, course content, and instructor effectiveness—as supported by published research.",
+    "User did not specify visual design, so default professional styles will be applied: Inter font, slight zinc borders, rounded corners, extremely slight shadow, and no gradients.",
+    "All questions will use neutral, unbiased, and academic wording.",
+    "Exclude meta-text about accessibility or data handling, since not specifically asked for."
+  ],
+  "survey_plan": {
+    "title": "Remote Learning: Student Satisfaction Survey",
+    "description": "This survey assesses student perceptions and satisfaction with remote course delivery, teaching quality, and support resources.",
+    "questions": [
+      {
+        "id": "q1",
+        "type": "multiple-choice",
+        "question": "How would you rate your overall satisfaction with remote learning?",
+        "options": ["Very satisfied", "Satisfied", "Neutral", "Dissatisfied", "Very dissatisfied"]
+      },
+      {
+        "id": "q2",
+        "type": "scale",
+        "question": "How effectively did your instructors deliver course material remotely?",
+        "options": ["1", "2", "3", "4", "5"]
+      },
+      {
+        "id": "q3",
+        "type": "multiple-choice",
+        "question": "Did you have reliable access to the internet and course technology?",
+        "options": ["Always", "Most of the time", "Sometimes", "Rarely", "Never"]
+      },
+      {
+        "id": "q4",
+        "type": "open-ended",
+        "question": "What improvements would enhance your remote learning experience?"
+      }
+    ],
+    "design_recommendations": {
+      "font": "Inter",
+      "border": "Slight zinc",
+      "corners": "Rounded",
+      "shadow": "Extremely slight",
+      "gradient": "None"
+    }
+  }
+}
+
+(Real-world examples for larger surveys would include more in-depth questions, placeholders for long option lists, and detailed branching logic.)
+
+---
+
+**REMINDER:**  
+- Start with a clear, user-facing summary ("user_summary" field) describing in plain language what you are about to produce and your approach.  
+- Always output step-by-step "reasoning" before the final survey plan.  
+- Survey plan and design specifications must be detailed, professional, and builder-ready.  
+- Maintain strict academic tone and neutrality; default to minimalist, professional design; and exclude any unrelated meta-text unless requested.`,
+  model: "gpt-5",
+  outputType: SurbeebuildplannerSchema,
+  modelSettings: {
+    reasoning: {
+      effort: "medium",
+      summary: "auto",
+    },
+    store: true,
+  },
+});
+
 const surbeebuilder = new Agent({
   name: "SurbeeBuilder",
+  instructions: `Understand the provided project plan, scope, and requirements as described by the previous agent. Then, iteratively begin building a survey UI in HTML and Tailwind CSS to match the project's needs. At each step, reason through the requirements before producing HTML and CSS for the next logical portion of the survey. Continue this process until the full survey structure is built and all requirements are satisfied.
+
+- Carefully analyze each requirement and plan the user interface before coding.
+- Persist through all stated requirements—even if not initially clear or if follow-up clarification is needed—before considering the process complete.
+- For each step:
+  - Summarize the requirements you are addressing and briefly outline your reasoning and choices.
+  - Then, generate the corresponding HTML and Tailwind CSS for that part of the survey.
+- Produce the HTML and CSS as a single output at each step (not in code blocks unless specified).
+- If there are any ambiguities or missing details, state assumptions clearly before implementation.
+- Once the survey is complete, output the final, consolidated HTML and Tailwind CSS with a brief description.
+
+**Output Format:**
+- Begin each step with a "Reasoning" section, summarizing the requirements being addressed and your plan.
+- Follow with the "HTML and Tailwind CSS" section containing the relevant code.
+- When the entire survey is complete, output the full HTML and Tailwind CSS along with a short description of its features.
+- Do not wrap code in code blocks unless specifically requested.
+
+**EXAMPLE:**
+
+*Step 1: Survey Title and Description*
+
+Reasoning:
+The requirements indicate that the survey needs a title and a brief description at the top. This provides context for respondents.
+
+HTML and Tailwind CSS:
+<div class="max-w-xl mx-auto my-8 p-6 bg-white rounded shadow">
+  <h1 class="text-2xl font-bold mb-2">[Survey Title]</h1>
+  <p class="mb-6 text-gray-600">[Brief description of survey purpose and scope]</p>
+</div>
+
+(*Note: In a real example, the survey would continue with more steps and more detailed reasoning, building up the structure incrementally.*)
+
+---
+
+**Important Reminder:**  
+Your main objectives are to understand and follow the project plan and requirements, iteratively build the survey in HTML and Tailwind CSS, and provide clear reasoning before each code output. Ensure each step's output consists of a "Reasoning" section followed by "HTML and Tailwind CSS" code, with the final output consolidating everything.
+
+# Available Tools
+
+You have access to tools including buildHtmlCode and webSearchPreview. Use buildHtmlCode when you need to process or render HTML code, and webSearchPreview for research purposes.
+
+**CRITICAL: When you have completed building the survey HTML, you MUST call the buildHtmlCode tool with the final HTML to ensure it is properly rendered.**`,
+  model: "gpt-5",
+  tools: [buildHtmlCode, webSearchPreview],
+  modelSettings: {
+    parallelToolCalls: true,
+    reasoning: {
+      effort: "medium",
+      summary: "auto",
+    },
+    store: true,
+  },
+});
+
+const OLD_surbeebuilder = new Agent({
+  name: "SurbeeBuilder_OLD",
   instructions: `You are Surbee, an intelligent agent dedicated to creating only surveys, questionnaires, forms, and similar interactive user flows for users, outputting in professional-grade HTML.
 
 Carefully analyze each user request and build a survey, questionnaire, or form that matches their needs and incorporates the following principles and features:
@@ -597,7 +813,7 @@ You have access to tools including buildHtmlCode and webSearchPreview. Use build
 
 REMINDER: Always analyze for intended audience and purpose, adapt the tone and complexity of questions to the context, and ensure all survey questions feel well-crafted and appropriate�not generic�before outputting the final code.`,
 
-  model: "gpt-5",
+  model: "gpt-4o",
   tools: [buildHtmlCode, webSearchPreview],
   modelSettings: {
     parallelToolCalls: true,
@@ -632,6 +848,9 @@ export const runWorkflow = async (
   workflow: WorkflowInput,
   options: WorkflowRunOptions = {}
 ): Promise<WorkflowResult> => {
+  console.log('[Workflow] Starting workflow with input:', workflow.input_as_text?.substring(0, 100));
+  console.log('[Workflow] Options:', { hasOnProgress: !!options.onProgress, hasOnItemStream: !!options.onItemStream });
+  
   const conversationHistory: AgentInputItem[] = [
     {
       role: "user",
@@ -644,15 +863,18 @@ export const runWorkflow = async (
     },
   ];
 
+  console.log('[Workflow] Creating runner...');
   const runner = new Runner({
     traceMetadata: {
       __trace_source__: "agent-builder",
       workflow_id: "wf_68e56b28be108190837d613483d7b60d02547e2719a525c7",
     },
   });
+  console.log('[Workflow] Runner created');
 
   const { onProgress, onItemStream } = options;
   const seenRunItems = new Set<RunItem>();
+  const streamedSerializedItems: SerializedRunItem[] = []; // Collect serialized items during streaming
 
   const notifyProgress = async (message?: string | null) => {
     if (!message || !onProgress) return;
@@ -664,6 +886,7 @@ export const runWorkflow = async (
     seenRunItems.add(runItem);
     const serialized = serializeRunItems([runItem]);
     for (const item of serialized) {
+      streamedSerializedItems.push(item); // Store serialized item
       await onItemStream(item);
     }
   };
@@ -673,30 +896,43 @@ export const runWorkflow = async (
     input: AgentInputItem[],
     progressLabel?: string
   ) => {
+    console.log('[Workflow] Executing agent:', (agent as any)?.name || 'unknown', 'with label:', progressLabel);
+    
     if (progressLabel) {
       await notifyProgress(progressLabel);
     }
 
+    const agentStartIndex = streamedSerializedItems.length; // Track where this agent's items start
+
     if (onItemStream) {
+      console.log('[Workflow] Running agent with stream...');
       const streamResult = await runner.run(agent, input, { stream: true });
+      console.log('[Workflow] Stream started');
       
       // Process events in real-time as they arrive
-      for await (const event of streamResult as AsyncIterable<RunStreamEvent>) {
-        if (event?.type === "run_item_stream_event") {
-          await emitRunItem(event.item);
-        } else if (event?.type === "agent_updated_stream_event") {
-          const name = (event.agent as any)?.name;
-          if (name) {
-            await notifyProgress(`Switched to ${name}`);
+      try {
+        for await (const event of streamResult as AsyncIterable<RunStreamEvent>) {
+          console.log('[Workflow] Stream event type:', event?.type);
+          if (event?.type === "run_item_stream_event") {
+            await emitRunItem(event.item);
+          } else if (event?.type === "agent_updated_stream_event") {
+            const name = (event.agent as any)?.name;
+            if (name) {
+              await notifyProgress(`Switched to ${name}`);
+            }
           }
         }
+      } catch (streamError) {
+        console.error('[Workflow] Stream processing error:', streamError);
+        throw streamError;
       }
 
       if ("completed" in streamResult && streamResult.completed) {
         try {
           await streamResult.completed;
-        } catch {
-          // Ignore completion errors here; downstream logic will surface them via thrown exceptions.
+        } catch (completionError) {
+          console.error('[Workflow] Stream completion error:', completionError);
+          throw completionError;
         }
       }
 
@@ -717,6 +953,20 @@ export const runWorkflow = async (
     return result;
   };
 
+  // Step 1: Optimize the prompt
+  console.log('[Workflow] Step 1: Optimizing prompt...');
+  const promptoptimizerResultTemp = await executeAgent(
+    promptoptimizer,
+    [...conversationHistory],
+    "Optimizing prompt..."
+  );
+  conversationHistory.push(...promptoptimizerResultTemp.newItems.map((item) => item.rawItem));
+
+  if (!promptoptimizerResultTemp.finalOutput) {
+    throw new Error("PromptOptimizer result is undefined");
+  }
+
+  // Step 2: Guardrails check
   const guardrailsInputtext = workflow.input_as_text;
   const guardrailsResult = await runGuardrails(guardrailsInputtext, guardrailsConfig, context);
   const guardrailsHastripwire = guardrailsHasTripwire(guardrailsResult as GuardrailResult[]);
@@ -728,7 +978,7 @@ export const runWorkflow = async (
   if (guardrailsHastripwire) {
     const surbeefailResultTemp = await executeAgent(
       surbeefail,
-      [],
+      [...conversationHistory],
       "Guardrail triggered - responding safely..."
     );
     conversationHistory.push(...surbeefailResultTemp.newItems.map((item) => item.rawItem));
@@ -737,11 +987,14 @@ export const runWorkflow = async (
       throw new Error("Agent result is undefined");
     }
 
+    // Use already-serialized items instead of re-serializing
+    const failItems = streamedSerializedItems.slice(); // Get all items up to this point
+    
     return {
       output_text: surbeefailResultTemp.finalOutput,
       stage: "fail",
       guardrails: guardrailsOutput,
-      items: serializeRunItems(surbeefailResultTemp.newItems),
+      items: failItems,
     };
   }
 
@@ -762,15 +1015,30 @@ export const runWorkflow = async (
   };
 
   if (categorizeResult.output_parsed.mode === "BUILD") {
+    // Build mode: first plan, then build
+    const surbeebuildplannerResultTemp = await executeAgent(
+      surbeebuildplanner,
+      [...conversationHistory],
+      "Creating detailed survey plan..."
+    );
+    conversationHistory.push(...surbeebuildplannerResultTemp.newItems.map((item) => item.rawItem));
+
+    if (!surbeebuildplannerResultTemp.finalOutput) {
+      throw new Error("SurbeeBuildPlanner result is undefined");
+    }
+
     const surbeebuilderResultTemp = await executeAgent(
       surbeebuilder,
       [...conversationHistory],
       "Building survey experience..."
     );
     conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
-    const serializedItems = serializeRunItems(surbeebuilderResultTemp.newItems);
+    
+    // Use already-serialized items instead of re-serializing
+    const allSerializedItems = streamedSerializedItems.slice(); // Get all streamed items
+    
     const htmlFromTool =
-      serializedItems
+      allSerializedItems
         .filter(
           (item): item is Extract<SerializedRunItem, { type: "tool_result" }> =>
             item.type === "tool_result" && item.name === "buildHtmlCode" && typeof item.html === "string"
@@ -782,14 +1050,14 @@ export const runWorkflow = async (
         : undefined);
 
     if (!surbeebuilderResultTemp.finalOutput) {
-      throw new Error("Agent result is undefined");
+      throw new Error("SurbeeBuilder result is undefined");
     }
 
     return {
       output_text: surbeebuilderResultTemp.finalOutput,
       stage: "build",
       guardrails: guardrailsOutput,
-      items: serializedItems,
+      items: allSerializedItems,
       html: htmlFromTool,
     };
   }
@@ -801,7 +1069,9 @@ export const runWorkflow = async (
       "Drafting structured plan..."
     );
     conversationHistory.push(...surbeeplannerResultTemp.newItems.map((item) => item.rawItem));
-    const serializedItems = serializeRunItems(surbeeplannerResultTemp.newItems);
+    
+    // Use already-serialized items instead of re-serializing
+    const plannerEndIndex = streamedSerializedItems.length;
 
     if (!surbeeplannerResultTemp.finalOutput) {
       throw new Error("Agent result is undefined");
@@ -814,9 +1084,12 @@ export const runWorkflow = async (
         "Building survey experience..."
       );
       conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
-      const builderItems = serializeRunItems(surbeebuilderResultTemp.newItems);
+      
+      // Use already-serialized items instead of re-serializing
+      const allItems = streamedSerializedItems.slice(); // Get all items
+      
       const htmlFromTool =
-        builderItems
+        allItems
           .filter(
             (item): item is Extract<SerializedRunItem, { type: "tool_result" }> =>
               item.type === "tool_result" && item.name === "buildHtmlCode" && typeof item.html === "string"
@@ -835,7 +1108,7 @@ export const runWorkflow = async (
         output_text: surbeebuilderResultTemp.finalOutput,
         stage: "build",
         guardrails: guardrailsOutput,
-        items: [...serializedItems, ...builderItems],
+        items: allItems,
         html: htmlFromTool,
       };
     }
@@ -844,59 +1117,10 @@ export const runWorkflow = async (
       output_text: surbeeplannerResultTemp.finalOutput,
       stage: "plan",
       guardrails: guardrailsOutput,
-      items: serializedItems,
+      items: streamedSerializedItems.slice(0, plannerEndIndex),
     };
   }
 
-  const surbeeplannerResultTemp = await executeAgent(
-    surbeeplanner,
-    [...conversationHistory],
-    "Drafting structured plan..."
-  );
-  conversationHistory.push(...surbeeplannerResultTemp.newItems.map((item) => item.rawItem));
-  const serializedItems = serializeRunItems(surbeeplannerResultTemp.newItems);
-
-  if (!surbeeplannerResultTemp.finalOutput) {
-    throw new Error("Agent result is undefined");
-  }
-
-  if (approvalRequest("Should we proceed with this plan?")) {
-    const surbeebuilderResultTemp = await executeAgent(
-      surbeebuilder,
-      [...conversationHistory],
-      "Building survey experience..."
-    );
-    conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
-    const builderItems = serializeRunItems(surbeebuilderResultTemp.newItems);
-    const htmlFromTool =
-      builderItems
-        .filter(
-          (item): item is Extract<SerializedRunItem, { type: "tool_result" }> =>
-            item.type === "tool_result" && item.name === "buildHtmlCode" && typeof item.html === "string"
-        )
-        .map((item) => item.html!)
-        .pop() ??
-      (typeof surbeebuilderResultTemp.finalOutput === "string" && looksLikeHtml(surbeebuilderResultTemp.finalOutput)
-        ? surbeebuilderResultTemp.finalOutput
-        : undefined);
-
-    if (!surbeebuilderResultTemp.finalOutput) {
-      throw new Error("Agent result is undefined");
-    }
-
-    return {
-      output_text: surbeebuilderResultTemp.finalOutput,
-      stage: "build",
-      guardrails: guardrailsOutput,
-      items: [...serializedItems, ...builderItems],
-      html: htmlFromTool,
-    };
-  }
-
-  return {
-    output_text: surbeeplannerResultTemp.finalOutput,
-    stage: "plan",
-    guardrails: guardrailsOutput,
-    items: serializedItems,
-  };
+  // Fallback: should not reach here, but handle gracefully
+  throw new Error("Unexpected workflow state - mode was neither ASK nor BUILD");
 };

@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRealtime } from '@/contexts/RealtimeContext';
 import { ThinkingDisplay } from '../../../../components/ThinkingUi/components/thinking-display';
 import { ToolCall } from '../../../../components/ThinkingUi/components/tool-call';
+import { AILoader } from '@/components/ai-loader';
 
 interface ThinkingStep {
   id: string;
@@ -154,6 +155,7 @@ export default function ProjectPage() {
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
   const [isBuilding, setIsBuilding] = useState(false);
   const [buildingLabel, setBuildingLabel] = useState('Building survey experience...');
+  const [hasHtmlContent, setHasHtmlContent] = useState(false);
   const buildingLabelRef = useRef(buildingLabel);
   useEffect(() => {
     buildingLabelRef.current = buildingLabel;
@@ -415,22 +417,80 @@ export default function ProjectPage() {
     setBuildingLabel(defaultBuildLabel);
     buildingLabelRef.current = defaultBuildLabel;
     setThinkingHtmlStream('');
-    // Start with empty thinking steps - real agent thinking will populate this in real-time
+    setHasHtmlContent(false);
     setThinkingSteps([]);
 
-    const appendUniqueStep = (id: string, content: string, status: "thinking" | "complete" = "thinking") => {
+    // Track reasoning by agent to consolidate steps
+    let currentAgent = 'Initial';
+    const agentStepMap = new Map<string, { id: string; content: string }>();
+    const pendingUpdates = new Map<string, string>();
+    let flushTimer: NodeJS.Timeout | null = null;
+
+    const detectAgentFromMessage = (text: string): string | null => {
+      // Detect agent transitions from "Switched to X" pattern
+      const switchMatch = text.match(/switched to (\w+)/i);
+      if (switchMatch) {
+        return switchMatch[1];
+      }
+      
+      // Simple pattern matching without memo
+      if (/optimizing prompt/i.test(text)) return 'Prompt Optimizer';
+      if (/classifying|categorizing/i.test(text)) return 'Categorizer';
+      if (/creating.*plan|planning/i.test(text)) return 'Build Planner';
+      if (/drafting.*plan/i.test(text)) return 'Survey Planner';
+      if (/guardrail|checking/i.test(text)) return 'Safety Check';
+      
+      return null;
+    };
+
+    const flushPendingUpdates = () => {
+      if (flushTimer) {
+        clearTimeout(flushTimer);
+        flushTimer = null;
+      }
+
+      if (pendingUpdates.size === 0) return;
+
+      console.log(`[Thinking] Flushing ${pendingUpdates.size} pending updates`);
+      
       setThinkingSteps((prev) => {
-        // Check if step with this ID already exists
-        const existingIndex = prev.findIndex((step) => step.id === id);
-        if (existingIndex !== -1) {
-          // Update existing step
-          const updated = [...prev];
-          updated[existingIndex] = { ...updated[existingIndex], content, status };
-          return updated;
-        }
-        // Add new step
-        return [...prev, { id, content, status }];
+        const updated = [...prev];
+        pendingUpdates.forEach((reasoning, agent) => {
+          const agentId = `agent-${agent.toLowerCase().replace(/\s+/g, '-')}`;
+          const content = reasoning; // Just use reasoning without agent prefix
+          const existing = updated.findIndex(s => s.id === agentId);
+          
+          console.log(`[Thinking] Flushing agent ${agent} (${agentId}), existing: ${existing !== -1}`);
+          
+          if (existing !== -1) {
+            updated[existing] = { ...updated[existing], content };
+          } else {
+            updated.push({ id: agentId, content, status: 'thinking' as const });
+          }
+          
+          agentStepMap.set(agentId, { id: agentId, content });
+        });
+        console.log(`[Thinking] Updated steps count: ${updated.length}`);
+        return updated;
       });
+      
+      pendingUpdates.clear();
+    };
+
+    const addAgentStep = (agent: string, reasoning: string) => {
+      console.log(`[Thinking] Adding step for agent: ${agent}`, reasoning.substring(0, 100));
+      // Buffer the update instead of immediately updating state
+      const existingReasoning = pendingUpdates.get(agent) || '';
+      const updatedReasoning = existingReasoning 
+        ? `${existingReasoning}\n${reasoning}` 
+        : reasoning;
+      pendingUpdates.set(agent, updatedReasoning);
+      
+      // Debounce: flush updates every 30ms for more responsive UI
+      if (flushTimer) clearTimeout(flushTimer);
+      flushTimer = setTimeout(() => {
+        flushPendingUpdates();
+      }, 30);
     };
 
     try {
@@ -476,27 +536,125 @@ export default function ProjectPage() {
             if (payload.trim().length > 0) {
               try {
                 const ev = JSON.parse(payload);
+                
+                // Handle batch events - unpack and process each event
+                if (ev.type === 'batch' && Array.isArray(ev.events)) {
+                  for (const batchedEvent of ev.events) {
+                    // Process each batched event directly
+                    if (batchedEvent.type === 'reasoning' && batchedEvent.text) {
+                      const text = String(batchedEvent.text).trim();
+                      if (text.length > 0) {
+                        const lower = text.toLowerCase();
+                        
+                        // Check if this is a building/generation phase - close thinking and start building
+                        if (lower.includes('switched to surbeebuilder') || 
+                            lower.includes('building survey') ||
+                            lower.includes('generating html') ||
+                            lower.includes('builder agent') ||
+                            lower.includes('building the survey')) {
+                          // Flush any pending thinking updates before closing
+                          if (flushTimer) clearTimeout(flushTimer);
+                          flushPendingUpdates();
+                          
+                          // Mark all thinking steps as complete and close thinking display
+                          setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
+                          setIsThinking(false);
+                          
+                          // Start building phase
+                          setIsBuilding(true);
+                          setBuildingLabel(text);
+                          buildingLabelRef.current = text;
+                        } else {
+                          // Detect which agent this reasoning is from
+                          const detectedAgent = detectAgentFromMessage(text);
+                          if (detectedAgent) {
+                            currentAgent = detectedAgent;
+                          }
+                          
+                          // Add or update the agent's step
+                          addAgentStep(currentAgent, text);
+                        }
+                      }
+                    } else if (batchedEvent.type === 'message' && batchedEvent.text) {
+                      const messageText = String(batchedEvent.text).trim();
+                      if (messageText.length > 0) {
+                        setMessages((prev) => [
+                          ...prev,
+                          {
+                            id: batchedEvent.id || `msg-${Date.now()}`,
+                            text: messageText,
+                            isUser: false,
+                            timestamp: new Date(),
+                          },
+                        ]);
+                      }
+                    }
+                  }
+                  boundary = buffer.indexOf('\n');
+                  continue;
+                }
+                
                 if (ev.type === 'reasoning' && ev.text) {
                   const text = String(ev.text).trim();
                   if (text.length > 0) {
                     const lower = text.toLowerCase();
-                    const stepId = ev.id || `reason-${Date.now()}`;
                     
-                    // Check if this is a building/generation phase - set state but DON'T add to thinking steps
+                    // Check if this is a building/generation phase - close thinking and start building
                     if (lower.includes('switched to surbeebuilder') || 
                         lower.includes('building survey') ||
-                        lower.includes('generating html')) {
+                        lower.includes('generating html') ||
+                        lower.includes('builder agent') ||
+                        lower.includes('building the survey')) {
+                      // Flush any pending thinking updates before closing
+                      if (flushTimer) clearTimeout(flushTimer);
+                      flushPendingUpdates();
+                      
+                      // Mark all thinking steps as complete and close thinking display
+                      setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
+                      setIsThinking(false);
+                      
+                      // Start building phase
                       setIsBuilding(true);
                       setBuildingLabel(text);
                       buildingLabelRef.current = text;
                     } else {
-                      // Add all reasoning steps directly as they stream in
-                      appendUniqueStep(stepId, text, 'thinking');
+                      // Detect which agent this reasoning is from
+                      const detectedAgent = detectAgentFromMessage(text);
+                      if (detectedAgent) {
+                        currentAgent = detectedAgent;
+                      }
+                      
+                      // Add or update the agent's step
+                      addAgentStep(currentAgent, text);
                     }
+                  }
+                } else if (ev.type === 'message' && ev.text) {
+                  // Handle AI message responses - add to chat
+                  const messageText = String(ev.text).trim();
+                  if (messageText.length > 0) {
+                    setMessages((prev) => [
+                      ...prev,
+                      {
+                        id: ev.id || `msg-${Date.now()}`,
+                        text: messageText,
+                        isUser: false,
+                        timestamp: new Date(),
+                      },
+                    ]);
                   }
                 } else if (ev.type === 'html_chunk' && typeof ev.chunk === 'string') {
                   htmlBuf += ev.chunk;
+                  // First HTML chunk means thinking is done - flush any pending updates first
+                  if (!htmlBuf || htmlBuf.length === ev.chunk.length) {
+                    // Flush pending updates immediately before closing thinking
+                    if (flushTimer) clearTimeout(flushTimer);
+                    flushPendingUpdates();
+                    
+                    setIsThinking(false);
+                    setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
+                  }
                   setIsBuilding(true);
+                  setHasHtmlContent(true);
                   if (htmlBuf.length > lastPushedLen) {
                     lastPushedLen = htmlBuf.length;
                     deepSite.updateHtml(htmlBuf);
@@ -510,12 +668,18 @@ export default function ProjectPage() {
                   const finalLabel = 'Build complete.';
                   setBuildingLabel(finalLabel);
                   buildingLabelRef.current = finalLabel;
-                  // Mark all thinking steps as complete
+                  // Ensure thinking is closed and all steps marked complete
+                  setIsThinking(false);
                   setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
                   setIsBuilding(false);
                 } else if (ev.type === 'error' && ev.message) {
                   const errorMessage = String(ev.message);
-                  appendUniqueStep(ev.id || `error-${Date.now()}`, `Error: ${errorMessage}`, 'thinking');
+                  const errorId = ev.id || `error-${Date.now()}`;
+                  setThinkingSteps((prev) => [
+                    ...prev,
+                    { id: errorId, content: `Error: ${errorMessage}`, status: 'thinking' },
+                  ]);
+                  setIsThinking(false);
                   setIsBuilding(false);
                 }
               } catch {
@@ -528,6 +692,12 @@ export default function ProjectPage() {
         }
       }
 
+      // Flush any pending updates before completing
+      if (flushTimer) {
+        clearTimeout(flushTimer);
+      }
+      flushPendingUpdates();
+      
       return true;
     } catch (error) {
       console.error('runSurveyBuild error', error);
@@ -550,6 +720,12 @@ export default function ProjectPage() {
       ]);
       return false;
     } finally {
+      // Flush any remaining pending updates
+      if (flushTimer) {
+        clearTimeout(flushTimer);
+      }
+      flushPendingUpdates();
+      
       setIsThinking(false);
       setIsInputDisabled(false);
       deepSite.setIsAiWorking(false);
@@ -1294,24 +1470,29 @@ export default function ProjectPage() {
         {/* Main Content Area */}
         <div className="flex-1 flex relative">
           {/* Restored rounded preview frame with border, like before */}
-          <div className="flex-1 flex flex-col relative bg-[#1a1a1a] rounded-[0.625rem] border border-zinc-800 mt-0 mr-3 mb-3 ml-2 overflow-hidden">
-            <div className="flex-1 overflow-hidden flex items-center justify-center">
-              {/* Device-sized container with smooth transitions on resize */}
-              <div className={`relative ${getDeviceStyles()} transition-all duration-300 ease-in-out`}>
-                <DeepSiteRenderer
-                  key={`renderer-${rendererKey}`}
-                  html={deepSite.html}
-                  currentPath={selectedRoute}
-                  deviceType={currentDevice}
-                  title="Website Preview"
-                  className="h-full w-full"
-                  isEditableModeEnabled={isEditableModeEnabled}
-                  onClickElement={(element) => {
-                    setIsEditableModeEnabled(false);
-                    setSelectedElement(element);
-                  }}
-                />
-              </div>
+          <div className="flex-1 flex flex-col relative bg-[#0a0a0a] rounded-[0.625rem] border border-zinc-800 mt-0 mr-3 mb-3 ml-2 overflow-hidden">
+            <div className="flex-1 overflow-hidden flex items-center justify-center bg-[#0a0a0a]">
+              {/* Show loading animation while building but no HTML yet */}
+              {(isBuilding || isThinking) && !hasHtmlContent ? (
+                <AILoader text="Building" size={200} />
+              ) : (
+                /* Device-sized container with smooth transitions on resize */
+                <div className={`relative ${getDeviceStyles()} transition-all duration-300 ease-in-out`}>
+                  <DeepSiteRenderer
+                    key={`renderer-${rendererKey}`}
+                    html={deepSite.html}
+                    currentPath={selectedRoute}
+                    deviceType={currentDevice}
+                    title="Website Preview"
+                    className="h-full w-full bg-[#0a0a0a]"
+                    isEditableModeEnabled={isEditableModeEnabled}
+                    onClickElement={(element) => {
+                      setIsEditableModeEnabled(false);
+                      setSelectedElement(element);
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

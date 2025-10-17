@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils"
 
 import { ShiningText } from "./shining-text"
 import { useEffect, useState, useRef } from "react"
+import { ChevronDown } from "lucide-react"
 
 interface ThinkingStep {
   id: string
@@ -23,10 +24,18 @@ export function ThinkingDisplay({ steps, isThinking = false, className }: Thinki
   const startTimeRef = useRef<number | null>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Force open when thinking starts or when new steps arrive
+  useEffect(() => {
+    if (isThinking) {
+      setIsOpen(true)
+    }
+  }, [isThinking, steps.length])
+
   useEffect(() => {
     if (isThinking && !startTimeRef.current) {
       // Start tracking time when thinking begins
       startTimeRef.current = Date.now()
+      setIsOpen(true) // Ensure display is open when thinking starts
       intervalRef.current = setInterval(() => {
         if (startTimeRef.current) {
           setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000))
@@ -40,7 +49,8 @@ export function ThinkingDisplay({ steps, isThinking = false, className }: Thinki
       }
       const finalTime = Math.floor((Date.now() - startTimeRef.current) / 1000)
       setElapsedTime(finalTime)
-      setIsOpen(false)
+      // Keep it open after completion so user can see what was thought
+      // setIsOpen(false)
     }
 
     return () => {
@@ -49,36 +59,53 @@ export function ThinkingDisplay({ steps, isThinking = false, className }: Thinki
       }
     }
   }, [isThinking])
+  
+  // Reset timer when component unmounts or isThinking becomes false after being true
+  useEffect(() => {
+    if (!isThinking && startTimeRef.current) {
+      // Reset for next thinking session
+      return () => {
+        startTimeRef.current = null
+        setElapsedTime(0)
+      }
+    }
+  }, [isThinking])
 
-  // Combine all step content into one continuous text for shimmer effect
-  const combinedText = steps.map(step => step.content).join(" • ")
+  // Always show when thinking, even with no steps yet
+  if (!isThinking && steps.length === 0) {
+    return null
+  }
 
   return (
     <div className={cn("relative my-1 min-h-6", className)}>
       <div className="relative flex origin-top-left flex-col gap-2 overflow-x-clip">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex w-fit items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer group"
         >
+          <ChevronDown 
+            className={cn(
+              "w-4 h-4 transition-transform duration-200",
+              isOpen ? "rotate-0" : "-rotate-90"
+            )}
+          />
           {isThinking ? (
-            <ShiningText text="Thinking..." className="text-sm" />
+            <ShiningText text="Thinking..." className="text-sm cursor-pointer" />
           ) : (
-            <span>{`Thought for ${elapsedTime}s`}</span>
+            <span className="cursor-pointer">{`Thought for ${elapsedTime}s`}</span>
           )}
         </button>
 
         <div
           className={cn(
-            "max-w-[calc(0.8*var(--thread-content-max-width,40rem))] transition-all duration-300 ease-in-out overflow-hidden",
+            "max-w-[calc(0.8*var(--thread-content-max-width,40rem))] transition-all duration-300 ease-in-out overflow-hidden pl-5",
             isOpen ? "opacity-100 max-h-[2000px]" : "opacity-0 max-h-0",
           )}
         >
           <div className="relative z-0">
             <div className="relative flex h-full flex-col" style={{ margin: "4px 0px" }}>
-              {isThinking && combinedText ? (
-                <div className="text-sm text-muted-foreground break-words">
-                  <ShiningText text={combinedText} />
-                </div>
+              {steps.length === 0 && isThinking ? (
+                <div className="text-sm text-muted-foreground animate-pulse">Processing...</div>
               ) : (
                 steps.map((step, index) => (
                   <ThinkingStep
@@ -87,6 +114,7 @@ export function ThinkingDisplay({ steps, isThinking = false, className }: Thinki
                     status={step.status}
                     isLast={index === steps.length - 1}
                     zIndex={index}
+                    isThinking={isThinking}
                   />
                 ))
               )}
@@ -103,6 +131,7 @@ interface ThinkingStepProps {
   status: "thinking" | "complete"
   isLast: boolean
   zIndex: number
+  isThinking: boolean
 }
 
 function ThinkingStep({ content, status, isLast, zIndex }: ThinkingStepProps) {
@@ -136,13 +165,13 @@ function ThinkingStep({ content, status, isLast, zIndex }: ThinkingStepProps) {
                 />
               </svg>
             ) : (
-              <div className="bg-muted-foreground/40 h-[6px] w-[6px] rounded-full" />
+              <div className="bg-muted-foreground/40 h-[6px] w-[6px] rounded-full animate-pulse" />
             )}
           </div>
           {!isLast && <div className="bg-border h-full w-[1px] rounded-full" />}
         </div>
         <div className="w-full" style={{ marginBottom: isLast ? "0px" : "12px" }}>
-          <div className="text-sm w-full break-words">
+          <div className="text-sm w-full break-words whitespace-pre-wrap">
             <span className="text-muted-foreground">{content}</span>
           </div>
         </div>

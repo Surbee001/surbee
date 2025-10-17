@@ -134,8 +134,8 @@
     }
   }
 
-  /* Reduced animation duration and adjusted background size for tighter shimmer */
+  /* Slower shimmer animation for subtle effect */
   .animate-shine {
-    animation: shine 2s linear infinite;
+    animation: shine 3.5s linear infinite;
   }
 }
