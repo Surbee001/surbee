@@ -78,6 +78,8 @@ export function ThinkingDisplay({ steps, isThinking = false, className }: Thinki
   // Always show if we have steps OR if thinking is active OR if we have elapsed time
   const shouldShow = isThinking || steps.length > 0 || elapsedTime > 0;
   
+  console.log('[ThinkingDisplay] Rendering - isThinking:', isThinking, 'steps.length:', steps.length, 'elapsedTime:', elapsedTime, 'shouldShow:', shouldShow);
+  
   if (!shouldShow) {
     return null;
   }

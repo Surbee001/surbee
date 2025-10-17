@@ -456,7 +456,7 @@ export default function ProjectPage() {
             status: 'thinking' as const
           }
         ];
-        console.log('[Thinking] Steps count:', newSteps.length);
+        console.log('[Thinking] Steps count:', newSteps.length, '| Latest step:', text.substring(0, 60));
         return newSteps;
       });
     };
@@ -511,6 +511,7 @@ export default function ProjectPage() {
                     // Process each batched event directly
                     if (batchedEvent.type === 'reasoning' && batchedEvent.text) {
                       const text = String(batchedEvent.text).trim();
+                      console.log('[Reasoning Event - Batch] Received:', text.substring(0, 100));
                       if (text.length > 0) {
                         // Always add reasoning step - don't trigger building from reasoning text
                         addReasoningStep(text);
@@ -545,6 +546,7 @@ export default function ProjectPage() {
                 
                 if (ev.type === 'reasoning' && ev.text) {
                   const text = String(ev.text).trim();
+                  console.log('[Reasoning Event - Non-Batch] Received:', text.substring(0, 100));
                   if (text.length > 0) {
                     // Always add reasoning step - don't trigger building from reasoning text
                     addReasoningStep(text);
