@@ -17,7 +17,7 @@ export function PricingCards() {
         </div>
 
         <div className="text-left mt-auto">
-          <button className="w-full py-3 px-6 bg-white text-black font-medium rounded-full border border-neutral-200 hover:bg-neutral-50 transition-colors">
+          <button className="py-3 px-6 bg-white text-black font-medium rounded-full border border-neutral-200 hover:bg-neutral-50 transition-colors">
             Start Free
           </button>
         </div>
@@ -35,7 +35,7 @@ export function PricingCards() {
         </div>
 
         <div className="text-left mt-auto">
-          <button className="w-full py-3 px-6 bg-white text-black font-medium rounded-full border border-neutral-200 hover:bg-neutral-50 transition-colors">
+          <button className="py-3 px-6 bg-white text-black font-medium rounded-full border border-neutral-200 hover:bg-neutral-50 transition-colors">
             Get Pro
           </button>
         </div>
@@ -45,7 +45,7 @@ export function PricingCards() {
       <div className="bg-neutral-100 rounded-lg p-6 border border-neutral-200 transition-all duration-300 min-h-[400px] flex flex-col">
         <div className="text-left mb-4">
           <h3 className="text-2xl font-semibold text-black mb-1">Max</h3>
-          <p className="text-lg text-neutral-500 font-medium">100%</p>
+          <p className="text-lg text-neutral-500 font-medium">$100</p>
         </div>
 
         <div className="mb-6 flex-grow">
@@ -53,7 +53,7 @@ export function PricingCards() {
         </div>
 
         <div className="text-left mt-auto">
-          <button className="w-full py-3 px-6 bg-white text-black font-medium rounded-full border border-neutral-200 hover:bg-neutral-50 transition-colors">
+          <button className="py-3 px-6 bg-white text-black font-medium rounded-full border border-neutral-200 hover:bg-neutral-50 transition-colors">
             Get Max
           </button>
         </div>
