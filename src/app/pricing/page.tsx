@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ImageKitProvider, Image as IKImage } from "@imagekit/next";
 
 export default function PricingPage() {
+  const [selectedFrequency, setSelectedFrequency] = useState("monthly");
   const sidebarWidthClass = "w-56"; // 14rem ~ 224px
 
   return (
@@ -145,55 +146,288 @@ export default function PricingPage() {
             </p>
           </header>
 
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-stretch justify-center">
-          {/* Trial */}
-          <PlanCard
-            title="Trial"
-            price="0"
-            period="/ month"
-            includes="500 credits / month"
-            ctaHref="/test-login"
-            imageSrc="/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__4ce65e66-d621-45c5-bf0a-fbb5ca988ffc.png"
-            features={[
-              "Core features",
-              "Community support",
-              "Basic usage limits",
-              "Limited generations",
-            ]}
-          />
+          <div className="flex justify-center mt-8 mb-6">
+            <fieldset aria-label="Payment frequency">
+              <div className="relative flex rounded-full text-center p-0.5 bg-gray-100 border border-gray-200">
+                <div
+                  className={`absolute rounded-full transition-all duration-300 ease-out bg-white border border-gray-200 ${selectedFrequency === 'monthly' ? 'left-0.5' : 'left-[calc(50%-2px)]'}`}
+                  style={{
+                    width: "101px",
+                    top: "2px",
+                    bottom: "2px",
+                  }}
+                />
+                <label className={`group relative cursor-pointer rounded-full text-base leading-[1] px-4 py-2 z-10 transition-colors ${selectedFrequency === 'monthly' ? 'text-black' : 'text-gray-600 hover:text-black'}`} style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+                  <input
+                    className="absolute inset-0 cursor-pointer appearance-none rounded-full opacity-0"
+                    name="frequency"
+                    type="radio"
+                    value="monthly"
+                    checked={selectedFrequency === 'monthly'}
+                    onChange={(e) => setSelectedFrequency(e.target.value)}
+                  />
+                  <span>Monthly</span>
+                </label>
+                <label className={`group relative cursor-pointer rounded-full text-base leading-[1] px-4 py-2 z-10 transition-colors ${selectedFrequency === 'yearly' ? 'text-black' : 'text-gray-600 hover:text-black'}`} style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+                  <input
+                    className="absolute inset-0 cursor-pointer appearance-none rounded-full opacity-0"
+                    name="frequency"
+                    type="radio"
+                    value="yearly"
+                    checked={selectedFrequency === 'yearly'}
+                    onChange={(e) => setSelectedFrequency(e.target.value)}
+                  />
+                  <span>Yearly</span>
+                </label>
+              </div>
+            </fieldset>
+          </div>
 
-          {/* Pro */}
-          <PlanCard
-            title="Pro"
-            price="39.99"
-            period="/ month"
-            includes="4000 credits / month"
-            ctaHref="/test-login"
-            imageSrc="/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__a251fdff-9dfc-4ba5-ae7b-fc45b9e25c11.png"
-            features={[
-              "Everything from Trial",
-              "Higher usage limits",
-              "Priority support",
-              "Request new integrations",
-            ]}
-          />
-
-          {/* Enterprise */}
-          <PlanCard
-            title="Enterprise"
-            price="Custom"
-            period=""
-            includes="Unlimited teams & SSO"
-            ctaHref="/test-login"
-            imageSrc="/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__eaaaa7a6-e50c-45e5-b7b9-d04871dae055.png"
-            features={[
-              "Everything in Pro",
-              "Dedicated support",
-              "Custom limits & SLAs",
-              "Security reviews & SSO/SAML",
-            ]}
-          />
+        <div className="mt-v3 space-y-v8/12">
+          <h2 id="individual" className="text-2xl font-semibold mb-6" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
+            <a
+              className="hover:opacity-90"
+              href="/pricing#individual"
+            >
+              Individual Plans
+            </a>
+          </h2>
+          <div className="gap-g1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+            <a
+              className="card card--text aspect-natural-box sm:aspect-natural-box md:aspect-16/9-box lg:aspect-4/5-box"
+              href="https://cursor.com/download"
+            >
+              <div className="col-span-full row-span-full flex flex-col justify-between">
+                <div>
+                  <div className="flex items-baseline gap-x-2">
+                    <h3 id="tier-0-0" className="type-md">
+                      Hobby
+                    </h3>
+                  </div>
+                  <p className="flex items-baseline">
+                    <span className="type-md text-theme-text-sec">Free</span>
+                  </p>
+                  <p className="text-theme-text-sec mt-v9/12">Includes:</p>
+                  <ul className="mt-v9/12 space-y-v2/12" role="list">
+                    <li className="gap-x-g0.75 flex">
+                      <span>✓</span> One-week Pro trial
+                    </li>
+                    <li className="gap-x-g0.75 flex">
+                      <span>✓</span> Limited Agent requests
+                    </li>
+                    <li className="gap-x-g0.75 flex">
+                      <span>✓</span> Limited Tab completions
+                    </li>
+                  </ul>
+                </div>
+                <div className="mt-v1.5">
+                  <span className="btn btn--secondary">Download</span>
+                </div>
+              </div>
+            </a>
+            <a
+              className="card card--text aspect-natural-box sm:aspect-natural-box md:aspect-16/9-box lg:aspect-4/5-box"
+              href="https://cursor.com/api/auth/checkoutDeepControl"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <div className="col-span-full row-span-full flex flex-col justify-between">
+                <div>
+                  <div className="flex items-baseline gap-x-2">
+                    <h3 id="tier-0-1" className="type-md">
+                      Pro
+                    </h3>
+                  </div>
+                  <p className="flex items-baseline">
+                    <span className="type-md text-theme-text-sec">$20</span>
+                    <span className="text-theme-text-sec text-sm"> / mo.</span>
+                  </p>
+                  <p className="text-theme-text-sec mt-v9/12">
+                    Everything in Hobby, plus:
+                  </p>
+                  <ul className="mt-v9/12 space-y-v2/12" role="list">
+                    <li className="gap-x-g0.75 flex">
+                      <span>✓</span> Extended limits on Agent
+                    </li>
+                    <li className="gap-x-g0.75 flex">
+                      <span>✓</span> Unlimited Tab completions
+                    </li>
+                    <li className="gap-x-g0.75 flex">
+                      <span>✓</span> Background Agents
+                    </li>
+                    <li className="gap-x-g0.75 flex">
+                      <span>✓</span> Maximum context windows
+                    </li>
+                  </ul>
+                </div>
+                <div className="mt-v1.5">
+                  <span className="btn btn--secondary">Get Pro</span>
+                </div>
+              </div>
+            </a>
+            <a
+              className="card card--text aspect-natural-box sm:aspect-natural-box md:aspect-16/9-box lg:aspect-4/5-box"
+              href="https://cursor.com/api/auth/checkoutDeepControl?tier=pro_plus"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <div className="col-span-full row-span-full flex flex-col justify-between">
+                <div>
+                  <div className="flex items-baseline gap-x-2">
+                    <h3 id="tier-0-2" className="type-md">
+                      Pro+
+                    </h3>
+                    <p className="text-theme-accent">Recommended</p>
+                  </div>
+                  <p className="flex items-baseline">
+                    <span className="type-md text-theme-text-sec">$60</span>
+                    <span className="text-theme-text-sec text-sm"> / mo.</span>
+                  </p>
+                  <p className="text-theme-text-sec mt-v9/12">
+                    Everything in Pro, plus:
+                  </p>
+                  <ul className="mt-v9/12 space-y-v2/12" role="list">
+                    <li className="gap-x-g0.75 flex">
+                      <span>✓</span> 3x usage on all OpenAI, Claude, Gemini models
+                    </li>
+                  </ul>
+                </div>
+                <div className="mt-v1.5">
+                  <span className="btn">Get Pro+</span>
+                </div>
+              </div>
+            </a>
+            <a
+              className="card card--text aspect-natural-box sm:aspect-natural-box md:aspect-16/9-box lg:aspect-4/5-box"
+              href="https://cursor.com/api/auth/checkoutDeepControl?tier=ultra"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <div className="col-span-full row-span-full flex flex-col justify-between">
+                <div>
+                  <div className="flex items-baseline gap-x-2">
+                    <h3 id="tier-0-3" className="type-md">
+                      Ultra
+                    </h3>
+                  </div>
+                  <p className="flex items-baseline">
+                    <span className="type-md text-theme-text-sec">$200</span>
+                    <span className="text-theme-text-sec text-sm"> / mo.</span>
+                  </p>
+                  <p className="text-theme-text-sec mt-v9/12">
+                    Everything in Pro, plus:
+                  </p>
+                  <ul className="mt-v9/12 space-y-v2/12" role="list">
+                    <li className="gap-x-g0.75 flex">
+                      <span>✓</span> 20x usage on all OpenAI, Claude, Gemini
+                      models
+                    </li>
+                    <li className="gap-x-g0.75 flex">
+                      <span>✓</span> Priority access to new features
+                    </li>
+                  </ul>
+                </div>
+                <div className="mt-v1.5">
+                  <span className="btn btn--secondary">Get Ultra</span>
+                </div>
+              </div>
+            </a>
+          </div>
         </div>
+
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            /* Pricing card styles */
+            .card {
+              border: 1px solid rgba(0, 0, 0, 0.08);
+              border-radius: 12px;
+              padding: 24px;
+              background: #fff;
+              transition: all 0.2s ease;
+            }
+            
+            .card:hover {
+              border-color: rgba(0, 0, 0, 0.12);
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            }
+            
+            .card--text {
+              color: #0a0a0a;
+            }
+            
+            .type-md {
+              font-size: 20px;
+              font-weight: 600;
+              line-height: 1.4;
+              color: #0a0a0a;
+            }
+            
+            .text-theme-text-sec {
+              color: #6b7280;
+            }
+            
+            .text-theme-accent {
+              color: #10b981;
+              font-size: 14px;
+              font-weight: 500;
+            }
+            
+            .btn {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              padding: 10px 20px;
+              border-radius: 8px;
+              font-size: 14px;
+              font-weight: 500;
+              transition: all 0.2s ease;
+              background: #0a0a0a;
+              color: #fff;
+              border: none;
+            }
+            
+            .btn:hover {
+              background: #1a1a1a;
+            }
+            
+            .btn--secondary {
+              background: #f5f5f5;
+              color: #0a0a0a;
+            }
+            
+            .btn--secondary:hover {
+              background: #e5e5e5;
+            }
+            
+            .mt-v9\\/12 {
+              margin-top: 0.75rem;
+            }
+            
+            .mt-v1\\.5 {
+              margin-top: 1.5rem;
+            }
+            
+            .mt-v3 {
+              margin-top: 3rem;
+            }
+            
+            .space-y-v2\\/12 > * + * {
+              margin-top: 0.5rem;
+            }
+            
+            .space-y-v8\\/12 > * + * {
+              margin-top: 2rem;
+            }
+            
+            .gap-g1 {
+              gap: 1rem;
+            }
+            
+            .gap-x-g0\\.75 {
+              column-gap: 0.75rem;
+            }
+          `
+        }} />
 
         {/* FAQ Section */}
         <section className="px-6 pt-24 pb-2 text-center">
@@ -229,7 +463,7 @@ export default function PricingPage() {
           </div>
         </section>
         </div>
-        </main>
+      </main>
       </div>
     </div>
     </ImageKitProvider>
@@ -287,140 +521,6 @@ function FAQItem({ question, answer }: FAQItemProps) {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
-  );
-}
-
-type PlanCardProps = {
-  title: string;
-  price: string;
-  period: string;
-  includes: string;
-  imageSrc: string;
-  ctaHref: string;
-  features: string[];
-};
-
-function PlanCard({ title, price, period, includes, imageSrc, ctaHref, features }: PlanCardProps) {
-  return (
-    <div className="group rounded-2xl border border-[#DEE2DE] bg-neutral-50 cursor-pointer transition-all hover:shadow-[0_2px_2px_0_rgba(0,0,0,0.06),_0_6px_6px_0_rgba(0,0,0,0.00),_0_0_0_5px_rgba(0,0,0,0.04)] shadow-[0_2px_2px_0_rgba(0,0,0,0.06),_0_6px_6px_0_rgba(0,0,0,0.00),_0_0_0_5px_rgba(0,0,0,0.04)] px-4 pb-8 pt-2.5 sm:px-8 sm:py-3 md:py-5 md:px-6 xl:px-8 xl:pb-10 flex-1 min-h-none lg:min-h-[700px] w-full max-w-[420px] sm:max-w-[704px] xl:max-w-none flex flex-col h-full">
-      <div className="flex justify-between items-center pb-6">
-        <p
-          className="font-medium text-[15px] leading-[140%]"
-          style={{ color: "rgb(180, 184, 180)", fontFamily: 'var(--font-inter), sans-serif', letterSpacing: '0.15px' }}
-        >
-          {title}
-        </p>
-        <div className="hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <a
-            className="flex items-center gap-[6px] px-[10px] py-1 rounded-[100px] border border-[rgba(255,255,255,0.60)] bg-neutral-900 shadow-[0_4px_12px_0_rgba(255,255,255,0.10)_inset,0_2px_6px_0_rgba(0,0,0,0.20)] backdrop-blur-[20px] cursor-pointer hover:[&>svg]:translate-x-[2px]"
-            aria-label="Select pricing plan"
-            href={ctaHref}
-          >
-            <span className="text-[#FFF] font-medium text-[13px] leading-[130%]" style={{ fontFamily: 'var(--font-inter), sans-serif', letterSpacing: '-0.13px' }}>
-              Select
-            </span>
-            <svg
-              className="text-[#FFF] transition-transform duration-200"
-              height="13"
-              width="11"
-              fill="none"
-              viewBox="0 0 7 10"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect height="1.41526" width="1.41526" fill="currentColor" x="4.36621" y="4.43835" />
-              <rect height="1.41526" width="1.41526" fill="currentColor" x="1.55078" y="1.61774" />
-              <rect height="1.41526" width="1.41526" fill="currentColor" x="1.55078" y="7.2619" />
-              <rect height="4.24579" width="1.41526" fill="currentColor" x="2.95117" y="3.02307" />
-            </svg>
-          </a>
-                    </div>
-                  </div>
-
-      <div className="flex-1 flex flex-col">
-        <div className="flex flex-col sm:flex-row lg:flex-col lg:gap-0 gap-4">
-          <div className="relative lg:w-full w-full sm:w-1/2 h-[230px] sm:h-[222px] aspect-square [border-radius:16px] [border:1px_solid_#DEE2DE] overflow-hidden">
-            <IKImage
-              className="object-cover absolute inset-0 h-full w-full select-none"
-              alt={title}
-              src={imageSrc}
-              width={600}
-              height={600}
-              transformation={[{ width: 480, quality: 85 }]}
-              loading="lazy"
-            />
-                      </div>
-          <div className="flex flex-col flex-1">
-            <div className="flex-1">
-              <div className="lg:mt-6 mt-0 flex flex-col gap-2">
-                <p className="font-medium text-[13px] text-neutral-700" style={{ fontFamily: 'var(--font-inter), sans-serif', letterSpacing: '0.13px', lineHeight: '130%' }}>
-                  Starting at
-                </p>
-                <div className="flex items-baseline gap-1">
-                  <div className="flex items-baseline">
-                    <img
-                      className="mr-[7px] self-center select-none"
-                      height={30}
-                      width={16}
-                      alt="$"
-                      src="https://cofounder.co/_next/static/media/dolar-sign.6d789d18.svg"
-                      draggable={false}
-                    />
-                    <p className="font-normal text-[50px] text-neutral-900 leading-[110%] mr-[7px]" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
-                      {price}
-                    </p>
-                  </div>
-                  {period ? (
-                    <p className="font-medium text-[15px] text-neutral-800 leading-[140%]" style={{ fontFamily: 'var(--font-inter), sans-serif', letterSpacing: '-0.15px', fontVariantNumeric: 'lining-nums proportional-nums' }}>
-                      {period}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-              <div className="mt-8 flex flex-col gap-4">
-                <ul className="flex flex-col gap-3">
-                  {features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-neutral-900 font-medium text-[15px] leading-[140%]" style={{ fontFamily: 'var(--font-inter), sans-serif', letterSpacing: '-0.15px', fontVariantNumeric: 'lining-nums proportional-nums' }}>
-                      <img
-                        height={15}
-                        width={14}
-                        alt="checkbox"
-                        src="https://cofounder.co/_next/static/media/checkbox-green.9f99a2ea.svg"
-                        draggable={false}
-                      />
-                      <span className="text-neutral-900 font-medium text-[15px] leading-[140%] -mt-[3px]" style={{ fontFamily: 'var(--font-inter), sans-serif', letterSpacing: '-0.15px', fontVariantNumeric: 'lining-nums proportional-nums' }}>
-                        {f}
-                      </span>
-                    </li>
-                  ))}
-                  </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-auto pt-6 flex flex-col gap-1">
-        <div className="flex items-center gap-1">
-          <p className="font-medium text-[13px] text-neutral-700" style={{ fontFamily: 'var(--font-inter), sans-serif', letterSpacing: '0.13px', lineHeight: '130%' }}>
-            Includes
-          </p>
-          <p className="font-medium text-[13px] text-neutral-600" style={{ fontFamily: 'var(--font-inter), sans-serif', letterSpacing: '0.13px', lineHeight: '130%' }}>
-            {includes}
-            </p>
-          </div>
-        <div className="block sm:hidden pt-5">
-          <a
-            className="flex w-full text-center justify-center items-center gap-[6px] px-[10px] py-1 min-h-[36px] rounded-[100px] border border-[rgba(255,255,255,0.60)] bg-neutral-900 shadow-[0_4px_12px_0_rgba(255,255,255,0.10)_inset,0_2px_6px_0_rgba(0,0,0,0.20)] cursor-pointer"
-            aria-label="Select pricing plan"
-            href={ctaHref}
-          >
-            <span className="text-[#FFF] font-medium text-[15px] leading-[140%]" style={{ fontFamily: 'var(--font-inter), sans-serif', letterSpacing: '-0.15px' }}>
-              Select
-            </span>
-          </a>
-        </div>
-      </div>
     </div>
   );
 }
