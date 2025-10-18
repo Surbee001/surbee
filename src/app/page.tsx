@@ -1,19 +1,18 @@
 "use client"
 
 import CreatedWithSurbee from "@/components/landing/CreatedWithSurbee"
+import AnimatedHero from "@/components/landing/AnimatedHero"
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center px-4">
-        <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-title-secondary md:text-title-primary mb-8">
-            Build Beautiful Surveys
-            <br />
-            with AI
-          </h1>
-          <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="min-h-[60vh] flex flex-col justify-center mb-16">
+            <AnimatedHero />
+          </div>
+          <p className="text-xl text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
             Create professional, engaging surveys in minutes with Surbee's AI-powered survey builder.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

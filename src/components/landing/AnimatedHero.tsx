@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 
-export default function HeroSection() {
+export default function AnimatedHero() {
   const [mousePos1, setMousePos1] = useState({ x: 79, y: 99 });
   const [mousePos2, setMousePos2] = useState({ x: 68, y: 3.9 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -25,8 +25,8 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <div className="h-full flex flex-col flex-shrink-0 z-1 justify-center">
-      <div ref={containerRef} className="relative flex h-full flex-col min-h-[40vh]">
+    <>
+      <div ref={containerRef} className="relative flex h-full flex-col">
         <h1 className="flex h-full flex-col select-none">
           <span className="bsmnt-text-display-sm self-start leading-none md:text-[6.25rem]">
             <span className="relative">
@@ -185,6 +185,16 @@ export default function HeroSection() {
       <style
         dangerouslySetInnerHTML={{
           __html: `
+html {
+  font-size: 1rem;
+  line-height: var(--tw-leading,calc(1.5/1));
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "rlig", "calt", "ss01";
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+  color-scheme: dark;
+}
+
 .bsmnt-text-display-sm {
   font-size: clamp(2.5rem, 5vw, 4rem);
   font-weight: 700;
@@ -199,6 +209,7 @@ export default function HeroSection() {
 `,
         }}
       />
-    </div>
+    </>
   );
 }
+

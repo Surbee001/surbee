@@ -2138,6 +2138,11 @@ body {
   animation: shine 3.5s linear infinite;
 }
 
+/* Animated Hero Text Effects */
+.text-shadow-ascii-contrast {
+  text-shadow: 0 0 1px var(--background, black);
+}
+
 /* Project Card Styles - Updated design */
 /* Colorful text effect */
 .colorful-text {
