@@ -339,11 +339,16 @@ export default function PricingPage() {
           __html: `
             /* Pricing card styles */
             .card {
+              display: grid;
+              grid-template-rows: 1fr;
+              grid-template-columns: 1fr;
               border: 1px solid rgba(0, 0, 0, 0.08);
               border-radius: 12px;
               padding: 24px;
               background: #fff;
               transition: all 0.2s ease;
+              position: relative;
+              overflow: hidden;
             }
             
             .card:hover {
@@ -353,6 +358,38 @@ export default function PricingPage() {
             
             .card--text {
               color: #0a0a0a;
+            }
+            
+            /* Aspect ratio utilities */
+            .aspect-natural-box {
+              aspect-ratio: auto;
+            }
+            
+            @media (min-width: 640px) {
+              .sm\\:aspect-natural-box {
+                aspect-ratio: auto;
+              }
+            }
+            
+            @media (min-width: 768px) {
+              .md\\:aspect-16\\/9-box {
+                aspect-ratio: 16 / 9;
+              }
+            }
+            
+            @media (min-width: 1024px) {
+              .lg\\:aspect-4\\/5-box {
+                aspect-ratio: 4 / 5;
+                min-height: 450px;
+              }
+            }
+            
+            .col-span-full {
+              grid-column: 1 / -1;
+            }
+            
+            .row-span-full {
+              grid-row: 1 / -1;
             }
             
             .type-md {
@@ -384,6 +421,7 @@ export default function PricingPage() {
               background: #0a0a0a;
               color: #fff;
               border: none;
+              width: 100%;
             }
             
             .btn:hover {
