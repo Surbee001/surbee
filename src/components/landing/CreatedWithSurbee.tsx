@@ -263,8 +263,8 @@ export default function CreatedWithSurbee() {
           __html: `
 @font-face {
   font-family: 'Tobias';
-  src: url('/fonts/Tobias-TRIAL-Thin.ttf') format('truetype');
-  font-weight: 100;
+  src: url('/fonts/Tobias-TRIAL-Light.ttf') format('truetype');
+  font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
