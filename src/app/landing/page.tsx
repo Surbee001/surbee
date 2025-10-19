@@ -234,7 +234,7 @@ export default function LandingPage() {
 
           {/* Features title */}
           <section className="px-6 pt-24 pb-2 text-center">
-            <h2 className="font-medium tracking-15 text-center text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 mb-8">
+            <h2 className="hero-text-tobias font-medium tracking-15 text-center text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 mb-8" style={{ fontSize: '48px', fontWeight: 100, letterSpacing: '-2px', lineHeight: '48px', color: '#0A0A0A' }}>
               Here's what Surbee can do for you
             </h2>
           </section>
@@ -321,9 +321,9 @@ export default function LandingPage() {
 	              <div className="border-l border-gray-200 flex-1 flex flex-col justify-end p-5 sm:p-8 2xl:px-9 2xl:py-8">
 	                <div className="relative w-full h-full overflow-hidden">
 	                  <div className="relative w-full h-full min-h-[190px] sm:min-h-[170px] lg:min-h-auto flex flex-col justify-end">
-	                    <div className="flex flex-col gap-8 justify-end h-full">
-	                      <div className="flex flex-col gap-4">
-	                        <h4 className="font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 text-left">
+	                      <div className="flex flex-col gap-8 justify-end h-full">
+	                        <div className="flex flex-col gap-4">
+	                          <h4 className="hero-text-tobias font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 text-left" style={{ fontSize: '32px', fontWeight: 100, letterSpacing: '-1px', lineHeight: '32px', color: '#0A0A0A' }}>
 	                          Detect Odd Behaviors & Bad Data
 	                        </h4>
 	                        <div className="flex flex-col gap-2">
@@ -643,6 +643,26 @@ export default function LandingPage() {
 	          </RevealSection>
         </main>
       </div>
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+@font-face {
+  font-family: 'Tobias';
+  src: url('/fonts/Tobias-TRIAL-Thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+.hero-text-tobias {
+  font-family: 'Tobias', var(--font-inter), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+`,
+        }}
+      />
     </div>
     </ImageKitProvider>
   );

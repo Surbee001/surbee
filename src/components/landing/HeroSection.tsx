@@ -161,7 +161,7 @@ export default function HeroSection() {
       </div>
 
       {/* Bottom Hero Text - "survey experiences" */}
-      <div ref={containerRef2} className="relative self-end mt-8">
+      <div ref={containerRef2} className="relative self-end mt-16">
         <h2 className="select-none hero-text-tobias">
           <span className="leading-none block" style={{ fontSize: '100px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '100px', color: '#0A0A0A' }}>
             <span className="relative">
@@ -243,7 +243,7 @@ export default function HeroSection() {
       </div>
 
       {/* Description and CTA Button */}
-      <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end -mt-6">
+      <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end -mt-12">
         <p className="bsmnt-text-body-md md:bsmnt-text-body-lg max-w-[30rem] text-balance" style={{ color: '#6B7280', fontFamily: 'var(--font-inter), sans-serif' }}>
           <strong className="font-normal" style={{ color: '#0A0A0A' }}>
             Create surveys that researchers trust and participants enjoy.
