@@ -138,63 +138,48 @@ export default function TestimonialCarousel() {
             ))}
           </div>
         </div>
-        <div className="w-full flex items-center justify-center gap-4.5">
-          <div className="flex-shrink-0">
-            <button
-              onClick={goToPrevious}
-              className="disabled:opacity-50 border-border transition-colors duration-300 w-10.5 h-10.5 border flex items-center justify-center hover:bg-neutral-300/10"
-              aria-label="move to left"
+        <div className="w-full flex items-center justify-center gap-4 mt-8">
+          <button
+            onClick={goToPrevious}
+            className="group relative bg-white border border-gray-200 rounded-full p-3 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md"
+            aria-label="Previous testimonial"
+          >
+            <svg
+              className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors duration-200"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
             >
-              <svg
-                className="lucide lucide-chevron-left h-4 w-4"
-                height="24"
-                width="24"
-                aria-hidden="true"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="m15 18-6-6 6-6" />
-              </svg>
-            </button>
-          </div>
-          <div className="flex-shrink-0">
-            <button
-              onClick={goToNext}
-              className="disabled:opacity-50 border-border transition-colors duration-300 w-10.5 h-10.5 border flex items-center justify-center hover:bg-neutral-300/10"
-              aria-label="move to right"
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            <div className="absolute inset-0 rounded-full bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 -z-10"></div>
+          </button>
+
+          <button
+            onClick={goToNext}
+            className="group relative bg-white border border-gray-200 rounded-full p-3 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md"
+            aria-label="Next testimonial"
+          >
+            <svg
+              className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors duration-200"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
             >
-              <svg
-                className="lucide lucide-chevron-right h-4 w-4"
-                height="24"
-                width="24"
-                aria-hidden="true"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="m9 18 6-6-6-6" />
-              </svg>
-            </button>
-          </div>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+            <div className="absolute inset-0 rounded-full bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 -z-10"></div>
+          </button>
         </div>
         <div
-          className="pointer-events-none absolute top-0 left-0 h-full w-[20%] transition-opacity duration-500 z-10 bg-gradient-to-r from-white to-transparent"
+          className="pointer-events-none absolute top-0 left-0 h-full w-[15%] z-10 bg-gradient-to-r from-white via-white/80 to-transparent"
           aria-hidden="true"
-          style={{ opacity: 0 }}
         />
         <div
-          className="pointer-events-none absolute top-0 right-0 h-full w-[20%] transition-opacity duration-500 z-10 bg-gradient-to-l from-white to-transparent"
+          className="pointer-events-none absolute top-0 right-0 h-full w-[15%] z-10 bg-gradient-to-l from-white via-white/80 to-transparent"
           aria-hidden="true"
-          style={{ opacity: 0 }}
         />
       </div>
       <style
