@@ -107,8 +107,9 @@ export default function TestimonialCarousel() {
             {testimonials.map((testimonial, index) => (
               <div key={index} className="flex-[0_0_100%] min-w-0 flex flex-col justify-center">
                 <blockquote
-                  className="max-w-[54.375rem] w-full mx-auto flex flex-col items-center gap-9.5 flex-[0_0_100%] justify-center"
-                  style={{ opacity: index === currentIndex ? 1 : 0 }}
+                  className={`max-w-[54.375rem] w-full mx-auto flex flex-col items-center gap-9.5 flex-[0_0_100%] justify-center transition-opacity duration-500 ${
+                    index === currentIndex ? 'opacity-100' : 'opacity-0'
+                  }`}
                 >
                   <p className="text-balance text-center text-black" style={{ fontSize: '51px', fontFamily: 'Tobias, "Tobias Fallback", serif', fontWeight: 100, letterSpacing: '-2px', lineHeight: '51px' }}>
                     <span>
