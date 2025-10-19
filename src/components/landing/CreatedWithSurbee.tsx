@@ -183,8 +183,8 @@ export default function CreatedWithSurbee() {
   return (
     <section className="w-full mb-[84px]">
       <h1
-        className="text-title-secondary md:text-title-primary max-w-[335px] md:max-w-[820px] mx-auto mb-[66px]"
-        style={{ textAlign: "center" }}
+        className="hero-text-tobias text-title-secondary md:text-title-primary max-w-[335px] md:max-w-[820px] mx-auto mb-[66px]"
+        style={{ textAlign: "center", fontSize: '38px', fontWeight: 100, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}
       >
         Created with Surbee
       </h1>
@@ -257,6 +257,26 @@ export default function CreatedWithSurbee() {
           </div>
         </div>
       </div>
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+@font-face {
+  font-family: 'Tobias';
+  src: url('/fonts/Tobias-TRIAL-Thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+.hero-text-tobias {
+  font-family: 'Tobias', var(--font-inter), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+`,
+        }}
+      />
     </section>
   );
 }

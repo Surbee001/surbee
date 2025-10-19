@@ -440,29 +440,6 @@ export default function LandingPage() {
 	          </div>
 
 
-          {/* Pricing Section */}
-          <RevealSection className="py-24 px-6">
-            <div id="pricing" className="mx-auto max-w-[1400px]">
-              <div className="mb-12 text-center">
-                <h2
-                  className="hero-text-tobias text-[42px] font-semibold tracking-[-0.03em] md:text-[48px]"
-                  style={{ color: "#0A0A0A", fontFamily: "var(--font-inter), sans-serif", fontSize: '38px', fontWeight: 100, letterSpacing: '-1px', lineHeight: '38px' }}
-                >
-                  Pricing
-                </h2>
-                <p
-                  className="mt-4 text-[16px] leading-[150%] text-neutral-600"
-                  style={{ fontFamily: "var(--font-inter), sans-serif" }}
-                >
-                  Choose the plan that fits how you build. Upgrade or downgrade anytime.
-                </p>
-              </div>
-              <PricingCards />
-            </div>
-          </RevealSection>
-
-
-          {/* Spacer section */}
           <div className="py-12"></div>
 
           {/* Created with Surbee Section */}
