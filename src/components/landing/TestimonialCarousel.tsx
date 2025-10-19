@@ -1,11 +1,89 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 
 export default function TestimonialCarousel() {
+  const [currentIndex, setCurrentIndex] = useState(2); // Start with the third testimonial (index 2)
+
+  const testimonials = [
+    {
+      text: "Thanks to Speakeasy, building and maintaining high-quality, language-idiomatic API clients became simple and efficient. We accelerated our release schedule without sacrificing code quality.",
+      author: "Steve Calvert",
+      role: "Software Engineer @ Glean",
+      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/steve-calvert.jpeg&w=96&q=75",
+      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Fsteve-calvert.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fsteve-calvert.jpeg&w=96&q=75 2x"
+    },
+    {
+      text: "We've been using Speakeasy to create Dub's TypeScript SDK and it's been an amazing experience so far: Sublime DX + beautiful product.",
+      author: "Steven Tey",
+      role: "Founder @ Dub.co",
+      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/steven-tey.jpeg&w=96&q=75",
+      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Fsteven-tey.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fsteven-tey.jpeg&w=96&q=75 2x"
+    },
+    {
+      text: "The MCP server we built using Speakeasy just works. It made becoming AI-native much simpler than we expected",
+      author: "Constantine Nathanson",
+      role: "Staff software engineer @ Cloudinary",
+      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/constantine-nathanson.jpeg&w=96&q=75",
+      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Fconstantine-nathanson.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fconstantine-nathanson.jpeg&w=96&q=75 2x"
+    },
+    {
+      text: "Speakeasy is a beautiful and easy-to-manage product with a team fully committed to the developer experience that understands our needs.",
+      author: "Leonardo Risch",
+      role: "Engineering manager @ Latitude.sh",
+      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/leonardo-risch.jpeg&w=96&q=75",
+      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Fleonardo-risch.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fleonardo-risch.jpeg&w=96&q=75 2x"
+    },
+    {
+      text: "Big thanks to Speakeasy for their partnership!",
+      author: "Lee Robinson",
+      role: "Developer experience @ Vercel",
+      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/lee-rob.jpeg&w=96&q=75",
+      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Flee-rob.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Flee-rob.jpeg&w=96&q=75 2x"
+    },
+    {
+      text: "Helping our customers ship as quickly as possible is our #1 priority. Speakeasy has made it so that we can provide first-class devex for our API users across any platform. Faster ship times = immediate ROI for both our customers and us.",
+      author: "Nick Gomez",
+      role: "Co-founder & CEO @ Inkeep",
+      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/nick-gomez.jpeg&w=96&q=75",
+      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Fnick-gomez.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fnick-gomez.jpeg&w=96&q=75 2x"
+    },
+    {
+      text: "I am super impressed with the generated SDK... When DX is your moat, it is super hard to outsource this, but Speakeasy makes it possible",
+      author: "Andreas Thomas",
+      role: "Co-founder & CTO @ Unkey",
+      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/andreas-thomas.jpeg&w=96&q=75",
+      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Fandreas-thomas.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fandreas-thomas.jpeg&w=96&q=75 2x"
+    },
+    {
+      text: "I can't recommend Speakeasy enough!",
+      author: "Pontus Abrahamsson",
+      role: "Co-founder @ Midday & Languine",
+      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/pontus-abrahamsson.jpeg&w=96&q=75",
+      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Fpontus-abrahamsson.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fpontus-abrahamsson.jpeg&w=96&q=75 2x"
+    },
+    {
+      text: "The Speakeasy team has been fantastic. The support feels like a real partnership, making all the difference.",
+      author: "Greg Poirier",
+      role: "Director of engineering @ SolarWinds",
+      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/greg-poirier.jpeg&w=96&q=75",
+      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Fgreg-poirier.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fgreg-poirier.jpeg&w=96&q=75 2x"
+    }
+  ];
+
+  const goToPrevious = () => {
+    setCurrentIndex((prevIndex) => (prevIndex === 0 ? testimonials.length - 1 : prevIndex - 1));
+  };
+
+  const goToNext = () => {
+    setCurrentIndex((prevIndex) => (prevIndex === testimonials.length - 1 ? 0 : prevIndex + 1));
+  };
+
   return (
     <>
-      <div className="w-full max-w-[1140px] mx-auto py-20 md:py-28.5 h-fit flex flex-col items-center gap-10.5 relative overflow-hidden">
+      <div className="w-full max-w-[1140px] mx-auto py-24 md:py-32 px-6 h-fit flex flex-col items-center gap-10.5 relative overflow-hidden">
         <svg
-          className="absolute w-24 h-auto md:top-[calc(50%-2.5rem)] md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full text-neutral-200/30 dark:text-neutral-900"
+          className="absolute w-24 h-auto md:top-[calc(50%-2.5rem)] md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full text-gray-200"
           height="367"
           width="1147"
           fill="none"
@@ -23,286 +101,46 @@ export default function TestimonialCarousel() {
         </svg>
         <div className="w-full cursor-grab active:cursor-grabbing relative">
           <div
-            className="flex"
-            style={{ transform: "translate3d(-2280px, 0px, 0px)" }}
+            className="flex transition-transform duration-500 ease-in-out"
+            style={{ transform: `translate3d(-${currentIndex * 100}%, 0px, 0px)` }}
           >
-            <div className="flex-[0_0_100%] min-w-0 flex flex-col justify-center">
-              <blockquote
-                className="max-w-[54.375rem] w-full mx-auto flex flex-col items-center gap-9.5 flex-[0_0_100%] justify-center"
-                style={{ opacity: 0 }}
-              >
-                <p className="text-balance bsmnt-text-display-xs md:bsmnt-text-display-md font-extralight text-center">
-                  <span>
-                    Thanks to Speakeasy, building and maintaining high-quality,
-                    language-idiomatic API clients became simple and efficient.
-                    We accelerated our release schedule without sacrificing code
-                    quality.
-                  </span>
-                </p>
-                <footer className="flex items-center gap-3">
-                  <div className="w-10 h-10 relative overflow-hidden">
-                    <img
-                      className="w-full h-full object-cover grayscale"
-                      height={40}
-                      width={40}
-                      alt="Steve Calvert"
-                      src="https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/steve-calvert.jpeg&w=96&q=75"
-                      srcSet="/_next/image?url=%2Fassets%2Fquote-headshots%2Fsteve-calvert.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fsteve-calvert.jpeg&w=96&q=75 2x"
-                      style={{ color: "transparent" }}
-                    />
-                  </div>
-                  <div className="uppercase bsmnt-text-body-xs font-normal font-mono">
-                    <p className="leading-none">Steve Calvert // </p>
-                    <p>Software Engineer @ Glean</p>
-                  </div>
-                </footer>
-              </blockquote>
-            </div>
-            <div className="flex-[0_0_100%] min-w-0 flex flex-col justify-center">
-              <blockquote
-                className="max-w-[54.375rem] w-full mx-auto flex flex-col items-center gap-9.5 flex-[0_0_100%] justify-center"
-                style={{ opacity: 0 }}
-              >
-                <p className="text-balance bsmnt-text-display-xs md:bsmnt-text-display-md font-extralight text-center">
-                  <span>
-                    We've been using Speakeasy to create Dub's TypeScript SDK
-                    and it's been an amazing experience so far: Sublime DX +
-                    beautiful product.
-                  </span>
-                </p>
-                <footer className="flex items-center gap-3">
-                  <div className="w-10 h-10 relative overflow-hidden">
-                    <img
-                      className="w-full h-full object-cover grayscale"
-                      height={40}
-                      width={40}
-                      alt="Steven Tey"
-                      src="https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/steven-tey.jpeg&w=96&q=75"
-                      srcSet="/_next/image?url=%2Fassets%2Fquote-headshots%2Fsteven-tey.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fsteven-tey.jpeg&w=96&q=75 2x"
-                      style={{ color: "transparent" }}
-                    />
-                  </div>
-                  <div className="uppercase bsmnt-text-body-xs font-normal font-mono">
-                    <p className="leading-none">Steven Tey // </p>
-                    <p>Founder @ Dub.co</p>
-                  </div>
-                </footer>
-              </blockquote>
-            </div>
-            <div className="flex-[0_0_100%] min-w-0 flex flex-col justify-center">
-              <blockquote
-                className="max-w-[54.375rem] w-full mx-auto flex flex-col items-center gap-9.5 flex-[0_0_100%] justify-center"
-                style={{ opacity: 1 }}
-              >
-                <p className="text-balance bsmnt-text-display-xs md:bsmnt-text-display-md font-extralight text-center">
-                  <span>
-                    The MCP server we built using Speakeasy just works. It made
-                    becoming AI-native much simpler than we expected
-                  </span>
-                </p>
-                <footer className="flex items-center gap-3">
-                  <div className="w-10 h-10 relative overflow-hidden">
-                    <img
-                      className="w-full h-full object-cover grayscale"
-                      height={40}
-                      width={40}
-                      alt="Constantine Nathanson"
-                      src="https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/constantine-nathanson.jpeg&w=96&q=75"
-                      srcSet="/_next/image?url=%2Fassets%2Fquote-headshots%2Fconstantine-nathanson.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fconstantine-nathanson.jpeg&w=96&q=75 2x"
-                      style={{ color: "transparent" }}
-                    />
-                  </div>
-                  <div className="uppercase bsmnt-text-body-xs font-normal font-mono">
-                    <p className="leading-none">Constantine Nathanson // </p>
-                    <p>Staff software engineer @ Cloudinary</p>
-                  </div>
-                </footer>
-              </blockquote>
-            </div>
-            <div className="flex-[0_0_100%] min-w-0 flex flex-col justify-center">
-              <blockquote
-                className="max-w-[54.375rem] w-full mx-auto flex flex-col items-center gap-9.5 flex-[0_0_100%] justify-center"
-                style={{ opacity: 0 }}
-              >
-                <p className="text-balance bsmnt-text-display-xs md:bsmnt-text-display-md font-extralight text-center">
-                  <span>
-                    Speakeasy is a beautiful and easy-to-manage product with a
-                    team fully committed to the developer experience that
-                    understands our needs.
-                  </span>
-                </p>
-                <footer className="flex items-center gap-3">
-                  <div className="w-10 h-10 relative overflow-hidden">
-                    <img
-                      className="w-full h-full object-cover grayscale"
-                      height={40}
-                      width={40}
-                      alt="Leonardo Risch"
-                      src="https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/leonardo-risch.jpeg&w=96&q=75"
-                      srcSet="/_next/image?url=%2Fassets%2Fquote-headshots%2Fleonardo-risch.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fleonardo-risch.jpeg&w=96&q=75 2x"
-                      style={{ color: "transparent" }}
-                    />
-                  </div>
-                  <div className="uppercase bsmnt-text-body-xs font-normal font-mono">
-                    <p className="leading-none">Leonardo Risch // </p>
-                    <p>Engineering manager @ Latitude.sh</p>
-                  </div>
-                </footer>
-              </blockquote>
-            </div>
-            <div className="flex-[0_0_100%] min-w-0 flex flex-col justify-center">
-              <blockquote
-                className="max-w-[54.375rem] w-full mx-auto flex flex-col items-center gap-9.5 flex-[0_0_100%] justify-center"
-                style={{ opacity: 0 }}
-              >
-                <p className="text-balance bsmnt-text-display-xs md:bsmnt-text-display-md font-extralight text-center">
-                  <span>Big thanks to Speakeasy for their partnership!</span>
-                </p>
-                <footer className="flex items-center gap-3">
-                  <div className="w-10 h-10 relative overflow-hidden">
-                    <img
-                      className="w-full h-full object-cover grayscale"
-                      height={40}
-                      width={40}
-                      alt="Lee Robinson"
-                      src="https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/lee-rob.jpeg&w=96&q=75"
-                      srcSet="/_next/image?url=%2Fassets%2Fquote-headshots%2Flee-rob.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Flee-rob.jpeg&w=96&q=75 2x"
-                      style={{ color: "transparent" }}
-                    />
-                  </div>
-                  <div className="uppercase bsmnt-text-body-xs font-normal font-mono">
-                    <p className="leading-none">Lee Robinson // </p>
-                    <p>Developer experience @ Vercel</p>
-                  </div>
-                </footer>
-              </blockquote>
-            </div>
-            <div className="flex-[0_0_100%] min-w-0 flex flex-col justify-center">
-              <blockquote
-                className="max-w-[54.375rem] w-full mx-auto flex flex-col items-center gap-9.5 flex-[0_0_100%] justify-center"
-                style={{ opacity: 0 }}
-              >
-                <p className="text-balance bsmnt-text-display-xs md:bsmnt-text-display-md font-extralight text-center">
-                  <span>
-                    Helping our customers ship as quickly as possible is our #1
-                    priority. Speakeasy has made it so that we can provide
-                    first-class devex for our API users across any platform.
-                    Faster ship times = immediate ROI for both our customers and
-                    us.
-                  </span>
-                </p>
-                <footer className="flex items-center gap-3">
-                  <div className="w-10 h-10 relative overflow-hidden">
-                    <img
-                      className="w-full h-full object-cover grayscale"
-                      height={40}
-                      width={40}
-                      alt="Nick Gomez"
-                      src="https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/nick-gomez.jpeg&w=96&q=75"
-                      srcSet="/_next/image?url=%2Fassets%2Fquote-headshots%2Fnick-gomez.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fnick-gomez.jpeg&w=96&q=75 2x"
-                      style={{ color: "transparent" }}
-                    />
-                  </div>
-                  <div className="uppercase bsmnt-text-body-xs font-normal font-mono">
-                    <p className="leading-none">Nick Gomez // </p>
-                    <p>Co-founder & CEO @ Inkeep</p>
-                  </div>
-                </footer>
-              </blockquote>
-            </div>
-            <div className="flex-[0_0_100%] min-w-0 flex flex-col justify-center">
-              <blockquote
-                className="max-w-[54.375rem] w-full mx-auto flex flex-col items-center gap-9.5 flex-[0_0_100%] justify-center"
-                style={{ opacity: 0 }}
-              >
-                <p className="text-balance bsmnt-text-display-xs md:bsmnt-text-display-md font-extralight text-center">
-                  <span>
-                    I am super impressed with the generated SDK... When DX is
-                    your moat, it is super hard to outsource this, but Speakeasy
-                    makes it possible
-                  </span>
-                </p>
-                <footer className="flex items-center gap-3">
-                  <div className="w-10 h-10 relative overflow-hidden">
-                    <img
-                      className="w-full h-full object-cover grayscale"
-                      height={40}
-                      width={40}
-                      alt="Andreas Thomas"
-                      src="https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/andreas-thomas.jpeg&w=96&q=75"
-                      srcSet="/_next/image?url=%2Fassets%2Fquote-headshots%2Fandreas-thomas.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fandreas-thomas.jpeg&w=96&q=75 2x"
-                      style={{ color: "transparent" }}
-                    />
-                  </div>
-                  <div className="uppercase bsmnt-text-body-xs font-normal font-mono">
-                    <p className="leading-none">Andreas Thomas // </p>
-                    <p>Co-founder & CTO @ Unkey</p>
-                  </div>
-                </footer>
-              </blockquote>
-            </div>
-            <div className="flex-[0_0_100%] min-w-0 flex flex-col justify-center">
-              <blockquote
-                className="max-w-[54.375rem] w-full mx-auto flex flex-col items-center gap-9.5 flex-[0_0_100%] justify-center"
-                style={{ opacity: 0 }}
-              >
-                <p className="text-balance bsmnt-text-display-xs md:bsmnt-text-display-md font-extralight text-center">
-                  <span>I can't recommend Speakeasy enough!</span>
-                </p>
-                <footer className="flex items-center gap-3">
-                  <div className="w-10 h-10 relative overflow-hidden">
-                    <img
-                      className="w-full h-full object-cover grayscale"
-                      height={40}
-                      width={40}
-                      alt="Pontus Abrahamsson"
-                      src="https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/pontus-abrahamsson.jpeg&w=96&q=75"
-                      srcSet="/_next/image?url=%2Fassets%2Fquote-headshots%2Fpontus-abrahamsson.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fpontus-abrahamsson.jpeg&w=96&q=75 2x"
-                      style={{ color: "transparent" }}
-                    />
-                  </div>
-                  <div className="uppercase bsmnt-text-body-xs font-normal font-mono">
-                    <p className="leading-none">Pontus Abrahamsson // </p>
-                    <p>Co-founder @ Midday & Languine</p>
-                  </div>
-                </footer>
-              </blockquote>
-            </div>
-            <div className="flex-[0_0_100%] min-w-0 flex flex-col justify-center">
-              <blockquote
-                className="max-w-[54.375rem] w-full mx-auto flex flex-col items-center gap-9.5 flex-[0_0_100%] justify-center"
-                style={{ opacity: 0 }}
-              >
-                <p className="text-balance bsmnt-text-display-xs md:bsmnt-text-display-md font-extralight text-center">
-                  <span>
-                    The Speakeasy team has been fantastic. The support feels
-                    like a real partnership, making all the difference.
-                  </span>
-                </p>
-                <footer className="flex items-center gap-3">
-                  <div className="w-10 h-10 relative overflow-hidden">
-                    <img
-                      className="w-full h-full object-cover grayscale"
-                      height={40}
-                      width={40}
-                      alt="Greg Poirier"
-                      src="https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/greg-poirier.jpeg&w=96&q=75"
-                      srcSet="/_next/image?url=%2Fassets%2Fquote-headshots%2Fgreg-poirier.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fgreg-poirier.jpeg&w=96&q=75 2x"
-                      style={{ color: "transparent" }}
-                    />
-                  </div>
-                  <div className="uppercase bsmnt-text-body-xs font-normal font-mono">
-                    <p className="leading-none">Greg Poirier // </p>
-                    <p>Director of engineering @ SolarWinds</p>
-                  </div>
-                </footer>
-              </blockquote>
-            </div>
+            {testimonials.map((testimonial, index) => (
+              <div key={index} className="flex-[0_0_100%] min-w-0 flex flex-col justify-center">
+                <blockquote
+                  className="max-w-[54.375rem] w-full mx-auto flex flex-col items-center gap-9.5 flex-[0_0_100%] justify-center"
+                  style={{ opacity: index === currentIndex ? 1 : 0 }}
+                >
+                  <p className="text-balance bsmnt-text-display-xs md:bsmnt-text-display-md font-extralight text-center text-black">
+                    <span>
+                      {testimonial.text}
+                    </span>
+                  </p>
+                  <footer className="flex items-center gap-3">
+                    <div className="w-10 h-10 relative overflow-hidden">
+                      <img
+                        className="w-full h-full object-cover grayscale"
+                        height={40}
+                        width={40}
+                        alt={testimonial.author}
+                        src={testimonial.avatar}
+                        srcSet={testimonial.srcSet}
+                        style={{ color: "transparent" }}
+                      />
+                    </div>
+                    <div className="uppercase bsmnt-text-body-xs font-normal font-mono text-black">
+                      <p className="leading-none">{testimonial.author} // </p>
+                      <p>{testimonial.role}</p>
+                    </div>
+                  </footer>
+                </blockquote>
+              </div>
+            ))}
           </div>
         </div>
         <div className="w-full flex items-center justify-center gap-4.5">
           <div className="flex-shrink-0">
             <button
+              onClick={goToPrevious}
               className="disabled:opacity-50 border-border transition-colors duration-300 w-10.5 h-10.5 border flex items-center justify-center hover:bg-neutral-300/10"
               aria-label="move to left"
             >
@@ -325,6 +163,7 @@ export default function TestimonialCarousel() {
           </div>
           <div className="flex-shrink-0">
             <button
+              onClick={goToNext}
               className="disabled:opacity-50 border-border transition-colors duration-300 w-10.5 h-10.5 border flex items-center justify-center hover:bg-neutral-300/10"
               aria-label="move to right"
             >
@@ -347,12 +186,12 @@ export default function TestimonialCarousel() {
           </div>
         </div>
         <div
-          className="pointer-events-none absolute top-0 left-0 h-full w-[20%] transition-opacity duration-500 z-10 bg-gradient-to-r from-background to-transparent dark:from-black mix-blend-lighten dark:mix-blend-normal"
+          className="pointer-events-none absolute top-0 left-0 h-full w-[20%] transition-opacity duration-500 z-10 bg-gradient-to-r from-white to-transparent"
           aria-hidden="true"
           style={{ opacity: 0 }}
         />
         <div
-          className="pointer-events-none absolute top-0 right-0 h-full w-[20%] transition-opacity duration-500 z-10 bg-gradient-to-l from-background to-transparent dark:from-black mix-blend-lighten dark:mix-blend-normal"
+          className="pointer-events-none absolute top-0 right-0 h-full w-[20%] transition-opacity duration-500 z-10 bg-gradient-to-l from-white to-transparent"
           aria-hidden="true"
           style={{ opacity: 0 }}
         />
@@ -367,7 +206,7 @@ html {
   font-feature-settings: "rlig", "calt", "ss01";
   -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
-  color-scheme: dark;
+  color-scheme: light;
 }
 `,
         }}
