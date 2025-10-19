@@ -4,6 +4,7 @@ import React, { useState } from "react";
 
 export default function TestimonialCarousel() {
   const [currentIndex, setCurrentIndex] = useState(2); // Start with the third testimonial (index 2)
+  const [showFade, setShowFade] = useState(false);
 
   const testimonials = [
     {
@@ -72,11 +73,15 @@ export default function TestimonialCarousel() {
   ];
 
   const goToPrevious = () => {
+    setShowFade(true);
     setCurrentIndex((prevIndex) => (prevIndex === 0 ? testimonials.length - 1 : prevIndex - 1));
+    setTimeout(() => setShowFade(false), 500);
   };
 
   const goToNext = () => {
+    setShowFade(true);
     setCurrentIndex((prevIndex) => (prevIndex === testimonials.length - 1 ? 0 : prevIndex + 1));
+    setTimeout(() => setShowFade(false), 500);
   };
 
   return (
@@ -174,11 +179,15 @@ export default function TestimonialCarousel() {
           </button>
         </div>
         <div
-          className="pointer-events-none absolute top-0 left-0 h-full w-[15%] z-10 bg-gradient-to-r from-white via-white/80 to-transparent"
+          className={`pointer-events-none absolute top-0 left-0 h-full w-[15%] z-10 bg-gradient-to-r from-white via-white/80 to-transparent transition-opacity duration-300 ${
+            showFade ? 'opacity-100' : 'opacity-0'
+          }`}
           aria-hidden="true"
         />
         <div
-          className="pointer-events-none absolute top-0 right-0 h-full w-[15%] z-10 bg-gradient-to-l from-white via-white/80 to-transparent"
+          className={`pointer-events-none absolute top-0 right-0 h-full w-[15%] z-10 bg-gradient-to-l from-white via-white/80 to-transparent transition-opacity duration-300 ${
+            showFade ? 'opacity-100' : 'opacity-0'
+          }`}
           aria-hidden="true"
         />
       </div>
