@@ -234,7 +234,7 @@ export default function LandingPage() {
 
           {/* Features title */}
           <section className="px-6 pt-24 pb-2 text-center">
-            <h2 className="hero-text-tobias font-medium tracking-15 text-center text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 mb-8" style={{ fontSize: '48px', fontWeight: 100, letterSpacing: '-2px', lineHeight: '48px', color: '#0A0A0A' }}>
+            <h2 className="hero-text-tobias font-medium tracking-15 text-center text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 mb-8" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}>
               Here's what Surbee can do for you
             </h2>
           </section>
@@ -323,7 +323,7 @@ export default function LandingPage() {
 	                  <div className="relative w-full h-full min-h-[190px] sm:min-h-[170px] lg:min-h-auto flex flex-col justify-end">
 	                      <div className="flex flex-col gap-8 justify-end h-full">
 	                        <div className="flex flex-col gap-4">
-	                          <h4 className="hero-text-tobias font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 text-left" style={{ fontSize: '32px', fontWeight: 100, letterSpacing: '-1px', lineHeight: '32px', color: '#0A0A0A' }}>
+	                          <h4 className="hero-text-tobias font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 text-left" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}>
 	                          Detect Odd Behaviors & Bad Data
 	                        </h4>
 	                        <div className="flex flex-col gap-2">
@@ -421,9 +421,9 @@ export default function LandingPage() {
 	              <div className="lg:border-r border-gray-200 flex-1 flex flex-col justify-end p-5 sm:p-8 2xl:px-9 2xl:py-8">
 	                <div className="relative w-full h-full overflow-hidden">
 	                  <div className="relative w-full h-full min-h-[190px] sm:min-h-[170px] lg:min-h-auto flex flex-col justify-end">
-	                    <div className="flex flex-col gap-8 justify-end h-full">
-	                      <div className="flex flex-col gap-4">
-	                        <h4 className="font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 text-left">
+	                      <div className="flex flex-col gap-8 justify-end h-full">
+	                        <div className="flex flex-col gap-4">
+	                          <h4 className="hero-text-tobias font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 text-left" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}>
 	                          Grow a Community Around Your Surveys
 	                        </h4>
 	                        <div className="flex flex-col gap-2">
@@ -445,8 +445,8 @@ export default function LandingPage() {
             <div id="pricing" className="mx-auto max-w-[1400px]">
               <div className="mb-12 text-center">
                 <h2
-                  className="text-[42px] font-semibold tracking-[-0.03em] md:text-[48px]"
-                  style={{ color: "#0A0A0A", fontFamily: "var(--font-inter), sans-serif" }}
+                  className="hero-text-tobias text-[42px] font-semibold tracking-[-0.03em] md:text-[48px]"
+                  style={{ color: "#0A0A0A", fontFamily: "var(--font-inter), sans-serif", fontSize: '38px', fontWeight: 100, letterSpacing: '-1px', lineHeight: '38px' }}
                 >
                   Pricing
                 </h2>
@@ -476,7 +476,7 @@ export default function LandingPage() {
           <RevealSection
             className="py-8 mx-auto w-full max-w-4xl flex flex-col justify-center items-center"
           >
-	            <h2 className="font-medium tracking-15 text-center text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 mb-8">
+	            <h2 className="hero-text-tobias font-medium tracking-15 text-center text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 mb-8" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}>
 	              Connect the tools you already use
 	            </h2>
 	            <div className="flex justify-center gap-3 sm:gap-4 pb-5 md:pb-6 pt-3 md:pt-6 px-3 sm:px-4 flex-wrap">
@@ -613,7 +613,7 @@ export default function LandingPage() {
 	                >
 	                  <RevealDiv className="relative inline-block">
 	                    <div className="rounded-lg px-8 py-6 backdrop-blur-lg max-w-[calc(100vw_-_64px)] w-[500px] flex flex-col items-center justify-center gap-3 bg-gradient-to-b from-[rgba(255,255,255,0.80)] to-[rgba(255,255,255,0.16)] shadow-[0px_4px_12px_0px_rgba(255,255,255,0.10)_inset,0px_0px_0px_6px_rgba(255,255,255,0.40),0px_1px_8px_0px_rgba(0,0,0,0.13),0px_2px_6px_0px_rgba(0,0,0,0.20)]">
-	                      <h3 className="font-semibold text-title-secondary md:text-title-primary leading-[130%] tracking-[-0.56px] text-center">
+	                      <h3 className="hero-text-tobias font-semibold text-title-secondary md:text-title-primary leading-[130%] tracking-[-0.56px] text-center" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}>
 	                        Join Our Community
 	                      </h3>
 	                      <p className="text-[15px] leading-[140%] text-center" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
