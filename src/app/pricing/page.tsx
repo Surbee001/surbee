@@ -9,7 +9,7 @@ export default function PricingPage() {
   const [selectedFrequency, setSelectedFrequency] = useState("monthly");
   const [mousePosPricing, setMousePosPricing] = useState({ x: 50, y: 50 });
   const containerRefPricing = useRef<HTMLSpanElement>(null);
-  const sidebarWidthClass = "w-56"; // 14rem ~ 224px
+  const sidebarWidthClass = "w-48"; // 12rem ~ 192px
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -34,7 +34,7 @@ export default function PricingPage() {
           background: "linear-gradient(#FEFFFC 40%, rgba(254, 255, 252, 0))",
         }}
       >
-		<div className="flex h-20 items-center justify-between gap-4 pl-56 pr-6">
+		<div className="flex h-20 items-center justify-between gap-4 pl-48 pr-6">
 		  <div className="text-2xl font-semibold tracking-[-0.02em] pl-5 md:pl-8 xl:pl-12 2xl:pl-30" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>surbee</div>
           <div className="flex items-center gap-6">
             <a href="/landing" className="text-sm hover:text-neutral-800 transition-all duration-300 ease-out" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
@@ -152,8 +152,8 @@ export default function PricingPage() {
         </aside>
 
         {/* Main Content - occupies the rest of the page width */}
-        <main className={`ml-56 w-full pt-12`}> {/* ml must equal sidebar width; pt offset for navbar */}
-        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 2xl:px-16 pt-8 pb-20">
+        <main className={`ml-48 w-full pt-12`}> {/* ml must equal sidebar width; pt offset for navbar */}
+        <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 2xl:px-16 pt-8 pb-20">
           <header className="mb-8 text-center">
             <div className="relative">
               <h1 className="select-none hero-text-tobias">
@@ -262,11 +262,11 @@ export default function PricingPage() {
                   </p>
                   <p className="text-neutral-600 mt-3">Everything in Pro, plus:</p>
                   <ul className="mt-3 space-y-2" role="list">
-                    <li className="flex gap-x-2"><span>✓</span> Centralized team billing</li>
-                    <li className="flex gap-x-2"><span>✓</span> Usage analytics and reporting</li>
-                    <li className="flex gap-x-2"><span>✓</span> Org-wide privacy mode controls</li>
-                    <li className="flex gap-x-2"><span>✓</span> Role-based access control</li>
-                    <li className="flex gap-x-2"><span>✓</span> SAML/OIDC SSO</li>
+                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> Centralized team billing</li>
+                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> Usage analytics and reporting</li>
+                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> Org-wide privacy mode controls</li>
+                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> Role-based access control</li>
+                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> SAML/OIDC SSO</li>
                   </ul>
                 </div>
                 <div className="mt-4">
@@ -289,12 +289,12 @@ export default function PricingPage() {
                   </p>
                   <p className="text-neutral-600 mt-3">Everything in Teams, plus:</p>
                   <ul className="mt-3 space-y-2" role="list">
-                    <li className="flex gap-x-2"><span>✓</span> Pooled usage</li>
-                    <li className="flex gap-x-2"><span>✓</span> Invoice/PO billing</li>
-                    <li className="flex gap-x-2"><span>✓</span> SCIM seat management</li>
-                    <li className="flex gap-x-2"><span>✓</span> AI code tracking API and audit logs</li>
-                    <li className="flex gap-x-2"><span>✓</span> Granular admin and model controls</li>
-                    <li className="flex gap-x-2"><span>✓</span> Priority support and account management</li>
+                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> Pooled usage</li>
+                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> Invoice/PO billing</li>
+                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> SCIM seat management</li>
+                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> AI code tracking API and audit logs</li>
+                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> Granular admin and model controls</li>
+                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> Priority support and account management</li>
                   </ul>
                 </div>
                 <div className="mt-4">
@@ -309,7 +309,7 @@ export default function PricingPage() {
 
         {/* FAQ Section */}
         <section className="px-6 pt-24 pb-2 text-center">
-          <h2 className="font-medium text-center text-[20px] leading-[130%] mb-12" style={{ color: '#0A0A0A', fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '32px', fontWeight: 100, letterSpacing: '-2px', lineHeight: '32px', marginBottom: '3rem' }}>
+          <h2 className="font-medium text-center text-[20px] leading-[130%] mb-12" style={{ color: '#0A0A0A', fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '54px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '54px', marginBottom: '3rem' }}>
             FAQs
           </h2>
           

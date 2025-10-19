@@ -7,7 +7,7 @@ export function PricingCards() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
       {/* Hobby Card */}
-      <div className="bg-neutral-100 rounded-md p-6 border border-neutral-200 transition-all duration-300 min-h-[450px] flex flex-col">
+      <div className="bg-neutral-100 rounded-md p-6 border border-neutral-200 transition-all duration-300 hover:bg-neutral-50 min-h-[450px] flex flex-col">
         <div className="text-left mb-4">
           <h3 className="text-2xl font-normal text-black mb-1">Hobby</h3>
           <p className="text-lg text-neutral-500 font-bold">Free</p>
@@ -39,7 +39,7 @@ export function PricingCards() {
       </div>
 
       {/* Pro Card */}
-      <div className="bg-neutral-100 rounded-md p-6 border border-neutral-200 transition-all duration-300 min-h-[450px] flex flex-col">
+      <div className="bg-neutral-100 rounded-md p-6 border border-neutral-200 transition-all duration-300 hover:bg-neutral-50 min-h-[450px] flex flex-col">
         <div className="text-left mb-4 mt-2">
           <div className="flex items-center gap-2">
             <h3 className="text-2xl font-normal text-black mb-1">Pro</h3>
@@ -78,7 +78,7 @@ export function PricingCards() {
       </div>
 
       {/* Max Card */}
-      <div className="bg-neutral-100 rounded-md p-6 border border-neutral-200 transition-all duration-300 min-h-[450px] flex flex-col">
+      <div className="bg-neutral-100 rounded-md p-6 border border-neutral-200 transition-all duration-300 hover:bg-neutral-50 min-h-[450px] flex flex-col">
         <div className="text-left mb-4">
           <h3 className="text-2xl font-normal text-black mb-1">Max</h3>
           <p className="text-lg text-neutral-500 font-bold">$100<span className="font-bold">/mo.</span></p>
