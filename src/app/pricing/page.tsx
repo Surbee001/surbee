@@ -153,7 +153,7 @@ export default function PricingPage() {
 
         {/* Main Content - occupies the rest of the page width */}
         <main className={`ml-56 w-full pt-12`}> {/* ml must equal sidebar width; pt offset for navbar */}
-        <div className="max-w-7xl mx-auto px-6 md:px-8 xl:px-12 2xl:px-30 pt-8 pb-20">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 2xl:px-16 pt-8 pb-20">
           <header className="mb-8 text-center">
             <div className="relative">
               <h1 className="select-none hero-text-tobias">
@@ -244,7 +244,7 @@ export default function PricingPage() {
 
         {/* Business Plans */}
         <div className="mt-16 space-y-6 max-w-5xl mx-auto">
-          <h2 id="business" className="text-[18px] md:text-[20px] font-semibold text-left" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
+          <h2 id="business" className="text-[16px] font-semibold text-left" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
             <a className="hover:opacity-90" href="/pricing#business">Business Plans</a>
           </h2>
 
@@ -270,7 +270,9 @@ export default function PricingPage() {
                   </ul>
                 </div>
                 <div className="mt-4">
-                  <span className="inline-flex items-center justify-center px-4 py-2 rounded-md border border-neutral-200 bg-white text-black text-sm font-medium">Get Teams</span>
+                  <button className="py-3 px-6 bg-white text-black font-medium rounded-full border border-neutral-200 hover:bg-neutral-50 transition-colors">
+                    Get Teams
+                  </button>
                 </div>
               </div>
             </a>
@@ -296,7 +298,9 @@ export default function PricingPage() {
                   </ul>
                 </div>
                 <div className="mt-4">
-                  <span className="inline-flex items-center justify-center px-4 py-2 rounded-md border border-neutral-200 bg-white text-black text-sm font-medium">Contact Sales</span>
+                  <button className="py-3 px-6 bg-white text-black font-medium rounded-full border border-neutral-200 hover:bg-neutral-50 transition-colors">
+                    Contact Sales
+                  </button>
                 </div>
               </div>
             </a>
@@ -305,7 +309,7 @@ export default function PricingPage() {
 
         {/* FAQ Section */}
         <section className="px-6 pt-24 pb-2 text-center">
-          <h2 className="font-medium text-center text-[20px] leading-[130%] mb-12" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif', fontSize: '20px', letterSpacing: '0.15px', lineHeight: '130%', marginBottom: '3rem' }}>
+          <h2 className="font-medium text-center text-[20px] leading-[130%] mb-12" style={{ color: '#0A0A0A', fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '32px', fontWeight: 100, letterSpacing: '-2px', lineHeight: '32px', marginBottom: '3rem' }}>
             FAQs
           </h2>
           
