@@ -8,63 +8,63 @@ export default function TestimonialCarousel() {
 
   const testimonials = [
     {
-      text: "Surbee transformed how I conduct research. The AI-powered survey generation is incredibly intuitive - I just describe what I need and get professional-quality surveys in minutes. It's like having a research assistant that never sleeps.",
+      text: "Surbee's AI survey generation is incredibly intuitive. I describe what I need and get professional surveys in minutes.",
       author: "Dr. Sarah Martinez",
-      role: "Research Psychologist @ Stanford University",
+      role: "Research Psychologist @ Stanford",
       avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=96&q=75",
       srcSet: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=48&q=75 1x, https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=96&q=75 2x"
     },
     {
-      text: "As a busy startup founder, I need tools that just work. Surbee's fraud detection caught several suspicious responses that I would have missed otherwise. The data quality is incredible - it's saved us thousands in bad decisions.",
+      text: "Surbee's fraud detection caught suspicious responses I would have missed. The data quality is incredible.",
       author: "Marcus Chen",
       role: "CEO @ GrowthTech",
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=96&q=75",
       srcSet: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=48&q=75 1x, https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=96&q=75 2x"
     },
     {
-      text: "I've tried every survey tool out there, but Surbee is different. The conditional logic and skip patterns work flawlessly, and the real-time analytics help me understand my audience like never before. My response rates have doubled.",
+      text: "Surbee's conditional logic and real-time analytics doubled my response rates. Best survey tool I've used.",
       author: "Jennifer Walsh",
       role: "UX Researcher @ Meta",
       avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=96&q=75",
       srcSet: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=48&q=75 1x, https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=96&q=75 2x"
     },
     {
-      text: "The behavioral tracking in Surbee is a game-changer for academic research. I can see exactly how participants interact with my surveys, which helps me design better studies. The fraud detection keeps my data clean and reliable.",
+      text: "Surbee's behavioral tracking helps me design better studies. Fraud detection keeps my data clean and reliable.",
       author: "Prof. David Kim",
       role: "Professor of Sociology @ UCLA",
       avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=96&q=75",
       srcSet: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=48&q=75 1x, https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=96&q=75 2x"
     },
     {
-      text: "Surbee makes survey creation feel effortless. I went from spending hours crafting questions to having professional surveys ready in 15 minutes. The AI understands context amazingly well - it's like it reads my mind.",
+      text: "Surbee makes survey creation effortless. From hours of work to professional surveys in 15 minutes.",
       author: "Alex Rodriguez",
       role: "Product Manager @ Spotify",
       avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=96&q=75",
       srcSet: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=48&q=75 1x, https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=96&q=75 2x"
     },
     {
-      text: "What impresses me most about Surbee is the attention to detail. From the beautiful survey designs to the comprehensive analytics, everything works together seamlessly. It's become an essential part of our research workflow.",
+      text: "Surbee's attention to detail is impressive. Beautiful designs and comprehensive analytics work seamlessly together.",
       author: "Maria Santos",
       role: "Head of Customer Insights @ Airbnb",
       avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=96&q=75",
       srcSet: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=48&q=75 1x, https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=96&q=75 2x"
     },
     {
-      text: "The community features in Surbee are fantastic. I can share surveys with my research group and get feedback instantly. The collaboration tools make academic research so much more efficient and enjoyable.",
+      text: "Surbee's community features are fantastic. Instant feedback and collaboration make research so much more efficient.",
       author: "Dr. Priya Patel",
       role: "Assistant Professor @ MIT",
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=96&q=75",
       srcSet: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=48&q=75 1x, https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=96&q=75 2x"
     },
     {
-      text: "Surbee's real-time fraud detection gives me peace of mind. I know that the responses I'm analyzing are genuine, which is crucial for market research. The accuracy scores help me identify and focus on the most reliable data.",
+      text: "Surbee's fraud detection gives me peace of mind. I know my responses are genuine and reliable for market research.",
       author: "Thomas Anderson",
       role: "Market Research Director @ Nielsen",
       avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=96&q=75",
       srcSet: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=48&q=75 1x, https://images.unsplash.com/photo-1560250097-0b93528c311a?w=96&q=75 2x"
     },
     {
-      text: "I love how Surbee handles complex survey logic. The skip patterns and conditional questions work perfectly, and the preview mode lets me test everything before launching. It's made my job so much easier.",
+      text: "Surbee handles complex survey logic perfectly. Skip patterns and preview mode make my job so much easier.",
       author: "Rachel Green",
       role: "Senior Survey Designer @ Qualtrics",
       avatar: "https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=96&q=75",
@@ -75,13 +75,13 @@ export default function TestimonialCarousel() {
   const goToPrevious = () => {
     setShowFade(true);
     setCurrentIndex((prevIndex) => (prevIndex === 0 ? testimonials.length - 1 : prevIndex - 1));
-    setTimeout(() => setShowFade(false), 500);
+    setTimeout(() => setShowFade(false), 1200);
   };
 
   const goToNext = () => {
     setShowFade(true);
     setCurrentIndex((prevIndex) => (prevIndex === testimonials.length - 1 ? 0 : prevIndex + 1));
-    setTimeout(() => setShowFade(false), 500);
+    setTimeout(() => setShowFade(false), 1200);
   };
 
   return (
@@ -116,8 +116,8 @@ export default function TestimonialCarousel() {
                     index === currentIndex ? 'opacity-100' : 'opacity-0'
                   }`}
                 >
-                  <p className="text-balance text-center text-black" style={{ fontSize: '51px', fontFamily: 'Tobias, "Tobias Fallback", serif', fontWeight: 100, letterSpacing: '-2px', lineHeight: '51px' }}>
-                    <span>
+                  <p className="text-balance text-center text-black transition-all duration-700 ease-in-out transform" style={{ fontSize: '51px', fontFamily: 'Tobias, "Tobias Fallback", serif', fontWeight: 100, letterSpacing: '-2px', lineHeight: '51px' }}>
+                    <span className="inline-block transition-all duration-700 ease-in-out">
                       {testimonial.text}
                     </span>
                   </p>

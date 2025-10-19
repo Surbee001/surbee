@@ -270,6 +270,35 @@ function serializeRunItems(items: RunItem[]): SerializedRunItem[] {
   return serialized;
 }
 
+function buildBuilderSummaryFromItems(items: SerializedRunItem[]): string | null {
+  const highlights: string[] = [];
+  for (const item of items) {
+    if (item.type !== "reasoning") continue;
+    if (typeof item.text !== "string") continue;
+    const agentName = (item.agent ?? "").toLowerCase();
+    if (!agentName.includes("surbeebuilder")) continue;
+    const normalized = item.text.replace(/\s+/g, " ").trim();
+    if (!normalized) continue;
+    const clipped = normalized.length > 240 ? `${normalized.slice(0, 237)}…` : normalized;
+    const isDuplicate = highlights.some((existing) => existing.toLowerCase() === clipped.toLowerCase());
+    if (isDuplicate) continue;
+    highlights.push(clipped);
+    if (highlights.length >= 6) break;
+  }
+
+  if (highlights.length === 0) {
+    return "SurbeeBuilder finished building your survey experience. Let me know if you'd like any adjustments or additional features.";
+  }
+
+  const bulletList = highlights.map((line) => `- ${line}`).join("\n");
+
+  return [
+    "SurbeeBuilder finished building your survey experience.",
+    `**Implementation Highlights**\n${bulletList}`,
+    "Let me know if you'd like any adjustments or additional features."
+  ].join("\n\n");
+}
+
 function guardrailsHasTripwire(results: GuardrailResult[] | undefined) {
   return (results ?? []).some((r) => r?.tripwireTriggered === true);
 }
@@ -862,6 +891,7 @@ export const runWorkflow = async (
   const { onProgress, onItemStream } = options;
   const seenRunItems = new Set<RunItem>();
   const streamedSerializedItems: SerializedRunItem[] = []; // Collect serialized items during streaming
+  let builderSummarySent = false;
 
   const notifyProgress = async (message?: string | null) => {
     if (!message || !onProgress) return;
@@ -875,6 +905,27 @@ export const runWorkflow = async (
     for (const item of serialized) {
       streamedSerializedItems.push(item); // Store serialized item
       await onItemStream(item);
+    }
+  };
+
+  const emitBuilderSummaryMessage = async () => {
+    if (builderSummarySent) return;
+    const summaryText = buildBuilderSummaryFromItems(streamedSerializedItems);
+    if (!summaryText) return;
+
+    const summaryRawItem = {
+      type: "message_output_item",
+      content: summaryText,
+      agent: { name: "SurbeeBuilder" }
+    };
+    const [summaryItem] = serializeRunItems([summaryRawItem as RunItem]);
+    if (!summaryItem) return;
+
+    streamedSerializedItems.push(summaryItem);
+    builderSummarySent = true;
+
+    if (onItemStream) {
+      await onItemStream(summaryItem);
     }
   };
 
@@ -1122,6 +1173,7 @@ export const runWorkflow = async (
       builderInputs
     );
     conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
+    await emitBuilderSummaryMessage();
     
     // Use already-serialized items instead of re-serializing
     const allSerializedItems = streamedSerializedItems.slice(); // Get all streamed items
@@ -1184,6 +1236,7 @@ export const runWorkflow = async (
         [...conversationHistory]
       );
       conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
+      await emitBuilderSummaryMessage();
       
       // Use already-serialized items instead of re-serializing
       const allItems = streamedSerializedItems.slice(); // Get all items

@@ -5,7 +5,7 @@ import React, { useState, useRef, useEffect } from "react";
 export default function HeroSection() {
   const [mousePos1, setMousePos1] = useState({ x: 79, y: 99 });
   const [mousePos2, setMousePos2] = useState({ x: 68, y: 3.9 });
-  const containerRef1 = useRef<HTMLDivElement>(null);
+  const containerRef1 = useRef<HTMLSpanElement>(null);
   const containerRef2 = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,9 +32,9 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <div className="relative flex h-full flex-col justify-between gap-10 min-h-[80vh]">
+    <div className="relative flex h-full flex-col justify-between gap-6 md:gap-8 min-h-[80vh] -mt-12 md:-mt-20">
       {/* Badge Announcement */}
-      <div className="mr-auto -mt-20">
+      <div className="mr-auto -mt-8 md:mt-0">
         <a
           className="x:focus-visible:nextra-focus flex group mr-auto"
           href="/pricing"
@@ -79,14 +79,14 @@ export default function HeroSection() {
       </div>
 
       {/* Top Hero Text - "Craft exceptional" */}
-      <div ref={containerRef1} className="relative -mt-[220px]">
+      <div className="relative -mt-[400px]">
         <h1 className="select-none hero-text-tobias">
           <span className="self-start leading-none block" style={{ fontSize: '100px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '100px', color: '#0A0A0A' }}>
             <span className="relative">
               <span className="inline-block -translate-y-[0.135em] opacity-0">
                 Craft exceptional
               </span>
-              <span className="px-[5%] -mx-[5%] block absolute inset-0 pointer" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '100px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '100px' }}>
+              <span ref={containerRef1} className="px-[5%] -mx-[5%] block absolute inset-0 pointer" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '100px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '100px' }}>
                 <svg
                   className="select-none pointer-events-none"
                   height="100%"
@@ -161,7 +161,7 @@ export default function HeroSection() {
       </div>
 
       {/* Bottom Hero Text - "survey experiences" */}
-      <div ref={containerRef2} className="relative self-end mt-16">
+      <div ref={containerRef2} className="relative self-end -mt-8">
         <h2 className="select-none hero-text-tobias">
           <span className="leading-none block" style={{ fontSize: '100px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '100px', color: '#0A0A0A' }}>
             <span className="relative">
@@ -243,8 +243,8 @@ export default function HeroSection() {
       </div>
 
       {/* Description and CTA Button */}
-      <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end -mt-12">
-        <p className="bsmnt-text-body-md md:bsmnt-text-body-lg max-w-[30rem] text-balance" style={{ color: '#6B7280', fontFamily: 'var(--font-inter), sans-serif' }}>
+      <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end -mt-96 md:-mt-[26rem]">
+        <p className="bsmnt-text-body-md md:bsmnt-text-body-lg max-w-[40rem] text-balance" style={{ color: '#6B7280', fontFamily: 'var(--font-inter), sans-serif', fontSize: '18px' }}>
           <strong className="font-normal" style={{ color: '#0A0A0A' }}>
             Create surveys that researchers trust and participants enjoy.
           </strong>{" "}
@@ -254,8 +254,8 @@ export default function HeroSection() {
         <div className="flex w-full flex-col gap-3 md:flex-row md:justify-end">
           <a
             href="/test-login"
-            className="px-8 py-4 text-base font-medium bg-black text-white hover:bg-neutral-800 transition-all duration-300 ease-out w-full md:w-auto text-center"
-            style={{ fontFamily: 'var(--font-inter), sans-serif', borderRadius: '12px' }}
+            className="px-8 py-4 text-base font-medium bg-black text-white hover:bg-neutral-800 transition-all duration-300 ease-out w-full md:w-auto text-center uppercase"
+            style={{ fontFamily: 'var(--font-inter), sans-serif', borderRadius: '9999px', letterSpacing: '0.04em' }}
           >
             Start Building
           </a>

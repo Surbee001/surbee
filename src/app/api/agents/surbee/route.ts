@@ -11,10 +11,10 @@ export const dynamic = "force-dynamic";
 
 type StreamEvent =
   | { type: "start" }
-  | { type: "reasoning"; id: string; text: string }
-  | { type: "message"; id: string; text: string }
-  | { type: "tool_call"; name: string; arguments: unknown }
-  | { type: "thinking_control"; action: "open" | "close" }
+  | { type: "reasoning"; id: string; text: string; agent?: string }
+  | { type: "message"; id: string; text: string; agent?: string }
+  | { type: "tool_call"; name: string; arguments: unknown; agent?: string }
+  | { type: "thinking_control"; action: "open" | "close"; agent?: string }
   | { type: "html_chunk"; chunk: string; final?: boolean }
   | { type: "complete" }
   | { type: "error"; message: string }
@@ -194,14 +194,14 @@ export async function POST(request: NextRequest) {
       let htmlSent = false;
       let latestHtml: string | undefined;
 
-      const sendReasoningLines = async (text: string, prefix: string = "r") => {
+      const sendReasoningLines = async (text: string, prefix: string = "r", agent?: string) => {
         if (isAborted) return; // Don't send if aborted
         console.log('[API] Sending reasoning lines:', text.substring(0, 50));
         const lines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean);
         for (const line of lines) {
           if (isAborted) break; // Stop mid-iteration if aborted
           const id = `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
-          await batcher.addEvent({ type: "reasoning", id, text: line });
+          await batcher.addEvent({ type: "reasoning", id, text: line, agent });
         }
       };
 
@@ -211,14 +211,14 @@ export async function POST(request: NextRequest) {
         if (!item) return;
 
         if (item.type === "reasoning" && typeof item.text === "string") {
-          await sendReasoningLines(item.text, "reason");
+          await sendReasoningLines(item.text, "reason", item.agent);
           return;
         }
 
         if (item.type === "message" && typeof item.text === "string" && !item.isHtml) {
           // Send messages as proper message events, not reasoning
           const id = `msg-${Math.random().toString(36).slice(2, 9)}`;
-          await batcher.addEvent({ type: "message", id, text: item.text });
+          await batcher.addEvent({ type: "message", id, text: item.text, agent: item.agent });
           return;
         }
 
@@ -227,7 +227,8 @@ export async function POST(request: NextRequest) {
           await batcher.addEvent({ 
             type: "tool_call", 
             name: item.name,
-            arguments: item.arguments 
+            arguments: item.arguments,
+            agent: item.agent
           });
           return;
         }
@@ -236,7 +237,8 @@ export async function POST(request: NextRequest) {
           // Send thinking control events to manage UI state
           await batcher.addEvent({ 
             type: "thinking_control", 
-            action: (item as any).action 
+            action: (item as any).action,
+            agent: (item as any).agent
           } as any);
           return;
         }
@@ -304,10 +306,10 @@ export async function POST(request: NextRequest) {
         for (const item of result.items || []) {
           try {
             if (item?.type === "reasoning" && typeof item?.text === "string" && item.text.trim()) {
-              await sendReasoningLines(item.text, "reason-fallback");
+              await sendReasoningLines(item.text, "reason-fallback", item.agent);
             } else if (item?.type === "message" && typeof item?.text === "string" && !item?.isHtml) {
               const id = `msg-fallback-${Math.random().toString(36).slice(2, 9)}`;
-              await batcher.addEvent({ type: "message", id, text: item.text });
+              await batcher.addEvent({ type: "message", id, text: item.text, agent: item.agent });
             }
           } catch {
             // ignore bad item
@@ -397,4 +399,3 @@ export async function POST(request: NextRequest) {
     },
   });
 }
-

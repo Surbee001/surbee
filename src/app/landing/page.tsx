@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { RevealSection, RevealDiv } from "@/components/landing/Reveal";
 import localFont from "next/font/local";
 import TypingOverlay from "@/components/landing/TypingOverlay";
 import { ImageKitProvider, Image as IKImage } from "@imagekit/next";
 import CreatedWithSurbee from "@/components/landing/CreatedWithSurbee";
+import GradientTitle from "@/components/landing/GradientTitle";
 import HeroSection from "@/components/landing/HeroSection";
 import PricingCards from "@/components/pricing/PricingCards";
 import TestimonialCarousel from "@/components/landing/TestimonialCarousel";
@@ -25,12 +26,36 @@ const epilogue = localFont({
   display: "swap",
 });
 
+const tobiasLight = localFont({
+  src: "../../../Font/Tobiasfont/Tobias-TRIAL-Light.ttf",
+  weight: "300",
+  style: "normal",
+  variable: "--font-tobias",
+  display: "swap",
+});
+
 export default function LandingPage() {
   const sidebarWidthClass = "w-56"; // 14rem ~ 224px
-  
+  const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
+  const containerRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        setMousePos({ x, y });
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
   return (
     <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
-    <div className={`min-h-screen w-full ${epilogue.variable}`} style={{ backgroundColor: "#FEFFFC", fontFamily: "var(--font-epilogue)" }}>
+    <div className={`min-h-screen w-full ${epilogue.variable} ${tobiasLight.variable}`} style={{ backgroundColor: "#FEFFFC", fontFamily: "var(--font-epilogue)" }}>
 	  {/* Top Navigation (full-width) with blur */}
 	  <nav className="sticky inset-x-0 top-0 nav-gradient z-50"
         style={{
@@ -234,9 +259,86 @@ export default function LandingPage() {
 
           {/* Features title */}
           <section className="px-6 pt-24 pb-2 text-center">
-            <h2 className="hero-text-tobias font-medium tracking-15 text-center text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 mb-8" style={{ fontSize: '51px', fontWeight: 200, letterSpacing: '-1px', lineHeight: '51px', color: '#0A0A0A' }}>
-              Here's what Surbee can do for you
-            </h2>
+            <div className="hero-text-tobias">
+              <h2 className="select-none">
+                <span className="leading-none block" style={{ fontSize: '51px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '51px', color: '#0A0A0A' }}>
+                  <span className="relative">
+                    <span className="inline-block -translate-y-[0.135em] opacity-0">
+                      Here's what Surbee can do for you
+                    </span>
+                    <span className="px-[5%] -mx-[5%] block absolute inset-0 pointer" style={{ fontFamily: 'var(--font-tobias), "Tobias Fallback", serif', fontSize: '51px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '51px' }}>
+                      <svg
+                        className="select-none pointer-events-none"
+                        height="100%"
+                        width="100%"
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <defs>
+                          <linearGradient
+                            id="textHoverEffectGradient-features"
+                            cx="50%"
+                            cy="50%"
+                            gradientTransform="rotate(-10)"
+                            gradientUnits="userSpaceOnUse"
+                          >
+                            <stop offset="0%" stopColor="#320F1E" />
+                            <stop offset="8.56%" stopColor="#C83228" />
+                            <stop offset="25.06%" stopColor="#FB873F" />
+                            <stop offset="37.56%" stopColor="#D2DC91" />
+                            <stop offset="50.06%" stopColor="#5A8250" />
+                            <stop offset="62.06%" stopColor="#002314" />
+                            <stop offset="74.06%" stopColor="#00143C" />
+                            <stop offset="86.06%" stopColor="#2873D7" />
+                            <stop offset="95.06%" stopColor="#9BC3FF" />
+                          </linearGradient>
+                          <radialGradient
+                            id="textHoverEffectRevealMask-features"
+                            cx={`${mousePos.x}%`}
+                            cy={`${mousePos.y}%`}
+                            gradientUnits="userSpaceOnUse"
+                            r="40%"
+                          >
+                            <stop offset="30%" stopColor="white" />
+                            <stop offset="100%" stopColor="black" />
+                          </radialGradient>
+                          <mask id="textHoverEffectMask-features">
+                            <rect
+                              height="100%"
+                              width="100%"
+                              fill="url(#textHoverEffectRevealMask-features)"
+                              x="0%"
+                              y="0"
+                            />
+                          </mask>
+                        </defs>
+                        <text
+                          className="text-[1em] fill-current text-shadow-ascii-contrast"
+                          dominantBaseline="middle"
+                          textAnchor="middle"
+                          x="50%"
+                          y="55%"
+                        >
+                          Here's what Surbee can do for you
+                        </text>
+                        <text
+                          className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]"
+                          dominantBaseline="middle"
+                          fill="url(#textHoverEffectGradient-features)"
+                          mask="url(#textHoverEffectMask-features)"
+                          opacity="1"
+                          textAnchor="middle"
+                          x="50%"
+                          y="55%"
+                        >
+                          Here's what Surbee can do for you
+                        </text>
+                      </svg>
+                    </span>
+                  </span>
+                </span>
+              </h2>
+            </div>
           </section>
 
 	          {/* Post-hero section */}
@@ -323,7 +425,7 @@ export default function LandingPage() {
 	                  <div className="relative w-full h-full min-h-[190px] sm:min-h-[170px] lg:min-h-auto flex flex-col justify-end">
 	                      <div className="flex flex-col gap-8 justify-end h-full">
 	                        <div className="flex flex-col gap-4">
-	                          <h4 className="hero-text-tobias font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 text-left" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}>
+	                          <h4 className="hero-text-tobias font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 text-left" style={{ fontSize: '38px', fontWeight: 300, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}>
 	                          Detect Odd Behaviors & Bad Data
 	                        </h4>
 	                        <div className="flex flex-col gap-2">
@@ -423,7 +525,7 @@ export default function LandingPage() {
 	                  <div className="relative w-full h-full min-h-[190px] sm:min-h-[170px] lg:min-h-auto flex flex-col justify-end">
 	                      <div className="flex flex-col gap-8 justify-end h-full">
 	                        <div className="flex flex-col gap-4">
-	                          <h4 className="hero-text-tobias font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 text-left" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}>
+	                          <h4 className="hero-text-tobias font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 text-left" style={{ fontSize: '38px', fontWeight: 300, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}>
 	                          Grow a Community Around Your Surveys
 	                        </h4>
 	                        <div className="flex flex-col gap-2">
@@ -453,9 +555,7 @@ export default function LandingPage() {
           <RevealSection
             className="py-8 mx-auto w-full max-w-4xl flex flex-col justify-center items-center"
           >
-	            <h2 className="hero-text-tobias font-medium tracking-15 text-center text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 mb-8" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}>
-	              Connect the tools you already use
-	            </h2>
+            <GradientTitle as="h2" text="Connect the tools you already use" align="center" className="mb-8" sizePx={38} />
 	            <div className="flex justify-center gap-3 sm:gap-4 pb-5 md:pb-6 pt-3 md:pt-6 px-3 sm:px-4 flex-wrap">
 	                <div className="flex relative flex-col items-center group">
 	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
@@ -590,7 +690,7 @@ export default function LandingPage() {
 	                >
 	                  <RevealDiv className="relative inline-block">
 	                    <div className="rounded-lg px-8 py-6 backdrop-blur-lg max-w-[calc(100vw_-_64px)] w-[500px] flex flex-col items-center justify-center gap-3 bg-gradient-to-b from-[rgba(255,255,255,0.80)] to-[rgba(255,255,255,0.16)] shadow-[0px_4px_12px_0px_rgba(255,255,255,0.10)_inset,0px_0px_0px_6px_rgba(255,255,255,0.40),0px_1px_8px_0px_rgba(0,0,0,0.13),0px_2px_6px_0px_rgba(0,0,0,0.20)]">
-	                      <h3 className="hero-text-tobias font-semibold text-title-secondary md:text-title-primary leading-[130%] tracking-[-0.56px] text-center" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}>
+	                      <h3 className="hero-text-tobias font-semibold text-title-secondary md:text-title-primary leading-[130%] tracking-[-0.56px] text-center" style={{ fontSize: '38px', fontWeight: 300, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}>
 	                        Join Our Community
 	                      </h3>
 	                      <p className="text-[15px] leading-[140%] text-center" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
@@ -624,16 +724,8 @@ export default function LandingPage() {
       <style
         dangerouslySetInnerHTML={{
           __html: `
-@font-face {
-  font-family: 'Tobias';
-  src: url('/fonts/Tobias-TRIAL-Light.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
 .hero-text-tobias {
-  font-family: 'Tobias', var(--font-inter), sans-serif;
+  font-family: var(--font-tobias), var(--font-inter), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

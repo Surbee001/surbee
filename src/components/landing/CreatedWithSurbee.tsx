@@ -1,6 +1,16 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from "react";
+import localFont from "next/font/local";
+import GradientTitle from "@/components/landing/GradientTitle";
+
+const tobiasLight = localFont({
+  src: "../../../Font/Tobiasfont/Tobias-TRIAL-Light.ttf",
+  weight: "300",
+  style: "normal",
+  variable: "--font-tobias",
+  display: "swap",
+});
 
 type CardConfig = {
   src: string;
@@ -181,13 +191,14 @@ export default function CreatedWithSurbee() {
     };
 
   return (
-    <section className="w-full mb-[84px]">
-      <h1
-        className="hero-text-tobias text-title-secondary md:text-title-primary max-w-[335px] md:max-w-[820px] mx-auto mb-[66px]"
-        style={{ textAlign: "center", fontSize: '38px', fontWeight: 100, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}
-      >
-        Created with Surbee
-      </h1>
+    <section className={`w-full mb-[84px] ${tobiasLight.variable}`}>
+      <GradientTitle
+        as="h1"
+        text="Created with Surbee"
+        align="center"
+        className="text-title-secondary md:text-title-primary max-w-[335px] md:max-w-[820px] mx-auto mb-[66px]"
+        sizePx={67}
+      />
       <div className="max-w-[1400px] aspect-[1440/692] mx-auto relative">
         <div className="h-full">
           <div className="relative h-full mx-auto">
@@ -261,16 +272,8 @@ export default function CreatedWithSurbee() {
       <style
         dangerouslySetInnerHTML={{
           __html: `
-@font-face {
-  font-family: 'Tobias';
-  src: url('/fonts/Tobias-TRIAL-Light.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
 .hero-text-tobias {
-  font-family: 'Tobias', var(--font-inter), sans-serif;
+  font-family: var(--font-tobias), var(--font-inter), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
