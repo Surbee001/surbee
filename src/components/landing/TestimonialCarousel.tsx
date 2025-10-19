@@ -7,67 +7,67 @@ export default function TestimonialCarousel() {
 
   const testimonials = [
     {
-      text: "Thanks to Speakeasy, building and maintaining high-quality, language-idiomatic API clients became simple and efficient. We accelerated our release schedule without sacrificing code quality.",
-      author: "Steve Calvert",
-      role: "Software Engineer @ Glean",
-      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/steve-calvert.jpeg&w=96&q=75",
-      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Fsteve-calvert.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fsteve-calvert.jpeg&w=96&q=75 2x"
+      text: "Surbee transformed how I conduct research. The AI-powered survey generation is incredibly intuitive - I just describe what I need and get professional-quality surveys in minutes. It's like having a research assistant that never sleeps.",
+      author: "Dr. Sarah Martinez",
+      role: "Research Psychologist @ Stanford University",
+      avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=96&q=75",
+      srcSet: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=48&q=75 1x, https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=96&q=75 2x"
     },
     {
-      text: "We've been using Speakeasy to create Dub's TypeScript SDK and it's been an amazing experience so far: Sublime DX + beautiful product.",
-      author: "Steven Tey",
-      role: "Founder @ Dub.co",
-      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/steven-tey.jpeg&w=96&q=75",
-      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Fsteven-tey.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fsteven-tey.jpeg&w=96&q=75 2x"
+      text: "As a busy startup founder, I need tools that just work. Surbee's fraud detection caught several suspicious responses that I would have missed otherwise. The data quality is incredible - it's saved us thousands in bad decisions.",
+      author: "Marcus Chen",
+      role: "CEO @ GrowthTech",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=96&q=75",
+      srcSet: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=48&q=75 1x, https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=96&q=75 2x"
     },
     {
-      text: "The MCP server we built using Speakeasy just works. It made becoming AI-native much simpler than we expected",
-      author: "Constantine Nathanson",
-      role: "Staff software engineer @ Cloudinary",
-      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/constantine-nathanson.jpeg&w=96&q=75",
-      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Fconstantine-nathanson.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fconstantine-nathanson.jpeg&w=96&q=75 2x"
+      text: "I've tried every survey tool out there, but Surbee is different. The conditional logic and skip patterns work flawlessly, and the real-time analytics help me understand my audience like never before. My response rates have doubled.",
+      author: "Jennifer Walsh",
+      role: "UX Researcher @ Meta",
+      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=96&q=75",
+      srcSet: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=48&q=75 1x, https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=96&q=75 2x"
     },
     {
-      text: "Speakeasy is a beautiful and easy-to-manage product with a team fully committed to the developer experience that understands our needs.",
-      author: "Leonardo Risch",
-      role: "Engineering manager @ Latitude.sh",
-      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/leonardo-risch.jpeg&w=96&q=75",
-      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Fleonardo-risch.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fleonardo-risch.jpeg&w=96&q=75 2x"
+      text: "The behavioral tracking in Surbee is a game-changer for academic research. I can see exactly how participants interact with my surveys, which helps me design better studies. The fraud detection keeps my data clean and reliable.",
+      author: "Prof. David Kim",
+      role: "Professor of Sociology @ UCLA",
+      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=96&q=75",
+      srcSet: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=48&q=75 1x, https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=96&q=75 2x"
     },
     {
-      text: "Big thanks to Speakeasy for their partnership!",
-      author: "Lee Robinson",
-      role: "Developer experience @ Vercel",
-      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/lee-rob.jpeg&w=96&q=75",
-      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Flee-rob.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Flee-rob.jpeg&w=96&q=75 2x"
+      text: "Surbee makes survey creation feel effortless. I went from spending hours crafting questions to having professional surveys ready in 15 minutes. The AI understands context amazingly well - it's like it reads my mind.",
+      author: "Alex Rodriguez",
+      role: "Product Manager @ Spotify",
+      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=96&q=75",
+      srcSet: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=48&q=75 1x, https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=96&q=75 2x"
     },
     {
-      text: "Helping our customers ship as quickly as possible is our #1 priority. Speakeasy has made it so that we can provide first-class devex for our API users across any platform. Faster ship times = immediate ROI for both our customers and us.",
-      author: "Nick Gomez",
-      role: "Co-founder & CEO @ Inkeep",
-      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/nick-gomez.jpeg&w=96&q=75",
-      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Fnick-gomez.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fnick-gomez.jpeg&w=96&q=75 2x"
+      text: "What impresses me most about Surbee is the attention to detail. From the beautiful survey designs to the comprehensive analytics, everything works together seamlessly. It's become an essential part of our research workflow.",
+      author: "Maria Santos",
+      role: "Head of Customer Insights @ Airbnb",
+      avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=96&q=75",
+      srcSet: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=48&q=75 1x, https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=96&q=75 2x"
     },
     {
-      text: "I am super impressed with the generated SDK... When DX is your moat, it is super hard to outsource this, but Speakeasy makes it possible",
-      author: "Andreas Thomas",
-      role: "Co-founder & CTO @ Unkey",
-      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/andreas-thomas.jpeg&w=96&q=75",
-      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Fandreas-thomas.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fandreas-thomas.jpeg&w=96&q=75 2x"
+      text: "The community features in Surbee are fantastic. I can share surveys with my research group and get feedback instantly. The collaboration tools make academic research so much more efficient and enjoyable.",
+      author: "Dr. Priya Patel",
+      role: "Assistant Professor @ MIT",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=96&q=75",
+      srcSet: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=48&q=75 1x, https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=96&q=75 2x"
     },
     {
-      text: "I can't recommend Speakeasy enough!",
-      author: "Pontus Abrahamsson",
-      role: "Co-founder @ Midday & Languine",
-      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/pontus-abrahamsson.jpeg&w=96&q=75",
-      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Fpontus-abrahamsson.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fpontus-abrahamsson.jpeg&w=96&q=75 2x"
+      text: "Surbee's real-time fraud detection gives me peace of mind. I know that the responses I'm analyzing are genuine, which is crucial for market research. The accuracy scores help me identify and focus on the most reliable data.",
+      author: "Thomas Anderson",
+      role: "Market Research Director @ Nielsen",
+      avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=96&q=75",
+      srcSet: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=48&q=75 1x, https://images.unsplash.com/photo-1560250097-0b93528c311a?w=96&q=75 2x"
     },
     {
-      text: "The Speakeasy team has been fantastic. The support feels like a real partnership, making all the difference.",
-      author: "Greg Poirier",
-      role: "Director of engineering @ SolarWinds",
-      avatar: "https://www.speakeasy.com/_next/image?url=/assets/quote-headshots/greg-poirier.jpeg&w=96&q=75",
-      srcSet: "/_next/image?url=%2Fassets%2Fquote-headshots%2Fgreg-poirier.jpeg&w=48&q=75 1x, /_next/image?url=%2Fassets%2Fquote-headshots%2Fgreg-poirier.jpeg&w=96&q=75 2x"
+      text: "I love how Surbee handles complex survey logic. The skip patterns and conditional questions work perfectly, and the preview mode lets me test everything before launching. It's made my job so much easier.",
+      author: "Rachel Green",
+      role: "Senior Survey Designer @ Qualtrics",
+      avatar: "https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=96&q=75",
+      srcSet: "https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=48&q=75 1x, https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=96&q=75 2x"
     }
   ];
 
@@ -201,8 +201,8 @@ export default function TestimonialCarousel() {
           __html: `
 @font-face {
   font-family: 'Tobias';
-  src: url('/fonts/Tobias-TRIAL-Thin.ttf') format('truetype');
-  font-weight: 100;
+  src: url('/fonts/Tobias-TRIAL-Light.ttf') format('truetype');
+  font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
