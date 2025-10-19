@@ -234,7 +234,7 @@ export default function LandingPage() {
 
           {/* Features title */}
           <section className="px-6 pt-24 pb-2 text-center">
-            <h2 className="hero-text-tobias font-medium tracking-15 text-center text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 mb-8" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}>
+            <h2 className="hero-text-tobias font-medium tracking-15 text-center text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 mb-8" style={{ fontSize: '51px', fontWeight: 200, letterSpacing: '-1px', lineHeight: '51px', color: '#0A0A0A' }}>
               Here's what Surbee can do for you
             </h2>
           </section>
