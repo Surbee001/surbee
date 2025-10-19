@@ -81,7 +81,7 @@ export default function TestimonialCarousel() {
 
   return (
     <>
-      <div className="w-full max-w-[1140px] mx-auto py-24 md:py-32 px-6 h-fit flex flex-col items-center gap-10.5 relative overflow-hidden">
+      <div className="w-full max-w-[1140px] mx-auto py-48 md:py-64 px-6 h-fit flex flex-col items-center gap-10.5 relative overflow-hidden">
         <svg
           className="absolute w-24 h-auto md:top-[calc(50%-2.5rem)] md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full text-gray-200"
           height="367"
@@ -110,7 +110,7 @@ export default function TestimonialCarousel() {
                   className="max-w-[54.375rem] w-full mx-auto flex flex-col items-center gap-9.5 flex-[0_0_100%] justify-center"
                   style={{ opacity: index === currentIndex ? 1 : 0 }}
                 >
-                  <p className="text-balance bsmnt-text-display-xs md:bsmnt-text-display-md font-extralight text-center text-black">
+                  <p className="text-balance text-center text-black" style={{ fontSize: '51px', fontFamily: 'Tobias, "Tobias Fallback", serif', fontWeight: 100, letterSpacing: '-2px', lineHeight: '51px' }}>
                     <span>
                       {testimonial.text}
                     </span>
@@ -199,6 +199,14 @@ export default function TestimonialCarousel() {
       <style
         dangerouslySetInnerHTML={{
           __html: `
+@font-face {
+  font-family: 'Tobias';
+  src: url('/fonts/Tobias-TRIAL-Thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
 html {
   font-size: 1rem;
   line-height: var(--tw-leading,calc(1.5/1));
