@@ -2143,6 +2143,31 @@ body {
   text-shadow: 0 0 1px var(--background, black);
 }
 
+/* Info/Badge Colors */
+.text-info-700 {
+  color: #0369a1;
+}
+
+.text-info-300 {
+  color: #7dd3fc;
+}
+
+.before\:bg-info-300::before {
+  background-color: #7dd3fc;
+}
+
+.before\:bg-info-700::before {
+  background-color: #0369a1;
+}
+
+.dark .dark\:text-info-300 {
+  color: #7dd3fc;
+}
+
+.dark .dark\:before\:bg-info-700::before {
+  background-color: #0369a1;
+}
+
 /* Project Card Styles - Updated design */
 /* Colorful text effect */
 .colorful-text {

@@ -5,6 +5,8 @@ import TypingOverlay from "@/components/landing/TypingOverlay";
 import { ImageKitProvider, Image as IKImage } from "@imagekit/next";
 import CreatedWithSurbee from "@/components/landing/CreatedWithSurbee";
 import HeroSection from "@/components/landing/HeroSection";
+import PricingCards from "@/components/pricing/PricingCards";
+import TestimonialCarousel from "@/components/landing/TestimonialCarousel";
 
 const epilogue = localFont({
   src: [
@@ -142,7 +144,7 @@ export default function LandingPage() {
         <main className={`ml-56 w-full pt-20`}> {/* ml must equal sidebar width; pt offset for navbar */}
           {/* Title and description (hero header) */}
           <RevealSection
-            className="w-full max-w-[1920px] mx-auto px-5 md:px-8 xl:px-12 2xl:px-30 pb-8 pt-8 xl:pb-20 xl:pt-20"
+            className="w-full max-w-[1920px] mx-auto px-5 md:px-8 xl:px-12 2xl:px-30 pb-8 pt-4 xl:pb-20 xl:pt-12"
           >
             <HeroSection />
           </RevealSection>
@@ -437,10 +439,33 @@ export default function LandingPage() {
             </RevealSection>
 	          </div>
 
-	          {/* Spacer section */}
-	          <div className="py-12"></div>
 
-	          {/* Created with Surbee Section */}
+          {/* Pricing Section */}
+          <RevealSection className="py-24 px-6">
+            <div id="pricing" className="mx-auto max-w-[1400px]">
+              <div className="mb-12 text-center">
+                <h2
+                  className="text-[42px] font-semibold tracking-[-0.03em] md:text-[48px]"
+                  style={{ color: "#0A0A0A", fontFamily: "var(--font-inter), sans-serif" }}
+                >
+                  Pricing
+                </h2>
+                <p
+                  className="mt-4 text-[16px] leading-[150%] text-neutral-600"
+                  style={{ fontFamily: "var(--font-inter), sans-serif" }}
+                >
+                  Choose the plan that fits how you build. Upgrade or downgrade anytime.
+                </p>
+              </div>
+              <PricingCards />
+            </div>
+          </RevealSection>
+
+
+          {/* Spacer section */}
+          <div className="py-12"></div>
+
+          {/* Created with Surbee Section */}
           <RevealSection
             className="py-8 mx-auto w-full max-w-[1400px] flex flex-col justify-center items-center"
           >
@@ -561,37 +586,9 @@ export default function LandingPage() {
           </RevealSection>
 
 	          {/* Testimonials Section */}
-	          <div className="w-full">
-	            <section
-	              id="results"
-	              className="2xl:pb-[120px] xl:pb-[100px] md:pb-[80px] pb-[60px] 2xl:pt-[120px] xl:pt-[100px] md:pt-[80px] pt-[60px] 2xl:px-30 xl:px-12 md:px-8 px-5 w-full max-w-[1920px] mx-auto"
-	            >
-	              <h2 className="font-medium tracking-15 text-center text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 mb-12">
-	                What people are saying about Surbee
-	              </h2>
-	              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-                {/* Left Testimonial */}
-                <div className="flex flex-col gap-6 p-8 bg-neutral-50 rounded-lg">
-                  <p className="font-medium text-[18px] md:text-[20px] leading-[140%]" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
-                    "Surbee will help my students collect reliable results quickly, it's definitely going to raise the quality of their work. The automated validation catches issues I used to spend hours explaining."
-                  </p>
-                  <p className="font-medium text-[15px] tracking-15 leading-[140%]" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
-                    — Prelaunch testimonial
-                  </p>
-                </div>
-                
-                {/* Right Testimonial */}
-                <div className="flex flex-col gap-6 p-8 bg-neutral-50 rounded-lg">
-                  <p className="font-medium text-[18px] md:text-[20px] leading-[140%]" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
-                    "I've been waiting for something like this. Creating surveys used to take me days, now I can prototype in minutes and iterate based on real feedback. It's going to change how we do research."
-                  </p>
-                  <p className="font-medium text-[15px] tracking-15 leading-[140%]" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
-                    — Prelaunch testimonial
-                  </p>
-                </div>
-	              </div>
-	            </section>
-	          </div>
+	          <RevealSection className="w-full">
+	            <TestimonialCarousel />
+	          </RevealSection>
 
 	          {/* Footer Section */}
 	          <RevealSection className="mt-8 w-full px-6 pb-8">
@@ -650,5 +647,3 @@ export default function LandingPage() {
     </ImageKitProvider>
   );
 }
-
-

@@ -1052,23 +1052,55 @@ export default function ProjectPage() {
             <div className="flex-1 overflow-y-auto pl-12 pr-6 py-6" ref={chatAreaRef}>
               <div className="space-y-6">
                 {messages.length === 0 && !isThinking && (
-                  <div></div>
+                  <div className="rounded-2xl border border-dashed border-zinc-800/70 bg-zinc-900/50 px-4 py-6 text-sm text-zinc-400">
+                    <p className="font-medium text-zinc-300">Kick off a build conversation</p>
+                    <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+                      Ask Surbee to create or refine a survey. The full planning, reasoning, and build progress will stream here without disappearing.
+                    </p>
+                  </div>
                 )}
 
                 {messages.map((message, idx) => {
                   const lastUserPrompt =
                     [...messages].slice(0, idx).reverse().find((m) => m.isUser)?.text || "";
+                  const isReasoningOnly = !message.isUser && message.text.trim().toLowerCase().startsWith("thought for ");
+
+                  if (isReasoningOnly) {
+                    return (
+                      <div key={message.id} className="flex justify-start">
+                        <div className="text-xs text-muted-foreground italic">
+                          {message.text}
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div
                       key={message.id}
                       className={message.isUser ? "flex justify-end" : "flex justify-start"}
                     >
                       {message.isUser ? (
-                        <div className="max-w-[85%] rounded-2xl bg-zinc-900 px-4 py-3 text-sm text-zinc-100 shadow-sm">
-                          {message.text}
+                        <div className="relative max-w-[80%] rounded-2xl bg-white text-black px-4 py-3 text-sm shadow-sm">
+                          <span className="block text-sm font-medium text-slate-900">
+                            You
+                          </span>
+                          <p className="mt-1 whitespace-pre-wrap text-slate-900/90">
+                            {message.text}
+                          </p>
+                          {message.timestamp && (
+                            <span className="mt-2 block text-right text-xs text-slate-500">
+                              {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          )}
                         </div>
                       ) : (
                         <div className="group relative max-w-full flex-1 rounded-2xl bg-zinc-900/40 px-4 py-4 text-sm text-zinc-100 shadow-sm">
+                          {message.agent && (
+                            <span className="mb-2 block text-xs uppercase tracking-wide text-slate-400">
+                              {message.agent}
+                            </span>
+                          )}
                           <MarkdownRenderer content={message.text} className="prose-invert prose-sm max-w-none" />
                           <div className="mt-2">
                             <AIResponseActions
@@ -1097,16 +1129,22 @@ export default function ProjectPage() {
                   );
                 })}
                 {(isThinking || isBuilding) && (
-                  <>
-                    {isThinking && <ThinkingDisplay steps={thinkingSteps} isThinking={isThinking} />}
-                    {isBuilding && (
-                      <ToolCall
-                        icon={<Hammer className="h-4 w-4 text-muted-foreground" />}
-                        label={buildingLabel}
-                        isActive
-                      />
+                  <div className="space-y-3">
+                    {isThinking && (
+                      <div className="rounded-2xl border border-zinc-800/70 bg-zinc-900/50 px-4 py-3">
+                        <ThinkingDisplay steps={thinkingSteps} isThinking={isThinking} />
+                      </div>
                     )}
-                  </>
+                    {isBuilding && (
+                      <div className="rounded-2xl border border-zinc-800/70 bg-zinc-900/50 px-4 py-3">
+                        <ToolCall
+                          icon={<Hammer className="h-4 w-4 text-muted-foreground" />}
+                          label={buildingLabel}
+                          isActive
+                        />
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

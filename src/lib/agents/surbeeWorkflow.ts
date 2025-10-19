@@ -998,7 +998,12 @@ export const runWorkflow = async (
     output_parsed: categorizeResultTemp.finalOutput,
   };
 
-  if (categorizeResult.output_parsed.mode === "BUILD") {
+  const modeRaw = (categorizeResult.output_parsed as any)?.mode;
+  const normalizedMode = typeof modeRaw === "string" ? modeRaw.trim().toLowerCase() : "";
+  const isBuildMode = ["build", "build mode", "build_mode", "builder", "buildmode"].includes(normalizedMode);
+  const isAskMode = ["ask", "ask mode", "ask_mode", "askmode"].includes(normalizedMode);
+
+  if (isBuildMode) {
     // Build mode: first plan, then build
     const surbeebuildplannerResultTemp = await executeAgent(
       surbeebuildplanner,
@@ -1011,61 +1016,110 @@ export const runWorkflow = async (
     }
 
     // Extract and send user_summary as a message if present
-    const planOutput = surbeebuildplannerResultTemp.finalOutput as any;
-    if (planOutput?.user_summary && typeof planOutput.user_summary === 'string') {
-      const summaryItem: SerializedRunItem = {
-        type: 'message',
-        text: planOutput.user_summary,
-        agent: 'SurbeeBuildPlanner'
-      };
-      streamedSerializedItems.push(summaryItem);
-      if (onItemStream) {
-        await onItemStream(summaryItem);
-      }
-      
-      // Close thinking after showing plan summary
-      const closeThinkingItem: SerializedRunItem = {
-        type: 'thinking_control',
-        action: 'close',
-        agent: 'SurbeeBuildPlanner'
-      } as any;
-      streamedSerializedItems.push(closeThinkingItem);
-      if (onItemStream) {
-        await onItemStream(closeThinkingItem);
+    let plannerOutput: unknown = surbeebuildplannerResultTemp.finalOutput;
+    if (typeof plannerOutput === "string") {
+      try {
+        plannerOutput = JSON.parse(plannerOutput);
+      } catch {
+        // keep as string if JSON parsing fails
       }
     }
 
-    // Extract and send reasoning steps if present (this was for debugging, can be removed)
+    const planOutput = plannerOutput as any;
+
+    if (planOutput?.user_summary && typeof planOutput.user_summary === 'string') {
+      const summaryRawItem = {
+        type: "message_output_item",
+        content: planOutput.user_summary,
+        agent: { name: "SurbeeBuildPlanner" }
+      };
+      const [summaryItem] = serializeRunItems([summaryRawItem as RunItem]);
+      if (summaryItem) {
+        streamedSerializedItems.push(summaryItem);
+        if (onItemStream) {
+          await onItemStream(summaryItem);
+        }
+      }
+
+      const closeThinkingRawItem = {
+        type: "thinking_control_item",
+        action: "close",
+        agent: { name: "SurbeeBuildPlanner" }
+      };
+      const [closeThinkingItem] = serializeRunItems([closeThinkingRawItem as RunItem]);
+      if (closeThinkingItem) {
+        streamedSerializedItems.push(closeThinkingItem);
+        if (onItemStream) {
+          await onItemStream(closeThinkingItem);
+        }
+      }
+    }
+
     if (Array.isArray(planOutput?.reasoning)) {
       for (const reasoningLine of planOutput.reasoning) {
         if (typeof reasoningLine === 'string' && reasoningLine.trim()) {
-          const reasoningItem: SerializedRunItem = {
-            type: 'reasoning',
-            text: reasoningLine,
-            agent: 'SurbeeBuildPlanner'
+          const reasoningRawItem = {
+            type: "reasoning_item",
+            content: [
+              {
+                type: "input_text",
+                text: reasoningLine
+              }
+            ],
+            agent: { name: "SurbeeBuildPlanner" }
           };
-          streamedSerializedItems.push(reasoningItem);
-          if (onItemStream) {
-            await onItemStream(reasoningItem);
+          const [reasoningItem] = serializeRunItems([reasoningRawItem as RunItem]);
+          if (reasoningItem) {
+            streamedSerializedItems.push(reasoningItem);
+            if (onItemStream) {
+              await onItemStream(reasoningItem);
+            }
           }
         }
       }
     }
 
-    // Re-open thinking for builder reasoning
-    const openThinkingItem: SerializedRunItem = {
-      type: 'thinking_control',
-      action: 'open',
-      agent: 'SurbeeBuilder'
-    } as any;
-    streamedSerializedItems.push(openThinkingItem);
-    if (onItemStream) {
-      await onItemStream(openThinkingItem);
+    const openThinkingRawItem = {
+      type: "thinking_control_item",
+      action: "open",
+      agent: { name: "SurbeeBuilder" }
+    };
+    const [openThinkingItem] = serializeRunItems([openThinkingRawItem as RunItem]);
+    if (openThinkingItem) {
+      streamedSerializedItems.push(openThinkingItem);
+      if (onItemStream) {
+        await onItemStream(openThinkingItem);
+      }
+    }
+
+    let planInputItem: AgentInputItem | null = null;
+    if (plannerOutput) {
+      const planPayloadText = typeof plannerOutput === 'string'
+        ? plannerOutput
+        : JSON.stringify(plannerOutput, null, 2);
+
+      if (planPayloadText && planPayloadText.trim().length > 0) {
+        planInputItem = {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: `SURBEE_BUILD_PLAN\n${planPayloadText}`,
+            },
+          ],
+        };
+      }
+    }
+
+    const builderInputs = [...conversationHistory];
+    if (planInputItem) {
+      builderInputs.push(planInputItem);
+      conversationHistory.push(planInputItem);
     }
 
     const surbeebuilderResultTemp = await executeAgent(
       surbeebuilder,
-      [...conversationHistory]
+      builderInputs
     );
     conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
     
@@ -1097,7 +1151,7 @@ export const runWorkflow = async (
     };
   }
 
-  if (categorizeResult.output_parsed.mode === "ASK") {
+  if (isAskMode || (!isBuildMode && !isAskMode)) {
     const surbeeplannerResultTemp = await executeAgent(
       surbeeplanner,
       [...conversationHistory]
