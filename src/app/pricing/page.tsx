@@ -1,13 +1,29 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ImageKitProvider, Image as IKImage } from "@imagekit/next";
 import PricingCards from "@/components/pricing/PricingCards";
 
 export default function PricingPage() {
   const [selectedFrequency, setSelectedFrequency] = useState("monthly");
+  const [mousePosPricing, setMousePosPricing] = useState({ x: 50, y: 50 });
+  const containerRefPricing = useRef<HTMLSpanElement>(null);
   const sidebarWidthClass = "w-56"; // 14rem ~ 224px
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (containerRefPricing.current) {
+        const rect = containerRefPricing.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        setMousePosPricing({ x, y });
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
 
   return (
     <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
@@ -136,15 +152,50 @@ export default function PricingPage() {
         </aside>
 
         {/* Main Content - occupies the rest of the page width */}
-        <main className={`ml-56 w-full pt-20`}> {/* ml must equal sidebar width; pt offset for navbar */}
-        <div className="max-w-7xl mx-auto px-6 md:px-8 xl:px-12 2xl:px-30 pt-16 pb-20">
-          <header className="mb-16 text-center">
-            <h1 className="text-[54px] font-semibold tracking-[-0.02em] leading-[110%]" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
-              Pricing
-            </h1>
-            <p className="mt-4 text-[15px] leading-[140%] max-w-2xl mx-auto" style={{ color: '#6B7280', fontFamily: 'var(--font-inter), sans-serif' }}>
-              Choose the plan that fits your workflow. Upgrade anytime.
-            </p>
+        <main className={`ml-56 w-full pt-12`}> {/* ml must equal sidebar width; pt offset for navbar */}
+        <div className="max-w-7xl mx-auto px-6 md:px-8 xl:px-12 2xl:px-30 pt-8 pb-20">
+          <header className="mb-8 text-center">
+            <div className="relative">
+              <h1 className="select-none hero-text-tobias">
+                <span className="leading-none block" style={{ fontSize: '54px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '54px', color: '#0A0A0A', fontFamily: 'Tobias, "Tobias Fallback", serif' }}>
+                  <span className="relative">
+                    <span className="inline-block -translate-y-[0.135em] opacity-0">
+                      Pricing
+                    </span>
+                    <span ref={containerRefPricing} className="px-[5%] -mx-[5%] block absolute inset-0 pointer" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '54px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '54px' }}>
+                      <svg className="select-none pointer-events-none" height="100%" width="100%" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                          <linearGradient id="textHoverEffectGradient-pricing" cx="50%" cy="50%" gradientTransform="rotate(-10)" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stopColor="#320F1E" />
+                            <stop offset="8.56%" stopColor="#C83228" />
+                            <stop offset="25.06%" stopColor="#FB873F" />
+                            <stop offset="37.56%" stopColor="#D2DC91" />
+                            <stop offset="50.06%" stopColor="#5A8250" />
+                            <stop offset="62.06%" stopColor="#002314" />
+                            <stop offset="74.06%" stopColor="#00143C" />
+                            <stop offset="86.06%" stopColor="#2873D7" />
+                            <stop offset="95.06%" stopColor="#9BC3FF" />
+                          </linearGradient>
+                          <radialGradient id="textHoverEffectRevealMask-pricing" cx={`${mousePosPricing.x}%`} cy={`${mousePosPricing.y}%`} gradientUnits="userSpaceOnUse" r="40%">
+                            <stop offset="30%" stopColor="white" />
+                            <stop offset="100%" stopColor="black" />
+                          </radialGradient>
+                          <mask id="textHoverEffectMask-pricing">
+                            <rect height="100%" width="100%" fill="url(#textHoverEffectRevealMask-pricing)" x="0%" y="0" />
+                          </mask>
+                        </defs>
+                        <text className="text-[1em] fill-current text-shadow-ascii-contrast" dominantBaseline="middle" textAnchor="middle" x="50%" y="55%">
+                          Pricing
+                        </text>
+                        <text className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]" dominantBaseline="middle" fill="url(#textHoverEffectGradient-pricing)" mask="url(#textHoverEffectMask-pricing)" opacity="1" textAnchor="middle" x="50%" y="55%">
+                          Pricing
+                        </text>
+                      </svg>
+                    </span>
+                  </span>
+                </span>
+              </h1>
+            </div>
           </header>
 
           <div className="flex justify-center mt-8 mb-6">
@@ -153,12 +204,12 @@ export default function PricingPage() {
                 <div
                   className={`absolute rounded-full transition-all duration-300 ease-out bg-white border border-gray-200 ${selectedFrequency === 'monthly' ? 'left-0.5' : 'left-[calc(50%-2px)]'}`}
                   style={{
-                    width: "101px",
-                    top: "2px",
-                    bottom: "2px",
+                    width: selectedFrequency === 'monthly' ? 'calc(100% / 2 - 4px)' : 'calc(100% / 2 - 4px)',
+                    top: '2px',
+                    bottom: '2px',
                   }}
                 />
-                <label className={`group relative cursor-pointer rounded-full text-base leading-[1] px-4 py-2 z-10 transition-colors ${selectedFrequency === 'monthly' ? 'text-black' : 'text-gray-600 hover:text-black'}`} style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+                <label className={`group relative cursor-pointer rounded-full text-sm md:text-base leading-[1] px-4 py-2 z-10 transition-colors ${selectedFrequency === 'monthly' ? 'text-black' : 'text-gray-600 hover:text-black'}`} style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
                   <input
                     className="absolute inset-0 cursor-pointer appearance-none rounded-full opacity-0"
                     name="frequency"
@@ -169,7 +220,7 @@ export default function PricingPage() {
                   />
                   <span>Monthly</span>
                 </label>
-                <label className={`group relative cursor-pointer rounded-full text-base leading-[1] px-4 py-2 z-10 transition-colors ${selectedFrequency === 'yearly' ? 'text-black' : 'text-gray-600 hover:text-black'}`} style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+                <label className={`group relative cursor-pointer rounded-full text-sm md:text-base leading-[1] px-4 py-2 z-10 transition-colors ${selectedFrequency === 'yearly' ? 'text-black' : 'text-gray-600 hover:text-black'}`} style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
                   <input
                     className="absolute inset-0 cursor-pointer appearance-none rounded-full opacity-0"
                     name="frequency"
@@ -184,16 +235,72 @@ export default function PricingPage() {
             </fieldset>
           </div>
 
-        <div className="mb-12">
-          <h2 id="individual" className="text-2xl font-semibold mb-8" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
-            <a
-              className="hover:opacity-90"
-              href="/pricing#individual"
-            >
-              Individual Plans
-            </a>
+        <div className="mb-8 max-w-5xl mx-auto px-0">
+          <h2 id="individual" className="text-[16px] font-semibold mb-6 text-left" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
+            Individual Plans
           </h2>
           <PricingCards />
+        </div>
+
+        {/* Business Plans */}
+        <div className="mt-16 space-y-6 max-w-5xl mx-auto">
+          <h2 id="business" className="text-[18px] md:text-[20px] font-semibold text-left" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
+            <a className="hover:opacity-90" href="/pricing#business">Business Plans</a>
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Teams */}
+            <a className="bg-neutral-100 rounded-md p-6 border border-neutral-200 transition-all duration-300 hover:bg-neutral-50" href="/team/new-team?yearly=false">
+              <div className="flex flex-col justify-between h-full">
+                <div>
+                  <div className="flex items-baseline gap-x-2">
+                    <h3 className="text-lg font-medium" id="tier-1-0" style={{ color: '#0A0A0A' }}>Teams</h3>
+                  </div>
+                  <p className="flex items-baseline mt-1">
+                    <span className="text-xl text-neutral-700">$40</span>
+                    <span className="text-neutral-600 text-sm ml-2">/ user / mo.</span>
+                  </p>
+                  <p className="text-neutral-600 mt-3">Everything in Pro, plus:</p>
+                  <ul className="mt-3 space-y-2" role="list">
+                    <li className="flex gap-x-2"><span>✓</span> Centralized team billing</li>
+                    <li className="flex gap-x-2"><span>✓</span> Usage analytics and reporting</li>
+                    <li className="flex gap-x-2"><span>✓</span> Org-wide privacy mode controls</li>
+                    <li className="flex gap-x-2"><span>✓</span> Role-based access control</li>
+                    <li className="flex gap-x-2"><span>✓</span> SAML/OIDC SSO</li>
+                  </ul>
+                </div>
+                <div className="mt-4">
+                  <span className="inline-flex items-center justify-center px-4 py-2 rounded-md border border-neutral-200 bg-white text-black text-sm font-medium">Get Teams</span>
+                </div>
+              </div>
+            </a>
+
+            {/* Enterprise */}
+            <a className="bg-neutral-100 rounded-md p-6 border border-neutral-200 transition-all duration-300 hover:bg-neutral-50" href="/contact-sales">
+              <div className="flex flex-col justify-between h-full">
+                <div>
+                  <div className="flex items-baseline gap-x-2">
+                    <h3 className="text-lg font-medium" id="tier-1-1" style={{ color: '#0A0A0A' }}>Enterprise</h3>
+                  </div>
+                  <p className="flex items-baseline mt-1">
+                    <span className="text-xl text-neutral-700">Custom</span>
+                  </p>
+                  <p className="text-neutral-600 mt-3">Everything in Teams, plus:</p>
+                  <ul className="mt-3 space-y-2" role="list">
+                    <li className="flex gap-x-2"><span>✓</span> Pooled usage</li>
+                    <li className="flex gap-x-2"><span>✓</span> Invoice/PO billing</li>
+                    <li className="flex gap-x-2"><span>✓</span> SCIM seat management</li>
+                    <li className="flex gap-x-2"><span>✓</span> AI code tracking API and audit logs</li>
+                    <li className="flex gap-x-2"><span>✓</span> Granular admin and model controls</li>
+                    <li className="flex gap-x-2"><span>✓</span> Priority support and account management</li>
+                  </ul>
+                </div>
+                <div className="mt-4">
+                  <span className="inline-flex items-center justify-center px-4 py-2 rounded-md border border-neutral-200 bg-white text-black text-sm font-medium">Contact Sales</span>
+                </div>
+              </div>
+            </a>
+          </div>
         </div>
 
         {/* FAQ Section */}

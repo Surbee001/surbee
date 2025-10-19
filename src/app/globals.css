@@ -74,7 +74,15 @@ body {
 }
 
 @font-face {
-  font-family: var(--font-inter);
+  font-family: 'Tobias';
+  src: url('/fonts/Tobias-TRIAL-Thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Tobias';
   src: url('/fonts/Tobias-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;

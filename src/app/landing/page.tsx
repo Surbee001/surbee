@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useRef, useEffect } from "react";
 import { RevealSection, RevealDiv } from "@/components/landing/Reveal";
 import localFont from "next/font/local";
