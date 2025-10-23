@@ -78,7 +78,7 @@ export function TypeformButtonContainer({
 }: TypeformButtonContainerProps) {
   return (
     <ul
-      className={cn("flex flex-col [&:has(:hover)>*:not(:hover)]:text-text-tertiary", className)}
+      className={cn("flex flex-col [&:has(:hover)>*:not(:hover)]:opacity-25", className)}
       style={{
         border: "0px solid",
         boxSizing: "border-box",
@@ -92,7 +92,7 @@ export function TypeformButtonContainer({
     >
       {React.Children.map(children, (child) => (
         <li
-          className="w-fit py-[1px] text-title-3 text-text-primary transition-colors duration-300"
+          className="w-fit py-[1px] text-title-3 text-text-primary transition-all duration-300"
           style={{
             border: "0px solid",
             boxSizing: "border-box",
@@ -105,7 +105,7 @@ export function TypeformButtonContainer({
             fontSize: "24px",
             lineHeight: "30px",
             color: "hsl(0 0% 100%/var(--tw-text-opacity,1))",
-            transitionProperty: "color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color",
+            transitionProperty: "color, background-color, border-color, text-decoration-color, fill, stroke, opacity, -webkit-text-decoration-color",
             transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
             transitionDuration: "0.3s",
           }}
