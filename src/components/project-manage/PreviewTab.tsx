@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Monitor,
   Smartphone,
+  Tablet,
   Edit2,
   Settings,
   Eye,
@@ -1012,67 +1013,387 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ projectId, sandboxBundle
     window.open(`/project/${projectId}`, '_blank');
   };
 
+  const [selectedTool, setSelectedTool] = useState<'select' | 'cursor'>('select');
+  const [zoomLevel, setZoomLevel] = useState(100);
+  const [showZoomDropdown, setShowZoomDropdown] = useState(false);
+
+  const zoomLevels = [25, 50, 75, 100, 125, 150, 200];
+
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: '#1C1C1C' }}>
-      {/* Top Control Container */}
-      <div className="flex items-center justify-center p-6" style={{ backgroundColor: '#1C1C1C' }}>
-        <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ backgroundColor: '#2A2A2A' }}>
-          <Button
+      {/* Framer-Style Floating Toolbar - Dark Version */}
+      <div className="flex items-center justify-center" style={{
+        backgroundColor: '#1C1C1C',
+        padding: '20px 0',
+        position: 'relative',
+      }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'stretch',
+          justifyContent: 'flex-start',
+          borderRadius: '15px',
+          height: '50px',
+          backgroundColor: '#1a1a1a',
+          gap: '10px',
+          padding: '10px',
+        }}>
+          {/* Edit Button - White */}
+          <button
             onClick={handleOpenInNewTab}
-            className="bg-white text-black hover:bg-gray-100 px-4 py-2 rounded-xl"
+            style={{
+              border: 'none',
+              borderRadius: '8px',
+              margin: '0px',
+              outline: 'none',
+              textDecoration: 'none',
+              transition: 'background-color 0.15s, color 0.15s',
+              position: 'relative',
+              appearance: 'none',
+              fontSize: '12px',
+              fontWeight: '600',
+              userSelect: 'none',
+              padding: '0px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#ffffff',
+              color: '#000000',
+              cursor: 'pointer',
+              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              gap: '8px',
+            }}
           >
-            <Edit2 className="w-4 h-4 mr-2" />
-            Edit
-          </Button>
+            <Edit2 style={{ width: '16px', height: '16px' }} />
+            <span>Edit</span>
+          </button>
 
-          <div className="w-px h-6" style={{ backgroundColor: '#404040' }} />
+          {/* Divider */}
+          <div style={{
+            width: '1px',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          }} />
 
-          <Button
-            variant={device === 'desktop' ? 'secondary' : 'ghost'}
-            size="sm"
+          {/* Select Tool Button */}
+          <button
+            onClick={() => setSelectedTool('select')}
+            title="Select"
+            onMouseEnter={(e) => {
+              if (selectedTool !== 'select') {
+                e.currentTarget.style.color = '#ffffff';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (selectedTool !== 'select') {
+                e.currentTarget.style.color = '#888888';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
+            style={{
+              border: 'none',
+              borderRadius: '8px',
+              margin: '0px',
+              outline: 'none',
+              transition: 'background-color 0.15s, color 0.15s',
+              position: 'relative',
+              appearance: 'none',
+              backgroundColor: selectedTool === 'select' ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+              color: selectedTool === 'select' ? '#ffffff' : '#888888',
+              fontSize: '12px',
+              fontWeight: '600',
+              userSelect: 'none',
+              padding: '0px',
+              display: 'flex',
+              width: '30px',
+              height: '30px',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <MousePointer style={{ width: '20px', height: '20px' }} />
+          </button>
+
+          {/* Cursor Tool Button */}
+          <button
+            onClick={() => setSelectedTool('cursor')}
+            title="Cursor"
+            onMouseEnter={(e) => {
+              if (selectedTool !== 'cursor') {
+                e.currentTarget.style.color = '#ffffff';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (selectedTool !== 'cursor') {
+                e.currentTarget.style.color = '#888888';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
+            style={{
+              border: 'none',
+              borderRadius: '8px',
+              margin: '0px',
+              outline: 'none',
+              transition: 'background-color 0.15s, color 0.15s',
+              position: 'relative',
+              appearance: 'none',
+              backgroundColor: selectedTool === 'cursor' ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+              color: selectedTool === 'cursor' ? '#ffffff' : '#888888',
+              fontSize: '12px',
+              fontWeight: '600',
+              userSelect: 'none',
+              padding: '0px',
+              display: 'flex',
+              width: '30px',
+              height: '30px',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <Mouse style={{ width: '20px', height: '20px' }} />
+          </button>
+
+          {/* Divider after mouse */}
+          <div style={{
+            width: '1px',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          }} />
+
+          {/* Device Icons - Icon Only */}
+          <button
             onClick={() => setDevice('desktop')}
-            className="px-3 py-2 rounded-xl"
+            title="Desktop"
+            onMouseEnter={(e) => {
+              if (device !== 'desktop') {
+                e.currentTarget.style.color = '#ffffff';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (device !== 'desktop') {
+                e.currentTarget.style.color = '#888888';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
+            style={{
+              border: 'none',
+              borderRadius: '8px',
+              margin: '0px',
+              outline: 'none',
+              transition: 'background-color 0.15s, color 0.15s',
+              position: 'relative',
+              appearance: 'none',
+              backgroundColor: device === 'desktop' ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+              color: device === 'desktop' ? '#ffffff' : '#888888',
+              fontSize: '12px',
+              fontWeight: '600',
+              userSelect: 'none',
+              padding: '0px',
+              display: 'flex',
+              width: '30px',
+              height: '30px',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
           >
-            <Monitor className="w-4 h-4 mr-1" />
-            Desktop
-          </Button>
-          <Button
-            variant={device === 'tablet' ? 'secondary' : 'ghost'}
-            size="sm"
+            <Monitor style={{ width: '20px', height: '20px' }} />
+          </button>
+
+          <button
             onClick={() => setDevice('tablet')}
-            className="px-3 py-2 rounded-xl"
+            title="Tablet"
+            onMouseEnter={(e) => {
+              if (device !== 'tablet') {
+                e.currentTarget.style.color = '#ffffff';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (device !== 'tablet') {
+                e.currentTarget.style.color = '#888888';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
+            style={{
+              border: 'none',
+              borderRadius: '8px',
+              margin: '0px',
+              outline: 'none',
+              transition: 'background-color 0.15s, color 0.15s',
+              position: 'relative',
+              appearance: 'none',
+              backgroundColor: device === 'tablet' ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+              color: device === 'tablet' ? '#ffffff' : '#888888',
+              fontSize: '12px',
+              fontWeight: '600',
+              userSelect: 'none',
+              padding: '0px',
+              display: 'flex',
+              width: '30px',
+              height: '30px',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
           >
-            <Grid3X3 className="w-4 h-4 mr-1" />
-            Tablet
-          </Button>
-          <Button
-            variant={device === 'mobile' ? 'secondary' : 'ghost'}
-            size="sm"
+            <Tablet style={{ width: '20px', height: '20px' }} />
+          </button>
+
+          <button
             onClick={() => setDevice('mobile')}
-            className="px-3 py-2 rounded-xl"
+            title="Mobile"
+            onMouseEnter={(e) => {
+              if (device !== 'mobile') {
+                e.currentTarget.style.color = '#ffffff';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (device !== 'mobile') {
+                e.currentTarget.style.color = '#888888';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
+            style={{
+              border: 'none',
+              borderRadius: '8px',
+              margin: '0px',
+              outline: 'none',
+              transition: 'background-color 0.15s, color 0.15s',
+              position: 'relative',
+              appearance: 'none',
+              backgroundColor: device === 'mobile' ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+              color: device === 'mobile' ? '#ffffff' : '#888888',
+              fontSize: '12px',
+              fontWeight: '600',
+              userSelect: 'none',
+              padding: '0px',
+              display: 'flex',
+              width: '30px',
+              height: '30px',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
           >
-            <Smartphone className="w-4 h-4 mr-1" />
-            Mobile
-          </Button>
+            <Smartphone style={{ width: '20px', height: '20px' }} />
+          </button>
 
-          <div className="w-px h-6" style={{ backgroundColor: '#404040' }} />
+          {/* Zoom Control with Dropdown */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowZoomDropdown(!showZoomDropdown)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0px 7px',
+                borderRadius: '8px',
+                position: 'relative',
+                width: '70px',
+                height: '30px',
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                color: '#ffffff',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontVariantNumeric: 'tabular-nums',
+                fontWeight: '500',
+                lineHeight: '12px',
+                userSelect: 'none',
+                gap: '2px',
+                border: 'none',
+                outline: 'none',
+              }}
+            >
+              <span>{zoomLevel}%</span>
+              <ChevronDown style={{ width: '8px', height: '8px', color: '#999999' }} />
+            </button>
 
-          <Button variant="ghost" size="sm" className="px-3 py-2 rounded-xl">
-            <Settings className="w-4 h-4 mr-1" />
-            Settings
-          </Button>
-          <Button variant="ghost" size="sm" className="px-3 py-2 rounded-xl">
-            <Code className="w-4 h-4 mr-1" />
-            Code
-          </Button>
-          <Button variant="ghost" size="sm" className="px-3 py-2 rounded-xl">
-            <Terminal className="w-4 h-4 mr-1" />
-            Console
-          </Button>
-          <Button variant="ghost" size="sm" className="px-3 py-2 rounded-xl">
-            <Eye className="w-4 h-4 mr-1" />
-            Preview
-          </Button>
+            {showZoomDropdown && (
+              <div style={{
+                position: 'absolute',
+                top: '35px',
+                left: '0',
+                backgroundColor: '#2A2A2A',
+                borderRadius: '8px',
+                padding: '4px',
+                minWidth: '80px',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
+                zIndex: 1000,
+              }}>
+                {zoomLevels.map((level) => (
+                  <button
+                    key={level}
+                    onClick={() => {
+                      setZoomLevel(level);
+                      setShowZoomDropdown(false);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      backgroundColor: zoomLevel === level ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      textAlign: 'left',
+                      transition: 'background-color 0.15s',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (zoomLevel !== level) {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (zoomLevel !== level) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }
+                    }}
+                  >
+                    {level}%
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div style={{
+            width: '1px',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          }} />
+
+          {/* Upgrade Button - Blue Tinted */}
+          <button
+            type="button"
+            style={{
+              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              padding: '0px 12px 1px',
+              border: 'none',
+              borderRadius: '8px',
+              margin: '0px',
+              outline: 'none',
+              textDecoration: 'none',
+              transition: 'background-color 0.2s',
+              position: 'relative',
+              height: '30px',
+              appearance: 'none',
+              userSelect: 'none',
+              fontSize: '12px',
+              fontWeight: '600',
+              backgroundColor: 'rgba(0, 153, 255, .2)',
+              boxShadow: 'none',
+              color: '#0099ff',
+              cursor: 'pointer',
+            }}
+          >
+            Upgrade Now
+          </button>
         </div>
       </div>
 
@@ -1086,12 +1407,12 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ projectId, sandboxBundle
           />
         </div>
 
-        {/* Center - Preview Canvas */}
-        <div className="flex items-center justify-center rounded-2xl overflow-hidden" style={{ backgroundColor: '#2A2A2A' }}>
-          <div className={`bg-white rounded-2xl overflow-hidden transition-all duration-300 ${
-            device === 'desktop' ? 'w-full h-[600px] max-w-[1000px]' :
-            device === 'tablet' ? 'w-[768px] h-[900px]' :
-            'w-[375px] h-[667px]'
+        {/* Center - Preview Canvas - Full Size */}
+        <div className="flex items-center justify-center overflow-hidden">
+          <div className={`bg-white overflow-hidden transition-all duration-300 ${
+            device === 'desktop' ? 'w-full h-full' :
+            device === 'tablet' ? 'w-[768px] h-full rounded-xl' :
+            'w-[375px] h-[667px] rounded-xl'
           }`}>
             {sandboxBundle ? (
               <div className="relative w-full h-full">

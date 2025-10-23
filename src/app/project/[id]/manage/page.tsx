@@ -302,7 +302,7 @@ export default function ProjectManagePage() {
     <AuthGuard>
       <div className="flex flex-col h-screen" style={{ backgroundColor: '#1C1C1C' }}>
         {/* Top Control Container */}
-        <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: '#404040', backgroundColor: '#1C1C1C' }}>
+        <div className="flex items-center justify-center p-6 border-b" style={{ borderColor: '#404040', backgroundColor: '#1C1C1C' }}>
           <div className="flex items-center gap-4">
             <Button
               onClick={handleBack}
@@ -357,6 +357,41 @@ export default function ProjectManagePage() {
           <AskSurbeeComponent />
         </div>
       </div>
+      
+      {/* Global Styles for Button Hover Effect */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+html {
+  border: 0px solid;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+  text-size-adjust: 100%;
+  tab-size: 4;
+  font-variation-settings: normal;
+  -webkit-tap-highlight-color: transparent;
+  font-family: "__saans_cd5095","__saans_Fallback_cd5095",sans-serif;
+  font-feature-settings: "dlig", "ss07", "calt" 0;
+  appearance: none;
+  color-scheme: dark;
+}
+
+body {
+  border: 0px solid;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  margin: 0px;
+  line-height: inherit;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  background-color: hsl(0 0% 8%/var(--tw-bg-opacity,1));
+  color: hsl(0 0% 100%/var(--tw-text-opacity,1));
+}
+`,
+        }}
+      />
     </AuthGuard>
   );
 }

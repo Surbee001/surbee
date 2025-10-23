@@ -19,34 +19,37 @@ export function TypeformButton({
   disabled = false,
 }: TypeformButtonProps) {
   const baseStyles = {
-    boxSizing: "inherit" as const,
-    border: "none",
-    borderRadius: "8px",
-    font: '500 14px / 143% -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
-    gap: "8px",
-    padding: "0px 12px",
-    textDecoration: "none",
-    whiteSpace: "nowrap" as const,
-    WebkitBoxAlign: "center" as const,
-    alignItems: "center",
-    alignSelf: "center",
-    display: "flex",
-    flexShrink: 0,
-    height: "32px",
-    WebkitBoxPack: "center" as const,
-    justifyContent: "center",
-    transitionProperty: "background-color, color",
-    transitionDuration: "0.2s",
-    position: "relative" as const,
-    appearance: "button" as const,
-    cursor: disabled ? "not-allowed" : isActive ? "default" : "pointer",
-    backgroundColor: isActive 
-      ? "rgba(87, 84, 91, 0.06)" 
-      : "rgba(60, 50, 62, 0)",
-    color: isActive 
-      ? "rgb(76, 65, 78)" 
-      : "rgb(101, 93, 103)",
+    border: "0px solid",
+    boxSizing: "border-box",
+    WebkitFontSmoothing: "antialiased",
+    width: "fit-content",
+    paddingTop: "1px",
+    paddingBottom: "1px",
+    letterSpacing: "0px",
+    fontWeight: 652,
+    fontSize: "24px",
+    lineHeight: "30px",
+    color: "hsl(0 0% 100%/var(--tw-text-opacity,1))",
+    transitionProperty: "color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color",
+    transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+    transitionDuration: "0.3s",
+    cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.5 : 1,
+    textDecoration: "inherit",
+    backgroundColor: "transparent",
+    border: "none",
+    padding: "0",
+    margin: "0",
+    fontFamily: "inherit",
+    fontFeatureSettings: "inherit",
+    fontVariationSettings: "inherit",
+    fontSize: "100%",
+    fontWeight: "inherit",
+    lineHeight: "inherit",
+    letterSpacing: "inherit",
+    textTransform: "none",
+    appearance: "button",
+    backgroundImage: "none",
   };
 
   const Component = href ? "a" : "button";
@@ -74,31 +77,42 @@ export function TypeformButtonContainer({
   className,
 }: TypeformButtonContainerProps) {
   return (
-    <div
-      className={cn("typeform-button-container", className)}
+    <ul
+      className={cn("flex flex-col [&:has(:hover)>*:not(:hover)]:text-text-tertiary", className)}
       style={{
-        boxSizing: "inherit" as const,
-        width: "fit-content",
-        overflowY: "hidden" as const,
+        border: "0px solid",
+        boxSizing: "border-box",
+        WebkitFontSmoothing: "antialiased",
+        listStyle: "none",
+        margin: "0px",
+        padding: "0px",
         display: "flex",
-        scrollbarWidth: "thin" as const,
+        flexDirection: "column",
       }}
     >
-      <div
-        role="tablist"
-        tabIndex={0}
-        style={{
-          boxSizing: "inherit" as const,
-          gap: "4px",
-          padding: "0px 12px",
-          display: "flex",
-          height: "56px",
-          width: "fit-content",
-          outline: "none",
-        }}
-      >
-        {children}
-      </div>
-    </div>
+      {React.Children.map(children, (child) => (
+        <li
+          className="w-fit py-[1px] text-title-3 text-text-primary transition-colors duration-300"
+          style={{
+            border: "0px solid",
+            boxSizing: "border-box",
+            WebkitFontSmoothing: "antialiased",
+            width: "fit-content",
+            paddingTop: "1px",
+            paddingBottom: "1px",
+            letterSpacing: "0px",
+            fontWeight: 652,
+            fontSize: "24px",
+            lineHeight: "30px",
+            color: "hsl(0 0% 100%/var(--tw-text-opacity,1))",
+            transitionProperty: "color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color",
+            transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+            transitionDuration: "0.3s",
+          }}
+        >
+          {child}
+        </li>
+      ))}
+    </ul>
   );
 }
