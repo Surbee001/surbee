@@ -302,7 +302,7 @@ export default function ProjectManagePage() {
     <AuthGuard>
       <div className="flex flex-col h-screen" style={{ backgroundColor: '#1C1C1C' }}>
         {/* Top Control Container */}
-        <div className="flex items-center justify-start p-6" style={{ backgroundColor: '#1C1C1C' }}>
+        <div className="flex items-center justify-center p-6" style={{ backgroundColor: '#1C1C1C' }}>
           <div className="flex items-center gap-4">
             <Button
               onClick={handleBack}

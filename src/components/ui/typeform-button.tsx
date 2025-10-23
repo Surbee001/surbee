@@ -78,7 +78,7 @@ export function TypeformButtonContainer({
 }: TypeformButtonContainerProps) {
   return (
     <ul
-      className={cn("flex flex-col [&:has(:hover)>*:not(:hover)]:opacity-25", className)}
+      className={cn("flex flex-row [&:has(:hover)>*:not(:hover)]:opacity-25", className)}
       style={{
         border: "0px solid",
         boxSizing: "border-box",
@@ -87,7 +87,8 @@ export function TypeformButtonContainer({
         margin: "0px",
         padding: "0px",
         display: "flex",
-        flexDirection: "column",
+        flexDirection: "row",
+        gap: "24px",
       }}
     >
       {React.Children.map(children, (child) => (
