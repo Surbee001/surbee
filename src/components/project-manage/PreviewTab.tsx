@@ -1190,7 +1190,7 @@ const PropertiesPanel: React.FC<{
       <div className="properties-header">
         <h2 className="properties-title">Properties</h2>
         <div className="selected-element">
-          <selectedElement.tag === 'div' ? (
+          {selectedElement.tag === 'div' ? (
             <Square className="element-type-icon" />
           ) : selectedElement.tag === 'button' ? (
             <Square className="element-type-icon" />
