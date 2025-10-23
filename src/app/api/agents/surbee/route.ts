@@ -12,10 +12,11 @@ export const dynamic = "force-dynamic";
 type StreamEvent =
   | { type: "start" }
   | { type: "reasoning"; id: string; text: string; agent?: string }
-  | { type: "message"; id: string; text: string; agent?: string }
+  | { type: "message"; id: string; text: string; agent?: string; isSummary?: boolean }
   | { type: "tool_call"; name: string; arguments: unknown; agent?: string }
   | { type: "thinking_control"; action: "open" | "close"; agent?: string }
   | { type: "html_chunk"; chunk: string; final?: boolean }
+  | { type: "code_bundle"; files: Record<string, string>; entry: string; dependencies?: string[]; devDependencies?: string[] }
   | { type: "complete" }
   | { type: "error"; message: string }
   | { type: "batch"; events: StreamEvent[] };
@@ -42,7 +43,15 @@ class SSEBatcher {
 
     try {
       // Critical events flush immediately
-      if (event.type === 'html_chunk' || event.type === 'complete' || event.type === 'error' || event.type === 'start') {
+      if (
+        event.type === 'html_chunk' ||
+        event.type === 'complete' ||
+        event.type === 'error' ||
+        event.type === 'start' ||
+        event.type === 'reasoning' ||
+        event.type === 'thinking_control' ||
+        event.type === 'code_bundle'
+      ) {
         await this.flush();
         await writeSSE(this.writer, this.encoder, event);
         return;
@@ -139,7 +148,7 @@ function splitIntoChunks(input: string, size = 2048): string[] {
 
 export async function POST(request: NextRequest) {
   console.log('[API] POST request received');
-  const { input, images } = await request.json().catch(() => ({ input: "", images: undefined }));
+  const { input, images, context } = await request.json().catch(() => ({ input: "", images: undefined, context: undefined }));
   console.log('[API] Input:', input?.substring(0, 100));
 
   if (!input || typeof input !== "string") {
@@ -193,6 +202,7 @@ export async function POST(request: NextRequest) {
       let streamedAny = false;
       let htmlSent = false;
       let latestHtml: string | undefined;
+      let codeBundleSent = false;
 
       const sendReasoningLines = async (text: string, prefix: string = "r", agent?: string) => {
         if (isAborted) return; // Don't send if aborted
@@ -218,7 +228,13 @@ export async function POST(request: NextRequest) {
         if (item.type === "message" && typeof item.text === "string" && !item.isHtml) {
           // Send messages as proper message events, not reasoning
           const id = `msg-${Math.random().toString(36).slice(2, 9)}`;
-          await batcher.addEvent({ type: "message", id, text: item.text, agent: item.agent });
+          await batcher.addEvent({
+            type: "message",
+            id,
+            text: item.text,
+            agent: item.agent,
+            isSummary: item.isSummary,
+          });
           return;
         }
 
@@ -244,6 +260,26 @@ export async function POST(request: NextRequest) {
         }
 
         if (item.type === "tool_result") {
+          const output = item.output as any;
+
+          if (!codeBundleSent && output && typeof output === "object" && output !== null && output.files) {
+            const dependencies =
+              Array.isArray(output.dependenciesApplied) ? output.dependenciesApplied :
+              Array.isArray(output.dependencies) ? output.dependencies : undefined;
+            const devDependencies =
+              Array.isArray(output.devDependenciesApplied) ? output.devDependenciesApplied :
+              Array.isArray(output.devDependencies) ? output.devDependencies : undefined;
+
+            await batcher.addEvent({
+              type: "code_bundle",
+              files: output.files as Record<string, string>,
+              entry: typeof output.entry === "string" ? output.entry : "src/Survey.tsx",
+              dependencies,
+              devDependencies,
+            });
+            codeBundleSent = true;
+          }
+
           const htmlCandidate =
             typeof item.html === "string" && item.html.trim()
               ? item.html
@@ -269,7 +305,7 @@ export async function POST(request: NextRequest) {
       let result;
       try {
         result = await runWorkflow(
-          { input_as_text: input },
+          { input_as_text: input, context },
           {
             onProgress: async (message) => {
               if (isAborted) return; // Don't process if aborted
@@ -309,12 +345,47 @@ export async function POST(request: NextRequest) {
               await sendReasoningLines(item.text, "reason-fallback", item.agent);
             } else if (item?.type === "message" && typeof item?.text === "string" && !item?.isHtml) {
               const id = `msg-fallback-${Math.random().toString(36).slice(2, 9)}`;
-              await batcher.addEvent({ type: "message", id, text: item.text, agent: item.agent });
+              await batcher.addEvent({
+                type: "message",
+                id,
+                text: item.text,
+                agent: item.agent,
+                isSummary: item.isSummary,
+              });
+            }
+            if (!codeBundleSent && item?.type === "tool_result" && item.output && typeof item.output === "object" && (item.output as any).files) {
+              const output = item.output as any;
+              const dependencies =
+                Array.isArray(output.dependenciesApplied) ? output.dependenciesApplied :
+                Array.isArray(output.dependencies) ? output.dependencies : undefined;
+              const devDependencies =
+                Array.isArray(output.devDependenciesApplied) ? output.devDependenciesApplied :
+                Array.isArray(output.devDependencies) ? output.devDependencies : undefined;
+
+              await batcher.addEvent({
+                type: "code_bundle",
+                files: output.files as Record<string, string>,
+                entry: typeof output.entry === "string" ? output.entry : "src/Survey.tsx",
+                dependencies,
+                devDependencies,
+              });
+              codeBundleSent = true;
             }
           } catch {
             // ignore bad item
           }
         }
+      }
+
+      if (!codeBundleSent && result.source_files && result.entry_file) {
+        await batcher.addEvent({
+          type: "code_bundle",
+          files: result.source_files,
+          entry: result.entry_file,
+          dependencies: result.dependencies,
+          devDependencies: result.devDependencies,
+        });
+        codeBundleSent = true;
       }
 
       // Determine HTML source: prefer tool_result.html; fallback to result.html

@@ -2,13 +2,9 @@ import React, { useState } from 'react';
 import {
   Monitor,
   Smartphone,
-  ExternalLink,
   Edit2,
   Settings,
   Eye,
-  Users,
-  Clock,
-  Globe,
   Code,
   Terminal,
   Type,
@@ -31,912 +27,33 @@ import {
   RotateCw,
   ZoomIn,
   ZoomOut,
-  Move,
-  Copy,
-  Trash2,
   ChevronDown,
   ChevronRight,
   Search,
-  Star,
-  Heart,
-  Smile,
-  Frown,
   Zap,
-  Wind,
-  Waves,
-  Flame,
-  Sparkles,
-  Eye as EyeIcon,
-  EyeOff,
-  Hand,
   Mouse,
-  ArrowUp,
-  ArrowDown,
-  ArrowLeft,
-  ArrowRight,
-  Maximize,
-  Minimize,
-  Layers,
-  Download,
-  Upload,
-  Camera,
-  Music,
-  Video,
-  Mic,
-  Phone,
-  Mail,
-  MessageCircle,
-  Calendar,
-  MapPin,
-  Clock as ClockIcon,
-  User,
-  Users as UsersIcon,
-  ShoppingCart,
-  CreditCard,
-  Home,
-  Building,
-  Car,
-  Plane,
-  Sun,
-  Moon,
-  Cloud,
-  CloudRain,
-  CloudSnow,
-  Thermometer,
-  Droplets,
-  Leaf,
-  TreePine,
-  Mountain,
-  Compass,
-  Navigation,
-  Wifi,
-  Bluetooth,
-  Battery,
-  Power,
-  Volume2,
-  VolumeX,
-  Play,
-  Pause,
-  SkipForward,
-  SkipBack,
-  Shuffle,
-  Repeat,
-  Headphones,
-  Speaker,
-  Radio,
-  Tv,
-  Monitor as MonitorIcon,
-  Laptop,
-  Smartphone as SmartphoneIcon,
-  Tablet,
-  Watch,
-  Camera as CameraIcon,
-  Printer,
-  Keyboard,
-  Cpu,
-  HardDrive,
-  Usb,
-  Plug,
-  Lightbulb,
-  Lamp,
-  Couch,
-  Bed,
-  Chair,
-  Table,
-  Utensils,
-  Coffee,
-  Pizza,
-  Apple,
-  Cookie,
-  Cake,
-  IceCream,
-  Wine,
-  Beer,
-  Shirt,
-  TShirt,
-  Pants,
-  Dress,
-  Shoes,
-  Watch as WatchIcon,
-  Glasses,
-  Hat,
-  Bag,
-  Backpack,
-  Briefcase,
-  Wallet,
-  Key,
-  Lock,
-  Unlock,
-  Shield,
-  ShieldCheck,
-  AlertTriangle,
-  AlertCircle,
-  Info,
-  CheckCircle,
-  XCircle,
-  HelpCircle,
-  BookOpen,
-  Book,
-  Newspaper,
-  File,
-  Folder,
-  FolderOpen,
-  Archive,
-  Trash,
-  Save,
-  Download as DownloadIcon,
-  Upload as UploadIcon,
-  Send,
-  Share,
-  Link,
-  Unlink,
-  Paperclip,
-  Scissors,
   Edit3,
-  Pen,
-  Pencil,
-  Highlighter,
-  Eraser,
-  Paintbrush,
-  Palette as PaletteIcon,
-  Color,
-  Ruler,
-  Compass as CompassIcon,
-  Calculator,
-  Abacus,
-  Target,
-  Crosshair,
-  Radar,
-  Satellite,
-  Rocket,
-  Telescope,
-  Microscope,
-  Atom,
-  Dna,
-  Pill,
-  Stethoscope,
-  HeartPulse,
-  Activity,
-  TrendingUp,
-  TrendingDown,
-  BarChart,
-  PieChart,
-  LineChart,
-  AreaChart,
-  DollarSign,
-  Euro,
-  PoundSterling,
-  Yen,
-  Bitcoin,
-  Coins,
-  Banknote,
-  Receipt,
-  Ticket,
-  Gift,
-  Award,
-  Trophy,
-  Medal,
-  Crown,
-  Gem,
-  Diamond,
-  Star as StarIcon,
-  StarOff,
-  SunDim,
-  Sunrise,
-  Sunset,
-  Eclipse,
-  Moon as MoonIcon,
-  Stars,
-  CloudDrizzle,
-  CloudLightning,
-  Tornado,
-  Wind as WindIcon,
-  Snowflake,
-  ThermometerSun,
-  ThermometerSnow,
-  Rainbow,
-  Umbrella,
-  Glasses as GlassesIcon,
-  Sunglasses,
-  Eye as EyeIcon2,
-  EyeOff as EyeOffIcon,
-  Ear,
-  Nose,
-  Mouth,
-  Tongue,
-  Tooth,
-  Brain,
-  Skull,
-  Bone,
-  Footprints,
-  Baby,
-  Child,
-  UserCheck,
-  UserX,
-  UserPlus,
-  UserMinus,
-  Users2,
-  UserCircle,
-  UserSquare,
-  UsersCheck,
-  UsersX,
-  UsersPlus,
-  UsersMinus,
-  Group,
-  Team,
-  Network,
-  Share2,
-  Link2,
-  Unlink2,
-  Merge,
-  Split,
-  GitBranch,
-  GitCommit,
-  GitMerge,
-  GitPullRequest,
-  GitPush,
-  GitCompare,
-  Terminal as TerminalIcon,
-  Command,
-  Code2,
-  Codepen,
-  Codesandbox,
-  Figma,
-  Framer,
-  Adobe,
-  Sketch,
-  Invision,
-  Zeplin,
-  Principle,
-  Marvel,
-  Axure,
-  Balsamiq,
-  Lucidchart,
-  DrawIo,
-  Miro,
-  Mural,
-  Notion,
-  Coda,
-  Airtable,
-  Asana,
-  Trello,
-  Jira,
-  Monday,
-  Basecamp,
-  Slack,
-  Discord,
-  Teams,
-  Zoom,
-  Meet,
-  Skype,
-  Whatsapp,
-  Telegram,
-  Signal,
-  Viber,
-  Wechat,
-  Line,
-  Kik,
-  Messenger,
-  Instagram,
-  Twitter,
-  Facebook,
-  Youtube,
-  Tiktok,
-  Linkedin,
-  Github,
-  Gitlab,
-  Bitbucket,
-  StackOverflow,
-  Reddit,
-  Twitch,
-  Dribbble,
-  Behance,
-  Pinterest,
-  Snapchat,
-  Vimeo,
-  Soundcloud,
-  Spotify,
-  AppleMusic,
-  Deezer,
-  Tidal,
-  Amazon,
-  Ebay,
-  Etsy,
-  Shopify,
-  WooCommerce,
-  Magento,
-  Bigcommerce,
-  Squarespace,
-  Wix,
-  Webflow,
-  Bubble,
-  Adalo,
-  Glide,
-  Zapier,
-  Ifttt,
-  Automate,
-  Integromat,
-  Parabola,
-  Microsoft,
-  Google,
-  Apple,
-  Android,
-  Linux,
-  Windows,
-  Chrome,
-  Firefox,
-  Safari,
-  Edge,
-  Opera,
-  Brave,
-  Vivaldi,
-  Tor,
-  DuckDuckGo,
-  Bing,
-  Yahoo,
-  Ask,
-  Aol,
-  Protonmail,
-  Gmail,
-  Outlook,
-  Icloud,
-  Fastmail,
-  Zoho,
-  Rackspace,
-  Godaddy,
-  Namecheap,
-  Hover,
-  Porkbun,
-  Njalla,
-  Epik,
-  Hexonet,
-  Openprovider,
-  Registrar,
-  Hosting,
-  Server,
-  Database,
-  Cloud as CloudIcon,
-  CloudUpload,
-  CloudDownload,
-  CloudSync,
-  CloudShare,
-  CloudLock,
-  CloudCheck,
-  CloudX,
-  CloudAlert,
-  CloudOff,
-  CloudQueue,
-  CloudDone,
-  CloudError,
-  CloudWarning,
-  CloudInfo,
-  CloudHelp,
-  CloudQuestion,
-  CloudSearch,
-  CloudFilter,
-  CloudSort,
-  CloudRefresh,
-  CloudHistory,
-  CloudBackup,
-  CloudRestore,
-  CloudArchive,
-  CloudUnarchive,
-  CloudDelete,
-  CloudRemove,
-  CloudAdd,
-  CloudMinus,
-  CloudPlus,
-  CloudUp,
-  CloudDown,
-  CloudLeft,
-  CloudRight,
-  CloudTop,
-  CloudBottom,
-  CloudCenter,
-  CloudMiddle,
-  CloudEdge,
-  CloudCorner,
-  CloudSide,
-  CloudBorder,
-  CloudFrame,
-  CloudOutline,
-  CloudFill,
-  CloudGradient,
-  CloudPattern,
-  CloudTexture,
-  CloudNoise,
-  CloudGrain,
-  CloudDots,
-  CloudLines,
-  CloudCurves,
-  CloudShapes,
-  CloudSymbols,
-  CloudIcons,
-  CloudEmoji,
-  CloudStickers,
-  CloudGifs,
-  CloudImages,
-  CloudVideos,
-  CloudAudio,
-  CloudMusic,
-  CloudPodcasts,
-  CloudRadio,
-  CloudTv,
-  CloudMovies,
-  CloudSeries,
-  CloudDocumentaries,
-  CloudAnime,
-  CloudCartoons,
-  CloudComedy,
-  CloudDrama,
-  CloudAction,
-  CloudAdventure,
-  CloudAnimation,
-  CloudBiography,
-  CloudDocumentary,
-  CloudEducational,
-  CloudEntertainment,
-  CloudFantasy,
-  CloudFiction,
-  CloudHistory as HistoryIcon,
-  CloudHorror,
-  CloudKids,
-  CloudMusic as MusicIcon,
-  CloudMystery,
-  CloudNews,
-  CloudReality,
-  CloudRomance,
-  CloudSciFi,
-  CloudSports,
-  CloudTalk,
-  CloudTechnology,
-  CloudThriller,
-  CloudTravel,
-  CloudWar,
-  CloudWestern,
-  CloudWildlife,
-  CloudNature,
-  CloudSpace,
-  CloudScience,
-  CloudArt,
-  CloudBusiness,
-  CloudEducation,
-  CloudFashion,
-  CloudFood,
-  CloudHealth,
-  CloudLifestyle,
-  CloudPolitics,
-  CloudReligion,
-  CloudSociety,
-  CloudWeather,
-  CloudWorld,
-  CloudLocal,
-  CloudNational,
-  CloudInternational,
-  CloudGlobal,
-  CloudUniversal,
-  CloudCosmic,
-  CloudGalactic,
-  CloudPlanetary,
-  CloudSolar,
-  CloudStellar,
-  CloudAstronomical,
-  CloudCelestial,
-  CloudTerrestrial,
-  CloudAquatic,
-  CloudAtmospheric,
-  CloudGeological,
-  CloudBiological,
-  CloudChemical,
-  CloudPhysical,
-  CloudMathematical,
-  CloudStatistical,
-  CloudComputational,
-  CloudAlgorithmic,
-  CloudArtificial,
-  CloudIntelligence,
-  CloudMachine,
-  CloudLearning,
-  CloudDeep,
-  CloudNeural,
-  CloudCognitive,
-  CloudRobotic,
-  CloudAutonomous,
-  CloudVirtual,
-  CloudAugmented,
-  CloudMixed,
-  CloudExtended,
-  CloudImmersive,
-  CloudInteractive,
-  CloudResponsive,
-  CloudAdaptive,
-  CloudPredictive,
-  CloudPrescriptive,
-  CloudDescriptive,
-  CloudDiagnostic,
-  CloudPrognostic,
-  CloudTherapeutic,
-  CloudPreventive,
-  CloudCurative,
-  CloudPalliative,
-  CloudRehabilitative,
-  CloudSupportive,
-  CloudComplementary,
-  CloudAlternative,
-  CloudIntegrative,
-  CloudHolistic,
-  CloudWellness,
-  CloudFitness,
-  CloudNutrition,
-  CloudMental,
-  CloudEmotional,
-  CloudSpiritual,
-  CloudSocial,
-  CloudEnvironmental,
-  CloudEconomic,
-  CloudPolitical,
-  CloudCultural,
-  CloudEthical,
-  CloudLegal,
-  CloudRegulatory,
-  CloudCompliance,
-  CloudGovernance,
-  CloudManagement,
-  CloudLeadership,
-  CloudStrategy,
-  CloudPlanning,
-  CloudExecution,
-  CloudMonitoring,
-  CloudEvaluation,
-  CloudAssessment,
-  CloudAnalysis,
-  CloudReporting,
-  CloudDocumentation,
-  CloudCommunication,
-  CloudCollaboration,
-  CloudCoordination,
-  CloudCooperation,
-  CloudIntegration,
-  CloudInteroperability,
-  CloudConnectivity,
-  CloudCompatibility,
-  CloudConsistency,
-  CloudReliability,
-  CloudAvailability,
-  CloudScalability,
-  CloudElasticity,
-  CloudFlexibility,
-  CloudAgility,
-  CloudResilience,
-  CloudRobustness,
-  CloudDurability,
-  CloudSustainability,
-  CloudMaintainability,
-  CloudUsability,
-  CloudAccessibility,
-  CloudInclusivity,
-  CloudDiversity,
-  CloudEquity,
-  CloudEquality,
-  CloudJustice,
-  CloudFairness,
-  CloudTransparency,
-  CloudAccountability,
-  CloudResponsibility,
-  CloudSecurity,
-  CloudPrivacy,
-  CloudConfidentiality,
-  CloudIntegrity,
-  CloudAuthenticity,
-  CloudValidity,
-  CloudAccuracy,
-  CloudPrecision,
-  CloudRecall,
-  CloudRelevance,
-  CloudTimeliness,
-  CloudCompleteness,
-  CloudCorrectness,
-  CloudConsistency as ConsistencyIcon,
-  CloudCurrency,
-  CloudRelevance as RelevanceIcon,
-  CloudTimeliness as TimelinessIcon,
-  CloudCompleteness as CompletenessIcon,
-  CloudCorrectness as CorrectnessIcon,
-  CloudConsistency as Consistency2,
-  CloudCurrency as CurrencyIcon,
-  CloudRelevance2,
-  CloudTimeliness2,
-  CloudCompleteness2,
-  CloudCorrectness2,
-  CloudConsistency3,
-  CloudCurrency2,
-  CloudRelevance3,
-  CloudTimeliness3,
-  CloudCompleteness3,
-  CloudCorrectness3,
-  CloudConsistency4,
-  CloudCurrency3,
-  CloudRelevance4,
-  CloudTimeliness4,
-  CloudCompleteness4,
-  CloudCorrectness4,
-  CloudConsistency5,
-  CloudCurrency4,
-  CloudRelevance5,
-  CloudTimeliness5,
-  CloudCompleteness5,
-  CloudCorrectness5,
-  CloudConsistency6,
-  CloudCurrency5,
-  CloudRelevance6,
-  CloudTimeliness6,
-  CloudCompleteness6,
-  CloudCorrectness6,
-  CloudConsistency7,
-  CloudCurrency6,
-  CloudRelevance7,
-  CloudTimeliness7,
-  CloudCompleteness7,
-  CloudCorrectness7,
-  CloudConsistency8,
-  CloudCurrency7,
-  CloudRelevance8,
-  CloudTimeliness8,
-  CloudCompleteness8,
-  CloudCorrectness8,
-  CloudConsistency9,
-  CloudCurrency8,
-  CloudRelevance9,
-  CloudTimeliness9,
-  CloudCompleteness9,
-  CloudCorrectness9,
-  CloudConsistency10,
-  CloudCurrency9,
-  CloudRelevance10,
-  CloudTimeliness10,
-  CloudCompleteness10,
-  CloudCorrectness10,
-  CloudConsistency11,
-  CloudCurrency10,
-  CloudRelevance11,
-  CloudTimeliness11,
-  CloudCompleteness11,
-  CloudCorrectness11,
-  CloudConsistency12,
-  CloudCurrency11,
-  CloudRelevance12,
-  CloudTimeliness12,
-  CloudCompleteness12,
-  CloudCorrectness12,
-  CloudConsistency13,
-  CloudCurrency12,
-  CloudRelevance13,
-  CloudTimeliness13,
-  CloudCompleteness13,
-  CloudCorrectness13,
-  CloudConsistency14,
-  CloudCurrency13,
-  CloudRelevance14,
-  CloudTimeliness14,
-  CloudCompleteness14,
-  CloudCorrectness14,
-  CloudConsistency15,
-  CloudCurrency14,
-  CloudRelevance15,
-  CloudTimeliness15,
-  CloudCompleteness15,
-  CloudCorrectness15,
-  CloudConsistency16,
-  CloudCurrency15,
-  CloudRelevance16,
-  CloudTimeliness16,
-  CloudCompleteness16,
-  CloudCorrectness16,
-  CloudConsistency17,
-  CloudCurrency16,
-  CloudRelevance17,
-  CloudTimeliness17,
-  CloudCompleteness17,
-  CloudCorrectness17,
-  CloudConsistency18,
-  CloudCurrency17,
-  CloudRelevance18,
-  CloudTimeliness18,
-  CloudCompleteness18,
-  CloudCorrectness18,
-  CloudConsistency19,
-  CloudCurrency18,
-  CloudRelevance19,
-  CloudTimeliness19,
-  CloudCompleteness19,
-  CloudCorrectness19,
-  CloudConsistency20,
-  CloudCurrency19,
-  CloudRelevance20,
-  CloudTimeliness20,
-  CloudCompleteness20,
-  CloudCorrectness20,
-  CloudConsistency21,
-  CloudCurrency20,
-  CloudRelevance21,
-  CloudTimeliness21,
-  CloudCompleteness21,
-  CloudCorrectness21,
-  CloudConsistency22,
-  CloudCurrency21,
-  CloudRelevance22,
-  CloudTimeliness22,
-  CloudCompleteness22,
-  CloudCorrectness22,
-  CloudConsistency23,
-  CloudCurrency22,
-  CloudRelevance23,
-  CloudTimeliness23,
-  CloudCompleteness23,
-  CloudCorrectness23,
-  CloudConsistency24,
-  CloudCurrency23,
-  CloudRelevance24,
-  CloudTimeliness24,
-  CloudCompleteness24,
-  CloudCorrectness24,
-  CloudConsistency25,
-  CloudCurrency24,
-  CloudRelevance25,
-  CloudTimeliness25,
-  CloudCompleteness25,
-  CloudCorrectness25,
-  CloudConsistency26,
-  CloudCurrency25,
-  CloudRelevance26,
-  CloudTimeliness26,
-  CloudCompleteness26,
-  CloudCorrectness26,
-  CloudConsistency27,
-  CloudCurrency26,
-  CloudRelevance27,
-  CloudTimeliness27,
-  CloudCompleteness27,
-  CloudCorrectness27,
-  CloudConsistency28,
-  CloudCurrency27,
-  CloudRelevance28,
-  CloudTimeliness28,
-  CloudCompleteness28,
-  CloudCorrectness28,
-  CloudConsistency29,
-  CloudCurrency28,
-  CloudRelevance29,
-  CloudTimeliness29,
-  CloudCompleteness29,
-  CloudCorrectness29,
-  CloudConsistency30,
-  CloudCurrency29,
-  CloudRelevance30,
-  CloudTimeliness30,
-  CloudCompleteness30,
-  CloudCorrectness30,
-  CloudConsistency31,
-  CloudCurrency30,
-  CloudRelevance31,
-  CloudTimeliness31,
-  CloudCompleteness31,
-  CloudCorrectness31,
-  CloudConsistency32,
-  CloudCurrency31,
-  CloudRelevance32,
-  CloudTimeliness32,
-  CloudCompleteness32,
-  CloudCorrectness32,
-  CloudConsistency33,
-  CloudCurrency32,
-  CloudRelevance33,
-  CloudTimeliness33,
-  CloudCompleteness33,
-  CloudCorrectness33,
-  CloudConsistency34,
-  CloudCurrency33,
-  CloudRelevance34,
-  CloudTimeliness34,
-  CloudCompleteness34,
-  CloudCorrectness34,
-  CloudConsistency35,
-  CloudCurrency34,
-  CloudRelevance35,
-  CloudTimeliness35,
-  CloudCompleteness35,
-  CloudCorrectness35,
-  CloudConsistency36,
-  CloudCurrency35,
-  CloudRelevance36,
-  CloudTimeliness36,
-  CloudCompleteness36,
-  CloudCorrectness36,
-  CloudConsistency37,
-  CloudCurrency36,
-  CloudRelevance37,
-  CloudTimeliness37,
-  CloudCompleteness37,
-  CloudCorrectness37,
-  CloudConsistency38,
-  CloudCurrency37,
-  CloudRelevance38,
-  CloudTimeliness38,
-  CloudCompleteness38,
-  CloudCorrectness38,
-  CloudConsistency39,
-  CloudCurrency38,
-  CloudRelevance39,
-  CloudTimeliness39,
-  CloudCompleteness39,
-  CloudCorrectness39,
-  CloudConsistency40,
-  CloudCurrency39,
-  CloudRelevance40,
-  CloudTimeliness40,
-  CloudCompleteness40,
-  CloudCorrectness40,
-  CloudConsistency41,
-  CloudCurrency40,
-  CloudRelevance41,
-  CloudTimeliness41,
-  CloudCompleteness41,
-  CloudCorrectness41,
-  CloudConsistency42,
-  CloudCurrency41,
-  CloudRelevance42,
-  CloudTimeliness42,
-  CloudCompleteness42,
-  CloudCorrectness42,
-  CloudConsistency43,
-  CloudCurrency42,
-  CloudRelevance43,
-  CloudTimeliness43,
-  CloudCompleteness43,
-  CloudCorrectness43,
-  CloudConsistency44,
-  CloudCurrency43,
-  CloudRelevance44,
-  CloudTimeliness44,
-  CloudCompleteness44,
-  CloudCorrectness44,
-  CloudConsistency45,
-  CloudCurrency44,
-  CloudRelevance45,
-  CloudTimeliness45,
-  CloudCompleteness45,
-  CloudCorrectness45,
-  CloudConsistency46,
-  CloudCurrency45,
-  CloudRelevance46,
-  CloudTimeliness46,
-  CloudCompleteness46,
-  CloudCorrectness46,
-  CloudConsistency47,
-  CloudCurrency46,
-  CloudRelevance47,
-  CloudTimeliness47,
-  CloudCompleteness47,
-  CloudCorrectness47,
-  CloudConsistency48,
-  CloudCurrency47,
-  CloudRelevance48,
-  CloudTimeliness48,
-  CloudCompleteness48,
-  CloudCorrectness48,
-  CloudConsistency49,
-  CloudCurrency48,
-  CloudRelevance49,
-  CloudTimeliness49,
-  CloudCompleteness49,
-  CloudCorrectness49,
-  CloudConsistency50,
-  CloudCurrency49,
-  CloudRelevance50,
-  CloudTimeliness50,
-  CloudCompleteness50,
-  CloudCorrectness50
+  Eye as EyeIcon,
+  Upload,
+  Link,
+  Hand,
+  Video,
+  Music
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface PreviewTabProps {
   projectId: string;
@@ -952,9 +69,9 @@ type DeviceType = 'desktop' | 'mobile' | 'tablet';
 
 interface SelectedElement {
   id: string;
-  tag: string;
-  text: string;
-  styles: Record<string, string>;
+    tag: string;
+    text: string;
+    styles: Record<string, string>;
   type: 'text' | 'image' | 'button' | 'input' | 'div' | 'other';
 }
 
@@ -1078,43 +195,50 @@ const ElementsSidebar: React.FC<{
   })).filter(category => category.elements.length > 0 || searchTerm === '');
 
   return (
-    <div className="framer-elements-sidebar">
-      <div className="elements-header">
-        <h2 className="elements-title">Elements</h2>
-        <div className="elements-search">
-          <Search className="search-icon" />
+    <div className="p-4" style={{ backgroundColor: '#2A2A2A', color: 'white' }}>
+      <div className="mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
             placeholder="Search elements..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
+            className="w-full h-10 pl-10 pr-3 text-sm rounded-xl focus:outline-none"
+            style={{
+              backgroundColor: '#1C1C1C',
+              color: 'white',
+              border: '1px solid #404040'
+            }}
           />
         </div>
       </div>
 
-      <div className="elements-content">
+      <div className="space-y-2">
         {filteredCategories.map(category => (
-          <div key={category.id} className="element-category">
+          <div key={category.id}>
             <button
-              className="category-header"
               onClick={() => toggleCategory(category.id)}
+              className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-600 transition-colors"
+              style={{ backgroundColor: 'transparent' }}
             >
-              <category.icon className="category-icon" />
-              <span className="category-name">{category.name}</span>
+              <div className="flex items-center gap-3">
+                <category.icon className="w-4 h-4 text-gray-400" />
+                <span className="text-sm font-medium text-white">{category.name}</span>
+              </div>
               {category.expanded ? (
-                <ChevronDown className="category-arrow" />
+                <ChevronDown className="w-4 h-4 text-gray-400" />
               ) : (
-                <ChevronRight className="category-arrow" />
+                <ChevronRight className="w-4 h-4 text-gray-400" />
               )}
             </button>
 
             {category.expanded && (
-              <div className="category-elements">
+              <div className="ml-7 mt-2 space-y-1">
                 {category.elements.map(element => (
                   <div
                     key={element.id}
-                    className="element-item"
+                    className="flex items-center gap-3 p-2 rounded-lg cursor-grab hover:bg-gray-600 transition-colors"
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData('application/json', JSON.stringify(element));
@@ -1123,10 +247,10 @@ const ElementsSidebar: React.FC<{
                     onMouseLeave={() => onElementHover?.(null)}
                     onClick={() => onElementAdd(element)}
                   >
-                    <div className="element-preview">
-                      <element.icon className="element-icon" />
+                    <div className="w-6 h-6 flex items-center justify-center rounded" style={{ backgroundColor: '#1C1C1C' }}>
+                      <element.icon className="w-4 h-4 text-gray-400" />
                     </div>
-                    <span className="element-name">{element.name}</span>
+                    <span className="text-sm text-gray-300">{element.name}</span>
                   </div>
                 ))}
               </div>
@@ -1171,544 +295,644 @@ const PropertiesPanel: React.FC<{
 
   if (!selectedElement) {
     return (
-      <div className="framer-properties-panel">
-        <div className="properties-header">
-          <h2 className="properties-title">Properties</h2>
-        </div>
-        <div className="properties-empty">
-          <div className="empty-icon">
-            <MousePointer className="w-8 h-8 text-gray-400" />
-          </div>
-          <p className="empty-text">Select an element to edit its properties</p>
+      <div className="p-4" style={{ backgroundColor: '#2A2A2A', color: 'white' }}>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <MousePointer className="w-8 h-8 mb-3 text-gray-400" />
+          <p className="text-sm text-gray-400">Select an element to edit its properties</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="framer-properties-panel">
-      <div className="properties-header">
-        <h2 className="properties-title">Properties</h2>
-        <div className="selected-element">
+    <div className="p-4" style={{ backgroundColor: '#2A2A2A', color: 'white' }}>
+      <div className="mb-6">
+        <div className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: '#1C1C1C' }}>
           {selectedElement.tag === 'div' ? (
-            <Square className="element-type-icon" />
+            <Square className="w-4 h-4 text-gray-400" />
           ) : selectedElement.tag === 'button' ? (
-            <Square className="element-type-icon" />
+            <Square className="w-4 h-4 text-gray-400" />
           ) : selectedElement.tag === 'input' ? (
-            <Edit3 className="element-type-icon" />
+            <Edit3 className="w-4 h-4 text-gray-400" />
           ) : selectedElement.tag === 'img' ? (
-            <Image className="element-type-icon" />
+            <Image className="w-4 h-4 text-gray-400" />
           ) : (
-            <FileText className="element-type-icon" />
+            <FileText className="w-4 h-4 text-gray-400" />
           )}
-          <span className="element-name">{selectedElement.text || selectedElement.tag}</span>
+          <span className="text-sm font-medium text-white">
+            {selectedElement.text || selectedElement.tag}
+          </span>
         </div>
       </div>
 
-      <div className="properties-tabs">
+      <div className="space-y-2 mb-6">
         <button
-          className={`properties-tab ${activeSection === 'design' ? 'active' : ''}`}
           onClick={() => setActiveSection('design')}
+          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
+            activeSection === 'design' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-600'
+          }`}
         >
-          <Palette className="tab-icon" />
-          Design
+          <Palette className="w-4 h-4" />
+          <span className="text-sm font-medium">Design</span>
         </button>
         <button
-          className={`properties-tab ${activeSection === 'layout' ? 'active' : ''}`}
           onClick={() => setActiveSection('layout')}
+          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
+            activeSection === 'layout' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-600'
+          }`}
         >
-          <Layout className="tab-icon" />
-          Layout
+          <Layout className="w-4 h-4" />
+          <span className="text-sm font-medium">Layout</span>
         </button>
         <button
-          className={`properties-tab ${activeSection === 'effects' ? 'active' : ''}`}
           onClick={() => setActiveSection('effects')}
+          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
+            activeSection === 'effects' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-600'
+          }`}
         >
-          <Zap className="tab-icon" />
-          Effects
+          <Zap className="w-4 h-4" />
+          <span className="text-sm font-medium">Effects</span>
         </button>
         <button
-          className={`properties-tab ${activeSection === 'cursor' ? 'active' : ''}`}
           onClick={() => setActiveSection('cursor')}
+          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
+            activeSection === 'cursor' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-600'
+          }`}
         >
-          <Mouse className="tab-icon" />
-          Cursor
+          <Mouse className="w-4 h-4" />
+          <span className="text-sm font-medium">Cursor</span>
         </button>
       </div>
 
-      <div className="properties-content">
+      <div className="space-y-6">
         {activeSection === 'design' && (
-          <div className="properties-section">
+          <div className="space-y-6">
             {/* Typography for text elements */}
             {selectedElement.type === 'text' && (
-              <>
-                <div className="property-group">
-                  <h3 className="property-group-title">Typography</h3>
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-white">Typography</h3>
 
-                  <div className="property-row">
-                    <label className="property-label">Font Size</label>
-                    <div className="property-control">
-                      <input
-                        type="range"
-                        min="8"
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-gray-300">Font Size</label>
+                    <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min="8"
                         max="72"
                         defaultValue="16"
                         onChange={(e) => onElementUpdate({ fontSize: `${e.target.value}px` })}
-                        className="property-slider"
+                        className="flex-1 h-1 bg-gray-600 rounded appearance-none cursor-pointer"
                       />
-                      <span className="property-value">16px</span>
-                    </div>
-                  </div>
-
-                  <div className="property-row">
-                    <label className="property-label">Font Weight</label>
-                    <select
-                      className="property-select"
-                      onChange={(e) => onElementUpdate({ fontWeight: e.target.value })}
-                    >
-                      <option value="normal">Normal</option>
-                      <option value="bold">Bold</option>
-                      <option value="lighter">Light</option>
-                      <option value="100">100</option>
-                      <option value="200">200</option>
-                      <option value="300">300</option>
-                      <option value="400">400</option>
-                      <option value="500">500</option>
-                      <option value="600">600</option>
-                      <option value="700">700</option>
-                      <option value="800">800</option>
-                      <option value="900">900</option>
-                    </select>
-                  </div>
-
-                  <div className="property-row">
-                    <label className="property-label">Color</label>
-                    <div className="property-color">
-                      <input
-                        type="color"
-                        defaultValue="#000000"
-                        onChange={(e) => onElementUpdate({ color: e.target.value })}
-                        className="property-color-picker"
-                      />
-                      <span className="property-color-value">#000000</span>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Background */}
-            <div className="property-group">
-              <h3 className="property-group-title">Background</h3>
-
-              <div className="property-row">
-                <label className="property-label">Background</label>
-                <div className="property-color">
-                  <input
-                    type="color"
-                    defaultValue="#ffffff"
-                    onChange={(e) => onElementUpdate({ backgroundColor: e.target.value })}
-                    className="property-color-picker"
-                  />
-                  <span className="property-color-value">#ffffff</span>
-                </div>
-              </div>
-
-              <div className="property-row">
-                <label className="property-label">Opacity</label>
-                <div className="property-control">
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    defaultValue="1"
-                    onChange={(e) => onElementUpdate({ opacity: e.target.value })}
-                    className="property-slider"
-                  />
-                  <span className="property-value">100%</span>
-                </div>
+                      <span className="text-xs font-mono w-12 text-right text-gray-400">16px</span>
               </div>
             </div>
 
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-gray-300">Font Weight</label>
+                    <Select onValueChange={(value) => onElementUpdate({ fontWeight: value })}>
+                      <SelectTrigger className="h-8" style={{ backgroundColor: '#1C1C1C', borderColor: '#404040', color: 'white' }}>
+                        <SelectValue placeholder="Normal" />
+                      </SelectTrigger>
+                      <SelectContent style={{ backgroundColor: '#1C1C1C', borderColor: '#404040' }}>
+                        <SelectItem value="normal" style={{ color: 'white' }}>Normal</SelectItem>
+                        <SelectItem value="bold" style={{ color: 'white' }}>Bold</SelectItem>
+                        <SelectItem value="lighter" style={{ color: 'white' }}>Light</SelectItem>
+                        <SelectItem value="100" style={{ color: 'white' }}>100</SelectItem>
+                        <SelectItem value="200" style={{ color: 'white' }}>200</SelectItem>
+                        <SelectItem value="300" style={{ color: 'white' }}>300</SelectItem>
+                        <SelectItem value="400" style={{ color: 'white' }}>400</SelectItem>
+                        <SelectItem value="500" style={{ color: 'white' }}>500</SelectItem>
+                        <SelectItem value="600" style={{ color: 'white' }}>600</SelectItem>
+                        <SelectItem value="700" style={{ color: 'white' }}>700</SelectItem>
+                        <SelectItem value="800" style={{ color: 'white' }}>800</SelectItem>
+                        <SelectItem value="900" style={{ color: 'white' }}>900</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-gray-300">Color</label>
+                    <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                        defaultValue="#000000"
+                        onChange={(e) => onElementUpdate({ color: e.target.value })}
+                        className="w-8 h-8 rounded border cursor-pointer"
+                        style={{ borderColor: '#404040' }}
+                      />
+                      <span className="text-xs font-mono flex-1 text-gray-400">#000000</span>
+                    </div>
+              </div>
+            </div>
+          </div>
+            )}
+
+            {/* Background */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-white">Background</h3>
+
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Background</label>
+                  <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                      defaultValue="#ffffff"
+                      onChange={(e) => onElementUpdate({ backgroundColor: e.target.value })}
+                      className="w-8 h-8 rounded border cursor-pointer"
+                      style={{ borderColor: '#404040' }}
+                    />
+                    <span className="text-xs font-mono flex-1 text-gray-400">#ffffff</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Opacity</label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      defaultValue="1"
+                      onChange={(e) => onElementUpdate({ opacity: e.target.value })}
+                      className="flex-1 h-1 bg-gray-600 rounded appearance-none cursor-pointer"
+                    />
+                    <span className="text-xs font-mono w-12 text-right text-gray-400">100%</span>
+                  </div>
+              </div>
+            </div>
+          </div>
+
             {/* Border */}
-            <div className="property-group">
-              <h3 className="property-group-title">Border</h3>
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-white">Border</h3>
 
-              <div className="property-row">
-                <label className="property-label">Border Width</label>
-                <div className="property-control">
-                  <input
-                    type="range"
-                    min="0"
-                    max="20"
-                    defaultValue="0"
-                    onChange={(e) => onElementUpdate({ borderWidth: `${e.target.value}px` })}
-                    className="property-slider"
-                  />
-                  <span className="property-value">0px</span>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Border Width</label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min="0"
+                      max="20"
+                      defaultValue="0"
+                      onChange={(e) => onElementUpdate({ borderWidth: `${e.target.value}px` })}
+                      className="flex-1 h-1 bg-gray-600 rounded appearance-none cursor-pointer"
+                    />
+                    <span className="text-xs font-mono w-12 text-right text-gray-400">0px</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="property-row">
-                <label className="property-label">Border Color</label>
-                <div className="property-color">
-                  <input
-                    type="color"
-                    defaultValue="#000000"
-                    onChange={(e) => onElementUpdate({ borderColor: e.target.value })}
-                    className="property-color-picker"
-                  />
-                  <span className="property-color-value">#000000</span>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Border Color</label>
+                  <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                      defaultValue="#000000"
+                      onChange={(e) => onElementUpdate({ borderColor: e.target.value })}
+                      className="w-8 h-8 rounded border cursor-pointer"
+                      style={{ borderColor: '#404040' }}
+                    />
+                    <span className="text-xs font-mono flex-1 text-gray-400">#000000</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="property-row">
-                <label className="property-label">Border Radius</label>
-                <div className="property-control">
-                  <input
-                    type="range"
-                    min="0"
-                    max="50"
-                    defaultValue="0"
-                    onChange={(e) => onElementUpdate({ borderRadius: `${e.target.value}px` })}
-                    className="property-slider"
-                  />
-                  <span className="property-value">0px</span>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Border Radius</label>
+                  <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min="0"
+                  max="50"
+                      defaultValue="0"
+                      onChange={(e) => onElementUpdate({ borderRadius: `${e.target.value}px` })}
+                      className="flex-1 h-1 bg-gray-600 rounded appearance-none cursor-pointer"
+                    />
+                    <span className="text-xs font-mono w-12 text-right text-gray-400">0px</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Transform */}
-            <div className="property-group">
-              <h3 className="property-group-title">Transform</h3>
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-white">Transform</h3>
 
-              <div className="property-row">
-                <label className="property-label">Rotation</label>
-                <div className="property-control">
-                  <input
-                    type="range"
-                    min="-180"
-                    max="180"
-                    defaultValue="0"
-                    onChange={(e) => onElementUpdate({ transform: `rotate(${e.target.value}deg)` })}
-                    className="property-slider"
-                  />
-                  <span className="property-value">0°</span>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Rotation</label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min="-180"
+                      max="180"
+                      defaultValue="0"
+                      onChange={(e) => onElementUpdate({ transform: `rotate(${e.target.value}deg)` })}
+                      className="flex-1 h-1 bg-gray-600 rounded appearance-none cursor-pointer"
+                    />
+                    <span className="text-xs font-mono w-12 text-right text-gray-400">0°</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="property-row">
-                <label className="property-label">Scale</label>
-                <div className="property-control">
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="3"
-                    step="0.1"
-                    defaultValue="1"
-                    onChange={(e) => onElementUpdate({ transform: `scale(${e.target.value})` })}
-                    className="property-slider"
-                  />
-                  <span className="property-value">100%</span>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Scale</label>
+                  <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                      min="0.1"
+                      max="3"
+                      step="0.1"
+                      defaultValue="1"
+                      onChange={(e) => onElementUpdate({ transform: `scale(${e.target.value})` })}
+                      className="flex-1 h-1 bg-gray-600 rounded appearance-none cursor-pointer"
+                    />
+                    <span className="text-xs font-mono w-12 text-right text-gray-400">100%</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Visibility */}
-            <div className="property-group">
-              <h3 className="property-group-title">Visibility</h3>
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-white">Visibility</h3>
 
-              <div className="property-row">
-                <label className="property-label">Visible</label>
-                <div className="property-toggle">
-                  <button
-                    className={`toggle-btn ${selectedElement.styles.visibility !== 'hidden' ? 'active' : ''}`}
-                    onClick={() => onElementUpdate({
-                      visibility: selectedElement.styles.visibility === 'hidden' ? 'visible' : 'hidden'
-                    })}
-                  >
-                    <EyeIcon className="toggle-icon" />
-                  </button>
-                </div>
-              </div>
+              <Button
+                onClick={() => onElementUpdate({
+                  visibility: selectedElement.styles.visibility === 'hidden' ? 'visible' : 'hidden'
+                })}
+                className={`w-full justify-start ${selectedElement.styles.visibility !== 'hidden' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 hover:bg-gray-700'}`}
+              >
+                <EyeIcon className="w-4 h-4 mr-2" />
+                {selectedElement.styles.visibility !== 'hidden' ? 'Visible' : 'Hidden'}
+              </Button>
             </div>
           </div>
         )}
 
         {activeSection === 'layout' && (
-          <div className="properties-section">
-            <div className="property-group">
-              <h3 className="property-group-title">Position</h3>
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-white">Position</h3>
 
-              <div className="property-row">
-                <label className="property-label">X Position</label>
-                <div className="property-input-group">
-                  <input
-                    type="number"
-                    placeholder="0"
-                    onChange={(e) => onElementUpdate({ left: `${e.target.value}px` })}
-                    className="property-input"
-                  />
-                  <span className="property-unit">px</span>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">X Position</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      onChange={(e) => onElementUpdate({ left: `${e.target.value}px` })}
+                      className="flex-1 h-8 px-3 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        backgroundColor: '#1C1C1C',
+                        borderColor: '#404040',
+                        color: 'white'
+                      }}
+                    />
+                    <span className="text-xs text-gray-400">px</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="property-row">
-                <label className="property-label">Y Position</label>
-                <div className="property-input-group">
-                  <input
-                    type="number"
-                    placeholder="0"
-                    onChange={(e) => onElementUpdate({ top: `${e.target.value}px` })}
-                    className="property-input"
-                  />
-                  <span className="property-unit">px</span>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Y Position</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      onChange={(e) => onElementUpdate({ top: `${e.target.value}px` })}
+                      className="flex-1 h-8 px-3 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        backgroundColor: '#1C1C1C',
+                        borderColor: '#404040',
+                        color: 'white'
+                      }}
+                    />
+                    <span className="text-xs text-gray-400">px</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="property-row">
-                <label className="property-label">Position Type</label>
-                <select
-                  className="property-select"
-                  onChange={(e) => onElementUpdate({ position: e.target.value })}
-                >
-                  <option value="static">Static</option>
-                  <option value="relative">Relative</option>
-                  <option value="absolute">Absolute</option>
-                  <option value="fixed">Fixed</option>
-                  <option value="sticky">Sticky</option>
-                </select>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Position Type</label>
+                  <Select onValueChange={(value) => onElementUpdate({ position: value })}>
+                    <SelectTrigger style={{ backgroundColor: '#1C1C1C', borderColor: '#404040', color: 'white' }}>
+                      <SelectValue placeholder="Static" />
+                    </SelectTrigger>
+                    <SelectContent style={{ backgroundColor: '#1C1C1C', borderColor: '#404040' }}>
+                      <SelectItem value="static" style={{ color: 'white' }}>Static</SelectItem>
+                      <SelectItem value="relative" style={{ color: 'white' }}>Relative</SelectItem>
+                      <SelectItem value="absolute" style={{ color: 'white' }}>Absolute</SelectItem>
+                      <SelectItem value="fixed" style={{ color: 'white' }}>Fixed</SelectItem>
+                      <SelectItem value="sticky" style={{ color: 'white' }}>Sticky</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
-            <div className="property-group">
-              <h3 className="property-group-title">Size</h3>
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-white">Size</h3>
 
-              <div className="property-row">
-                <label className="property-label">Width</label>
-                <div className="property-input-group">
-                  <input
-                    type="number"
-                    placeholder="100"
-                    onChange={(e) => onElementUpdate({ width: `${e.target.value}px` })}
-                    className="property-input"
-                  />
-                  <span className="property-unit">px</span>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Width</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      placeholder="100"
+                      onChange={(e) => onElementUpdate({ width: `${e.target.value}px` })}
+                      className="flex-1 h-8 px-3 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        backgroundColor: '#1C1C1C',
+                        borderColor: '#404040',
+                        color: 'white'
+                      }}
+                    />
+                    <span className="text-xs text-gray-400">px</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="property-row">
-                <label className="property-label">Height</label>
-                <div className="property-input-group">
-                  <input
-                    type="number"
-                    placeholder="100"
-                    onChange={(e) => onElementUpdate({ height: `${e.target.value}px` })}
-                    className="property-input"
-                  />
-                  <span className="property-unit">px</span>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Height</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      placeholder="100"
+                      onChange={(e) => onElementUpdate({ height: `${e.target.value}px` })}
+                      className="flex-1 h-8 px-3 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        backgroundColor: '#1C1C1C',
+                        borderColor: '#404040',
+                        color: 'white'
+                      }}
+                    />
+                    <span className="text-xs text-gray-400">px</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="property-row">
-                <label className="property-label">Size Type</label>
-                <select
-                  className="property-select"
-                  onChange={(e) => {
-                    const sizeType = e.target.value;
-                    if (sizeType === 'fill') {
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Size Type</label>
+                  <Select onValueChange={(value) => {
+                    if (value === 'fill') {
                       onElementUpdate({ width: '100%', height: '100%' });
-                    } else if (sizeType === 'fit') {
+                    } else if (value === 'fit') {
                       onElementUpdate({ width: 'auto', height: 'auto' });
                     }
-                  }}
+                  }}>
+                    <SelectTrigger style={{ backgroundColor: '#1C1C1C', borderColor: '#404040', color: 'white' }}>
+                      <SelectValue placeholder="Fixed" />
+                    </SelectTrigger>
+                    <SelectContent style={{ backgroundColor: '#1C1C1C', borderColor: '#404040' }}>
+                      <SelectItem value="fixed" style={{ color: 'white' }}>Fixed</SelectItem>
+                      <SelectItem value="fill" style={{ color: 'white' }}>Fill</SelectItem>
+                      <SelectItem value="fit" style={{ color: 'white' }}>Fit Content</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-white">Alignment</h3>
+
+              <div className="flex gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onElementUpdate({ textAlign: 'left' })}
+                  className="h-8 w-8 p-0"
+                  style={{ borderColor: '#404040' }}
                 >
-                  <option value="fixed">Fixed</option>
-                  <option value="fill">Fill</option>
-                  <option value="fit">Fit Content</option>
-                </select>
+                  <AlignLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onElementUpdate({ textAlign: 'center' })}
+                  className="h-8 w-8 p-0"
+                  style={{ borderColor: '#404040' }}
+                >
+                  <AlignCenter className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onElementUpdate({ textAlign: 'right' })}
+                  className="h-8 w-8 p-0"
+                  style={{ borderColor: '#404040' }}
+                >
+                  <AlignRight className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onElementUpdate({ textAlign: 'justify' })}
+                  className="h-8 w-8 p-0"
+                  style={{ borderColor: '#404040' }}
+                >
+                  <AlignJustify className="w-4 h-4" />
+                </Button>
               </div>
             </div>
 
-            <div className="property-group">
-              <h3 className="property-group-title">Alignment</h3>
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-white">Spacing</h3>
 
-              <div className="property-alignment">
-                <div className="alignment-row">
-                  <button className="alignment-btn" onClick={() => onElementUpdate({ textAlign: 'left' })}>
-                    <AlignLeft className="alignment-icon" />
-                  </button>
-                  <button className="alignment-btn" onClick={() => onElementUpdate({ textAlign: 'center' })}>
-                    <AlignCenter className="alignment-icon" />
-                  </button>
-                  <button className="alignment-btn" onClick={() => onElementUpdate({ textAlign: 'right' })}>
-                    <AlignRight className="alignment-icon" />
-                  </button>
-                  <button className="alignment-btn" onClick={() => onElementUpdate({ textAlign: 'justify' })}>
-                    <AlignJustify className="alignment-icon" />
-                  </button>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Padding</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      onChange={(e) => onElementUpdate({ padding: `${e.target.value}px` })}
+                      className="flex-1 h-8 px-3 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        backgroundColor: '#1C1C1C',
+                        borderColor: '#404040',
+                        color: 'white'
+                      }}
+                    />
+                    <span className="text-xs text-gray-400">px</span>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="property-group">
-              <h3 className="property-group-title">Spacing</h3>
-
-              <div className="property-row">
-                <label className="property-label">Padding</label>
-                <div className="property-input-group">
-                  <input
-                    type="number"
-                    placeholder="0"
-                    onChange={(e) => onElementUpdate({ padding: `${e.target.value}px` })}
-                    className="property-input"
-                  />
-                  <span className="property-unit">px</span>
-                </div>
-              </div>
-
-              <div className="property-row">
-                <label className="property-label">Margin</label>
-                <div className="property-input-group">
-                  <input
-                    type="number"
-                    placeholder="0"
-                    onChange={(e) => onElementUpdate({ margin: `${e.target.value}px` })}
-                    className="property-input"
-                  />
-                  <span className="property-unit">px</span>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Margin</label>
+                  <div className="flex items-center gap-2">
+                <input
+                      type="number"
+                      placeholder="0"
+                  onChange={(e) => onElementUpdate({ margin: `${e.target.value}px` })}
+                      className="flex-1 h-8 px-3 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        backgroundColor: '#1C1C1C',
+                        borderColor: '#404040',
+                        color: 'white'
+                      }}
+                    />
+                    <span className="text-xs text-gray-400">px</span>
                 </div>
               </div>
             </div>
           </div>
+        </div>
         )}
 
         {activeSection === 'effects' && (
-          <div className="properties-section">
-            <div className="property-group">
-              <h3 className="property-group-title">Animation Effects</h3>
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-white">Animation Effects</h3>
 
-              <div className="property-row">
-                <label className="property-label">On Appear</label>
-                <select
-                  className="property-select"
-                  onChange={(e) => onElementUpdate({ animation: e.target.value })}
-                >
-                  <option value="">None</option>
-                  {predefinedEffects.filter(e => e.type === 'appear').map(effect => (
-                    <option key={effect.id} value={effect.id}>{effect.name}</option>
-                  ))}
-                </select>
-              </div>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">On Appear</label>
+                  <Select onValueChange={(value) => onElementUpdate({ animation: value })}>
+                    <SelectTrigger style={{ backgroundColor: '#1C1C1C', borderColor: '#404040', color: 'white' }}>
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent style={{ backgroundColor: '#1C1C1C', borderColor: '#404040' }}>
+                      <SelectItem value="" style={{ color: 'white' }}>None</SelectItem>
+                      {predefinedEffects.filter(e => e.type === 'appear').map(effect => (
+                        <SelectItem key={effect.id} value={effect.id} style={{ color: 'white' }}>{effect.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+          </div>
 
-              <div className="property-row">
-                <label className="property-label">On Press</label>
-                <select
-                  className="property-select"
-                  onChange={(e) => onElementUpdate({ pressEffect: e.target.value })}
-                >
-                  <option value="">None</option>
-                  {predefinedEffects.filter(e => e.type === 'interaction').map(effect => (
-                    <option key={effect.id} value={effect.id}>{effect.name}</option>
-                  ))}
-                </select>
-              </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">On Press</label>
+                  <Select onValueChange={(value) => onElementUpdate({ pressEffect: value })}>
+                    <SelectTrigger style={{ backgroundColor: '#1C1C1C', borderColor: '#404040', color: 'white' }}>
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent style={{ backgroundColor: '#1C1C1C', borderColor: '#404040' }}>
+                      <SelectItem value="" style={{ color: 'white' }}>None</SelectItem>
+                      {predefinedEffects.filter(e => e.type === 'interaction').map(effect => (
+                        <SelectItem key={effect.id} value={effect.id} style={{ color: 'white' }}>{effect.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="property-row">
-                <label className="property-label">On Scroll</label>
-                <select
-                  className="property-select"
-                  onChange={(e) => onElementUpdate({ scrollEffect: e.target.value })}
-                >
-                  <option value="">None</option>
-                  {predefinedEffects.filter(e => e.type === 'scroll').map(effect => (
-                    <option key={effect.id} value={effect.id}>{effect.name}</option>
-                  ))}
-                </select>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">On Scroll</label>
+                  <Select onValueChange={(value) => onElementUpdate({ scrollEffect: value })}>
+                    <SelectTrigger style={{ backgroundColor: '#1C1C1C', borderColor: '#404040', color: 'white' }}>
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent style={{ backgroundColor: '#1C1C1C', borderColor: '#404040' }}>
+                      <SelectItem value="" style={{ color: 'white' }}>None</SelectItem>
+                      {predefinedEffects.filter(e => e.type === 'scroll').map(effect => (
+                        <SelectItem key={effect.id} value={effect.id} style={{ color: 'white' }}>{effect.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
-            <div className="property-group">
-              <h3 className="property-group-title">Animation Settings</h3>
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-white">Animation Settings</h3>
 
-              <div className="property-row">
-                <label className="property-label">Duration</label>
-                <div className="property-input-group">
-                  <input
-                    type="number"
-                    placeholder="0.3"
-                    step="0.1"
-                    onChange={(e) => onElementUpdate({ animationDuration: `${e.target.value}s` })}
-                    className="property-input"
-                  />
-                  <span className="property-unit">s</span>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Duration</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      placeholder="0.3"
+                      step="0.1"
+                      onChange={(e) => onElementUpdate({ animationDuration: `${e.target.value}s` })}
+                      className="flex-1 h-8 px-3 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        backgroundColor: '#1C1C1C',
+                        borderColor: '#404040',
+                        color: 'white'
+                      }}
+                    />
+                    <span className="text-xs text-gray-400">s</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="property-row">
-                <label className="property-label">Delay</label>
-                <div className="property-input-group">
-                  <input
-                    type="number"
-                    placeholder="0"
-                    step="0.1"
-                    onChange={(e) => onElementUpdate({ animationDelay: `${e.target.value}s` })}
-                    className="property-input"
-                  />
-                  <span className="property-unit">s</span>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Delay</label>
+                  <div className="flex items-center gap-2">
+                <input
+                      type="number"
+                      placeholder="0"
+                      step="0.1"
+                      onChange={(e) => onElementUpdate({ animationDelay: `${e.target.value}s` })}
+                      className="flex-1 h-8 px-3 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        backgroundColor: '#1C1C1C',
+                        borderColor: '#404040',
+                        color: 'white'
+                      }}
+                    />
+                    <span className="text-xs text-gray-400">s</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="property-row">
-                <label className="property-label">Easing</label>
-                <select
-                  className="property-select"
-                  onChange={(e) => onElementUpdate({ animationTimingFunction: e.target.value })}
-                >
-                  <option value="ease">Ease</option>
-                  <option value="ease-in">Ease In</option>
-                  <option value="ease-out">Ease Out</option>
-                  <option value="ease-in-out">Ease In Out</option>
-                  <option value="linear">Linear</option>
-                  <option value="cubic-bezier(0.4, 0, 0.2, 1)">Material</option>
-                </select>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-300">Easing</label>
+                  <Select onValueChange={(value) => onElementUpdate({ animationTimingFunction: value })}>
+                    <SelectTrigger style={{ backgroundColor: '#1C1C1C', borderColor: '#404040', color: 'white' }}>
+                      <SelectValue placeholder="Ease" />
+                    </SelectTrigger>
+                    <SelectContent style={{ backgroundColor: '#1C1C1C', borderColor: '#404040' }}>
+                      <SelectItem value="ease" style={{ color: 'white' }}>Ease</SelectItem>
+                      <SelectItem value="ease-in" style={{ color: 'white' }}>Ease In</SelectItem>
+                      <SelectItem value="ease-out" style={{ color: 'white' }}>Ease Out</SelectItem>
+                      <SelectItem value="ease-in-out" style={{ color: 'white' }}>Ease In Out</SelectItem>
+                      <SelectItem value="linear" style={{ color: 'white' }}>Linear</SelectItem>
+                      <SelectItem value="cubic-bezier(0.4, 0, 0.2, 1)" style={{ color: 'white' }}>Material</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>
         )}
 
         {activeSection === 'cursor' && (
-          <div className="properties-section">
-            <div className="property-group">
-              <h3 className="property-group-title">Cursor Templates</h3>
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-white">Cursor Templates</h3>
 
-              <div className="cursor-grid">
+              <div className="grid grid-cols-3 gap-2">
                 {cursorTemplates.map(cursor => (
-                  <button
+                  <Button
                     key={cursor.id}
-                    className="cursor-template"
+                    variant="outline"
+                    size="sm"
                     onClick={() => onElementUpdate({ cursor: cursor.preview })}
+                    className="h-auto p-3 flex flex-col items-center gap-2"
                     title={cursor.name}
+                    style={{ backgroundColor: '#1C1C1C', borderColor: '#404040', color: 'white' }}
                   >
                     <div
-                      className="cursor-preview"
-                      style={{ cursor: cursor.preview }}
+                      className="w-8 h-8 flex items-center justify-center rounded"
+                      style={{
+                        cursor: cursor.preview,
+                        backgroundColor: '#2A2A2A'
+                      }}
                     >
-                      <Mouse className="cursor-icon" />
+                      <Mouse className="w-4 h-4 text-gray-400" />
                     </div>
-                    <span className="cursor-name">{cursor.name}</span>
-                  </button>
+                    <span className="text-xs text-gray-300">{cursor.name}</span>
+                  </Button>
                 ))}
               </div>
             </div>
 
-            <div className="property-group">
-              <h3 className="property-group-title">Custom Cursor</h3>
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-white">Custom Cursor</h3>
 
-              <div className="property-row">
-                <label className="property-label">Upload Image</label>
-                <div className="property-file-upload">
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-gray-300">Upload Image</label>
+                <div>
                   <input
                     type="file"
                     accept="image/*"
@@ -1719,12 +943,19 @@ const PropertiesPanel: React.FC<{
                         onElementUpdate({ cursor: `url(${url}), auto` });
                       }
                     }}
-                    className="file-input"
+                    className="hidden"
                     id="cursor-upload"
                   />
-                  <label htmlFor="cursor-upload" className="file-upload-btn">
-                    <Upload className="upload-icon" />
-                    Upload Image
+                  <label htmlFor="cursor-upload">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                      style={{ backgroundColor: '#1C1C1C', borderColor: '#404040', color: 'white' }}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload Image
+                    </Button>
                   </label>
                 </div>
               </div>
@@ -1782,50 +1013,73 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ projectId, sandboxBundle
   };
 
   return (
-    <div className="framer-preview-container">
-      {/* Top Toolbar */}
-      <div className="framer-toolbar">
-        <div className="toolbar-left">
-          <button className="toolbar-btn primary" onClick={handleOpenInNewTab}>
-            <Edit2 className="btn-icon" />
+    <div className="flex flex-col h-full" style={{ backgroundColor: '#1C1C1C' }}>
+      {/* Top Control Container */}
+      <div className="flex items-center justify-center p-6" style={{ backgroundColor: '#1C1C1C' }}>
+        <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ backgroundColor: '#2A2A2A' }}>
+          <Button
+            onClick={handleOpenInNewTab}
+            className="bg-white text-black hover:bg-gray-100 px-4 py-2 rounded-xl"
+          >
+            <Edit2 className="w-4 h-4 mr-2" />
             Edit
-          </button>
+          </Button>
 
-          <div className="toolbar-separator" />
+          <div className="w-px h-6" style={{ backgroundColor: '#404040' }} />
 
-          <div className="device-buttons">
-            <button className="device-btn" onClick={() => setDevice('desktop')}>
-              <Monitor className="device-icon" />
-            </button>
-            <button className="device-btn" onClick={() => setDevice('tablet')}>
-              <Tablet className="device-icon" />
-            </button>
-            <button className="device-btn active" onClick={() => setDevice('mobile')}>
-              <Smartphone className="device-icon" />
-            </button>
-          </div>
-        </div>
+          <Button
+            variant={device === 'desktop' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setDevice('desktop')}
+            className="px-3 py-2 rounded-xl"
+          >
+            <Monitor className="w-4 h-4 mr-1" />
+            Desktop
+          </Button>
+          <Button
+            variant={device === 'tablet' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setDevice('tablet')}
+            className="px-3 py-2 rounded-xl"
+          >
+            <Grid3X3 className="w-4 h-4 mr-1" />
+            Tablet
+          </Button>
+          <Button
+            variant={device === 'mobile' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setDevice('mobile')}
+            className="px-3 py-2 rounded-xl"
+          >
+            <Smartphone className="w-4 h-4 mr-1" />
+            Mobile
+          </Button>
 
-        <div className="toolbar-right">
-          <button className="toolbar-btn secondary">
-            <Settings className="btn-icon" />
-          </button>
-          <button className="toolbar-btn secondary">
-            <Code className="btn-icon" />
-          </button>
-          <button className="toolbar-btn secondary">
-            <Terminal className="btn-icon" />
-          </button>
-          <button className="toolbar-btn secondary">
-            <Eye className="btn-icon" />
-          </button>
+          <div className="w-px h-6" style={{ backgroundColor: '#404040' }} />
+
+          <Button variant="ghost" size="sm" className="px-3 py-2 rounded-xl">
+            <Settings className="w-4 h-4 mr-1" />
+            Settings
+          </Button>
+          <Button variant="ghost" size="sm" className="px-3 py-2 rounded-xl">
+            <Code className="w-4 h-4 mr-1" />
+            Code
+          </Button>
+          <Button variant="ghost" size="sm" className="px-3 py-2 rounded-xl">
+            <Terminal className="w-4 h-4 mr-1" />
+            Console
+          </Button>
+          <Button variant="ghost" size="sm" className="px-3 py-2 rounded-xl">
+            <Eye className="w-4 h-4 mr-1" />
+            Preview
+          </Button>
         </div>
       </div>
 
       {/* Main Three-Column Layout */}
-      <div className="framer-main-layout">
+      <div className="flex-1 grid grid-cols-[300px_1fr_340px] gap-6 p-6 h-[calc(100vh-120px)]">
         {/* Left Sidebar - Elements */}
-        <div className="framer-left-sidebar">
+        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#2A2A2A' }}>
           <ElementsSidebar
             onElementAdd={handleElementAdd}
             onElementHover={setHoveredElement}
@@ -1833,109 +1087,87 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ projectId, sandboxBundle
         </div>
 
         {/* Center - Preview Canvas */}
-        <div className="framer-canvas-container">
-          <div className="canvas-header">
-            <h3 className="canvas-title">Preview</h3>
-            <div className="canvas-controls">
-              <button className="canvas-control-btn">
-                <ZoomIn className="control-icon" />
-              </button>
-              <button className="canvas-control-btn">
-                <ZoomOut className="control-icon" />
-              </button>
-              <button className="canvas-control-btn">
-                <RotateCcw className="control-icon" />
-              </button>
-              <span className="canvas-zoom">100%</span>
-            </div>
-          </div>
+        <div className="flex items-center justify-center rounded-2xl overflow-hidden" style={{ backgroundColor: '#2A2A2A' }}>
+          <div className={`bg-white rounded-2xl overflow-hidden transition-all duration-300 ${
+            device === 'desktop' ? 'w-full h-[600px] max-w-[1000px]' :
+            device === 'tablet' ? 'w-[768px] h-[900px]' :
+            'w-[375px] h-[667px]'
+          }`}>
+            {sandboxBundle ? (
+              <div className="relative w-full h-full">
+                <iframe
+                  src={`/project/${projectId}?sandbox=1`}
+                  className="w-full h-full border-none"
+                  title="Survey Preview"
+                />
 
-          <div className="canvas-area">
-            <div className={`canvas-frame ${device}`}>
-              {sandboxBundle ? (
-                <div className="canvas-content">
-                  <iframe
-                    src={`/project/${projectId}?sandbox=1`}
-                    className="canvas-iframe"
-                    title="Survey Preview"
-                  />
-
-                  {/* Overlay canvas elements for visual editing */}
-                  <div className="canvas-overlay">
-                    {canvasElements.map(element => (
-                      <div
-                        key={element.id}
-                        className={`canvas-element ${selectedElement?.id === element.id ? 'selected' : ''}`}
-                        style={element.styles}
-                        onClick={() => handleElementSelect(element)}
-                      >
-                        {element.type === 'text' && (
-                          <span>{element.text}</span>
-                        )}
-                        {element.type === 'button' && (
-                          <button className="element-button">{element.text}</button>
-                        )}
-                        {element.type === 'image' && (
-                          <div className="element-image">
-                            <Image className="image-icon" />
-                          </div>
-                        )}
-                        {element.type === 'input' && (
-                          <input
-                            type="text"
-                            placeholder={element.text}
-                            className="element-input"
-                          />
-                        )}
-                        {element.type === 'div' && (
-                          <div className="element-container">
-                            {element.text}
-                          </div>
-                        )}
-                        {element.type === 'shape' && (
-                          <div className="element-shape">
-                            {element.tag === 'circle' && <Circle className="shape-icon" />}
-                            {element.tag === 'rectangle' && <Square className="shape-icon" />}
-                            {element.tag === 'triangle' && <Triangle className="shape-icon" />}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                {/* Overlay canvas elements for visual editing */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {canvasElements.map(element => (
+                    <div
+                      key={element.id}
+                      className={`pointer-events-auto cursor-pointer border-2 transition-all duration-150 min-w-[40px] min-h-[40px] flex items-center justify-center ${
+                        selectedElement?.id === element.id ? 'border-blue-500 bg-blue-50' : 'border-transparent hover:border-blue-300'
+                      }`}
+                      style={element.styles}
+                      onClick={() => handleElementSelect(element)}
+                    >
+                      {element.type === 'text' && (
+                        <span>{element.text}</span>
+                      )}
+                      {element.type === 'button' && (
+                        <Button size="sm">{element.text}</Button>
+                      )}
+                      {element.type === 'image' && (
+                        <div className="bg-gray-100 border border-gray-300 rounded flex items-center justify-center min-w-[60px] min-h-[60px]">
+                          <Image className="w-6 h-6 text-gray-500" />
+                        </div>
+                      )}
+                      {element.type === 'input' && (
+                        <input
+                          type="text"
+                          placeholder={element.text}
+                          className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      )}
+                      {element.type === 'div' && (
+                        <div className="bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-600">
+                          {element.text}
+                        </div>
+                      )}
+                      {element.type === 'shape' && (
+                        <div className="bg-blue-500 rounded flex items-center justify-center">
+                          {element.tag === 'circle' && <Circle className="w-5 h-5 text-white" />}
+                          {element.tag === 'rectangle' && <Square className="w-5 h-5 text-white" />}
+                          {element.tag === 'triangle' && <Triangle className="w-5 h-5 text-white" />}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
+              </div>
               ) : (
-                <div className="canvas-empty">
-                  <div className="empty-state">
-                    <Layout className="empty-icon" />
-                    <h3 className="empty-title">Start Building</h3>
-                    <p className="empty-description">
-                      Drag elements from the left sidebar to start creating your survey
+              <div className="flex items-center justify-center w-full h-full bg-gray-50">
+                <div className="text-center">
+                  <Layout className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-gray-600">
+                    Drag elements from the left sidebar to start creating your survey
                     </p>
                   </div>
                 </div>
               )}
-            </div>
           </div>
         </div>
 
         {/* Right Sidebar - Properties */}
-        <div className="framer-right-sidebar">
+        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#2A2A2A' }}>
           <PropertiesPanel
-            selectedElement={selectedElement}
+              selectedElement={selectedElement}
             onElementUpdate={handleElementUpdate}
-          />
-        </div>
+            />
+          </div>
       </div>
 
-      {/* Hover Preview */}
-      {hoveredElement && (
-        <div className="element-hover-preview">
-          <div className="hover-preview-content">
-            <hoveredElement.icon className="hover-preview-icon" />
-            <span className="hover-preview-name">{hoveredElement.name}</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -38,10 +38,50 @@ const SidebarItem = ({
 export default function DashboardSidebar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
   const pathname = usePathname();
   const router = useRouter();
   const { signOut, user, userProfile } = useAuth();
+
+  // Theme toggle functionality
+  const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
+    setTheme(newTheme);
+
+    if (newTheme === 'system') {
+      // Use system preference
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.classList.toggle('dark', systemTheme === 'dark');
+    } else {
+      // Set explicit theme
+      document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    }
+
+    // Store preference in localStorage
+    localStorage.setItem('theme', newTheme);
+  };
+
+  // Initialize theme on mount
+  React.useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system' | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+      handleThemeChange(savedTheme);
+    } else {
+      handleThemeChange('system');
+    }
+  }, []);
+
+  const handleSendFeedback = () => {
+    if (feedbackText.trim()) {
+      // TODO: Send feedback to backend
+      console.log('Feedback:', feedbackText);
+      setFeedbackText('');
+      setIsFeedbackModalOpen(false);
+      // Show success message
+    }
+  };
 
   const displayName = useMemo(() => {
     if (userProfile?.name) return userProfile.name;
@@ -167,23 +207,6 @@ export default function DashboardSidebar() {
                   Set up profile
                 </button>
 
-                {/* Request app */}
-                <button
-                  onClick={() => { setIsUserMenuOpen(false); /* handle request app */ }}
-                  className="user-menu-item"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="user-menu-icon-circle">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="16"/>
-                        <line x1="8" y1="12" x2="16" y2="12"/>
-                      </svg>
-                    </div>
-                    <span>Request app</span>
-                  </div>
-                </button>
-
                 {/* Settings */}
                 <button
                   onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard/settings'); }}
@@ -203,21 +226,21 @@ export default function DashboardSidebar() {
                   <div className="user-menu-theme-toggle">
                     <button
                       className={`user-menu-theme-btn ${theme === 'light' ? 'active' : ''}`}
-                      onClick={() => setTheme('light')}
+                      onClick={() => handleThemeChange('light')}
                       aria-label="Light theme"
                     >
                       <Sun className="h-4 w-4" />
                     </button>
                     <button
                       className={`user-menu-theme-btn ${theme === 'dark' ? 'active' : ''}`}
-                      onClick={() => setTheme('dark')}
+                      onClick={() => handleThemeChange('dark')}
                       aria-label="Dark theme"
                     >
                       <Moon className="h-4 w-4" />
                     </button>
                     <button
                       className={`user-menu-theme-btn ${theme === 'system' ? 'active' : ''}`}
-                      onClick={() => setTheme('system')}
+                      onClick={() => handleThemeChange('system')}
                       aria-label="System theme"
                     >
                       <Laptop className="h-4 w-4" />
@@ -249,27 +272,12 @@ export default function DashboardSidebar() {
                   <span>Blog</span>
                 </button>
 
-                {/* Careers */}
+                {/* Give Feedback */}
                 <button
-                  onClick={() => { setIsUserMenuOpen(false); window.open('/careers', '_blank'); }}
+                  onClick={() => { setIsUserMenuOpen(false); setIsFeedbackModalOpen(true); }}
                   className="user-menu-item"
                 >
-                  <div className="flex items-center justify-between w-full">
-                    <span>Careers</span>
-                    <ExternalLink className="h-3.5 w-3.5 opacity-40" />
-                  </div>
-                </button>
-
-                {/* Merch */}
-                <button
-                  onClick={() => { setIsUserMenuOpen(false); window.open('/merch', '_blank'); }}
-                  className="user-menu-item"
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span>Merch</span>
-                    <span className="user-menu-new-badge">New</span>
-                    <ExternalLink className="h-3.5 w-3.5 opacity-40" />
-                  </div>
+                  <span>Give Feedback</span>
                 </button>
 
                 {/* Support */}
@@ -329,17 +337,17 @@ export default function DashboardSidebar() {
           {isInviteModalOpen && (
             <div className="invite-modal-overlay" onClick={() => setIsInviteModalOpen(false)}>
               <div className="invite-modal-content" onClick={(e) => e.stopPropagation()}>
-                <button 
+                <button
                   className="invite-modal-close"
                   onClick={() => setIsInviteModalOpen(false)}
                 >
                   <X className="h-5 w-5" />
                 </button>
-                
+
                 <div className="invite-modal-layout">
                   <div className="invite-modal-text">
                     <h2 className="invite-modal-title">Inv<em>i</em>te and E<em>a</em>rn</h2>
-                    
+
                     <div className="invite-how-it-works">
                       <h3 className="invite-section-title">How it works:</h3>
                       <div className="invite-steps">
@@ -348,8 +356,8 @@ export default function DashboardSidebar() {
                         <div className="invite-step">• You earn 5 credits when they publish their first project</div>
                       </div>
                     </div>
-                    
-                    <button 
+
+                    <button
                       className="invite-copy-button"
                       onClick={() => {
                         const inviteLink = `https://surbee.com/invite/${user?.id || 'demo'}`;
@@ -360,8 +368,8 @@ export default function DashboardSidebar() {
                       <Copy className="h-4 w-4" />
                       Copy Link
                     </button>
-                    
-                    <button 
+
+                    <button
                       className="invite-terms-link"
                       onClick={() => {
                         setIsInviteModalOpen(false);
@@ -370,19 +378,44 @@ export default function DashboardSidebar() {
                     >
                       View Terms and Conditions
                     </button>
-                    
+
                   </div>
-                  
+
                   <div className="invite-modal-image">
-                    <img 
-                      src="https://github.com/Surbee001/webimg/blob/main/u7411232448_i_need_a_very_visble_heart_a_2d_heart._--ar_34_--pr_23edf17f-fb22-43b6-b589-c3e3d7c2d068.png?raw=true" 
-                      alt="Invite and Earn" 
+                    <img
+                      src="https://github.com/Surbee001/webimg/blob/main/u7411232448_i_need_a_very_visble_heart_a_2d_heart._--ar_34_--pr_23edf17f-fb22-43b6-b589-c3e3d7c2d068.png?raw=true"
+                      alt="Invite and Earn"
                       className="invite-heart-image"
                     />
                   </div>
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Feedback Modal */}
+          {isFeedbackModalOpen && (
+            <>
+              <div className="feedback-modal-overlay" onClick={() => setIsFeedbackModalOpen(false)} />
+              <div className="feedback-modal-input-wrapper" onClick={(e) => e.stopPropagation()}>
+                <div className="feedback-modal-textarea-container">
+                  <textarea
+                    className="feedback-modal-textarea"
+                    placeholder="Share your thoughts, suggestions, or report issues..."
+                    value={feedbackText}
+                    onChange={(e) => setFeedbackText(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+                <button
+                  className="feedback-modal-send-btn"
+                  onClick={handleSendFeedback}
+                  disabled={!feedbackText.trim()}
+                >
+                  Send
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>

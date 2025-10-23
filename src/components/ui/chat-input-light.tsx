@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { ArrowUp, Plus, X, Settings2, Crosshair, Eye, Lightbulb } from "lucide-react";
+import { ArrowUp, Plus, X, Settings2, Crosshair, Eye, Lightbulb, Square } from "lucide-react";
 import ChatSettingsMenu from "@/components/ui/chat-settings-menu";
 import { ImageViewerModal } from "@/components/ui/image-viewer-modal";
 
@@ -21,6 +21,8 @@ interface ChatInputLightProps {
   tokenPercent?: number; // optional, shows token usage next to send
   shouldGlow?: boolean; // optional, adds glow effect to border
   disableRotatingPlaceholders?: boolean; // optional, disables rotating placeholders
+  isBusy?: boolean;
+  onStop?: () => void;
 }
 
 export default function ChatInputLight({ 
@@ -38,7 +40,9 @@ export default function ChatInputLight({
   showSettings = true,
   tokenPercent,
   shouldGlow = false,
-  disableRotatingPlaceholders = false
+  disableRotatingPlaceholders = false,
+  isBusy = false,
+  onStop,
 }: ChatInputLightProps) {
   const [chatText, setChatText] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -261,8 +265,15 @@ export default function ChatInputLight({
     }
   }, [chatText]);
 
+  const hasMessage = chatText.trim().length > 0;
+  const buttonDisabled = isBusy ? false : (!hasMessage || isInputDisabled);
+  const buttonBaseClass = "flex justify-center items-center ease-in transition-all duration-150 cursor-pointer";
+  const idleActiveClass = theme === 'white' ? 'bg-black text-white p-1.5 rounded-full' : 'bg-white text-black p-1.5 rounded-full';
+  const idleInactiveClass = theme === 'white' ? 'text-gray-500 hover:text-gray-600 p-1.5 rounded-full' : 'text-gray-400 hover:text-gray-300 p-1.5 rounded-full';
+  const busyClass = idleActiveClass;
+
   return (
-    <div className={`w-full max-w-xl mx-auto ${className}`}>
+    <div className={`w-full max-w-2xl mx-auto ${className}`}>
       <div 
         ref={chatboxContainerRef}
         className={`relative flex flex-col max-h-[40rem] min-h-[122px] z-10 transition-all duration-500`}
@@ -470,20 +481,16 @@ export default function ChatInputLight({
             </div>
             <div className="flex flex-row items-center gap-2 flex-shrink-0">
               <button
-                className={`flex justify-center items-center ease-in transition-all duration-150 cursor-pointer rounded-full ${
-                  chatText.trim() && !isInputDisabled 
-                    ? (theme === 'white' ? 'bg-black text-white p-1.5' : 'bg-white text-black p-1.5')
-                    : (theme === 'white' ? 'text-gray-500 hover:text-gray-600 p-1.5' : 'text-gray-400 hover:text-gray-300 p-1.5')
-                }`}
-                disabled={!chatText.trim() || isInputDisabled}
-                onClick={handleSendMessage}
+                className={`${buttonBaseClass} ${isBusy ? busyClass : (hasMessage && !isInputDisabled ? idleActiveClass : idleInactiveClass)}`}
+                disabled={buttonDisabled}
+                onClick={isBusy ? () => onStop?.() : handleSendMessage}
                 style={{
                   margin: "0px",
-                  cursor: chatText.trim() ? "pointer" : "not-allowed",
-                  opacity: chatText.trim() ? 1 : 0.7,
+                  cursor: buttonDisabled ? "not-allowed" : "pointer",
+                  opacity: buttonDisabled && !isBusy ? 0.7 : 1,
                 }}
               >
-                <ArrowUp className="h-4 w-4" />
+                {isBusy ? <Square className="h-4 w-4" fill="currentColor" stroke="currentColor" strokeWidth={1.5} /> : <ArrowUp className="h-4 w-4" />}
               </button>
             </div>
           </div>
@@ -502,9 +509,5 @@ export default function ChatInputLight({
     </div>
   );
 }
-
-
-
-
 
 

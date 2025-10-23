@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronLeft, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, StopCircle, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy, Hammer } from "lucide-react";
+import { ChevronDown, ChevronLeft, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy, Hammer, Code, Terminal, AlertTriangle } from "lucide-react";
 import UserNameBadge from "@/components/UserNameBadge";
 import UserMenu from "@/components/ui/user-menu";
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -24,6 +24,19 @@ import { useRealtime } from '@/contexts/RealtimeContext';
 import { ThinkingDisplay } from '../../../../components/ThinkingUi/components/thinking-display';
 import { ToolCall } from '../../../../components/ThinkingUi/components/tool-call';
 import { AILoader } from '@/components/ai-loader';
+import { cn } from "@/lib/utils";
+import {
+  SandboxProvider,
+  SandboxLayout,
+  type SandboxProviderProps,
+} from "@/components/kibo-ui/sandbox";
+import {
+  SandpackCodeEditor,
+  SandpackConsole,
+  SandpackFileExplorer,
+  SandpackPreview,
+  useSandpack,
+} from "@codesandbox/sandpack-react";
 
 interface ThinkingStep {
   id: string;
@@ -31,6 +44,660 @@ interface ThinkingStep {
   status: "thinking" | "complete";
 }
 
+type WorkflowContextChatMessage = {
+  role: "user" | "assistant";
+  text: string;
+  agent?: string;
+};
+
+type SelectedElementSnapshot = {
+  outerHTML: string;
+  textContent: string;
+  selector: string;
+};
+
+const MAX_CHAT_HISTORY_ENTRIES = 8;
+
+const sanitizePlainTextForContext = (value: string | null | undefined, limit: number) => {
+  if (!value) return "";
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (!normalized) return "";
+  if (normalized.length <= limit) return normalized;
+  return `${normalized.slice(0, Math.max(0, limit - 3))}...`;
+};
+
+const sanitizeHtmlSnippetForContext = (value: string | null | undefined, limit: number) => {
+  if (!value) return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.length <= limit) return trimmed;
+  return `${trimmed.slice(0, limit)}<!-- truncated -->`;
+};
+
+const computeElementSelector = (element: HTMLElement): string => {
+  const segments: string[] = [];
+  let node: HTMLElement | null = element;
+
+  while (node && segments.length < 5) {
+    let segment = node.tagName.toLowerCase();
+
+    if (node.id) {
+      segment += `#${node.id}`;
+      segments.unshift(segment);
+      break;
+    }
+
+    const classList = Array.from(node.classList).slice(0, 2);
+    if (classList.length > 0) {
+      segment += `.${classList.join(".")}`;
+    }
+
+    const parent = node.parentElement;
+    if (parent) {
+      const siblings = Array.from(parent.children).filter(
+        (child) => (child as HTMLElement).tagName === node.tagName
+      );
+      if (siblings.length > 1) {
+        const index = siblings.indexOf(node) + 1;
+        segment += `:nth-of-type(${index})`;
+      }
+    }
+
+    segments.unshift(segment);
+    node = node.parentElement;
+
+    if (node && node.tagName.toLowerCase() === "body") {
+      segments.unshift("body");
+      break;
+    }
+  }
+
+  if (segments.length === 0) {
+    return element.tagName.toLowerCase();
+  }
+
+  return segments.join(" > ");
+};
+
+const captureElementSnapshot = (element: HTMLElement | null): SelectedElementSnapshot | null => {
+  if (!element) return null;
+  return {
+    outerHTML: sanitizeHtmlSnippetForContext(element.outerHTML, 8000),
+    textContent: sanitizePlainTextForContext(element.textContent, 400),
+    selector: sanitizePlainTextForContext(computeElementSelector(element), 250) || element.tagName.toLowerCase(),
+  };
+};
+
+const buildChatHistoryPayload = (
+  messages: ChatMessage[],
+  limit = MAX_CHAT_HISTORY_ENTRIES
+): WorkflowContextChatMessage[] => {
+  if (!Array.isArray(messages) || messages.length === 0) return [];
+  const recent = messages
+    .filter((message) => typeof message.text === "string" && message.text.trim().length > 0)
+    .slice(-limit);
+
+  const history: WorkflowContextChatMessage[] = [];
+  for (const entry of recent) {
+    const safeText = sanitizePlainTextForContext(entry.text, 900);
+    if (!safeText) continue;
+    history.push({
+      role: entry.isUser ? "user" : "assistant",
+      text: safeText,
+      agent: entry.isUser ? undefined : entry.agent,
+    });
+  }
+
+  return history;
+};
+
+const buildChatSummary = (history: WorkflowContextChatMessage[], limit = 4): string | null => {
+  if (!Array.isArray(history) || history.length === 0) return null;
+  const recent = history.slice(-limit);
+  const lines = recent
+    .map((entry) => {
+      const safe = sanitizePlainTextForContext(entry.text, 400);
+      if (!safe) return null;
+      const speaker =
+        entry.role === "assistant" ? `Surbee${entry.agent ? ` (${entry.agent})` : ""}` : "User";
+      return `${speaker}: ${safe}`;
+    })
+    .filter((line): line is string => Boolean(line));
+
+  return lines.length > 0 ? lines.join("\n") : null;
+};
+
+function ProjectSandboxView({
+  showConsole,
+  providerProps,
+  onFixError,
+  bundle,
+}: {
+  showConsole: boolean;
+  providerProps: SandboxProviderProps;
+  onFixError: (errorMessage: string) => void;
+  bundle: SandboxBundle | null;
+}) {
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownload = useCallback(async () => {
+    if (!bundle) return;
+    setIsDownloading(true);
+    try {
+      const JSZip = (await import("jszip")).default;
+      const { saveAs } = await import("file-saver");
+      const zip = new JSZip();
+      Object.entries(bundle.files).forEach(([filePath, contents]) => {
+        zip.file(filePath, contents ?? "");
+      });
+      const blob = await zip.generateAsync({ type: "blob" });
+      saveAs(blob, "surbee-survey-artifacts.zip");
+    } catch (error) {
+      console.error("[Sandbox] Failed to download bundle", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [bundle]);
+
+  const dependencySummary = useMemo(() => {
+    if (!bundle) {
+      return "Bundle output will appear here as soon as SurbeeBuilder delivers a project.";
+    }
+    const deps = [...(bundle.dependencies ?? []), ...(bundle.devDependencies ?? [])];
+    const summaryParts = [`Entry file: ${bundle.entry}`];
+    if (deps.length > 0) {
+      summaryParts.push(`Requires: ${deps.join(", ")}`);
+    } else {
+      summaryParts.push("Requires: default React/Tailwind runtime only");
+    }
+    summaryParts.push("Global stylesheet: src/styles/survey.css");
+    return summaryParts.join(" | ");
+  }, [bundle]);
+
+  return (
+    <SandboxProvider key={bundle ? `${bundle.entry}-${Object.keys(bundle.files).length}` : "placeholder-project"} {...providerProps}>
+      <SandboxLayout className="flex flex-col h-full !bg-[#0a0a0a] !border-none !rounded-none">
+        {/* Top bar with info and download */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
+          <span className="text-xs text-zinc-400 leading-relaxed">{dependencySummary}</span>
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={!bundle || isDownloading}
+            className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {isDownloading ? "Preparing..." : "Download ZIP"}
+          </button>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* File Explorer */}
+          <SandpackFileExplorer className="w-56 shrink-0 border-r border-zinc-800 text-xs text-zinc-200" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }} />
+
+          {/* Code Editor */}
+          <SandpackCodeEditor
+            className="flex-1 min-w-0"
+            showLineNumbers
+            showInlineErrors
+            wrapContent
+            style={{ fontSize: 14, backgroundColor: '#0a0a0a' }}
+          />
+
+          {/* Preview */}
+          <div className="flex-1 border-l border-zinc-800 bg-[#0a0a0a]">
+            <SandpackPreview
+              className="h-full w-full"
+              showRefreshButton
+              showNavigator={false}
+              showOpenInCodeSandbox={false}
+              style={{ backgroundColor: "#0a0a0a" }}
+            />
+          </div>
+        </div>
+
+        {/* Console Panel at Bottom */}
+        {showConsole && (
+          <div className="h-48 border-t border-zinc-800 p-3" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
+            <SandpackConsole
+              className="h-full overflow-y-auto text-xs leading-relaxed text-emerald-100 [&>*]:font-mono"
+              style={{ backgroundColor: '#0a0a0a' }}
+            />
+          </div>
+        )}
+
+        <SandboxErrorPanel isVisible onFix={onFixError} />
+      </SandboxLayout>
+    </SandboxProvider>
+  );
+}
+
+const BASE_SANDBOX_DEPENDENCIES: Record<string, string> = {
+  react: "19.1.0",
+  "react-dom": "19.1.0",
+  "lucide-react": "^0.454.0",
+};
+
+function deriveSandboxConfig(bundle: SandboxBundle | null): {
+  files: SandboxProviderProps["files"];
+  activeFile: string;
+  dependencies: Record<string, string>;
+} {
+  if (!bundle) {
+    return createDefaultSandboxConfig();
+  }
+
+  const files: SandboxProviderProps["files"] = {};
+  const normalizedEntry = normalizeSandboxPath(bundle.entry);
+  const dependencies = buildSandboxDependencies(bundle);
+  let entryExists = false;
+
+  for (const [filePath, contents] of Object.entries(bundle.files)) {
+    const normalizedPath = normalizeSandboxPath(filePath);
+    const code = typeof contents === "string" ? contents : "";
+    files[normalizedPath] = {
+      code,
+      active: normalizedPath === normalizedEntry,
+    };
+    if (normalizedPath === normalizedEntry) {
+      entryExists = true;
+    }
+  }
+
+  if (!entryExists) {
+    files[normalizedEntry] = {
+      code: `export default function GeneratedSurvey() {
+  return (
+    <main className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
+      <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-10 text-center">
+        <h1 className="text-2xl font-semibold">Entry component missing</h1>
+        <p className="mt-3 text-sm text-zinc-300">
+          The survey builder did not provide the file referenced in the tool call (\`${bundle.entry}\`).
+          Update the build output and retry.
+        </p>
+      </div>
+    </main>
+  );
+}
+`,
+      active: true,
+    };
+  }
+
+  const importSpecifier = toImportSpecifier(normalizedEntry);
+
+  // Debug: Log the import specifier
+  console.log('[deriveSandboxConfig] Entry:', normalizedEntry, 'Import:', importSpecifier);
+
+  // Only create index.tsx if it doesn't exist
+  if (!files["/index.tsx"]) {
+    files["/index.tsx"] = {
+      code: `import React from "react";
+import { createRoot } from "react-dom/client";
+import SurveyExperience from "${importSpecifier}";
+import "./tailwind.css";
+
+const container = document.getElementById("root");
+
+if (container) {
+  const root = createRoot(container);
+  root.render(
+    <React.StrictMode>
+      <SurveyExperience />
+    </React.StrictMode>
+  );
+}
+`,
+    };
+  }
+
+  // Add tailwind.css file if it doesn't exist
+  if (!files["/tailwind.css"]) {
+    files["/tailwind.css"] = {
+      code: "/* Tailwind styles are provided via CDN in public/index.html */",
+      hidden: true,
+    };
+  }
+
+  // Add styles/survey.css file if it doesn't exist (AI agents often reference this)
+  if (!files["/styles/survey.css"]) {
+    files["/styles/survey.css"] = {
+      code: `/* Survey styles - Tailwind provided via CDN in public/index.html */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}`,
+      hidden: true,
+    };
+  }
+
+  // Only create public/index.html if it doesn't exist
+  if (!files["/public/index.html"]) {
+    files["/public/index.html"] = {
+      code: `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Survey Preview</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: 'Inter', sans-serif; }
+    </style>
+  </head>
+  <body class="bg-slate-950 text-slate-100">
+    <div id="root"></div>
+  </body>
+</html>
+`,
+      hidden: true,
+    };
+  }
+
+  if (!files["/package.json"]) {
+    files["/package.json"] = {
+      code: JSON.stringify(
+        {
+          name: "surbee-sandbox",
+          version: "1.0.0",
+          private: true,
+          main: "index.tsx",
+          dependencies,
+        },
+        null,
+       2
+      ),
+      hidden: true,
+    };
+  }
+
+  return {
+    files,
+    activeFile: normalizedEntry,
+    dependencies,
+  };
+}
+
+function createDefaultSandboxConfig(): {
+  files: SandboxProviderProps["files"];
+  activeFile: string;
+  dependencies: Record<string, string>;
+} {
+  const dependencies = { ...BASE_SANDBOX_DEPENDENCIES };
+  const files: SandboxProviderProps["files"] = {
+    "/Survey.tsx": {
+      code: `import { Calendar, Smile } from "lucide-react";
+
+interface SurveyQuestion {
+  id: string;
+  label: string;
+  type: "multiple-choice" | "rating" | "open-ended";
+  options?: string[];
+}
+
+const QUESTIONS: SurveyQuestion[] = [
+  {
+    id: "sentiment",
+    label: "How satisfied are you with your onboarding experience so far?",
+    type: "rating",
+    options: ["1", "2", "3", "4", "5"],
+  },
+  {
+    id: "channels",
+    label: "Which communication channels do you prefer?",
+    type: "multiple-choice",
+    options: ["Email", "SMS", "Slack", "Teams", "Phone"],
+  },
+  {
+    id: "insights",
+    label: "Share any ideas or questions you have for the team.",
+    type: "open-ended",
+  },
+];
+
+export default function Survey() {
+  return (
+    <main className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-12">
+        <header className="flex flex-col gap-3">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-wider text-white/70">
+            <Calendar className="h-3 w-3" />
+            Customer Discovery Pulse
+          </div>
+          <h1 className="text-3xl font-semibold">
+            Tell us about your first impressions
+          </h1>
+          <p className="text-sm text-white/70">
+            Your answers help us tailor the onboarding journey to what matters most for your team.
+          </p>
+        </header>
+
+        <section className="space-y-6">
+          {QUESTIONS.map((question) => (
+            <article
+              key={question.id}
+              className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-white/5"
+            >
+              <h2 className="text-lg font-medium text-white/90">{question.label}</h2>
+              <div className="mt-4">
+                {question.type === "rating" && question.options && (
+                  <div className="flex items-center gap-1">
+                    {question.options.map((option) => (
+                      <button
+                        key={option}
+                        className="h-10 w-10 rounded-full border border-white/10 bg-white/10 text-sm text-white/80 transition hover:bg-white/20"
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {question.type === "multiple-choice" && question.options && (
+                  <div className="flex flex-wrap gap-2">
+                    {question.options.map((option) => (
+                      <label
+                        key={option}
+                        className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 transition hover:bg-white/10"
+                      >
+                        <input type="checkbox" className="accent-white/80" /> {option}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {question.type === "open-ended" && (
+                  <div className="relative">
+                    <textarea
+                      className="mt-2 block w-full resize-y rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/90 placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
+                      rows={4}
+                      placeholder="Drop your thoughts here..."
+                    />
+                    <Smile className="absolute bottom-4 right-4 h-4 w-4 text-white/40" />
+                  </div>
+                )}
+              </div>
+            </article>
+          ))}
+        </section>
+
+        <footer className="flex flex-col gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6 text-sm text-emerald-100">
+          <p>
+            We read every response. Your insights directly inform how we design product tours, playbooks,
+            and success metrics.
+          </p>
+          <button className="inline-flex w-fit items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-400">
+            Submit responses
+          </button>
+        </footer>
+      </div>
+    </main>
+  );
+}
+`,
+      active: true,
+    },
+    "/index.tsx": {
+      code: `import React from "react";
+import { createRoot } from "react-dom/client";
+import Survey from "./Survey";
+import "./tailwind.css";
+
+const container = document.getElementById("root");
+
+if (container) {
+  const root = createRoot(container);
+  root.render(
+    <React.StrictMode>
+      <Survey />
+    </React.StrictMode>
+  );
+}
+`,
+    },
+    "/tailwind.css": {
+      code: "/* Tailwind styles are provided via CDN in public/index.html for the default sandbox. */",
+      hidden: true,
+    },
+    "/public/index.html": {
+      code: `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Surbee Sandbox</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+  </head>
+  <body class="bg-slate-950 text-slate-100">
+    <div id="root"></div>
+  </body>
+</html>
+`,
+      hidden: true,
+    },
+    "/package.json": {
+      code: JSON.stringify(
+        {
+          name: "surbee-sandbox",
+          version: "1.0.0",
+          private: true,
+          main: "index.tsx",
+          dependencies,
+        },
+        null,
+        2
+      ),
+      hidden: true,
+    },
+  };
+
+  return {
+    files,
+    activeFile: "/Survey.tsx",
+    dependencies,
+  };
+}
+
+function normalizeSandboxPath(filePath: string): string {
+  const trimmed = filePath.replace(/^\.\//, "").replace(/\\/g, "/");
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
+function toImportSpecifier(normalizedPath: string): string {
+  const withoutExtension = normalizedPath.replace(/\.[tj]sx?$/, "");
+  return withoutExtension.startsWith("/")
+    ? `.${withoutExtension}`
+    : `./${withoutExtension}`;
+}
+
+function buildSandboxDependencies(bundle: SandboxBundle | null): Record<string, string> {
+  const dependencies: Record<string, string> = { ...BASE_SANDBOX_DEPENDENCIES };
+
+  const mergeSpecs = (specs?: string[]) => {
+    specs?.forEach((spec) => {
+      const parsed = parseDependencySpec(spec);
+      if (parsed) {
+        dependencies[parsed.name] = parsed.version;
+      }
+    });
+  };
+
+  mergeSpecs(bundle?.dependencies);
+  mergeSpecs(bundle?.devDependencies);
+
+  return dependencies;
+}
+
+function parseDependencySpec(spec: string): { name: string; version: string } | null {
+  const trimmed = spec.trim();
+  if (!trimmed) return null;
+
+  if (trimmed.startsWith("@")) {
+    const atIndex = trimmed.indexOf("@", 1);
+    if (atIndex !== -1) {
+      return {
+        name: trimmed.slice(0, atIndex),
+        version: trimmed.slice(atIndex + 1) || "latest",
+      };
+    }
+    return { name: trimmed, version: "latest" };
+  }
+
+  const lastAt = trimmed.lastIndexOf("@");
+  if (lastAt > 0) {
+    return {
+      name: trimmed.slice(0, lastAt),
+      version: trimmed.slice(lastAt + 1) || "latest",
+    };
+  }
+
+  return { name: trimmed, version: "latest" };
+}
+
+function SandboxErrorPanel({
+  isVisible,
+  onFix,
+}: {
+  isVisible: boolean;
+  onFix: (error: string) => void;
+}) {
+  const { sandpack } = useSandpack();
+  const errorMessage = useMemo(() => {
+    if (!isVisible) return null;
+    const errors = sandpack?.bundlerState?.errors ?? {};
+    const firstError = Object.values(errors)[0] as any;
+    if (!firstError) return null;
+    if (typeof firstError === "string") return firstError;
+    return firstError?.message || firstError?.stack || JSON.stringify(firstError);
+  }, [isVisible, sandpack?.bundlerState]);
+
+  if (!isVisible || !errorMessage) {
+    return null;
+  }
+
+  return (
+    <div className="pointer-events-auto absolute bottom-4 right-4 max-w-xs rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-3 text-sm shadow-lg backdrop-blur">
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-red-200">
+        Runtime error
+      </div>
+      <p className="text-sm text-red-100/90 whitespace-pre-wrap">
+        {errorMessage}
+      </p>
+      <button
+        type="button"
+        onClick={() => onFix(errorMessage)}
+        className="mt-2 inline-flex items-center justify-center gap-1 rounded-md bg-red-500/80 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-500"
+      >
+        Fix it
+      </button>
+    </div>
+  );
+}
 
 
 interface Project {
@@ -63,6 +730,15 @@ interface WorkflowRunResult {
 
 const HTML_TAG_CUES = ['<!doctype', '<html', '<body', '<head', '<section', '<main', '<form', '<div'];
 
+type WorkflowPhase = 'idle' | 'planner' | 'planner_summary' | 'builder' | 'complete';
+
+interface SandboxBundle {
+  files: Record<string, string>;
+  entry: string;
+  dependencies?: string[];
+  devDependencies?: string[];
+}
+
 
 
 interface HistoryEntry {
@@ -73,6 +749,8 @@ interface HistoryEntry {
   version: number;
   isFlagged: boolean;
 }
+
+type SidebarView = 'chat' | 'history' | 'code' | 'console';
 
 interface ProjectPageProps {
   params: {
@@ -91,7 +769,10 @@ export default function ProjectPage() {
   // Disabled for demo
   const subscribeToProject = () => {};
   const router = useRouter();
-  
+
+  // Check if this is a sandbox preview request
+  const isSandboxPreview = searchParams?.get('sandbox') === '1';
+
   // Enable temporary mock mode to work on UI without DB/auth
   const mockMode = (searchParams?.get('mock') === '1') || (process.env.NEXT_PUBLIC_MOCK_PROJECT === 'true');
 
@@ -124,7 +805,7 @@ export default function ProjectPage() {
   const [isInputDisabled, setIsInputDisabled] = useState(false);
   
   // Thinking chain state
-  const [showHistory, setShowHistory] = useState(false);
+  const [sidebarView, setSidebarView] = useState<SidebarView>('chat');
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
   const [versionCounter, setVersionCounter] = useState(1);
   const [currentDevice, setCurrentDevice] = useState<'desktop' | 'tablet' | 'phone'>('desktop');
@@ -139,6 +820,7 @@ export default function ProjectPage() {
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   const [isEditableModeEnabled, setIsEditableModeEnabled] = useState(false);
   const [selectedElement, setSelectedElement] = useState<HTMLElement | null>(null);
+  const [selectedElementSnapshot, setSelectedElementSnapshot] = useState<SelectedElementSnapshot | null>(null);
   const [activeTopButton, setActiveTopButton] = useState<'upgrade' | 'publish' | null>(null);
   const [rendererKey, setRendererKey] = useState(0);
   const [isAskMode, setIsAskMode] = useState(false);
@@ -149,11 +831,32 @@ export default function ProjectPage() {
   const conversationIdRef = useRef<string | null>(null);
 
   const activeRequestRef = useRef<AbortController | null>(null);
+  const messagesRef = useRef<ChatMessage[]>([]);
+  const selectedElementSnapshotRef = useRef<SelectedElementSnapshot | null>(null);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  useEffect(() => {
+    selectedElementSnapshotRef.current = selectedElementSnapshot;
+  }, [selectedElementSnapshot]);
 
   
   const [thinkingHtmlStream, setThinkingHtmlStream] = useState<string>('');
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
+  const plannerSummarySeenRef = useRef(false);
+  const plannerFallbackSentRef = useRef(false);
+  const builderSummarySeenRef = useRef(false);
+  const builderFallbackSentRef = useRef(false);
+  const plannerReasoningSnapshotRef = useRef<ThinkingStep[]>([]);
+  const builderReasoningSnapshotRef = useRef<ThinkingStep[]>([]);
+  const latestThinkingStepsRef = useRef<ThinkingStep[]>([]);
+  const [workflowPhase, setWorkflowPhase] = useState<WorkflowPhase>('idle');
+  const workflowPhaseRef = useRef<WorkflowPhase>('idle');
   const [isBuilding, setIsBuilding] = useState(false);
+  const [sandboxBundle, setSandboxBundle] = useState<SandboxBundle | null>(null);
+  const [sandboxError, setSandboxError] = useState<string | null>(null);
   const [buildingLabel, setBuildingLabel] = useState('Building survey experience...');
   const [hasHtmlContent, setHasHtmlContent] = useState(false);
   const buildingLabelRef = useRef(buildingLabel);
@@ -161,9 +864,38 @@ export default function ProjectPage() {
     buildingLabelRef.current = buildingLabel;
   }, [buildingLabel]);
 
-  const recordError = (err: string) => {
+  const updateWorkflowPhase = useCallback((next: WorkflowPhase) => {
+    workflowPhaseRef.current = next;
+    setWorkflowPhase(next);
+  }, []);
+
+  const enterPlannerPhase = useCallback(() => {
+    updateWorkflowPhase('planner');
+    setIsThinking(true);
+    setIsBuilding(false);
+  }, [updateWorkflowPhase]);
+
+  const enterPlannerSummaryPhase = useCallback(() => {
+    updateWorkflowPhase('planner_summary');
+    setIsThinking(false);
+  }, [updateWorkflowPhase]);
+
+  const enterBuilderPhase = useCallback(() => {
+    updateWorkflowPhase('builder');
+    setIsThinking(false);
+    setIsBuilding(true);
+  }, [updateWorkflowPhase]);
+
+  const enterCompletePhase = useCallback(() => {
+    updateWorkflowPhase('complete');
+    setIsThinking(false);
+    setIsBuilding(false);
+  }, [updateWorkflowPhase]);
+
+  const recordError = useCallback((err: string) => {
     console.error('[Error]', err);
-  };
+    setSandboxError(err);
+  }, []);
 
   // Context usage meter for Grok-4 with 2 million token limit
   const GROK_CONTEXT_TOKENS = 2000000; // 2 million tokens
@@ -214,8 +946,37 @@ export default function ProjectPage() {
 </html>`,
     onMessage: onDeepSiteMessage,
     onError: onDeepSiteError,
-    projectId: projectId || undefined
+  projectId: projectId || undefined
   });
+  const sandboxConfig = useMemo(() => {
+    const config = deriveSandboxConfig(sandboxBundle);
+    console.log('[Sandbox Config]', {
+      bundle: sandboxBundle,
+      files: Object.keys(config.files),
+      activeFile: config.activeFile,
+      dependencies: config.dependencies,
+      fileContents: config.files
+    });
+    return config;
+  }, [sandboxBundle]);
+
+  const sandboxProviderProps = useMemo<SandboxProviderProps>(() => ({
+    template: "react-ts",
+    theme: "dark",
+    files: sandboxConfig.files,
+    customSetup: {
+      entry: "/index.tsx",
+      main: "/index.tsx",
+      dependencies: sandboxConfig.dependencies,
+    },
+    options: {
+      activeFile: sandboxConfig.activeFile,
+      autorun: true,
+      recompileMode: "immediate",
+      recompileDelay: 300,
+    },
+  }), [sandboxConfig]);
+  const sandboxAvailable = Boolean(sandboxBundle);
   
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -308,7 +1069,7 @@ export default function ProjectPage() {
       const unsubscribe = subscribeToProject();
       return unsubscribe;
     }
-  }, [projectId, user, subscribeToProject, mockMode]);
+  }, [projectId, user, mockMode]);
 
     // Sync in-frame navigations to the route dropdown
   useEffect(() => {
@@ -379,6 +1140,128 @@ export default function ProjectPage() {
 
 
 
+  const createMessageId = () => `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+  const registerAgentMessage = useCallback((agent?: string, isSummary?: boolean) => {
+    if (!agent || !isSummary) return;
+    const normalized = agent.toLowerCase();
+    if (normalized.includes('surbeebuildplanner')) {
+      plannerSummarySeenRef.current = true;
+    }
+    if (normalized.includes('surbeebuilder')) {
+      builderSummarySeenRef.current = true;
+    }
+  }, []);
+
+  const addAgentMessage = useCallback(
+    (text: string, agent?: string, options?: { isSummary?: boolean }) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      const isSummary = Boolean(options?.isSummary);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: createMessageId(),
+          text: trimmed,
+          isUser: false,
+          agent,
+          timestamp: new Date(),
+          isSummary,
+        },
+      ]);
+      registerAgentMessage(agent, isSummary);
+    },
+    [registerAgentMessage]
+  );
+
+  const clampHighlight = useCallback((text: string, maxLen = 240) => {
+    const normalized = text.replace(/\s+/g, ' ').trim();
+    if (!normalized) return '';
+    return normalized.length > maxLen ? `${normalized.slice(0, Math.max(0, maxLen - 3))}...` : normalized;
+  }, []);
+
+  const extractHighlightsFromSteps = useCallback(
+    (steps: ThinkingStep[], max: number, fromEnd = false) => {
+      if (!Array.isArray(steps) || steps.length === 0 || max <= 0) {
+        return [] as string[];
+      }
+
+      const highlights: string[] = [];
+      const seen = new Set<string>();
+
+      if (fromEnd) {
+        for (let i = steps.length - 1; i >= 0 && highlights.length < max; i -= 1) {
+          const highlight = clampHighlight(steps[i]?.content ?? '');
+          if (!highlight) continue;
+          const key = highlight.toLowerCase();
+          if (seen.has(key)) continue;
+          seen.add(key);
+          highlights.unshift(highlight);
+        }
+        return highlights.slice(-max);
+      }
+
+      for (const step of steps) {
+        const highlight = clampHighlight(step?.content ?? '');
+        if (!highlight) continue;
+        const key = highlight.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        highlights.push(highlight);
+        if (highlights.length >= max) break;
+      }
+
+      return highlights.slice(0, max);
+    },
+    [clampHighlight]
+  );
+
+  const buildPlannerFallbackSummary = useCallback(() => {
+    const highlights = extractHighlightsFromSteps(plannerReasoningSnapshotRef.current, 4, false);
+    const sections: string[] = [
+      "SurbeeBuildPlanner: Here's what I understood and how I'll build this survey experience.",
+    ];
+    if (highlights.length > 0) {
+      sections.push(`**What I'm building**\n${highlights.map((line) => `- ${line}`).join('\n')}`);
+    }
+    sections.push("I'm about to start assembling the UI - pause me if you want to adjust anything before I begin.");
+    return sections.filter(Boolean).join('\n\n');
+  }, [extractHighlightsFromSteps]);
+
+  const buildBuilderFallbackSummary = useCallback(() => {
+    const highlights = extractHighlightsFromSteps(builderReasoningSnapshotRef.current, 5, true);
+    const sections: string[] = [
+      "SurbeeBuilder: I've finished constructing the survey exactly as planned.",
+    ];
+    if (highlights.length > 0) {
+      sections.push(`**What I delivered**\n${highlights.map((line) => `- ${line}`).join('\n')}`);
+    }
+    sections.push("Let me know if you'd like revisions, extra logic, or follow-up journeys.");
+    return sections.filter(Boolean).join('\n\n');
+  }, [extractHighlightsFromSteps]);
+
+  const ensurePlannerSummary = useCallback(() => {
+    if (!plannerSummarySeenRef.current && !plannerFallbackSentRef.current) {
+      const fallbackSummary = buildPlannerFallbackSummary().trim();
+      if (fallbackSummary) {
+        addAgentMessage(fallbackSummary, 'SurbeeBuildPlanner', { isSummary: true });
+      }
+      plannerFallbackSentRef.current = true;
+    }
+    enterPlannerSummaryPhase();
+  }, [addAgentMessage, buildPlannerFallbackSummary, enterPlannerSummaryPhase]);
+
+  const ensureBuilderSummary = useCallback(() => {
+    if (!builderSummarySeenRef.current && !builderFallbackSentRef.current) {
+      const fallbackSummary = buildBuilderFallbackSummary().trim();
+      if (fallbackSummary) {
+        addAgentMessage(fallbackSummary, 'SurbeeBuilder', { isSummary: true });
+      }
+      builderFallbackSentRef.current = true;
+    }
+  }, [addAgentMessage, buildBuilderFallbackSummary]);
+
+
   const stop = () => {
     if (activeRequestRef.current) {
       activeRequestRef.current.abort();
@@ -392,6 +1275,7 @@ export default function ProjectPage() {
     const defaultBuildLabel = 'Building survey experience...';
     setBuildingLabel(defaultBuildLabel);
     buildingLabelRef.current = defaultBuildLabel;
+    updateWorkflowPhase('idle');
   };
 
   const runSurveyBuild = useCallback(async (prompt: string, images?: string[]) => {
@@ -407,16 +1291,13 @@ export default function ProjectPage() {
     const controller = new AbortController();
     activeRequestRef.current = controller;
 
-    // Set thinking to true FIRST to keep UI visible
-    setIsThinking(true);
-    
+    setSandboxError(null);
+    enterPlannerPhase();
     setIsInputDisabled(true);
     deepSite.setIsAiWorking(true);
     deepSite.setIsThinking(true);
-
     setIsBuilding(false);
-    
-    // Fun random building labels
+
     const buildingLabels = [
       'Doodling your survey...',
       'Sketching questions...',
@@ -436,29 +1317,71 @@ export default function ProjectPage() {
     buildingLabelRef.current = randomBuildLabel;
     setThinkingHtmlStream('');
     setHasHtmlContent(false);
-    
-    // Now clear steps - thinking is already true so UI won't disappear
+    setSandboxBundle(null);
+    setSidebarView('chat');
+    plannerSummarySeenRef.current = false;
+    plannerFallbackSentRef.current = false;
+    builderSummarySeenRef.current = false;
+    builderFallbackSentRef.current = false;
+    plannerReasoningSnapshotRef.current = [];
+    builderReasoningSnapshotRef.current = [];
+    latestThinkingStepsRef.current = [];
     setThinkingSteps([]);
 
-    // Simply track each reasoning line as it comes in
     let reasoningCounter = 0;
 
-    const addReasoningStep = (text: string) => {
-      console.log('[Thinking] Adding reasoning:', text);
+    const appendReasoningStep = (text: string) => {
       const stepId = `reasoning-${Date.now()}-${reasoningCounter++}`;
-      
       setThinkingSteps((prev) => {
-        const newSteps = [
+        const next = [
           ...prev,
           {
             id: stepId,
             content: text,
-            status: 'thinking' as const
-          }
+            status: 'thinking' as const,
+          },
         ];
-        console.log('[Thinking] Steps count:', newSteps.length, '| Latest step:', text.substring(0, 60));
-        return newSteps;
+        latestThinkingStepsRef.current = next;
+        return next;
       });
+    };
+
+    const snapshotPlannerSteps = () => {
+      const snapshot = latestThinkingStepsRef.current.map((step) => ({ ...step }));
+      if (snapshot.length > 0) {
+        plannerReasoningSnapshotRef.current = snapshot;
+      }
+    };
+
+    const MAX_CONTEXT_HTML = 150000;
+    const currentHtml = deepSite.html || '';
+    const contextHtml =
+      currentHtml.length > MAX_CONTEXT_HTML
+        ? `${currentHtml.slice(0, MAX_CONTEXT_HTML)}<!-- truncated -->`
+        : currentHtml;
+    const chatHistoryPayload = buildChatHistoryPayload(messagesRef.current);
+    const chatSummaryPayload = buildChatSummary(chatHistoryPayload);
+    const selectedElementSnapshotValue = selectedElementSnapshotRef.current;
+    const selectedElementPayload =
+      selectedElementSnapshotValue &&
+      (selectedElementSnapshotValue.outerHTML ||
+        selectedElementSnapshotValue.textContent ||
+        selectedElementSnapshotValue.selector)
+        ? {
+            outerHTML: selectedElementSnapshotValue.outerHTML || undefined,
+            textContent: selectedElementSnapshotValue.textContent || undefined,
+            selector: selectedElementSnapshotValue.selector || undefined,
+          }
+        : undefined;
+
+    const contextPayload = {
+      html: contextHtml,
+      selectedRoute,
+      pages,
+      device: currentDevice,
+      chatHistory: chatHistoryPayload.length ? chatHistoryPayload : undefined,
+      chatSummary: chatSummaryPayload && chatSummaryPayload.trim() ? chatSummaryPayload : undefined,
+      selectedElement: selectedElementPayload,
     };
 
     try {
@@ -467,7 +1390,7 @@ export default function ProjectPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ input: trimmed, images }),
+        body: JSON.stringify({ input: trimmed, images, context: contextPayload }),
         signal: controller.signal,
       });
 
@@ -485,6 +1408,158 @@ export default function ProjectPage() {
       let buffer = '';
       let htmlBuf = '';
       let lastPushedLen = 0;
+
+      const processEvent = async (event: any) => {
+        if (!event || typeof event !== 'object') return;
+
+        if (event.type === 'reasoning' && event.text) {
+          const text = String(event.text).trim();
+          if (!text) return;
+          appendReasoningStep(text);
+          return;
+        }
+
+        if (event.type === 'message' && event.text) {
+          const messageText = String(event.text).trim();
+          if (!messageText) return;
+
+          const isSummary = Boolean(event.isSummary);
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: event.id || `msg-${Date.now()}`,
+              text: messageText,
+              isUser: false,
+              agent: event.agent || undefined,
+              timestamp: new Date(),
+              isSummary,
+            },
+          ]);
+          registerAgentMessage(event.agent || undefined, isSummary);
+
+          if (isSummary) {
+            const agentName = String(event.agent || '').toLowerCase();
+            if (agentName.includes('surbeebuildplanner')) {
+              ensurePlannerSummary();
+            } else if (agentName.includes('surbeebuilder')) {
+              builderSummarySeenRef.current = true;
+            }
+          }
+          return;
+        }
+
+        if (event.type === 'tool_call') {
+          if (event.name === 'build_typescript_tailwind_project') {
+            snapshotPlannerSteps();
+            ensurePlannerSummary();
+            setThinkingSteps((prev) => {
+              const updated = prev.map((step) => ({ ...step, status: 'complete' as const }));
+              latestThinkingStepsRef.current = updated;
+              return updated;
+            });
+            setIsThinking(false);
+            deepSite.setIsThinking(false);
+            enterBuilderPhase();
+          }
+          return;
+        }
+
+        if (event.type === 'code_bundle') {
+          const files = event.files && typeof event.files === 'object' ? event.files : {};
+          const entry = typeof event.entry === 'string' && event.entry.trim() ? event.entry : 'src/Survey.tsx';
+          setSandboxBundle({
+            files,
+            entry,
+            dependencies: Array.isArray(event.dependencies) ? event.dependencies : undefined,
+            devDependencies: Array.isArray(event.devDependencies) ? event.devDependencies : undefined,
+          });
+          return;
+        }
+
+        if ((event as any).type === 'thinking_control') {
+          const action = (event as any).action;
+          if (action === 'close') {
+            setThinkingSteps((prev) => {
+              const updated = prev.map((step) => ({ ...step, status: 'complete' as const }));
+              latestThinkingStepsRef.current = updated;
+              return updated;
+            });
+            setIsThinking(false);
+            deepSite.setIsThinking(false);
+          } else if (action === 'open') {
+            snapshotPlannerSteps();
+            ensurePlannerSummary();
+            setThinkingSteps([]);
+            latestThinkingStepsRef.current = [];
+            setIsThinking(true);
+            deepSite.setIsThinking(true);
+          }
+          return;
+        }
+
+        if (event.type === 'html_chunk' && typeof event.chunk === 'string') {
+          ensurePlannerSummary();
+          const wasEmpty = htmlBuf.length === 0;
+          htmlBuf += event.chunk;
+          if (wasEmpty) {
+            setThinkingSteps((prev) => {
+              const updated = prev.map((step) => ({ ...step, status: 'complete' as const }));
+              latestThinkingStepsRef.current = updated;
+              return updated;
+            });
+            setIsThinking(false);
+            deepSite.setIsThinking(false);
+          }
+          enterBuilderPhase();
+          setHasHtmlContent(true);
+          if (htmlBuf.length > lastPushedLen) {
+            lastPushedLen = htmlBuf.length;
+            deepSite.updateHtml(htmlBuf);
+            setThinkingHtmlStream(htmlBuf);
+          }
+          return;
+        }
+
+        if (event.type === 'complete') {
+          ensurePlannerSummary();
+          const builderSnapshot = latestThinkingStepsRef.current.map((step) => ({ ...step }));
+          if (builderSnapshot.length > 0) {
+            builderReasoningSnapshotRef.current = builderSnapshot;
+          }
+          if (htmlBuf.length > lastPushedLen) {
+            deepSite.updateHtml(htmlBuf);
+            setThinkingHtmlStream(htmlBuf);
+          }
+          const finalLabel = 'Build complete.';
+          setBuildingLabel(finalLabel);
+          buildingLabelRef.current = finalLabel;
+          setThinkingSteps((prev) => {
+            const updated = prev.map((step) => ({ ...step, status: 'complete' as const }));
+            latestThinkingStepsRef.current = updated;
+            return updated;
+          });
+          ensureBuilderSummary();
+          enterCompletePhase();
+          deepSite.setIsThinking(false);
+          deepSite.setIsAiWorking(false);
+          setIsBuilding(false);
+          return;
+        }
+
+        if (event.type === 'error' && event.message) {
+          const errorMessage = String(event.message);
+          const errorId = event.id || `error-${Date.now()}`;
+          setThinkingSteps((prev) => [
+            ...prev,
+            { id: errorId, content: `Error: ${errorMessage}`, status: 'thinking' },
+          ]);
+          setIsThinking(false);
+          deepSite.setIsThinking(false);
+          setIsBuilding(false);
+          recordError(errorMessage);
+          return;
+        }
+      };
 
       while (true) {
         const { done, value } = await reader.read();
@@ -504,135 +1579,12 @@ export default function ProjectPage() {
             if (payload.trim().length > 0) {
               try {
                 const ev = JSON.parse(payload);
-                
-                // Handle batch events - unpack and process each event
                 if (ev.type === 'batch' && Array.isArray(ev.events)) {
                   for (const batchedEvent of ev.events) {
-                    // Process each batched event directly
-                    if (batchedEvent.type === 'reasoning' && batchedEvent.text) {
-                      const text = String(batchedEvent.text).trim();
-                      console.log('[Reasoning Event - Batch] Received:', text.substring(0, 100));
-                      if (text.length > 0) {
-                        // Always add reasoning step - don't trigger building from reasoning text
-                        addReasoningStep(text);
-                      }
-                    } else if (batchedEvent.type === 'message' && batchedEvent.text) {
-                      const messageText = String(batchedEvent.text).trim();
-                      console.log('[Message] AI response received (batch):', messageText.substring(0, 100));
-                      if (messageText.length > 0) {
-                        // Don't close thinking - just add the message to chat
-                        // Thinking stays open and can continue showing more reasoning after the message
-                        setMessages((prev) => [
-                          ...prev,
-                          {
-                            id: batchedEvent.id || `msg-${Date.now()}`,
-                            text: messageText,
-                            isUser: false,
-                            agent: batchedEvent.agent || undefined,
-                            timestamp: new Date(),
-                          },
-                        ]);
-                      }
-                    } else if (batchedEvent.type === 'tool_call' && batchedEvent.name === 'buildHtmlCode') {
-                      // Tool call to buildHtmlCode means building phase is starting
-                      console.log('[Tool Call] buildHtmlCode starting - closing thinking, starting building');
-                      setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
-                      setIsThinking(false);
-                      setIsBuilding(true);
-                    } else if ((batchedEvent as any).type === 'thinking_control') {
-                      // Handle thinking control events
-                      const action = (batchedEvent as any).action;
-                      console.log('[Thinking Control - Batch]', action);
-                      if (action === 'close') {
-                        setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
-                        setIsThinking(false);
-                      } else if (action === 'open') {
-                        setIsThinking(true);
-                        setThinkingSteps([]); // Start fresh for builder reasoning
-                      }
-                    }
+                    await processEvent(batchedEvent);
                   }
-                  boundary = buffer.indexOf('\n');
-                  continue;
-                }
-                
-                if (ev.type === 'reasoning' && ev.text) {
-                  const text = String(ev.text).trim();
-                  console.log('[Reasoning Event - Non-Batch] Received:', text.substring(0, 100));
-                  if (text.length > 0) {
-                    // Always add reasoning step - don't trigger building from reasoning text
-                    addReasoningStep(text);
-                  }
-                } else if (ev.type === 'message' && ev.text) {
-                  // Handle AI message responses - add to chat but keep thinking open
-                  const messageText = String(ev.text).trim();
-                  console.log('[Message] AI response received:', messageText.substring(0, 100));
-                  if (messageText.length > 0) {
-                    // Don't close thinking - just add the message to chat
-                    // Thinking stays open and can continue showing more reasoning after the message
-                    setMessages((prev) => [
-                      ...prev,
-                      {
-                        id: ev.id || `msg-${Date.now()}`,
-                        text: messageText,
-                        isUser: false,
-                        agent: ev.agent || undefined,
-                        timestamp: new Date(),
-                      },
-                    ]);
-                  }
-                } else if (ev.type === 'tool_call' && ev.name === 'buildHtmlCode') {
-                  // Tool call to buildHtmlCode means building phase is starting
-                  console.log('[Tool Call] buildHtmlCode starting - closing thinking, starting building');
-                  setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
-                  setIsThinking(false);
-                  setIsBuilding(true);
-                } else if ((ev as any).type === 'thinking_control') {
-                  // Handle thinking control events
-                  const action = (ev as any).action;
-                  console.log('[Thinking Control - Non-Batch]', action);
-                  if (action === 'close') {
-                    setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
-                    setIsThinking(false);
-                  } else if (action === 'open') {
-                    setIsThinking(true);
-                    setThinkingSteps([]); // Start fresh for builder reasoning
-                  }
-                } else if (ev.type === 'html_chunk' && typeof ev.chunk === 'string') {
-                  htmlBuf += ev.chunk;
-                  // First HTML chunk means thinking is done
-                  if (!htmlBuf || htmlBuf.length === ev.chunk.length) {
-                    setIsThinking(false);
-                    setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
-                  }
-                  setIsBuilding(true);
-                  setHasHtmlContent(true);
-                  if (htmlBuf.length > lastPushedLen) {
-                    lastPushedLen = htmlBuf.length;
-                    deepSite.updateHtml(htmlBuf);
-                    setThinkingHtmlStream(htmlBuf);
-                  }
-                } else if (ev.type === 'complete') {
-                  if (htmlBuf.length > lastPushedLen) {
-                    deepSite.updateHtml(htmlBuf);
-                    setThinkingHtmlStream(htmlBuf);
-                  }
-                  const finalLabel = 'Build complete.';
-                  setBuildingLabel(finalLabel);
-                  buildingLabelRef.current = finalLabel;
-                  // Ensure thinking is closed and all steps marked complete
-                  setIsThinking(false);
-                  setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
-                  setIsBuilding(false);
-                } else if (ev.type === 'error' && ev.message) {
-                  const errorMessage = String(ev.message);
-                  const errorId = ev.id || `error-${Date.now()}`;
-                  setThinkingSteps((prev) => [
-                    ...prev,
-                    { id: errorId, content: `Error: ${errorMessage}`, status: 'thinking' },
-                  ]);
-                  setIsThinking(false);
-                  setIsBuilding(false);
+                } else {
+                  await processEvent(ev);
                 }
               } catch {
                 // ignore malformed line
@@ -652,8 +1604,11 @@ export default function ProjectPage() {
       setIsBuilding(false);
       setBuildingLabel(failureLabel);
       buildingLabelRef.current = failureLabel;
-      // Mark all thinking steps as complete
-      setThinkingSteps((prev) => prev.map((step) => ({ ...step, status: 'complete' })));
+      setThinkingSteps((prev) => {
+        const updated = prev.map((step) => ({ ...step, status: 'complete' as const }));
+        latestThinkingStepsRef.current = updated;
+        return updated;
+      });
       recordError(message);
       setMessages((prev) => [
         ...prev,
@@ -664,16 +1619,25 @@ export default function ProjectPage() {
           timestamp: new Date(),
         },
       ]);
+      updateWorkflowPhase('idle');
       return false;
     } finally {
-      setIsThinking(false);
       setIsInputDisabled(false);
       deepSite.setIsAiWorking(false);
       deepSite.setIsThinking(false);
       setIsBuilding(false);
+      if (!plannerSummarySeenRef.current && !plannerFallbackSentRef.current) {
+        ensurePlannerSummary();
+      }
+      if (!builderSummarySeenRef.current && !builderFallbackSentRef.current && workflowPhaseRef.current === 'complete') {
+        ensureBuilderSummary();
+      }
+      if (workflowPhaseRef.current !== 'complete') {
+        updateWorkflowPhase('idle');
+      }
       activeRequestRef.current = null;
     }
-  }, [deepSite, recordError]);
+  }, [currentDevice, deepSite, ensureBuilderSummary, ensurePlannerSummary, enterBuilderPhase, enterCompletePhase, enterPlannerPhase, pages, recordError, registerAgentMessage, selectedRoute, updateWorkflowPhase]);
 
   const handleSendMessage = async (message?: string, images?: string[]) => {
     const textToSend = message || chatText.trim();
@@ -716,6 +1680,17 @@ export default function ProjectPage() {
 
     await runSurveyBuild(textToSend, imagePayload);
   };
+
+  const handleSandboxFixRequest = useCallback((errorMessage: string) => {
+    const prompt = `The sandbox preview reported an error:\n\n${errorMessage}\n\nPlease diagnose the issue and provide an updated solution.`;
+    void handleSendMessage(prompt);
+    setSidebarView('chat');
+    setSandboxError(null);
+  }, [handleSendMessage, setSidebarView]);
+
+  const handleSandboxIgnore = useCallback(() => {
+    setSandboxError(null);
+  }, []);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -815,9 +1790,9 @@ export default function ProjectPage() {
     }
   }, [messages]);
 
-  const handleHistoryClick = () => {
-    setShowHistory(!showHistory);
-  };
+  useEffect(() => {
+    latestThinkingStepsRef.current = thinkingSteps.map((step) => ({ ...step }));
+  }, [thinkingSteps]);
 
   const addHistoryEntry = (prompt: string, changes: string[]) => {
     const newEntry: HistoryEntry = {
@@ -956,6 +1931,92 @@ export default function ProjectPage() {
   //   );
   // }
 
+  // Handle element clicks in sandbox for parent window communication
+  const handleElementClick = (element: HTMLElement) => {
+    if (isSandboxPreview && window.parent) {
+      window.parent.postMessage({
+        type: 'element-selected',
+        element: {
+          tagName: element.tagName,
+          textContent: element.textContent,
+          styles: window.getComputedStyle(element)
+        }
+      }, window.location.origin);
+    }
+  };
+
+  // If this is a sandbox preview request, show only the sandbox
+  if (isSandboxPreview) {
+    // For sandbox preview, we need to ensure sandbox bundle is loaded
+    // Use mock bundle if none exists
+    const previewBundle = sandboxBundle || {
+      files: {
+        "src/Survey.tsx": `export default function GeneratedSurvey() {
+  return (
+    <main className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-8">
+      <div className="rounded-2xl border border-white/10 bg-white/5 px-8 py-12 text-center max-w-md">
+        <h1 className="text-2xl font-semibold mb-4">Survey Preview</h1>
+        <p className="text-white/70 mb-6">
+          This survey is being built. The preview will appear once the sandbox is ready.
+        </p>
+        <div className="text-sm text-white/50">
+          Project: ${projectId}
+        </div>
+      </div>
+    </main>
+  );
+}`,
+      },
+      entry: 'src/Survey.tsx',
+      dependencies: ['react', 'react-dom', 'lucide-react'],
+    };
+
+    return (
+      <div className="h-screen w-full bg-[#0a0a0a] text-white">
+        {/* Show sandbox view only */}
+        <div className="relative h-full w-full">
+          <ProjectSandboxView
+            showConsole={false}
+            providerProps={{
+              ...sandboxProviderProps,
+              files: previewBundle.files as any,
+              customSetup: {
+                ...sandboxProviderProps.customSetup,
+                dependencies: {
+                  react: "19.1.0",
+                  "react-dom": "19.1.0",
+                  "lucide-react": "^0.454.0",
+                  ...previewBundle.dependencies?.reduce((acc: Record<string, string>, dep: string) => ({ ...acc, [dep]: "latest" }), {}),
+                },
+              },
+            }}
+            onFixError={handleSandboxFixRequest}
+            bundle={previewBundle}
+          />
+          {/* Overlay to capture clicks for element selection */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'transparent',
+              zIndex: 10
+            }}
+          >
+            <div
+              className="w-full h-full pointer-events-auto cursor-crosshair opacity-0 hover:opacity-10 transition-opacity"
+              style={{
+                background: 'radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 50%)',
+              }}
+              onClick={(e) => {
+                // For sandbox preview, we need to handle clicks differently
+                // The iframe will handle its own click events
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <AppLayout hideSidebar fullBleed>
       <div className="flex h-full w-full" style={{ fontFamily: 'FK Grotesk, sans-serif', backgroundColor: 'var(--surbee-sidebar-bg)', color: 'var(--surbee-fg-primary)' }}>
@@ -1000,14 +2061,14 @@ export default function ProjectPage() {
         </div>
 
         {/* Chat Area in Sidebar */}
-        <div className="flex-1 flex flex-col min-h-0">
-          {showHistory ? (
-            /* History View */
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-4 pr-4">
-                <div className="mb-4" style={{ paddingLeft: '8px' }}>
-                  <h3 className="text-lg font-semibold text-white mb-2" style={{
-                    fontFamily: 'Sohne, sans-serif',
+          <div className="flex-1 flex flex-col min-h-0">
+            {sidebarView === 'history' ? (
+              /* History View */
+              <div className="flex-1 overflow-y-auto">
+                <div className="p-4 pr-4">
+                  <div className="mb-4" style={{ paddingLeft: '8px' }}>
+                    <h3 className="text-lg font-semibold text-white mb-2" style={{
+                      fontFamily: 'Sohne, sans-serif',
                     fontSize: '14px',
                     fontWeight: 500,
                     lineHeight: '1.375rem'
@@ -1045,15 +2106,15 @@ export default function ProjectPage() {
                         <Flag className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            /* Chat Messages View */
-            <div className="flex-1 overflow-y-auto pl-12 pr-6 py-6" ref={chatAreaRef}>
-              <div className="space-y-6">
-                {messages.map((message, idx) => {
+            ) : (
+              /* Chat Messages View */
+              <div className="flex-1 overflow-y-auto pl-12 pr-6 py-6" ref={chatAreaRef}>
+                <div className="space-y-6">
+                  {messages.map((message, idx) => {
                   const lastUserPrompt =
                     [...messages].slice(0, idx).reverse().find((m) => m.isUser)?.text || "";
                   const isReasoningOnly = !message.isUser && message.text.trim().toLowerCase().startsWith("thought for ");
@@ -1071,10 +2132,10 @@ export default function ProjectPage() {
                   return (
                     <div
                       key={message.id}
-                      className={message.isUser ? "flex justify-end" : "flex justify-start"}
+                      className={`flex w-full ${message.isUser ? 'justify-end' : 'justify-start'}`}
                     >
                       {message.isUser ? (
-                        <div className="relative max-w-[80%] rounded-2xl bg-white text-black px-4 py-3 text-sm shadow-sm">
+                        <div className="relative max-w-[80%] rounded-2xl bg-white text-black px-4 py-3 text-sm shadow-lg border border-zinc-200">
                           <span className="block text-sm font-medium text-slate-900">
                             You
                           </span>
@@ -1088,11 +2149,26 @@ export default function ProjectPage() {
                           )}
                         </div>
                       ) : (
-                        <div className="group relative max-w-full flex-1 text-sm text-zinc-100 leading-relaxed">
-                          {message.agent && (
-                            <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-400">
-                              {message.agent}
-                            </span>
+                        <div
+                          className={
+                            message.isSummary
+                              ? "group relative max-w-full flex-1 rounded-2xl border border-blue-500/35 bg-blue-500/10 px-4 py-4 text-sm text-zinc-100 shadow-sm"
+                              : "group relative max-w-full flex-1 text-sm text-zinc-100 leading-relaxed"
+                          }
+                        >
+                          {(message.agent || message.isSummary) && (
+                            <div className="mb-2 flex items-center gap-2">
+                              {message.agent && (
+                                <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                                  {message.agent}
+                                </span>
+                              )}
+                              {message.isSummary && (
+                                <span className="inline-flex items-center rounded-full bg-blue-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-blue-200">
+                                  Summary
+                                </span>
+                              )}
+                            </div>
                           )}
                           <MarkdownRenderer content={message.text} className="prose-invert prose-sm max-w-none" />
                           <div className="mt-3">
@@ -1157,27 +2233,19 @@ export default function ProjectPage() {
                   setIsEditableModeEnabled(!isEditableModeEnabled);
                   if (selectedElement) {
                     setSelectedElement(null);
+                    setSelectedElementSnapshot(null);
                   }
                 }}
                 showSettings={false}
                 selectedElement={selectedElement}
                 disableRotatingPlaceholders={true}
-                onClearSelection={() => setSelectedElement(null)}
+                onClearSelection={() => {
+                  setSelectedElement(null);
+                  setSelectedElementSnapshot(null);
+                }}
+                isBusy={isThinking || isBuilding}
+                onStop={stop}
               />
-              {/* Additional Controls pinned to the input's top-right */}
-              <div className="absolute top-2 right-2 flex items-center gap-2 z-10">
-
-                {isThinking && (
-                  <button
-                    onClick={stop}
-                    className="relative justify-center whitespace-nowrap ring-offset-background focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 h-7 data-[state=open]:bg-muted focus-visible:outline-none group inline-flex gap-1 items-center px-2.5 py-1 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer w-fit focus-visible:ring-0 focus-visible:ring-offset-0 bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-transparent"
-                    type="button"
-                  >
-                    <StopCircle className="w-4 h-4" />
-                    <span className="text-sm font-medium">Stop</span>
-                  </button>
-                )}
-              </div>
             </div>
         </div>
       </div>
@@ -1207,12 +2275,12 @@ export default function ProjectPage() {
             </button>
             <button
               className={`rounded-md transition-colors cursor-pointer ${
-                showHistory 
-                  ? 'text-white bg-white/10' 
+                sidebarView === 'history'
+                  ? 'text-white bg-white/10'
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
-              onClick={() => setShowHistory((v) => !v)}
-              aria-pressed={showHistory}
+              onClick={() => setSidebarView((current) => current === 'history' ? 'chat' : 'history')}
+              aria-pressed={sidebarView === 'history'}
               title="Toggle history"
               style={{
                 fontFamily: 'Sohne, sans-serif',
@@ -1220,6 +2288,40 @@ export default function ProjectPage() {
               }}
             >
               <History className="w-4 h-4" />
+            </button>
+            <button
+              className={`rounded-md transition-colors cursor-pointer ${
+                sidebarView === 'code'
+                  ? 'text-white bg-white/10'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              } ${!sandboxAvailable ? 'opacity-40 cursor-not-allowed' : ''}`}
+              onClick={() => sandboxAvailable && setSidebarView((current) => current === 'code' ? 'chat' : 'code')}
+              aria-pressed={sidebarView === 'code'}
+              title="Toggle code view"
+              style={{
+                fontFamily: 'Sohne, sans-serif',
+                padding: '8px 12px'
+              }}
+              disabled={!sandboxAvailable}
+            >
+              <Code className="w-4 h-4" />
+            </button>
+            <button
+              className={`rounded-md transition-colors cursor-pointer ${
+                sidebarView === 'console'
+                  ? 'text-white bg-white/10'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              } ${!sandboxAvailable ? 'opacity-40 cursor-not-allowed' : ''}`}
+              onClick={() => sandboxAvailable && setSidebarView((current) => current === 'console' ? 'chat' : 'console')}
+              aria-pressed={sidebarView === 'console'}
+              title="Toggle console view"
+              style={{
+                fontFamily: 'Sohne, sans-serif',
+                padding: '8px 12px'
+              }}
+              disabled={!sandboxAvailable}
+            >
+              <Terminal className="w-4 h-4" />
             </button>
           </div>
 
@@ -1438,29 +2540,74 @@ export default function ProjectPage() {
         <div className="flex-1 flex relative">
           {/* Restored rounded preview frame with border, like before */}
           <div className="flex-1 flex flex-col relative bg-[#0a0a0a] rounded-[0.625rem] border border-zinc-800 mt-0 mr-3 mb-3 ml-2 overflow-hidden">
-            <div className="flex-1 overflow-hidden flex items-center justify-center bg-[#0a0a0a]">
-              {/* Show loading animation while building but no HTML yet */}
-              {(isBuilding || isThinking) && !hasHtmlContent ? (
-                <AILoader text="Building" size={200} />
-              ) : (
-                /* Device-sized container with smooth transitions on resize */
-                <div className={`relative ${getDeviceStyles()} transition-all duration-300 ease-in-out`}>
-                  <DeepSiteRenderer
-                    key={`renderer-${rendererKey}`}
-                    html={deepSite.html}
-                    currentPath={selectedRoute}
-                    deviceType={currentDevice}
-                    title="Website Preview"
-                    className="h-full w-full bg-[#0a0a0a]"
-                    isEditableModeEnabled={isEditableModeEnabled}
-                    onClickElement={(element) => {
-                      setIsEditableModeEnabled(false);
-                      setSelectedElement(element);
+            {/* Show Sandbox View when code or console mode is active */}
+            {(sidebarView === 'code' || sidebarView === 'console') && sandboxAvailable ? (
+              <ProjectSandboxView
+                showConsole={sidebarView === 'console'}
+                providerProps={sandboxProviderProps}
+                onFixError={handleSandboxFixRequest}
+                bundle={sandboxBundle}
+              />
+            ) : (
+              <div className="flex-1 overflow-hidden flex items-center justify-center bg-[#0a0a0a]">
+                {/* Show loading animation while building but no HTML yet */}
+                {(isBuilding || isThinking) && !hasHtmlContent ? (
+                  <AILoader text="Building" size={200} />
+                ) : (
+                  /* Device-sized container with smooth transitions on resize */
+                  <div className={`relative ${getDeviceStyles()} transition-all duration-300 ease-in-out`}>
+                    <DeepSiteRenderer
+                      key={`renderer-${rendererKey}`}
+                      html={deepSite.html}
+                      currentPath={selectedRoute}
+                      deviceType={currentDevice}
+                      title="Website Preview"
+                      className="h-full w-full bg-[#0a0a0a]"
+                      isEditableModeEnabled={isEditableModeEnabled}
+                      onClickElement={(element) => {
+                        setIsEditableModeEnabled(false);
+                        setSelectedElement(element);
+                      setSelectedElementSnapshot(captureElementSnapshot(element));
+                      handleElementClick(element);
                     }}
                   />
+                  {sandboxError && (
+                    <div className="pointer-events-none absolute inset-0 flex items-end justify-end p-4">
+                      <div className="pointer-events-auto max-w-sm rounded-xl border border-red-500/40 bg-red-500/15 backdrop-blur-sm shadow-2xl">
+                        <div className="flex items-start gap-3 px-4 py-3 text-sm text-red-100">
+                          <AlertTriangle className="mt-0.5 h-5 w-5 text-red-300" />
+                          <div className="space-y-1">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-red-200">
+                              Preview issue
+                            </p>
+                            <p className="text-sm leading-relaxed text-red-100/90">
+                              {sandboxError}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-end gap-2 border-t border-white/10 px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={handleSandboxIgnore}
+                            className="rounded-md border border-white/10 px-3 py-1.5 text-xs font-medium text-red-100 hover:border-white/20 hover:bg-white/10 transition"
+                          >
+                            Ignore
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSandboxFixRequest(sandboxError)}
+                            className="rounded-md bg-red-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-red-400"
+                          >
+                            Fix now
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

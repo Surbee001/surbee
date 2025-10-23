@@ -33,7 +33,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   const router = useRouter();
 
   const handleCardClick = () => {
-    router.push(`/project/${id}`);
+    router.push(`/project/${id}/manage`);
+  };
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/project/${id}/manage`);
   };
 
   // Mock response count - in real implementation, this would come from props
@@ -73,6 +78,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           </div>
         </div>
         <div
+          onClick={handleEditClick}
           className="w-[66px] h-[35px] bg-white text-black opacity-0 group-hover:opacity-100 group-hover:border-[#f8f8f8] group-hover:pointer-events-auto duration-300 ease-in-out text-sm rounded-lg flex items-center justify-center font-medium cursor-pointer pointer-events-auto active:scale-95 transition"
           style={{ border: '1px solid var(--surbee-border-accent)' }}
         >

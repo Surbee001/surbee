@@ -2,24 +2,1257 @@ import { tool, webSearchTool, Agent, AgentInputItem, Runner, RunItem, RunStreamE
 import { z } from "zod";
 import { OpenAI } from "openai";
 import { runGuardrails } from "@openai/guardrails";
+import { promises as fs } from "fs";
+import path from "path";
+import os from "os";
+import { randomUUID } from "crypto";
+import type { ComponentType, ReactElement } from "react";
 
 type GuardrailResult = any;
 
 type GuardrailOutput = ReturnType<typeof buildGuardrailFailOutput> | { safe_text: string };
 
-const buildHtmlCode = tool({
-  name: "buildHtmlCode",
-  description: "Builds HTML by sending provided code to the IFRAME renderer",
-  parameters: z.object({
-    code: z.string(),
+// Global CSS for shadcn/ui styling
+const globalsCss = `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}`;
+
+const FilePayloadSchema = z.union([
+  z.string(),
+  z.object({
+    content: z.string(),
+    encoding: z.enum(["utf-8", "base64"]).default("utf-8"),
   }),
-  execute: async (input: { code: string }) => {
-    // For now, return the HTML directly - this maintains compatibility with the existing workflow
-    // The agent will call this tool but we'll just return the HTML for the workflow to use
+]);
+
+const LegacyBundleSchema = z.object({
+  files: z.record(FilePayloadSchema),
+  entry: z.string().min(1, "entry must reference the root component file (e.g. src/Survey.tsx)"),
+  dependencies: z.array(z.string()).optional(),
+  devDependencies: z.array(z.string()).optional(),
+  htmlShell: z
+    .object({
+      title: z.string().nullish().optional(),
+      head: z.array(z.string()).optional(),
+      bodyClass: z.string().nullish().optional(),
+    })
+    .optional(),
+});
+
+const FileEntryInputSchema = z.object({
+  path: z.string().min(1, "files[].path must be provided"),
+  content: z.string(),
+  encoding: z.enum(["utf-8", "base64"]).optional(),
+});
+
+const BuildProjectSchema = z
+  .object({
+    project_name: z.string().min(1, "project_name must be provided"),
+    components: z.array(z.string()),
+    initial_code: z.string().min(1, "initial_code must include TypeScript source").optional(),
+    tailwind_config: z.string().min(1, "tailwind_config must be provided").optional(),
+    files: z.array(FileEntryInputSchema).optional(),
+    entry: z.string().optional(),
+    dependencies: z.array(z.string()).optional(),
+    devDependencies: z.array(z.string()).optional(),
+  })
+  .refine((value) => {
+    const hasInitial = typeof value.initial_code === "string" && value.initial_code.trim().length > 0;
+    const hasFiles = Array.isArray(value.files) && value.files.length > 0;
+    return hasInitial || hasFiles;
+  }, {
+    message: "Provide either initial_code or a non-empty files array.",
+    path: ["initial_code"],
+  })
+  .refine((value) => {
+    if (Array.isArray(value.files) && value.files.length > 0) {
+      return typeof value.entry === "string" && value.entry.trim().length > 0;
+    }
+    return true;
+  }, {
+    message: "entry must be provided when files are supplied.",
+    path: ["entry"],
+  });
+
+const BuildProjectJsonSchema = {
+  type: "object",
+  properties: {
+    project_name: {
+      type: "string",
+      description: "Name of the project to be built",
+    },
+    components: {
+      type: "array",
+      description: "List of UI components to include in the project",
+      items: {
+        type: "string",
+        description: "Name of a UI component",
+      },
+    },
+    initial_code: {
+      type: "string",
+      description: "Single-file TSX module if building a minimal project. Optional when providing a multi-file bundle.",
+    },
+    tailwind_config: {
+      type: "string",
+      description: "TailwindCSS configuration options. Optional when included inside the file bundle.",
+    },
+    files: {
+      type: "array",
+      description: "List of files to include when generating a multi-file project bundle.",
+      items: {
+        type: "object",
+        properties: {
+          path: {
+            type: "string",
+            description: "File path relative to the project root (e.g. src/Survey.tsx).",
+          },
+          content: {
+            type: "string",
+            description: "File contents encoded as UTF-8 or base64 depending on the encoding field.",
+          },
+          encoding: {
+            type: "string",
+            description: "Encoding of the provided content (defaults to utf-8).",
+            enum: ["utf-8", "base64"],
+          },
+        },
+        required: ["path", "content"],
+        additionalProperties: false,
+      },
+    },
+    entry: {
+      type: "string",
+      description: "Entry point file path to render (e.g. src/Survey.tsx). Required whenever files are provided.",
+    },
+    dependencies: {
+      type: "array",
+      description: "Runtime dependencies to install / inject into the sandbox (e.g. tailwindcss@^3.4.0).",
+      items: { type: "string" },
+    },
+    devDependencies: {
+      type: "array",
+      description: "Dev-only dependencies required for the project (rarely needed).",
+      items: { type: "string" },
+    },
+  },
+  required: ["project_name", "components"],
+  additionalProperties: false,
+} as const;
+
+const stripCodeFence = (value: string) => {
+  const trimmed = value.trim();
+  const fenceMatch = trimmed.match(/^```[a-zA-Z0-9_-]*\s*\n([\s\S]*?)\n```$/);
+  if (fenceMatch) {
+    return fenceMatch[1];
+  }
+  return trimmed;
+};
+
+const normaliseCodePayload = (value: string | null | undefined) => {
+  if (typeof value !== "string") return "";
+  return stripCodeFence(value.replace(/^\uFEFF/, ""));
+};
+
+type ToolBundle = {
+  files: Record<string, z.infer<typeof FilePayloadSchema>>;
+  entry: string;
+  dependencies: string[];
+  devDependencies: string[];
+  htmlShell: {
+    title: string | null;
+    head: string[];
+    bodyClass: string | null;
+  };
+};
+
+const DEFAULT_TAILWIND_CONFIG = `module.exports = {
+  content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
+  theme: {
+    extend: {
+      fontFamily: {
+        display: ["Inter", "ui-sans-serif", "system-ui"],
+        body: ["Inter", "ui-sans-serif", "system-ui"],
+      },
+      colors: {
+        "surbee-ink": "#0b0e14",
+        "surbee-rose": "#ff5678",
+        "surbee-amber": "#ffb454",
+      },
+    },
+  },
+  plugins: [require("@tailwindcss/forms"), require("@tailwindcss/typography")],
+};`;
+
+const DEFAULT_SURVEY_CSS = `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: #0b0e14;
+  color: #f5f7fa;
+}
+
+body {
+  @apply min-h-screen bg-gradient-to-br from-[#0b0e14] via-[#111827] to-[#020617] text-slate-100;
+}
+
+.survey-shell {
+  @apply mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-8 px-6 py-16 md:px-10 lg:px-16;
+}
+
+.survey-card {
+  @apply overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-xl backdrop-blur-lg;
+}
+
+.survey-section-title {
+  @apply text-lg font-semibold text-white/90 tracking-wide uppercase;
+}
+
+.survey-grid {
+  @apply grid grid-cols-1 gap-6 md:grid-cols-2;
+}
+
+.survey-button-primary {
+  @apply inline-flex items-center justify-center rounded-xl bg-white/90 px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white;
+}
+
+.survey-button-secondary {
+  @apply inline-flex items-center justify-center rounded-xl border border-white/20 px-6 py-3 text-sm font-semibold text-white/80 transition hover:border-white/40 hover:text-white;
+}
+
+.survey-progress-bar {
+  @apply h-2 w-full overflow-hidden rounded-full bg-white/10;
+}
+
+.survey-progress-value {
+  @apply h-full rounded-full bg-gradient-to-r from-[#38bdf8] via-[#818cf8] to-[#c084fc] transition-all duration-500 ease-out;
+}
+`;
+
+const mergeDependencySpecs = (...lists: (string[] | undefined)[]): string[] => {
+  const merged = new Set<string>();
+  for (const list of lists) {
+    if (!Array.isArray(list)) continue;
+    for (const spec of list) {
+      const trimmed = typeof spec === "string" ? spec.trim() : "";
+      if (trimmed) {
+        merged.add(trimmed);
+      }
+    }
+  }
+  return Array.from(merged);
+};
+
+const ensureTailwindScaffolding = (
+  bundle: ToolBundle,
+  explicitTailwindConfig: string | null | undefined
+) => {
+  bundle.dependencies = mergeDependencySpecs(bundle.dependencies, [
+    "tailwindcss@^3.4.13",
+    "@tailwindcss/forms@^0.5.7",
+    "@tailwindcss/typography@^0.5.9",
+  ]);
+
+  const hasTailwindConfig = Object.keys(bundle.files).some((filePath) =>
+    /tailwind\.config\.(cjs|mjs|js|ts)$/i.test(filePath)
+  );
+
+  if (!hasTailwindConfig) {
+    bundle.files["tailwind.config.js"] =
+      (explicitTailwindConfig && explicitTailwindConfig.trim().length > 0
+        ? explicitTailwindConfig
+        : DEFAULT_TAILWIND_CONFIG);
+  } else if (explicitTailwindConfig && explicitTailwindConfig.trim().length > 0) {
+    // Respect explicit config path only if not already provided inside bundle files
+    const defaultPath = "tailwind.config.js";
+    if (!bundle.files[defaultPath]) {
+      bundle.files[defaultPath] = explicitTailwindConfig;
+    }
+  }
+
+  const hasCss = Object.keys(bundle.files).some((filePath) => /\.css$/i.test(filePath));
+  if (!hasCss) {
+    bundle.files["src/styles/survey.css"] = DEFAULT_SURVEY_CSS;
+  }
+
+  const rootHtml = bundle.htmlShell || { title: null, head: [], bodyClass: null };
+  bundle.htmlShell = {
+    title: rootHtml.title ?? "Surbee Survey Preview",
+    head: Array.isArray(rootHtml.head) ? rootHtml.head : [],
+    bodyClass: rootHtml.bodyClass ?? "bg-slate-950 text-slate-100",
+  };
+};
+
+// =============================================================================
+// SANDBOX IDE TOOLS - Complete IDE Environment for Agents
+// =============================================================================
+
+// Sandbox state management
+interface SandboxState {
+  projectName: string;
+  rootDir: string;
+  files: Record<string, string>;
+  dependencies: string[];
+  devDependencies: string[];
+  created: Date;
+  lastModified: Date;
+}
+
+// Global sandbox state (in production, this would be in a database)
+const sandboxStates = new Map<string, SandboxState>();
+
+// Helper functions for sandbox operations
+const createSandboxPath = (projectName: string, filePath: string = ""): string => {
+  const safeName = projectName.replace(/[^a-zA-Z0-9-_]/g, "_");
+  const baseDir = path.join(os.tmpdir(), `surbee-ide-${safeName}-${randomUUID()}`);
+  return filePath ? path.join(baseDir, filePath) : baseDir;
+};
+
+const ensureSandboxDir = async (sandboxPath: string): Promise<void> => {
+  await fs.mkdir(sandboxPath, { recursive: true });
+};
+
+const getSandboxState = (projectName: string): SandboxState | null => {
+  console.log('[getSandboxState] Looking for project:', projectName);
+  console.log('[getSandboxState] Available projects:', Array.from(sandboxStates.keys()));
+  const state = sandboxStates.get(projectName);
+  console.log('[getSandboxState] Found state:', !!state);
+  return state || null;
+};
+
+// Helper function to find existing sandbox directories
+const findSandboxDirectory = async (projectName: string): Promise<string | null> => {
+  try {
+    const tempDir = os.tmpdir();
+    const pattern = `surbee-ide-${projectName.replace(/[^a-zA-Z0-9-_]/g, "_")}-*`;
+
+    // In a real implementation, we'd scan the temp directory for matching patterns
+    // For now, we'll return null and let the agent handle the error
+    return null;
+  } catch {
+        return null;
+      }
+};
+
+const saveSandboxState = (state: SandboxState): void => {
+  state.lastModified = new Date();
+  sandboxStates.set(state.projectName, state);
+};
+
+const deleteSandboxState = (projectName: string): void => {
+  sandboxStates.delete(projectName);
+};
+
+// Tool: Initialize Sandbox IDE
+const initSandbox = tool({
+  name: "init_sandbox",
+  description: "Initialize a new sandbox IDE environment with shadcn/ui and all necessary dependencies",
+  parameters: z.object({
+    project_name: z.string().min(1, "Project name is required"),
+    initial_files: z.record(z.string()).optional().nullable(),
+  }),
+  execute: async (input) => {
+    const { project_name, initial_files = {} } = input;
+    console.log('[init_sandbox] Starting initialization for project:', project_name);
+
+    // Clean up existing sandbox if it exists
+    const existingState = getSandboxState(project_name);
+    if (existingState) {
+      console.log('[init_sandbox] Cleaning up existing sandbox:', existingState.rootDir);
+      try {
+        await fs.rm(existingState.rootDir, { recursive: true, force: true });
+      } catch (e) {
+        console.warn('[init_sandbox] Error cleaning up existing sandbox:', e);
+      }
+    }
+
+    // Create new sandbox directory
+    const rootDir = createSandboxPath(project_name);
+    console.log('[init_sandbox] Creating sandbox directory:', rootDir);
+    await ensureSandboxDir(rootDir);
+
+    // Create initial project structure
+    const packageJson = {
+      name: project_name,
+      version: "1.0.0",
+      private: true,
+      dependencies: {
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
+        "tailwindcss": "^3.4.0",
+        "autoprefixer": "^10.4.0",
+        "postcss": "^8.4.0",
+        "@radix-ui/react-slot": "^1.0.0",
+        "class-variance-authority": "^0.7.0",
+        "clsx": "^2.0.0",
+        "tailwind-merge": "^2.0.0",
+        "lucide-react": "^0.294.0",
+      },
+      devDependencies: {
+        "typescript": "^5.0.0",
+        "@types/node": "^20.0.0",
+        "tailwindcss": "^3.4.0",
+      },
+      scripts: {
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+      },
+    };
+
+    const tailwindConfig = `/** @type {import('tailwindcss').Config} */
+module.exports = {
+  darkMode: ["class"],
+  content: [
+    './pages/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+    './app/**/*.{ts,tsx}',
+    './src/**/*.{ts,tsx}',
+  ],
+  prefix: "",
+  theme: {
+    container: {
+      center: true,
+      padding: "2rem",
+      screens: {
+        "2xl": "1400px",
+      },
+    },
+    extend: {
+      colors: {
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+      keyframes: {
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+      },
+    },
+  },
+  plugins: [require("tailwindcss-animate")],
+}`;
+
+
+    // Create directory structure and files
+    console.log('[init_sandbox] Creating files in:', rootDir);
+    const packageJsonPath = path.join(rootDir, "package.json");
+    const tailwindConfigPath = path.join(rootDir, "tailwind.config.js");
+
+    await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
+    await fs.writeFile(tailwindConfigPath, tailwindConfig);
+    console.log('[init_sandbox] Created package.json and tailwind.config.js');
+
+    // Verify basic files exist
+    try {
+      await fs.access(packageJsonPath);
+      await fs.access(tailwindConfigPath);
+      console.log('[init_sandbox] Verified package.json and tailwind.config.js exist');
+    } catch (error) {
+      console.error('[init_sandbox] Failed to verify basic files exist:', error);
+      throw new Error('Failed to create basic project files');
+    }
+
+    // Ensure src/styles directory exists
+    const stylesDir = path.join(rootDir, "src", "styles");
+    await fs.mkdir(stylesDir, { recursive: true });
+    const globalsCssPath = path.join(stylesDir, "globals.css");
+    await fs.writeFile(globalsCssPath, globalsCss);
+    console.log('[init_sandbox] Created src/styles/globals.css at:', globalsCssPath);
+
+    // Verify file was created
+    try {
+      await fs.access(globalsCssPath);
+      console.log('[init_sandbox] Verified globals.css exists');
+    } catch (error) {
+      console.error('[init_sandbox] Failed to verify globals.css exists:', error);
+      throw new Error('Failed to create globals.css file');
+    }
+
+    // Create shadcn/ui utils
+    const utilsPath = path.join(rootDir, "src", "lib", "utils.ts");
+    await fs.mkdir(path.dirname(utilsPath), { recursive: true });
+    await fs.writeFile(utilsPath, `import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}`);
+    console.log('[init_sandbox] Created src/lib/utils.ts at:', utilsPath);
+
+    // Verify utils file was created
+    try {
+      await fs.access(utilsPath);
+      console.log('[init_sandbox] Verified utils.ts exists');
+    } catch (error) {
+      console.error('[init_sandbox] Failed to verify utils.ts exists:', error);
+      throw new Error('Failed to create utils.ts file');
+    }
+
+    // Create initial files
+    if (initial_files) {
+      for (const [filePath, content] of Object.entries(initial_files)) {
+        const fullPath = path.join(rootDir, filePath);
+        await fs.mkdir(path.dirname(fullPath), { recursive: true });
+        await fs.writeFile(fullPath, content);
+      }
+    }
+
+    // Save sandbox state
+    const sandboxState: SandboxState = {
+      projectName: project_name,
+      rootDir,
+      files: { ...initial_files },
+      dependencies: Object.keys(packageJson.dependencies),
+      devDependencies: Object.keys(packageJson.devDependencies),
+      created: new Date(),
+      lastModified: new Date(),
+    };
+
+    saveSandboxState(sandboxState);
+    console.log('[init_sandbox] Sandbox initialization completed successfully for:', project_name);
+
     return {
       status: "success",
-      html: input.code,
-      message: "HTML generated successfully"
+      message: `Sandbox IDE initialized for project: ${project_name}`,
+      project_name,
+      root_dir: rootDir,
+      files_created: initial_files ? Object.keys(initial_files).length : 0,
+      dependencies_installed: Object.keys(packageJson.dependencies).length,
+    };
+  },
+});
+
+// Tool: Create File
+const createFile = tool({
+  name: "create_file",
+  description: "Create a new file in the sandbox IDE",
+  parameters: z.object({
+    project_name: z.string(),
+    file_path: z.string(),
+    content: z.string(),
+  }),
+  execute: async (input) => {
+    const { project_name, file_path, content } = input;
+    console.log('[create_file] Starting for project:', project_name, 'file:', file_path);
+
+    const state = getSandboxState(project_name);
+    if (!state) {
+      console.error('[create_file] Sandbox not found for project:', project_name);
+      throw new Error(`Sandbox not found for project: ${project_name}. Please call init_sandbox first to create the project environment.`);
+    }
+
+    const fullPath = path.join(state.rootDir, file_path);
+    console.log('[create_file] Creating file at:', fullPath);
+
+    try {
+      await fs.mkdir(path.dirname(fullPath), { recursive: true });
+      await fs.writeFile(fullPath, content);
+      console.log('[create_file] File created successfully');
+
+      // Update state
+      state.files[file_path] = content;
+      saveSandboxState(state);
+
+      console.log('[create_file] Completed successfully');
+      return {
+        status: "success",
+        message: `File created: ${file_path}`,
+        project_name,
+        file_path,
+        size: content.length,
+      };
+    } catch (error) {
+      console.error('[create_file] Error creating file:', error);
+      throw error;
+    }
+  },
+});
+
+// Tool: Read File
+const readFile = tool({
+  name: "read_file",
+  description: "Read a file from the sandbox IDE",
+  parameters: z.object({
+    project_name: z.string(),
+    file_path: z.string(),
+  }),
+  execute: async (input) => {
+    const { project_name, file_path } = input;
+
+    const state = getSandboxState(project_name);
+    if (!state) {
+      throw new Error(`Sandbox not found for project: ${project_name}. Please call init_sandbox first to create the project environment.`);
+    }
+
+    const fullPath = path.join(state.rootDir, file_path);
+    console.log('[read_file] Attempting to read:', fullPath);
+
+    try {
+      const content = await fs.readFile(fullPath, "utf-8");
+      console.log('[read_file] Successfully read file:', file_path, 'size:', content.length);
+      state.files[file_path] = content; // Update cache
+      saveSandboxState(state);
+
+      return {
+        status: "success",
+        content,
+        project_name,
+        file_path,
+        size: content.length,
+      };
+    } catch (error) {
+      console.error('[read_file] Error reading file:', fullPath, error);
+      throw new Error(`File not found: ${file_path}. Make sure the file exists in the sandbox. If this is a new project, ensure init_sandbox was called first.`);
+    }
+  },
+});
+
+// Tool: Update File
+const updateFile = tool({
+  name: "update_file",
+  description: "Update an existing file in the sandbox IDE",
+  parameters: z.object({
+    project_name: z.string(),
+    file_path: z.string(),
+    content: z.string(),
+  }),
+  execute: async (input) => {
+    const { project_name, file_path, content } = input;
+
+    const state = getSandboxState(project_name);
+    if (!state) {
+      throw new Error(`Sandbox not found for project: ${project_name}. Please call init_sandbox first to create the project environment.`);
+    }
+
+    const fullPath = path.join(state.rootDir, file_path);
+
+    try {
+      await fs.writeFile(fullPath, content);
+
+      // Update state
+      state.files[file_path] = content;
+      saveSandboxState(state);
+
+      return {
+        status: "success",
+        message: `File updated: ${file_path}`,
+        project_name,
+        file_path,
+        size: content.length,
+      };
+    } catch (error) {
+      throw new Error(`Failed to update file: ${file_path}`);
+    }
+  },
+});
+
+// Tool: Delete File
+const deleteFile = tool({
+  name: "delete_file",
+  description: "Delete a file from the sandbox IDE",
+  parameters: z.object({
+    project_name: z.string(),
+    file_path: z.string(),
+  }),
+  execute: async (input) => {
+    const { project_name, file_path } = input;
+
+    const state = getSandboxState(project_name);
+    if (!state) {
+      throw new Error(`Sandbox not found for project: ${project_name}. Please call init_sandbox first to create the project environment.`);
+    }
+
+    const fullPath = path.join(state.rootDir, file_path);
+
+    try {
+      await fs.unlink(fullPath);
+
+      // Update state
+      delete state.files[file_path];
+      saveSandboxState(state);
+
+      return {
+        status: "success",
+        message: `File deleted: ${file_path}`,
+        project_name,
+        file_path,
+      };
+    } catch (error) {
+      throw new Error(`Failed to delete file: ${file_path} - ${error instanceof Error ? error.message : String(error)}`);
+    }
+  },
+});
+
+// Tool: List Files
+const listFiles = tool({
+  name: "list_files",
+  description: "List files and directories in the sandbox IDE",
+  parameters: z.object({
+    project_name: z.string(),
+    directory: z.string().optional().nullable().default(""),
+  }),
+  execute: async (input) => {
+    const { project_name, directory = "" } = input;
+
+    const state = getSandboxState(project_name);
+    if (!state) {
+      throw new Error(`Sandbox not found for project: ${project_name}. Please call init_sandbox first to create the project environment.`);
+    }
+
+    const fullPath = path.join(state.rootDir, directory || "");
+    const readdirOpts = { withFileTypes: true as const };
+    const items = await fs.readdir(fullPath, readdirOpts);
+
+    const result = items.map(item => ({
+      name: item.name,
+      type: item.isDirectory() ? "directory" : "file",
+      path: path.join(directory || "", item.name).replace(/\\/g, "/"),
+    }));
+
+    return {
+      status: "success",
+      directory: directory || "",
+      items: result,
+      count: result.length,
+    };
+  },
+});
+
+// Tool: Install Package
+const installPackage = tool({
+  name: "install_package",
+  description: "Install a package in the sandbox IDE",
+  parameters: z.object({
+    project_name: z.string(),
+    package_name: z.string(),
+    dev: z.boolean().optional().nullable().default(false),
+  }),
+  execute: async (input) => {
+    const { project_name, package_name, dev = false } = input;
+
+    const state = getSandboxState(project_name);
+    if (!state) {
+      throw new Error(`Sandbox not found for project: ${project_name}. Please call init_sandbox first to create the project environment.`);
+    }
+
+    try {
+      // In a real implementation, this would run npm/pnpm install
+      // For now, we'll just update the package.json
+      const packageJsonPath = path.join(state.rootDir, "package.json");
+      const packageJson = JSON.parse(await fs.readFile(packageJsonPath, "utf-8"));
+
+      if (dev) {
+        packageJson.devDependencies = packageJson.devDependencies || {};
+        packageJson.devDependencies[package_name] = "latest";
+        state.devDependencies.push(package_name);
+        } else {
+        packageJson.dependencies = packageJson.dependencies || {};
+        packageJson.dependencies[package_name] = "latest";
+        state.dependencies.push(package_name);
+      }
+
+      await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
+      saveSandboxState(state);
+
+      return {
+        status: "success",
+        message: `Package ${package_name} ${dev ? "dev" : ""}dependency added`,
+        project_name,
+        package_name,
+        type: dev ? "devDependency" : "dependency",
+      };
+    } catch (error) {
+      throw new Error(`Failed to install package: ${package_name} - ${error instanceof Error ? error.message : String(error)}`);
+    }
+  },
+});
+
+// Tool: Run Console Command
+const runCommand = tool({
+  name: "run_command",
+  description: "Run a console command in the sandbox IDE",
+  parameters: z.object({
+    project_name: z.string(),
+    command: z.string(),
+    args: z.array(z.string()).optional().nullable().default([]),
+    cwd: z.string().optional().nullable(),
+  }),
+  execute: async (input) => {
+    const { project_name, command, args = [], cwd } = input;
+
+    const state = getSandboxState(project_name);
+    if (!state) {
+      throw new Error(`Sandbox not found for project: ${project_name}. Please call init_sandbox first to create the project environment.`);
+    }
+
+    const workingDir = cwd && cwd !== null ? path.join(state.rootDir, cwd) : state.rootDir;
+
+    try {
+      const { exec } = await import("child_process");
+      const fullCommand = `${command} ${(args || []).join(" ")}`;
+
+      return new Promise((resolve, reject) => {
+        exec(fullCommand, { cwd: workingDir }, (error, stdout, stderr) => {
+          if (error) {
+            reject(new Error(`Command failed: ${error.message}`));
+            return;
+          }
+
+          resolve({
+            status: "success",
+            command: fullCommand,
+            stdout: stdout.toString(),
+            stderr: stderr.toString(),
+            cwd: workingDir,
+          });
+        });
+      });
+    } catch (error) {
+      throw new Error(`Failed to run command: ${command} - ${error instanceof Error ? error.message : String(error)}`);
+    }
+          },
+        });
+
+// Tool: Render Preview
+const renderPreview = tool({
+  name: "render_preview",
+  description: "Render the final TSX preview of the survey",
+  parameters: z.object({
+    project_name: z.string(),
+    entry_file: z.string().optional().nullable().default("src/Survey.tsx"),
+  }),
+  execute: async (input) => {
+    const { project_name, entry_file = "src/Survey.tsx" } = input;
+
+    const state = getSandboxState(project_name);
+    if (!state) {
+      throw new Error(`Sandbox not found for project: ${project_name}. Please call init_sandbox first to create the project environment.`);
+    }
+
+    const entryPath = path.join(state.rootDir, entry_file || "src/Survey.tsx");
+
+    try {
+      // Check if entry file exists
+      await fs.access(entryPath);
+
+      // Compile and render the TSX component
+      const content = await fs.readFile(entryPath, "utf-8");
+      console.log('[render_preview] Compiling and rendering survey:', entryPath);
+
+      // For now, return the raw content as HTML since we don't have a full React renderer
+      // In a production system, this would compile TSX to JS and render with React
+      const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${project_name} Survey Preview</title>
+  <!--
+    Note: Using Tailwind CDN for agent-generated previews.
+    This allows AI agents to use Tailwind classes when building surveys.
+    TODO: Replace with compiled CSS bundle for production deployments.
+    See: https://tailwindcss.com/docs/installation for production setup
+  -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+  <style>
+    ${globalsCss}
+  </style>
+</head>
+<body class="bg-background text-foreground min-h-screen">
+  <div id="root" class="container mx-auto px-4 py-8 max-w-2xl">
+    <!-- Survey component would be rendered here -->
+    <div class="prose prose-lg max-w-none">
+      <pre class="bg-gray-50 p-6 rounded-lg border overflow-x-auto text-sm"><code>${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+    </div>
+  </div>
+</body>
+</html>`;
+
+      // Read all created files for the code preview
+      const sourceFiles: Record<string, string> = {};
+
+      // Helper function to recursively read directory
+      const readDirRecursive = async (dir: string, basePath: string = ""): Promise<void> => {
+        try {
+          const readdirOptions = { withFileTypes: true as const };
+          const items = await fs.readdir(dir, readdirOptions);
+
+          for (const item of items) {
+            const itemPath = path.join(dir, item.name);
+            const relativePath = basePath ? path.join(basePath, item.name) : item.name;
+
+            if (item.isFile()) {
+              try {
+                const fileContent = await fs.readFile(itemPath, "utf-8");
+                // Use forward slashes for paths (sandpack expects this)
+                const normalizedPath = relativePath.replace(/\\/g, '/');
+                const finalPath = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`;
+                sourceFiles[finalPath] = fileContent;
+              } catch (e) {
+                // Skip files that can't be read
+                console.error(`[render_preview] Failed to read file: ${itemPath}`, e);
+              }
+            } else if (item.isDirectory() && item.name !== 'node_modules' && item.name !== '.git') {
+              await readDirRecursive(itemPath, relativePath);
+            }
+          }
+        } catch (e) {
+          // Skip directories that can't be read
+          console.error(`[render_preview] Failed to read directory: ${dir}`, e);
+        }
+      };
+
+      await readDirRecursive(state.rootDir);
+
+      return {
+        status: "success",
+        project_name,
+        entry_file: entry_file || "src/Survey.tsx",
+        entry: entry_file || "src/Survey.tsx", // Add this for compatibility
+        content,
+        html,
+        files: sourceFiles,
+        message: "Preview generated successfully",
+      };
+    } catch (error) {
+      throw new Error(`Failed to render preview: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  },
+});
+
+// Tool: Create Shadcn Component
+const createShadcnComponent = tool({
+  name: "create_shadcn_component",
+  description: "Create a shadcn/ui component in the sandbox",
+  parameters: z.object({
+    project_name: z.string(),
+    component_name: z.string(),
+    component_type: z.enum([
+      "button", "input", "card", "dialog", "form", "select", "checkbox",
+      "radio", "textarea", "label", "badge", "alert", "progress", "tabs"
+    ]),
+  }),
+  execute: async (input) => {
+    const { project_name, component_name, component_type } = input;
+
+    const state = getSandboxState(project_name);
+    if (!state) {
+      throw new Error(`Sandbox not found for project: ${project_name}. Please call init_sandbox first to create the project environment.`);
+    }
+
+    // Component templates
+    const componentTemplates: Record<string, string> = {
+      button: `import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cva, type VariantProps } from "class-variance-authority"
+import { cn } from "@/lib/utils"
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button"
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Button.displayName = "Button"
+
+export { Button, buttonVariants }`,
+
+      input: `import * as React from "react"
+import { cn } from "@/lib/utils"
+
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {}
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Input.displayName = "Input"
+
+export { Input }`,
+
+      card: `import * as React from "react"
+import { cn } from "@/lib/utils"
+
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-lg border bg-card text-card-foreground shadow-sm",
+      className
+    )}
+    {...props}
+  />
+))
+Card.displayName = "Card"
+
+const CardHeader = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    {...props}
+  />
+))
+CardHeader.displayName = "CardHeader"
+
+const CardTitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h3
+    ref={ref}
+    className={cn(
+      "text-2xl font-semibold leading-none tracking-tight",
+      className
+    )}
+    {...props}
+  />
+))
+CardTitle.displayName = "CardTitle"
+
+const CardDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+))
+CardDescription.displayName = "CardDescription"
+
+const CardContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+))
+CardContent.displayName = "CardContent"
+
+const CardFooter = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex items-center p-6 pt-0", className)}
+    {...props}
+  />
+))
+CardFooter.displayName = "CardFooter"
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }`,
+
+      label: `import * as React from "react"
+import * as LabelPrimitive from "@radix-ui/react-label"
+import { cva, type VariantProps } from "class-variance-authority"
+import { cn } from "@/lib/utils"
+
+const labelVariants = cva(
+  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+)
+
+const Label = React.forwardRef<
+  React.ElementRef<typeof LabelPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> &
+    VariantProps<typeof labelVariants>
+>(({ className, ...props }, ref) => (
+  <LabelPrimitive.Root
+    ref={ref}
+    className={cn(labelVariants(), className)}
+    {...props}
+  />
+))
+Label.displayName = LabelPrimitive.Root.displayName
+
+export { Label }`,
+    };
+
+    const componentContent = componentTemplates[component_type] || `// ${component_type} component not found`;
+
+    const filePath = `src/components/ui/${component_name}.tsx`;
+    const fullPath = path.join(state.rootDir, filePath);
+
+    await fs.mkdir(path.dirname(fullPath), { recursive: true });
+    await fs.writeFile(fullPath, componentContent);
+
+    // Update state
+    state.files[filePath] = componentContent;
+    saveSandboxState(state);
+
+      return {
+        status: "success",
+      message: `${component_type} component created: ${component_name}`,
+      project_name,
+      component_name,
+      file_path: filePath,
     };
   },
 });
@@ -80,6 +1313,7 @@ export type SerializedRunItem =
       text: string;
       agent?: string;
       isHtml?: boolean;
+      isSummary?: boolean;
     }
   | {
       type: "reasoning";
@@ -98,6 +1332,10 @@ export type SerializedRunItem =
       output: unknown;
       agent?: string;
       html?: string | null;
+      files?: Record<string, string>;
+      entry?: string;
+      dependencies?: string[];
+      devDependencies?: string[];
     }
   | {
       type: "handoff";
@@ -195,11 +1433,13 @@ function serializeRunItems(items: RunItem[]): SerializedRunItem[] {
     switch (type) {
       case "message_output_item": {
         const text = typeof (item as any)?.content === "string" ? (item as any).content : "";
+        const isSummary = rawItem?.__summary === true;
         serialized.push({
           type: "message",
           text,
           agent: agentName,
           isHtml: looksLikeHtml(text),
+          isSummary,
         });
         break;
       }
@@ -228,13 +1468,59 @@ function serializeRunItems(items: RunItem[]): SerializedRunItem[] {
       case "tool_call_output_item": {
         const name = rawItem?.name ?? "unknown_tool";
         const output = (item as any)?.output ?? rawItem?.output;
+        const files =
+          output && typeof output === "object" && output !== null && "files" in (output as Record<string, unknown>)
+            ? (output as Record<string, unknown>).files
+            : undefined;
+        const entry =
+          output && typeof output === "object" && output !== null && typeof (output as any).entry === "string"
+            ? ((output as any).entry as string)
+            : undefined;
+        const dependencies =
+          output && typeof output === "object" && output !== null && Array.isArray((output as any).dependenciesApplied)
+            ? ((output as any).dependenciesApplied as string[])
+            : output && typeof output === "object" && output !== null && Array.isArray((output as any).dependencies)
+              ? ((output as any).dependencies as string[])
+              : undefined;
+        const devDependencies =
+          output && typeof output === "object" && output !== null && Array.isArray((output as any).devDependenciesApplied)
+            ? ((output as any).devDependenciesApplied as string[])
+            : output && typeof output === "object" && output !== null && Array.isArray((output as any).devDependencies)
+              ? ((output as any).devDependencies as string[])
+              : undefined;
+
         serialized.push({
           type: "tool_result",
           name,
           output,
           agent: agentName,
           html: extractHtmlFromToolOutput(output),
+          files: files as Record<string, string> | undefined,
+          entry,
+          dependencies,
+          devDependencies,
         });
+        break;
+      }
+      case "summary_item":
+      case "model_summary_item":
+      case "assistant_summary_item":
+      case "run_summary_item":
+      case "summary_output_item": {
+        const summaryText =
+          extractReasoningText(rawItem) ||
+          (typeof rawItem?.text === "string" ? rawItem.text.trim() : "") ||
+          (typeof (rawItem?.summary ?? (item as any)?.summary) === "string"
+            ? (rawItem?.summary ?? (item as any)?.summary).trim()
+            : "");
+        if (summaryText) {
+          serialized.push({
+            type: "message",
+            text: summaryText,
+            agent: agentName,
+            isSummary: true,
+          });
+        }
         break;
       }
       case "handoff_call_item": {
@@ -263,11 +1549,35 @@ function serializeRunItems(items: RunItem[]): SerializedRunItem[] {
         break;
       }
       default:
+        if (type && type.toLowerCase().includes("summary")) {
+          const summaryText =
+            extractReasoningText(rawItem) ||
+            (typeof rawItem?.text === "string" ? rawItem.text.trim() : "") ||
+            (typeof (rawItem?.summary ?? (item as any)?.summary) === "string"
+              ? (rawItem?.summary ?? (item as any)?.summary).trim()
+              : "");
+          if (summaryText) {
+            serialized.push({
+              type: "message",
+              text: summaryText,
+              agent: agentName,
+              isSummary: true,
+            });
+          }
+        }
         break;
     }
   }
 
   return serialized;
+}
+
+function clampTextForSummary(text: string, maxLen = 240): string {
+  const normalized = typeof text === "string" ? text.replace(/\s+/g, " ").trim() : "";
+  if (!normalized) return "";
+  if (normalized.length <= maxLen) return normalized;
+  const sliceEnd = Math.max(0, maxLen - 3);
+  return `${normalized.slice(0, sliceEnd)}...`;
 }
 
 function buildBuilderSummaryFromItems(items: SerializedRunItem[]): string | null {
@@ -277,9 +1587,8 @@ function buildBuilderSummaryFromItems(items: SerializedRunItem[]): string | null
     if (typeof item.text !== "string") continue;
     const agentName = (item.agent ?? "").toLowerCase();
     if (!agentName.includes("surbeebuilder")) continue;
-    const normalized = item.text.replace(/\s+/g, " ").trim();
-    if (!normalized) continue;
-    const clipped = normalized.length > 240 ? `${normalized.slice(0, 237)}…` : normalized;
+    const clipped = clampTextForSummary(item.text);
+    if (!clipped) continue;
     const isDuplicate = highlights.some((existing) => existing.toLowerCase() === clipped.toLowerCase());
     if (isDuplicate) continue;
     highlights.push(clipped);
@@ -297,6 +1606,131 @@ function buildBuilderSummaryFromItems(items: SerializedRunItem[]): string | null
     `**Implementation Highlights**\n${bulletList}`,
     "Let me know if you'd like any adjustments or additional features."
   ].join("\n\n");
+}
+
+function derivePlannerSummary(plannerOutput: unknown, rawOutput: unknown): string | null {
+  let structured: any = null;
+  let fallbackText = "";
+
+  if (typeof plannerOutput === "string") {
+    fallbackText = plannerOutput;
+    try {
+      structured = JSON.parse(plannerOutput);
+    } catch {
+      structured = null;
+    }
+  } else if (plannerOutput && typeof plannerOutput === "object") {
+    structured = plannerOutput as Record<string, unknown>;
+    fallbackText = JSON.stringify(plannerOutput, null, 2);
+  }
+
+  if (!structured && typeof rawOutput === "string") {
+    if (!fallbackText) fallbackText = rawOutput;
+    try {
+      structured = JSON.parse(rawOutput);
+    } catch {
+      structured = null;
+    }
+  }
+
+  const highlights: string[] = [];
+  let intro: string | null = null;
+
+  if (structured && typeof structured === "object") {
+    const maybeSummary = typeof structured.user_summary === "string" ? clampTextForSummary(structured.user_summary, 360) : "";
+    if (maybeSummary) {
+      intro = maybeSummary;
+    }
+
+    const surveyPlan = structured.survey_plan as any;
+    const title = typeof surveyPlan?.title === "string" ? clampTextForSummary(surveyPlan.title, 200) : "";
+    if (title) {
+      highlights.push(`Title: ${title}`);
+    }
+
+    const questionsArray = Array.isArray(surveyPlan?.questions) ? surveyPlan.questions : [];
+    if (questionsArray.length > 0) {
+      const types = Array.from(
+        new Set(
+          questionsArray
+            .map((question: any) => (typeof question?.type === "string" ? question.type : ""))
+            .filter((type: string) => type.length > 0)
+        )
+      );
+
+      let questionHighlight = `Questions: ${questionsArray.length} planned`;
+      if (types.length > 0) {
+        questionHighlight += ` (${types.join(", ")})`;
+      }
+      highlights.push(questionHighlight);
+
+      const questionTopics = questionsArray
+        .map((question: any) => (typeof question?.question === "string" ? clampTextForSummary(question.question, 120) : ""))
+        .filter((topic: string) => topic.length > 0)
+        .slice(0, 2);
+      if (questionTopics.length > 0) {
+        highlights.push(`Focus areas: ${questionTopics.join(" | ")}`);
+      }
+    }
+
+    const design = surveyPlan?.design_recommendations;
+    if (design && typeof design === "object") {
+      const designParts: string[] = [];
+      const designFields: Array<[string, string]> = [
+        ["font", "Font"],
+        ["border", "Border"],
+        ["corners", "Corners"],
+        ["shadow", "Shadow"],
+        ["gradient", "Gradient"],
+      ];
+      for (const [key, label] of designFields) {
+        const value = design[key as keyof typeof design];
+        if (typeof value === "string" && value.trim()) {
+          designParts.push(`${label}: ${value.trim()}`);
+        }
+      }
+      if (designParts.length > 0) {
+        highlights.push(`Design: ${designParts.join(", ")}`);
+      }
+    }
+
+    const reasoningLines = Array.isArray(structured.reasoning)
+      ? structured.reasoning
+          .filter((line: unknown) => typeof line === "string")
+          .map((line: string) => clampTextForSummary(line, 220))
+          .filter((line: string) => line.length > 0)
+      : [];
+    for (const line of reasoningLines.slice(0, 3)) {
+      highlights.push(line);
+    }
+  }
+
+  if (!intro) {
+    intro = "SurbeeBuildPlanner: I've prepared a builder-ready survey plan and am handing it to SurbeeBuilder.";
+  } else if (!intro.toLowerCase().startsWith("surbeebuildplanner")) {
+    intro = `SurbeeBuildPlanner: ${intro}`;
+  }
+
+  if (highlights.length === 0 && typeof fallbackText === "string" && fallbackText.trim()) {
+    const fallbackLines = fallbackText
+      .split(/\r?\n/)
+      .map((line) => clampTextForSummary(line, 220))
+      .filter((line) => line.length > 0)
+      .slice(0, 3);
+    highlights.push(...fallbackLines);
+  }
+
+  const uniqueHighlights = Array.from(
+    new Set(highlights.map((line) => line.trim()).filter((line) => line.length > 0))
+  ).slice(0, 6);
+
+  const sections: string[] = [intro];
+  if (uniqueHighlights.length > 0) {
+    sections.push(`**Plan Highlights**\n${uniqueHighlights.map((line) => `- ${line}`).join("\n")}`);
+  }
+  sections.push("Handing off to SurbeeBuilder now.");
+
+  return sections.filter(Boolean).join("\n\n");
 }
 
 function guardrailsHasTripwire(results: GuardrailResult[] | undefined) {
@@ -396,7 +1830,8 @@ Hello! I'm Surbee, and I'm sorry for the inconvenience-sometimes, my safeguards 
       effort: "low",
       summary: "auto",
     },
-    store: true,
+    store: false,
+    maxTurns: 20,
   },
 });
 
@@ -486,6 +1921,7 @@ Carefully categorize user intention as �ASK Mode� (discussion/planning/infor
       summary: "auto",
     },
     store: true,
+    maxTurns: 20,
   },
 });
 
@@ -557,10 +1993,11 @@ Clarifying user intent and audience first is mandatory. Always present your reas
   tools: [webSearchPreview],
   modelSettings: {
     reasoning: {
-      effort: "medium",
+      effort: "low",
       summary: "auto",
     },
     store: true,
+    maxTurns: 20,
   },
 });
 
@@ -593,182 +2030,160 @@ Output: "Create a detailed employee engagement survey for a tech startup with 50
       summary: "auto",
     },
     store: true,
+    maxTurns: 20,
   },
 });
 
 const surbeebuildplanner = new Agent({
   name: "SurbeeBuildPlanner",
-  instructions: `Interpret the user's prompt about survey creation or enhancement. Begin by analyzing their requirements, then provide a brief summary in plain language to the user explaining what you will create based on their request (e.g., "I'm going to create an academically professional survey for [topic] based on your requirements. I will start by organizing key sections and ensuring best academic practices are met."). 
-
-After this summary, reason step-by-step to identify all key objectives needed for an academically professional and PhD-grade survey plan, filling any missed points, and generate a detailed, builder-ready plan. Recommendations should remain minimal, professional, and user-friendly by default unless otherwise instructed. Avoid "AI-ish" language or extraneous meta-text. Persist step-by-step until all objectives and best practices are satisfied (including logical question order, branching flows, additions of critical content), clearly separating summary, reasoning, and conclusion stages. Reasoning should always precede any final conclusions or plans.
-
-## Task Steps
-
-1. **Analyze and restate the user's intended survey requirements.**
-2. **Present a concise summary to the user** (in plain language, e.g., "I'm going to create... based on your requirements. First, I will..."), briefly describing what you will produce and your general approach.
-3. **Identify and organize any missing, implicit, or academic-level enhancements** (clarifications, logical flows, neutral bias, appropriate academic language, etc.) with detailed reasoning. 
-4. **Specify the detailed survey plan for the builder**, including:
-    - Structure: titles, descriptions, and questions only (omit unrelated system/accessibility blurbs unless requested).
-    - Visual design recommendations: 
-      - Default to Inter font if unspecified.
-      - Borders: slight zinc.
-      - Corners: rounded.
-      - Shadow: extremely slight.
-      - Gradients: none by default; allow only subtle/professional if justified.
-    - Logical flow: logical sequencing, support for conditional/branching logic.
-5. **Persist and reflect:** Ensure all instructed and reasonable enhancements are included before finalizing output.
-
-## Output Format
-
-Output must be in JSON, with these fields and order:
-- "user_summary": [short plain-language summary for user, as described above]
-- "reasoning": [detailed, sequential reasoning steps with justifications for each choice/enhancement; builder- and planner-focused]
-- "survey_plan": {
-    "title": [survey title],
-    "description": [academic, professional description],
-    "questions": [
-        {
-          "id": [unique id],
-          "type": [question type—multiple-choice, scale, open-ended, etc.],
-          "question": [question text],
-          "options": [if applicable, list of options],
-          "logic": [if applicable, details of IF/while/branching logic]
-        }
-        ...
-    ],
-    "design_recommendations": {
-      "font": "Inter",
-      "border": "Slight zinc",
-      "corners": "Rounded",
-      "shadow": "Extremely slight",
-      "gradient": "None (unless needed, then subtle/professional only)"
-    }
-  }
-
-## Example
-
-Input:
-Create a survey to evaluate student satisfaction with remote learning.
-
-Expected Output:
-{
-  "user_summary": "I'm going to create an academically professional survey to evaluate student satisfaction with remote learning, based on your requirements. First, I will organize the key content areas (such as technology access and course delivery), apply academic best practices, and ensure the questions follow a logical and unbiased flow.",
-  "reasoning": [
-    "The user requests an academically credible student satisfaction survey for remote learning.",
-    "To thoroughly cover the domain, I will include sections on technology access, course content, and instructor effectiveness—as supported by published research.",
-    "User did not specify visual design, so default professional styles will be applied: Inter font, slight zinc borders, rounded corners, extremely slight shadow, and no gradients.",
-    "All questions will use neutral, unbiased, and academic wording.",
-    "Exclude meta-text about accessibility or data handling, since not specifically asked for."
-  ],
-  "survey_plan": {
-    "title": "Remote Learning: Student Satisfaction Survey",
-    "description": "This survey assesses student perceptions and satisfaction with remote course delivery, teaching quality, and support resources.",
-    "questions": [
-      {
-        "id": "q1",
-        "type": "multiple-choice",
-        "question": "How would you rate your overall satisfaction with remote learning?",
-        "options": ["Very satisfied", "Satisfied", "Neutral", "Dissatisfied", "Very dissatisfied"]
-      },
-      {
-        "id": "q2",
-        "type": "scale",
-        "question": "How effectively did your instructors deliver course material remotely?",
-        "options": ["1", "2", "3", "4", "5"]
-      },
-      {
-        "id": "q3",
-        "type": "multiple-choice",
-        "question": "Did you have reliable access to the internet and course technology?",
-        "options": ["Always", "Most of the time", "Sometimes", "Rarely", "Never"]
-      },
-      {
-        "id": "q4",
-        "type": "open-ended",
-        "question": "What improvements would enhance your remote learning experience?"
-      }
-    ],
-    "design_recommendations": {
-      "font": "Inter",
-      "border": "Slight zinc",
-      "corners": "Rounded",
-      "shadow": "Extremely slight",
-      "gradient": "None"
-    }
-  }
-}
-
-(Real-world examples for larger surveys would include more in-depth questions, placeholders for long option lists, and detailed branching logic.)
-
----
-
-**REMINDER:**  
-- Start with a clear, user-facing summary ("user_summary" field) describing in plain language what you are about to produce and your approach.  
-- Always output step-by-step "reasoning" before the final survey plan.  
-- Survey plan and design specifications must be detailed, professional, and builder-ready.  
-- Maintain strict academic tone and neutrality; default to minimalist, professional design; and exclude any unrelated meta-text unless requested.`,
+  instructions: `Plan surveys simply. Analyze user request and create a brief plan for what survey to build. Keep it concise and actionable.`,
   model: "gpt-5-mini",
   outputType: SurbeebuildplannerSchema,
   modelSettings: {
     reasoning: {
-      effort: "medium",
+      effort: "low",
       summary: "auto",
     },
     store: true,
+    maxTurns: 20,
   },
 });
 
+const SURBEE_BUILDER_INSTRUCTIONS = [
+  "You are SurbeeBuilder. Build surveys using this SIMPLE 3-step process:",
+  "",
+  "STEP 1: init_sandbox({ project_name: \"survey-name\" })",
+  "STEP 2: create_file({ project_name: \"survey-name\", file_path: \"src/Survey.tsx\", content: \"survey component code\" })",
+  "STEP 3: render_preview({ project_name: \"survey-name\" })",
+  "",
+  "🎯 **INSTRUCTIONS:**",
+  "- Create a complete, working survey component in src/Survey.tsx",
+  "- Use shadcn/ui components for beautiful styling",
+  "- Make it responsive and accessible",
+  "- Output only the survey component code",
+  "",
+  "✨ **STYLING:** Make it look amazing with Typeform-style design",
+  "",
+  "**Core Outcomes**",
+  "- Convert the planner's intent (plus any user follow ups) into a complete survey UI composed of strongly-typed React components.",
+  "- Structure the project exactly like a mini app: entry component at src/Survey.tsx, shared subcomponents in src/components/..., helpers in src/lib/..., styles in src/styles/survey.css, and optional assets under public/....",
+  "- Style exclusively with Tailwind utility classes or Tailwind-powered helper classes declared in src/styles/survey.css. Avoid inline styles or CSS-in-JS.",
+  "- Preserve and improve existing survey HTML context. When the user highlights a specific element, prefer surgical refactors over wholesale rewrites.",
+  "- Deliver the bundle via a single build_typescript_tailwind_project call with no raw HTML in your final answer.",
+  "",
+  "**Project Bundle Requirements**",
+  "- Emit a global stylesheet at src/styles/survey.css containing the Tailwind directives, shared tokens, and any Google Font imports (for example, @import url(\"https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap\");).",
+  "- Populate the files array with objects shaped like { path, content, encoding? } so the runtime can recreate every source file you generated.",
+  "- Import that stylesheet at the top of the root survey component (for example, import \"./styles/survey.css\").",
+  "- Keep the root survey wrapper annotated with data-surbee-flow and wrap each logical step in data-surbee-step=\"step-id\". Provide navigation controls with data-surbee-action=\"next\", \"prev\", or \"submit\" as appropriate.",
+  "- Give every question container data-surbee-question=\"question-id\", unique ids/names, accessible labels, helper text where relevant, and focus-visible Tailwind styles.",
+  "- Encode conditional logic in readable metadata (for example, data-surbee-condition=\"score>=8\") or JSON stored inside <script type=\"application/json\" data-surbee-logic> blocks so downstream engines can wire behaviour.",
+  "- Use lucide-react for all iconography. Include sr-only text for icons that convey meaning or mark them aria-hidden=\"true\" when decorative.",
+  "- When the user supplies images, reference them with descriptive alt text and place new assets under public/assets/.",
+  "- Factor layout shells, cards, question clusters, progress indicators, and similar constructs into separate components.",
+  "",
+  "**Dependencies & Assets**",
+  "- Tailwind, Inter, and lucide-react are the baseline. If you need other libraries (for example, @headlessui/react or animation helpers) add them to the dependencies array in the tool call and explain why they are required before you invoke the tool.",
+  "- Keep dependencies lightweight. Prefer small utilities you author yourself when practical.",
+  "- Binary assets may be included via base64 payloads by setting encoding to \"base64\" on individual entries in the files array.",
+  "",
+  "**Process Checklist**",
+  "1. Create the survey project: init_sandbox({ project_name: \"survey-name\" })",
+  "2. Build the main survey component in src/Survey.tsx using create_file",
+  "3. Create any supporting components (Progress, Questions, etc.) using create_file",
+  "4. Use render_preview to generate the final survey",
+  "",
+  "**Example Tool Calls (new IDE workflow)**",
+  "- init_sandbox({ project_name: \"my-survey\", initial_files: {} })",
+  "- create_file({ project_name: \"my-survey\", file_path: \"src/Survey.tsx\", content: \"...\" })",
+  "- create_file({ project_name: \"my-survey\", file_path: \"src/components/QuestionCard.tsx\", content: \"...\" })",
+  "- render_preview({ project_name: \"my-survey\" })",
+  "",
+  "**Context Awareness**",
+  "- Respect the HTML provided in <CurrentSurveyHTML> by reusing structural ideas and class names unless the user requests a rebuild.",
+  "- When an element is highlighted, update that subtree by editing or creating the owning component rather than regenerating the entire flow.",
+  "- Match breakpoints to the active device (desktop, tablet, phone) noted in context.",
+  "",
+  "**Survey Flow & Logic Requirements**",
+  "- Wrap steps and sections with data-surbee-step and include human-friendly headings.",
+  "- Provide navigation with clear affordances, keyboard focus, and disabled states controlled via data attributes for the runtime.",
+  "- Encode branching and validation in data-surbee-logic attributes or JSON. Never introduce a branch without an exit path.",
+  "- Supply a completion or summary step with CTA(s) or follow-up instructions.",
+  "",
+  "**Quality Checklist**",
+  "- Every question should have a unique id/name, accessible label, aria descriptions, helper text when useful, consistent spacing, and sr-only instructions as needed.",
+  "- Progressive disclosure (for example, accordions) must use semantic buttons and aria-expanded state.",
+  "- Use tasteful motion (for example, transition or animate-in) only when it supports clarity.",
+  "- Default typography, spacing, and color palette should echo Surbee's premium aesthetic (Inter, rounded corners, soft drop shadows, zinc surfaces, restrained gradients).",
+  "",
+  "**Available Tools**",
+  "🎯 CORE TOOLS (use these in order):",
+  "1. init_sandbox – Initialize project (call once first)",
+  "2. create_file – Create survey components",
+  "3. render_preview – Generate final survey",
+  "",
+  "🔧 UTILITY TOOLS (use as needed):",
+  "- read_file – Read existing files",
+  "- update_file – Modify files",
+  "- delete_file – Remove files",
+  "- list_files – Explore directories",
+  "- install_package – Add dependencies",
+  "- run_command – Execute commands",
+  "- create_shadcn_component – Create UI components",
+  "- webSearchPreview – Research patterns",
+
+  "**Sandbox IDE Workflow**",
+  "⚠️ CRITICAL: Always call init_sandbox FIRST to create the project environment!",
+  "1. init_sandbox({ project_name: \"survey-name\", initial_files: {} })",
+  "2. Create your main survey file: create_file({ project_name: \"survey-name\", file_path: \"src/Survey.tsx\", content: \"your survey component code\" })",
+  "3. Create supporting components as needed using create_file",
+  "4. Use install_package only if you need additional dependencies",
+  "5. Use render_preview({ project_name: \"survey-name\" }) for final output",
+
+  "**Component Management**",
+  "- Create separate component files using create_file.",
+  "- Use create_shadcn_component for pre-built shadcn/ui components (button, input, card, etc.).",
+  "- Use shadcn/ui components via the cn() utility function already available.",
+  "- Import components: import { Button } from '@/components/ui/button'.",
+  "- All components should be in src/components/ directory.",
+
+  "**Dependency Management**",
+  "- Use install_package to add new dependencies before creating components that need them.",
+  "- Announce packages before installing: 'Installing @radix-ui/react-dialog for modal functionality'.",
+  "- All shadcn/ui dependencies are pre-installed.",
+
+  "**CRITICAL**",
+  "- Build components individually using create_file/update_file, not via a single tool call.",
+  "- Each component should be a separate file with proper imports.",
+  "- Use render_preview only at the end to generate final output.",
+  "- Do not output raw HTML - everything should be TSX components.",
+  "- Always call init_sandbox FIRST before any file operations.",
+].join("\n");
+
 const surbeebuilder = new Agent({
   name: "SurbeeBuilder",
-  instructions: `You are a survey builder that creates complete, professional surveys in HTML and Tailwind CSS based on the provided requirements and plan.
-
-**Your Process:**
-1. Carefully analyze the requirements and project plan
-2. Think through the survey structure, questions, and design
-3. Build the COMPLETE survey HTML with Tailwind CSS
-4. Call the buildHtmlCode tool with the final, complete HTML
-
-**CRITICAL RULES:**
-- Do NOT output HTML code in your messages or reasoning
-- Use your reasoning to explain your approach and design decisions (text only)
-- Only output the actual HTML code through the buildHtmlCode tool call
-- The buildHtmlCode tool should be called ONCE with the complete, final survey HTML
-- Do NOT show HTML snippets or intermediate code - only final output via the tool
-
-**Design Guidelines:**
-- Professional, clean, modern UI
-- Mobile responsive and accessible (WCAG compliant)
-- Default style: Minimalist, Typeform-like, Inter font
-- Use Tailwind CSS for styling
-- Ensure proper semantic HTML and ARIA labels
-
-**Example Process:**
-
-Your reasoning (text only):
-"I'll create a customer satisfaction survey with 5 rating-scale questions and 2 open-ended questions. The design will use a clean, minimalist style with the Inter font. I'll structure it with a clear title, description, and logical question flow. Each question will have proper labels and focus states for accessibility."
-
-Then call: buildHtmlCode(complete_html)
-
-**Available Tools:**
-- buildHtmlCode: Use this to output the final, complete HTML code
-- webSearchPreview: Use for research if needed
-
-**CRITICAL: You MUST call buildHtmlCode with the complete HTML. Do not output HTML in any other way.**`,
+  instructions: SURBEE_BUILDER_INSTRUCTIONS,
   model: "gpt-5-mini",
-  tools: [buildHtmlCode, webSearchPreview],
+  tools: [initSandbox, createFile, readFile, updateFile, deleteFile, listFiles, installPackage, runCommand, renderPreview, createShadcnComponent, webSearchPreview],
   modelSettings: {
-    parallelToolCalls: true,
+    parallelToolCalls: false, // Disable parallel calls to avoid confusion
     reasoning: {
-      effort: "medium",
-      summary: "auto",
+      effort: "low", // Reduce reasoning effort
+      summary: "auto", // Auto-choose summary level (best balance)
     },
-    store: true,
+    store: true, // Enable store for conversation persistence
+    maxTurns: 20, // Increase max turns limit
   },
 });
 
 const OLD_surbeebuilder = new Agent({
   name: "SurbeeBuilder_OLD",
-  instructions: `You are Surbee, an intelligent agent dedicated to creating only surveys, questionnaires, forms, and similar interactive user flows for users, outputting in professional-grade HTML.
+  instructions: `You are Surbee, an intelligent agent dedicated to creating only surveys, questionnaires, forms, and similar interactive user flows for users, outputting in professional-grade TSX components using a sandbox IDE.
+
+🚀 QUICK START: Always follow this exact sequence:
+1. init_sandbox({ project_name: "survey-name" })
+2. create_file({ project_name: "survey-name", file_path: "src/Survey.tsx", content: "your survey code" })
+3. render_preview({ project_name: "survey-name" })
 
 Carefully analyze each user request and build a survey, questionnaire, or form that matches their needs and incorporates the following principles and features:
 
@@ -802,7 +2217,7 @@ Carefully analyze each user request and build a survey, questionnaire, or form t
 
 # Available Tools
 
-You have access to tools including buildHtmlCode and webSearchPreview. Use buildHtmlCode when you need to process or render HTML code, and webSearchPreview for research purposes.
+You have access to tools including build_typescript_tailwind_project and webSearchPreview. Use build_typescript_tailwind_project when you need to process or render HTML code, and webSearchPreview for research purposes.
 
 # Examples
 
@@ -830,7 +2245,7 @@ You have access to tools including buildHtmlCode and webSearchPreview. Use build
 REMINDER: Always analyze for intended audience and purpose, adapt the tone and complexity of questions to the context, and ensure all survey questions feel well-crafted and appropriate�not generic�before outputting the final code.`,
 
   model: "gpt-4o",
-  tools: [buildHtmlCode, webSearchPreview],
+  tools: [initSandbox, createFile, readFile, updateFile, deleteFile, listFiles, installPackage, runCommand, renderPreview, createShadcnComponent, webSearchPreview],
   modelSettings: {
     parallelToolCalls: true,
     reasoning: {
@@ -845,7 +2260,162 @@ const approvalRequest = (_message: string) => {
   return true;
 };
 
-export type WorkflowInput = { input_as_text: string };
+export interface WorkflowContextChatEntry {
+  role: "user" | "assistant";
+  text: string;
+  agent?: string;
+}
+
+export interface WorkflowContextSelection {
+  outerHTML?: string;
+  textContent?: string;
+  selector?: string;
+}
+
+export interface WorkflowContextPayload {
+  html?: string;
+  selectedRoute?: string;
+  pages?: { path: string; title: string }[];
+  device?: string;
+  chatHistory?: WorkflowContextChatEntry[];
+  chatSummary?: string;
+  selectedElement?: WorkflowContextSelection;
+}
+
+const MAX_CONTEXT_HTML_FOR_PROMPT = 80000;
+const MAX_SELECTED_HTML_FOR_PROMPT = 8000;
+const MAX_CHAT_TURN_TEXT = 1200;
+
+function sanitizeContextHtml(html?: string, limit = MAX_CONTEXT_HTML_FOR_PROMPT): string | null {
+  if (!html) return null;
+  const trimmed = html.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > limit) {
+    return `${trimmed.slice(0, limit)}<!-- truncated -->`;
+  }
+  return trimmed;
+}
+
+function sanitizeContextText(text?: string, limit = MAX_CHAT_TURN_TEXT): string | null {
+  if (!text) return null;
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (!normalized) return null;
+  if (normalized.length <= limit) return normalized;
+  const sliceEnd = Math.max(0, limit - 3);
+  return `${normalized.slice(0, sliceEnd)}...`;
+}
+
+function formatChatHistoryForPreface(chatHistory?: WorkflowContextChatEntry[]): string | null {
+  if (!Array.isArray(chatHistory) || chatHistory.length === 0) return null;
+  const recent = chatHistory.slice(-6);
+  const lines = recent
+    .map((entry) => {
+      const safeText = sanitizeContextText(entry.text);
+      if (!safeText) return null;
+      const speaker =
+        entry.role === "assistant"
+          ? `Surbee${entry.agent ? ` (${entry.agent})` : ""}`
+          : "User";
+      return `${speaker}: ${safeText}`;
+    })
+    .filter((line): line is string => Boolean(line));
+  return lines.length > 0 ? lines.join("\n") : null;
+}
+
+function buildAgentChatHistoryItems(chatHistory?: WorkflowContextChatEntry[]): AgentInputItem[] {
+  if (!Array.isArray(chatHistory) || chatHistory.length === 0) return [];
+  const recent = chatHistory.slice(-10);
+  const items: AgentInputItem[] = [];
+  for (const entry of recent) {
+    const safeText = sanitizeContextText(entry.text);
+    if (!safeText) continue;
+    const speakerPrefix =
+      entry.role === "assistant" && entry.agent
+        ? `[${entry.agent}] `
+        : "";
+    items.push({
+      role: entry.role,
+      content: `${speakerPrefix}${safeText}`,
+    } as AgentInputItem);
+  }
+  return items;
+}
+
+function buildContextPreface(context?: WorkflowContextPayload): string | null {
+  if (!context) return null;
+
+  const sections: string[] = [
+    "Context: You are continuing work inside Surbee's no-code survey builder. Use the current survey state to keep outputs cohesive.",
+  ];
+
+  if (context.selectedRoute) {
+    sections.push(`Active route in preview: ${context.selectedRoute}`);
+  }
+
+  if (Array.isArray(context.pages) && context.pages.length > 0) {
+    const pageList = context.pages
+      .map((page) => `- ${page.path}${page.title && page.title !== page.path ? ` (${page.title})` : ""}`)
+      .join("\n");
+    sections.push(`Known project routes:\n${pageList}`);
+  }
+
+  if (context.device) {
+    sections.push(`Preview device: ${context.device}`);
+  }
+
+  const chatSummary = sanitizeContextText(context.chatSummary, 2000);
+  if (chatSummary) {
+    sections.push(`Conversation summary:\n${chatSummary}`);
+  }
+
+  const chatHistoryText = formatChatHistoryForPreface(context.chatHistory);
+  if (chatHistoryText) {
+    sections.push(`Recent conversation turns:\n${chatHistoryText}`);
+  }
+
+  if (context.selectedElement) {
+    const selector = sanitizeContextText(context.selectedElement.selector, 200);
+    const elementHtml = sanitizeContextHtml(context.selectedElement.outerHTML, MAX_SELECTED_HTML_FOR_PROMPT);
+    const elementText = sanitizeContextText(context.selectedElement.textContent, 400);
+    const elementLines: string[] = [];
+    if (selector) {
+      elementLines.push(`Selector: ${selector}`);
+    }
+    if (elementText) {
+      elementLines.push(`Text content: ${elementText}`);
+    }
+    if (elementHtml) {
+      elementLines.push("<FocusedElement>");
+      elementLines.push(elementHtml);
+      elementLines.push("</FocusedElement>");
+    }
+    if (elementLines.length > 0) {
+      sections.push(
+        [
+          "Focus: The user highlighted this element for targeted updates.",
+          ...elementLines,
+          "Prefer minimal, surgical changes to this selection unless their request explicitly requires broader updates.",
+        ].join("\n")
+      );
+    }
+  }
+
+  const sanitizedHtml = sanitizeContextHtml(context.html);
+  if (sanitizedHtml) {
+    sections.push("Current survey HTML (read-only context, update via builder steps rather than echoing blindly):");
+    sections.push("<CurrentSurveyHTML>");
+    sections.push(sanitizedHtml);
+    sections.push("</CurrentSurveyHTML>");
+  }
+
+  sections.push(
+    "Respect this context, repair broken flows when needed, and keep subsequent steps aligned with what already exists. When the user asks for a localized tweak, avoid rebuilding unrelated sections."
+  );
+
+  return sections.join("\n\n");
+}
+
+export type WorkflowInput = { input_as_text: string; context?: WorkflowContextPayload };
 
 export interface WorkflowResult {
   output_text: string;
@@ -853,6 +2423,10 @@ export interface WorkflowResult {
   guardrails: GuardrailOutput;
   items: SerializedRunItem[];
   html?: string;
+  source_files?: Record<string, string>;
+  entry_file?: string;
+  dependencies?: string[];
+  devDependencies?: string[];
 }
 
 export interface WorkflowRunOptions {
@@ -867,17 +2441,31 @@ export const runWorkflow = async (
   console.log('[Workflow] Starting workflow with input:', workflow.input_as_text?.substring(0, 100));
   console.log('[Workflow] Options:', { hasOnProgress: !!options.onProgress, hasOnItemStream: !!options.onItemStream });
   
-  const conversationHistory: AgentInputItem[] = [
-    {
-      role: "user",
-      content: [
-        {
-          type: "input_text",
-          text: workflow.input_as_text,
-        },
-      ],
-    },
-  ];
+  const conversationHistory: AgentInputItem[] = [];
+
+  const contextPreface = buildContextPreface(workflow.context);
+  if (contextPreface) {
+    conversationHistory.push({
+      role: "system",
+      content: contextPreface,
+    } as AgentInputItem);
+  }
+
+  const historyItems = buildAgentChatHistoryItems(workflow.context?.chatHistory);
+  if (historyItems.length > 0) {
+    conversationHistory.push(...historyItems);
+  }
+
+  const sanitizedUserInput = sanitizeContextText(workflow.input_as_text, 4000) ?? workflow.input_as_text;
+  conversationHistory.push({
+    role: "user",
+    content: [
+      {
+        type: "input_text",
+        text: sanitizedUserInput,
+      },
+    ],
+  });
 
   console.log('[Workflow] Creating runner...');
   const runner = new Runner({
@@ -891,6 +2479,7 @@ export const runWorkflow = async (
   const { onProgress, onItemStream } = options;
   const seenRunItems = new Set<RunItem>();
   const streamedSerializedItems: SerializedRunItem[] = []; // Collect serialized items during streaming
+  let plannerSummarySent = false;
   let builderSummarySent = false;
 
   const notifyProgress = async (message?: string | null) => {
@@ -904,7 +2493,38 @@ export const runWorkflow = async (
     const serialized = serializeRunItems([runItem]);
     for (const item of serialized) {
       streamedSerializedItems.push(item); // Store serialized item
+      if (item.type === "message" && item.isSummary) {
+        const agentLower = (item.agent ?? "").toLowerCase();
+        if (agentLower.includes("surbeebuildplanner")) {
+          plannerSummarySent = true;
+        }
+        if (agentLower.includes("surbeebuilder")) {
+          builderSummarySent = true;
+        }
+      }
       await onItemStream(item);
+    }
+  };
+
+  const emitPlannerSummaryMessage = async (summaryText: string) => {
+    if (plannerSummarySent) return;
+    const trimmed = clampTextForSummary(summaryText, 800);
+    if (!trimmed) return;
+
+    const summaryRawItem = {
+      type: "message_output_item" as const,
+      content: trimmed,
+      agent: { name: "SurbeeBuildPlanner" },
+      __summary: true,
+    };
+    const [summaryItem] = serializeRunItems([summaryRawItem as unknown as RunItem]);
+    if (!summaryItem) return;
+
+    streamedSerializedItems.push(summaryItem);
+    plannerSummarySent = true;
+
+    if (onItemStream) {
+      await onItemStream(summaryItem);
     }
   };
 
@@ -914,11 +2534,12 @@ export const runWorkflow = async (
     if (!summaryText) return;
 
     const summaryRawItem = {
-      type: "message_output_item",
+      type: "message_output_item" as const,
       content: summaryText,
-      agent: { name: "SurbeeBuilder" }
+      agent: { name: "SurbeeBuilder" },
+      __summary: true,
     };
-    const [summaryItem] = serializeRunItems([summaryRawItem as RunItem]);
+    const [summaryItem] = serializeRunItems([summaryRawItem as unknown as RunItem]);
     if (!summaryItem) return;
 
     streamedSerializedItems.push(summaryItem);
@@ -1078,31 +2699,21 @@ export const runWorkflow = async (
 
     const planOutput = plannerOutput as any;
 
-    if (planOutput?.user_summary && typeof planOutput.user_summary === 'string') {
-      const summaryRawItem = {
-        type: "message_output_item",
-        content: planOutput.user_summary,
-        agent: { name: "SurbeeBuildPlanner" }
-      };
-      const [summaryItem] = serializeRunItems([summaryRawItem as RunItem]);
-      if (summaryItem) {
-        streamedSerializedItems.push(summaryItem);
-        if (onItemStream) {
-          await onItemStream(summaryItem);
-        }
-      }
+    const plannerSummaryText = derivePlannerSummary(planOutput, surbeebuildplannerResultTemp.finalOutput);
+    if (plannerSummaryText) {
+      await emitPlannerSummaryMessage(plannerSummaryText);
+    }
 
-      const closeThinkingRawItem = {
-        type: "thinking_control_item",
-        action: "close",
-        agent: { name: "SurbeeBuildPlanner" }
-      };
-      const [closeThinkingItem] = serializeRunItems([closeThinkingRawItem as RunItem]);
-      if (closeThinkingItem) {
-        streamedSerializedItems.push(closeThinkingItem);
-        if (onItemStream) {
-          await onItemStream(closeThinkingItem);
-        }
+    const closeThinkingRawItem = {
+      type: "thinking_control_item" as const,
+      action: "close" as const,
+      agent: { name: "SurbeeBuildPlanner" }
+    };
+    const [closeThinkingItem] = serializeRunItems([closeThinkingRawItem as unknown as RunItem]);
+    if (closeThinkingItem) {
+      streamedSerializedItems.push(closeThinkingItem);
+      if (onItemStream) {
+        await onItemStream(closeThinkingItem);
       }
     }
 
@@ -1110,16 +2721,16 @@ export const runWorkflow = async (
       for (const reasoningLine of planOutput.reasoning) {
         if (typeof reasoningLine === 'string' && reasoningLine.trim()) {
           const reasoningRawItem = {
-            type: "reasoning_item",
+            type: "reasoning_item" as const,
             content: [
               {
-                type: "input_text",
+                type: "input_text" as const,
                 text: reasoningLine
               }
             ],
             agent: { name: "SurbeeBuildPlanner" }
           };
-          const [reasoningItem] = serializeRunItems([reasoningRawItem as RunItem]);
+          const [reasoningItem] = serializeRunItems([reasoningRawItem as unknown as RunItem]);
           if (reasoningItem) {
             streamedSerializedItems.push(reasoningItem);
             if (onItemStream) {
@@ -1131,11 +2742,11 @@ export const runWorkflow = async (
     }
 
     const openThinkingRawItem = {
-      type: "thinking_control_item",
-      action: "open",
+      type: "thinking_control_item" as const,
+      action: "open" as const,
       agent: { name: "SurbeeBuilder" }
     };
-    const [openThinkingItem] = serializeRunItems([openThinkingRawItem as RunItem]);
+    const [openThinkingItem] = serializeRunItems([openThinkingRawItem as unknown as RunItem]);
     if (openThinkingItem) {
       streamedSerializedItems.push(openThinkingItem);
       if (onItemStream) {
@@ -1178,14 +2789,17 @@ export const runWorkflow = async (
     // Use already-serialized items instead of re-serializing
     const allSerializedItems = streamedSerializedItems.slice(); // Get all streamed items
     
-    const htmlFromTool =
+    // For IDE workflow, look for render_preview results instead of build_typescript_tailwind_project
+    const latestRenderResult =
       allSerializedItems
         .filter(
           (item): item is Extract<SerializedRunItem, { type: "tool_result" }> =>
-            item.type === "tool_result" && item.name === "buildHtmlCode" && typeof item.html === "string"
+            item.type === "tool_result" && item.name === "render_preview"
         )
-        .map((item) => item.html!)
-        .pop() ??
+        .pop();
+
+    const htmlFromTool =
+      latestRenderResult?.content ??
       (typeof surbeebuilderResultTemp.finalOutput === "string" && looksLikeHtml(surbeebuilderResultTemp.finalOutput)
         ? surbeebuilderResultTemp.finalOutput
         : undefined);
@@ -1200,6 +2814,10 @@ export const runWorkflow = async (
       guardrails: guardrailsOutput,
       items: allSerializedItems,
       html: htmlFromTool,
+      source_files: latestRenderResult?.files,
+      entry_file: latestRenderResult?.entry_file,
+      dependencies: latestRenderResult?.dependencies,
+      devDependencies: latestRenderResult?.devDependencies,
     };
   }
 
@@ -1209,26 +2827,40 @@ export const runWorkflow = async (
       [...conversationHistory]
     );
     conversationHistory.push(...surbeeplannerResultTemp.newItems.map((item) => item.rawItem));
-    
-    // Use already-serialized items instead of re-serializing
-    const plannerEndIndex = streamedSerializedItems.length;
 
     if (!surbeeplannerResultTemp.finalOutput) {
       throw new Error("Agent result is undefined");
     }
 
-    // Send planner output as a message
-    if (typeof surbeeplannerResultTemp.finalOutput === 'string') {
-      const plannerMessage: SerializedRunItem = {
-        type: 'message',
-        text: surbeeplannerResultTemp.finalOutput,
-        agent: 'SurbeePlanner'
-      };
-      streamedSerializedItems.push(plannerMessage);
-      if (onItemStream) {
-        await onItemStream(plannerMessage);
+    let plannerOutput: unknown = surbeeplannerResultTemp.finalOutput;
+    if (typeof plannerOutput === "string") {
+      try {
+        plannerOutput = JSON.parse(plannerOutput);
+      } catch {
+        // keep string output if JSON parsing fails
       }
     }
+
+    const plannerSummaryText = derivePlannerSummary(plannerOutput, surbeeplannerResultTemp.finalOutput);
+    if (plannerSummaryText) {
+      await emitPlannerSummaryMessage(plannerSummaryText);
+    }
+
+    const plannerCloseThinkingRawItem = {
+      type: "thinking_control_item" as const,
+      action: "close" as const,
+      agent: { name: "SurbeeBuildPlanner" }
+    };
+    const [plannerCloseThinkingItem] = serializeRunItems([plannerCloseThinkingRawItem as unknown as RunItem]);
+    if (plannerCloseThinkingItem) {
+      streamedSerializedItems.push(plannerCloseThinkingItem);
+      if (onItemStream) {
+        await onItemStream(plannerCloseThinkingItem);
+      }
+    }
+
+    // Use already-serialized items instead of re-serializing
+    const plannerEndIndex = streamedSerializedItems.length;
 
     if (approvalRequest("Should we proceed with this plan?")) {
       const surbeebuilderResultTemp = await executeAgent(
@@ -1240,15 +2872,18 @@ export const runWorkflow = async (
       
       // Use already-serialized items instead of re-serializing
       const allItems = streamedSerializedItems.slice(); // Get all items
-      
-      const htmlFromTool =
+
+      // For IDE workflow, look for render_preview results
+      const latestRenderResult =
         allItems
           .filter(
             (item): item is Extract<SerializedRunItem, { type: "tool_result" }> =>
-              item.type === "tool_result" && item.name === "buildHtmlCode" && typeof item.html === "string"
+              item.type === "tool_result" && item.name === "render_preview"
           )
-          .map((item) => item.html!)
-          .pop() ??
+          .pop();
+
+      const htmlFromTool =
+        latestRenderResult?.content ??
         (typeof surbeebuilderResultTemp.finalOutput === "string" && looksLikeHtml(surbeebuilderResultTemp.finalOutput)
           ? surbeebuilderResultTemp.finalOutput
           : undefined);
@@ -1263,6 +2898,10 @@ export const runWorkflow = async (
         guardrails: guardrailsOutput,
         items: allItems,
         html: htmlFromTool,
+         source_files: latestRenderResult?.files || sourceFiles,
+         entry_file: latestRenderResult?.entry_file || entry_file,
+         dependencies: latestRenderResult?.dependencies,
+         devDependencies: latestRenderResult?.devDependencies,
       };
     }
 

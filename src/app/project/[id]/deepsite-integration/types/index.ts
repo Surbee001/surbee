@@ -59,6 +59,7 @@ export interface ChatMessage {
   timestamp?: Date;
   suggestions?: string[];
   agent?: string;
+  isSummary?: boolean;
 }
 
 export interface DeepSiteConfig {

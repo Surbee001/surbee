@@ -406,6 +406,20 @@ export const DeepSiteRenderer: React.FC<DeepSiteRendererProps> = ({
   return (
     <div className={`flex items-center justify-center bg-gray-100 ${className} ${isEditableModeEnabled ? 'cursor-crosshair' : ''}`}>
       <div className={`bg-white shadow-lg rounded-lg overflow-hidden transition-all duration-300 ${getDeviceStyles(deviceType)}`}>
+        {/*
+          Security Note: This iframe uses both allow-scripts and allow-same-origin.
+          This is intentional for the code preview/builder functionality to work properly.
+          The content is user-generated code they're building (similar to CodeSandbox/StackBlitz).
+
+          We accept this security tradeoff for functionality because:
+          1. Users are previewing their own code, not untrusted third-party content
+          2. allow-scripts: Required to execute JavaScript in the preview
+          3. allow-same-origin: Required for DOM manipulation and interactive features
+          4. The iframe is isolated within the application context
+
+          For production deployments serving user-generated content to others,
+          consider using a separate domain for isolation (e.g., user-content.yourdomain.com)
+        */}
         <iframe
           ref={iframeRef}
           className={`w-full h-full border-0 rounded-lg ${isEditableModeEnabled ? 'pointer-events-auto' : ''}`}
