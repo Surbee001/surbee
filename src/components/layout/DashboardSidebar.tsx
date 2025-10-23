@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from "@/lib/trpc/react";
-import { HelpCircle, Check, ChevronUp, ChevronDown, Gift, X, Copy, ArrowRight, ExternalLink } from "lucide-react";
+import { HelpCircle, Check, ChevronUp, ChevronDown, Gift, X, Copy, ArrowRight, ExternalLink, Settings as SettingsIcon, Sun, Moon, Laptop } from "lucide-react";
 
 const SidebarItem = ({ 
   label, 
@@ -38,6 +38,7 @@ const SidebarItem = ({
 export default function DashboardSidebar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
   const pathname = usePathname();
   const router = useRouter();
   const { signOut, user, userProfile } = useAuth();
@@ -79,7 +80,7 @@ export default function DashboardSidebar() {
     }
   };
 
-  const logoSrc = "https://github.com/Surbee001/webimg/blob/main/White%20Logo.png?raw=true";
+  const logoSrc = "/logo.svg";
 
   return (
     <div className="dashboard-sidebar">
@@ -152,53 +153,174 @@ export default function DashboardSidebar() {
                 className="user-menu-panel"
                 role="menu"
               >
-                <div className="user-menu-account">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="user-menu-avatar">{initialLetter}</div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="truncate user-menu-account-name">{user?.email || 'you@example.com'}</span>
-                      <span className="user-menu-account-plan">Max plan</span>
-                    </div>
-                  </div>
-                  <Check className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                {/* User info header */}
+                <div className="user-menu-header-section">
+                  <div className="user-menu-username">{displayName}</div>
+                  <div className="user-menu-email">{user?.email || 'you@example.com'}</div>
                 </div>
 
+                {/* Set up profile button */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard/settings'); }}
+                  className="user-menu-setup-profile"
+                >
+                  Set up profile
+                </button>
+
+                {/* Request app */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); /* handle request app */ }}
+                  className="user-menu-item"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="user-menu-icon-circle">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                      </svg>
+                    </div>
+                    <span>Request app</span>
+                  </div>
+                </button>
+
+                {/* Settings */}
                 <button
                   onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard/settings'); }}
                   className="user-menu-item"
                 >
-                  <span>Settings</span>
+                  <div className="flex items-center gap-2">
+                    <div className="user-menu-icon-circle">
+                      <SettingsIcon className="h-4 w-4" />
+                    </div>
+                    <span>Settings</span>
+                  </div>
                 </button>
 
+                {/* Theme selector */}
+                <div className="user-menu-theme-section">
+                  <div className="user-menu-theme-label">Theme</div>
+                  <div className="user-menu-theme-toggle">
+                    <button
+                      className={`user-menu-theme-btn ${theme === 'light' ? 'active' : ''}`}
+                      onClick={() => setTheme('light')}
+                      aria-label="Light theme"
+                    >
+                      <Sun className="h-4 w-4" />
+                    </button>
+                    <button
+                      className={`user-menu-theme-btn ${theme === 'dark' ? 'active' : ''}`}
+                      onClick={() => setTheme('dark')}
+                      aria-label="Dark theme"
+                    >
+                      <Moon className="h-4 w-4" />
+                    </button>
+                    <button
+                      className={`user-menu-theme-btn ${theme === 'system' ? 'active' : ''}`}
+                      onClick={() => setTheme('system')}
+                      aria-label="System theme"
+                    >
+                      <Laptop className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Pricing */}
                 <button
-                  onClick={() => { setIsUserMenuOpen(false); setIsInviteModalOpen(true); }}
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/pricing'); }}
                   className="user-menu-item"
                 >
-                  <span>Invite and Earn</span>
-                  <Gift className="h-4 w-4 text-zinc-500" />
+                  <span>Pricing</span>
                 </button>
 
+                {/* Changelog */}
                 <button
-                  onClick={() => { setIsUserMenuOpen(false); /* help action */ }}
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/changelog'); }}
                   className="user-menu-item"
                 >
-                  <span>Get help</span>
-                  <HelpCircle className="h-4 w-4 text-zinc-500" />
+                  <span>Changelog</span>
                 </button>
 
+                {/* Blog */}
                 <button
-                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard/upgrade-plan'); }}
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/blog'); }}
                   className="user-menu-item"
                 >
-                  <span>Upgrade plan</span>
+                  <span>Blog</span>
                 </button>
 
+                {/* Careers */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); window.open('/careers', '_blank'); }}
+                  className="user-menu-item"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span>Careers</span>
+                    <ExternalLink className="h-3.5 w-3.5 opacity-40" />
+                  </div>
+                </button>
+
+                {/* Merch */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); window.open('/merch', '_blank'); }}
+                  className="user-menu-item"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span>Merch</span>
+                    <span className="user-menu-new-badge">New</span>
+                    <ExternalLink className="h-3.5 w-3.5 opacity-40" />
+                  </div>
+                </button>
+
+                {/* Support */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); window.open('/support', '_blank'); }}
+                  className="user-menu-item"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span>Support</span>
+                    <ExternalLink className="h-3.5 w-3.5 opacity-40" />
+                  </div>
+                </button>
+
+                {/* Log out */}
                 <button
                   onClick={() => { setIsUserMenuOpen(false); handleProfileAction('logout'); }}
                   className="user-menu-item"
                 >
-                  <span className="flex items-center">Log out</span>
+                  <span>Log out</span>
                 </button>
+
+                {/* Footer */}
+                <div className="user-menu-footer">
+                  <button
+                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/privacy'); }}
+                    className="user-menu-footer-link"
+                  >
+                    Privacy
+                  </button>
+                  <button
+                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/terms'); }}
+                    className="user-menu-footer-link"
+                  >
+                    Terms
+                  </button>
+                  <button
+                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/copyright'); }}
+                    className="user-menu-footer-link"
+                  >
+                    Copyright
+                  </button>
+                  <button
+                    onClick={() => { setIsUserMenuOpen(false); window.open('https://x.com/surbee', '_blank'); }}
+                    className="user-menu-footer-link"
+                    aria-label="X (Twitter)"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

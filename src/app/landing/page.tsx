@@ -38,16 +38,48 @@ const tobiasLight = localFont({
 
 export default function LandingPage() {
   const sidebarWidthClass = "w-56"; // 14rem ~ 224px
-  const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
-  const containerRef = useRef<HTMLSpanElement>(null);
+  const [mousePosFeatures, setMousePosFeatures] = useState({ x: 50, y: 50 });
+  const [mousePosDetect, setMousePosDetect] = useState({ x: 50, y: 50 });
+  const [mousePosCommunity, setMousePosCommunity] = useState({ x: 50, y: 50 });
+  const [mousePosTools, setMousePosTools] = useState({ x: 50, y: 50 });
+  const [mousePosJoin, setMousePosJoin] = useState({ x: 50, y: 50 });
+  const containerRefFeatures = useRef<HTMLSpanElement>(null);
+  const containerRefDetect = useRef<HTMLSpanElement>(null);
+  const containerRefCommunity = useRef<HTMLSpanElement>(null);
+  const containerRefTools = useRef<HTMLSpanElement>(null);
+  const containerRefJoin = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
+      if (containerRefFeatures.current) {
+        const rect = containerRefFeatures.current.getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 100;
         const y = ((e.clientY - rect.top) / rect.height) * 100;
-        setMousePos({ x, y });
+        setMousePosFeatures({ x, y });
+      }
+      if (containerRefDetect.current) {
+        const rect = containerRefDetect.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        setMousePosDetect({ x, y });
+      }
+      if (containerRefCommunity.current) {
+        const rect = containerRefCommunity.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        setMousePosCommunity({ x, y });
+      }
+      if (containerRefTools.current) {
+        const rect = containerRefTools.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        setMousePosTools({ x, y });
+      }
+      if (containerRefJoin.current) {
+        const rect = containerRefJoin.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        setMousePosJoin({ x, y });
       }
     };
 
@@ -261,14 +293,14 @@ export default function LandingPage() {
 
           {/* Features title */}
           <section className="px-6 pt-24 pb-2 text-center">
-            <div className="hero-text-tobias">
-              <h2 className="select-none">
-                <span className="leading-none block" style={{ fontSize: '51px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '51px', color: '#0A0A0A' }}>
+            <div className="relative">
+              <h2 className="select-none hero-text-tobias">
+                <span className="leading-none block" style={{ fontSize: '61px', fontWeight: 100, letterSpacing: '-2px', lineHeight: '51px', color: '#0A0A0A' }}>
                   <span className="relative">
                     <span className="inline-block -translate-y-[0.135em] opacity-0">
                       Here's what Surbee can do for you
                     </span>
-                    <span className="px-[5%] -mx-[5%] block absolute inset-0 pointer" style={{ fontFamily: 'var(--font-tobias), "Tobias Fallback", serif', fontSize: '51px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '51px' }}>
+                    <span ref={containerRefFeatures} className="px-[5%] -mx-[5%] block absolute inset-0 pointer overflow-hidden" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '51px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '51px' }}>
                       <svg
                         className="select-none pointer-events-none"
                         height="100%"
@@ -296,8 +328,8 @@ export default function LandingPage() {
                           </linearGradient>
                           <radialGradient
                             id="textHoverEffectRevealMask-features"
-                            cx={`${mousePos.x}%`}
-                            cy={`${mousePos.y}%`}
+                            cx={`${mousePosFeatures.x}%`}
+                            cy={`${mousePosFeatures.y}%`}
                             gradientUnits="userSpaceOnUse"
                             r="40%"
                           >
@@ -427,9 +459,47 @@ export default function LandingPage() {
 	                  <div className="relative w-full h-full min-h-[190px] sm:min-h-[170px] lg:min-h-auto flex flex-col justify-end">
 	                      <div className="flex flex-col gap-8 justify-end h-full">
 	                        <div className="flex flex-col gap-4">
-	                          <h4 className="hero-text-tobias font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 text-left" style={{ fontSize: '38px', fontWeight: 300, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}>
+	                          <div className="relative">
+	                          <h4 className="select-none hero-text-tobias">
+	                          <span className="leading-none block" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px', color: '#0A0A0A' }}>
+	                          <span className="relative">
+	                          <span className="inline-block -translate-y-[0.135em] opacity-0">
 	                          Detect Odd Behaviors & Bad Data
-	                        </h4>
+	                          </span>
+	                          <span ref={containerRefDetect} className="px-[5%] -mx-[5%] block absolute inset-0 pointer overflow-hidden" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px' }}>
+	                          <svg className="select-none pointer-events-none" height="100%" width="100%" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+	                          <defs>
+	                          <linearGradient id="textHoverEffectGradient-detect" cx="50%" cy="50%" gradientTransform="rotate(-10)" gradientUnits="userSpaceOnUse">
+	                          <stop offset="0%" stopColor="#320F1E" />
+	                          <stop offset="8.56%" stopColor="#C83228" />
+	                          <stop offset="25.06%" stopColor="#FB873F" />
+	                          <stop offset="37.56%" stopColor="#D2DC91" />
+	                          <stop offset="50.06%" stopColor="#5A8250" />
+	                          <stop offset="62.06%" stopColor="#002314" />
+	                          <stop offset="74.06%" stopColor="#00143C" />
+	                          <stop offset="86.06%" stopColor="#2873D7" />
+	                          <stop offset="95.06%" stopColor="#9BC3FF" />
+	                          </linearGradient>
+	                          <radialGradient id="textHoverEffectRevealMask-detect" cx={`${mousePosDetect.x}%`} cy={`${mousePosDetect.y}%`} gradientUnits="userSpaceOnUse" r="40%">
+	                          <stop offset="30%" stopColor="white" />
+	                          <stop offset="100%" stopColor="black" />
+	                          </radialGradient>
+	                          <mask id="textHoverEffectMask-detect">
+	                          <rect height="100%" width="100%" fill="url(#textHoverEffectRevealMask-detect)" x="0%" y="0" />
+	                          </mask>
+	                          </defs>
+	                          <text className="text-[1em] fill-current text-shadow-ascii-contrast" dominantBaseline="middle" textAnchor="middle" x="50%" y="55%">
+	                          Detect Odd Behaviors & Bad Data
+	                          </text>
+	                          <text className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]" dominantBaseline="middle" fill="url(#textHoverEffectGradient-detect)" mask="url(#textHoverEffectMask-detect)" opacity="1" textAnchor="middle" x="50%" y="55%">
+	                          Detect Odd Behaviors & Bad Data
+	                          </text>
+	                          </svg>
+	                          </span>
+	                          </span>
+	                          </span>
+	                          </h4>
+	                          </div>
 	                        <div className="flex flex-col gap-2">
 	                          <p className="font-medium text-[15px] tracking-15 leading-[140%] [font-variant-numeric:lining-nums_proportional-nums]" style={{ color: '#6B7280', fontFamily: 'var(--font-inter), sans-serif' }}>
 	                            Surbee flags suspicious patterns, bots, and inconsistent answers — like a data detective.
@@ -527,9 +597,47 @@ export default function LandingPage() {
 	                  <div className="relative w-full h-full min-h-[190px] sm:min-h-[170px] lg:min-h-auto flex flex-col justify-end">
 	                      <div className="flex flex-col gap-8 justify-end h-full">
 	                        <div className="flex flex-col gap-4">
-	                          <h4 className="hero-text-tobias font-medium tracking-15 [font-variant-numeric:lining-nums_proportional-nums] text-title-secondary md:text-title-primary leading-[130%] tracking-24 md:tracking-48 text-left" style={{ fontSize: '38px', fontWeight: 300, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}>
-	                          Grow a Community Around Your Surveys
-	                        </h4>
+	                          <div className="relative">
+	                          <h4 className="select-none hero-text-tobias">
+	                          <span className="leading-none block" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px', color: '#0A0A0A' }}>
+	                          <span className="relative">
+                          <span className="inline-block -translate-y-[0.135em] opacity-0">
+                          Grow a Community<br />Around Your Surveys
+                          </span>
+	                          <span ref={containerRefCommunity} className="px-[5%] -mx-[5%] block absolute inset-0 pointer overflow-hidden" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px' }}>
+	                          <svg className="select-none pointer-events-none" height="100%" width="100%" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+	                          <defs>
+	                          <linearGradient id="textHoverEffectGradient-community" cx="50%" cy="50%" gradientTransform="rotate(-10)" gradientUnits="userSpaceOnUse">
+	                          <stop offset="0%" stopColor="#320F1E" />
+	                          <stop offset="8.56%" stopColor="#C83228" />
+	                          <stop offset="25.06%" stopColor="#FB873F" />
+	                          <stop offset="37.56%" stopColor="#D2DC91" />
+	                          <stop offset="50.06%" stopColor="#5A8250" />
+	                          <stop offset="62.06%" stopColor="#002314" />
+	                          <stop offset="74.06%" stopColor="#00143C" />
+	                          <stop offset="86.06%" stopColor="#2873D7" />
+	                          <stop offset="95.06%" stopColor="#9BC3FF" />
+	                          </linearGradient>
+	                          <radialGradient id="textHoverEffectRevealMask-community" cx={`${mousePosCommunity.x}%`} cy={`${mousePosCommunity.y}%`} gradientUnits="userSpaceOnUse" r="40%">
+	                          <stop offset="30%" stopColor="white" />
+	                          <stop offset="100%" stopColor="black" />
+	                          </radialGradient>
+	                          <mask id="textHoverEffectMask-community">
+	                          <rect height="100%" width="100%" fill="url(#textHoverEffectRevealMask-community)" x="0%" y="0" />
+	                          </mask>
+	                          </defs>
+                          <text className="text-[1em] fill-current text-shadow-ascii-contrast" dominantBaseline="middle" textAnchor="middle" x="50%" y="55%">
+                            Grow a Community<tspan x="50%" dy="1.2em">Around Your Surveys</tspan>
+                          </text>
+                          <text className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]" dominantBaseline="middle" fill="url(#textHoverEffectGradient-community)" mask="url(#textHoverEffectMask-community)" opacity="1" textAnchor="middle" x="50%" y="55%">
+                            Grow a Community<tspan x="50%" dy="1.2em">Around Your Surveys</tspan>
+                          </text>
+	                          </svg>
+	                          </span>
+	                          </span>
+	                          </span>
+	                          </h4>
+	                          </div>
 	                        <div className="flex flex-col gap-2">
 	                          <p className="font-medium text-[15px] tracking-15 leading-[140%] [font-variant-numeric:lining-nums_proportional-nums]" style={{ color: '#6B7280', fontFamily: 'var(--font-inter), sans-serif' }}>
 	                            Launch a lightweight community where participants discuss, respond, and resurface insights.
@@ -557,7 +665,47 @@ export default function LandingPage() {
           <RevealSection
             className="py-8 mx-auto w-full max-w-4xl flex flex-col justify-center items-center"
           >
-            <GradientTitle as="h2" text="Connect the tools you already use" align="center" className="mb-8" sizePx={38} />
+            <div className="relative">
+              <h2 className="select-none hero-text-tobias">
+                <span className="leading-none block" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px', color: '#0A0A0A' }}>
+                  <span className="relative">
+                    <span className="inline-block -translate-y-[0.135em] opacity-0">
+                      Connect the tools you already use
+                    </span>
+                    <span ref={containerRefTools} className="px-[5%] -mx-[5%] block absolute inset-0 pointer overflow-hidden" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px' }}>
+                      <svg className="select-none pointer-events-none" height="100%" width="100%" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                          <linearGradient id="textHoverEffectGradient-tools" cx="50%" cy="50%" gradientTransform="rotate(-10)" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stopColor="#320F1E" />
+                            <stop offset="8.56%" stopColor="#C83228" />
+                            <stop offset="25.06%" stopColor="#FB873F" />
+                            <stop offset="37.56%" stopColor="#D2DC91" />
+                            <stop offset="50.06%" stopColor="#5A8250" />
+                            <stop offset="62.06%" stopColor="#002314" />
+                            <stop offset="74.06%" stopColor="#00143C" />
+                            <stop offset="86.06%" stopColor="#2873D7" />
+                            <stop offset="95.06%" stopColor="#9BC3FF" />
+                          </linearGradient>
+                          <radialGradient id="textHoverEffectRevealMask-tools" cx={`${mousePosTools.x}%`} cy={`${mousePosTools.y}%`} gradientUnits="userSpaceOnUse" r="40%">
+                            <stop offset="30%" stopColor="white" />
+                            <stop offset="100%" stopColor="black" />
+                          </radialGradient>
+                          <mask id="textHoverEffectMask-tools">
+                            <rect height="100%" width="100%" fill="url(#textHoverEffectRevealMask-tools)" x="0%" y="0" />
+                          </mask>
+                        </defs>
+                        <text className="text-[1em] fill-current text-shadow-ascii-contrast" dominantBaseline="middle" textAnchor="middle" x="50%" y="55%">
+                          Connect the tools you already use
+                        </text>
+                        <text className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]" dominantBaseline="middle" fill="url(#textHoverEffectGradient-tools)" mask="url(#textHoverEffectMask-tools)" opacity="1" textAnchor="middle" x="50%" y="55%">
+                          Connect the tools you already use
+                        </text>
+                      </svg>
+                    </span>
+                  </span>
+                </span>
+              </h2>
+            </div>
 	            <div className="flex justify-center gap-3 sm:gap-4 pb-5 md:pb-6 pt-3 md:pt-6 px-3 sm:px-4 flex-wrap">
 	                <div className="flex relative flex-col items-center group">
 	                  <div className="flex z-10 justify-center items-center p-4 w-16 h-16 text-xl text-white rounded-lg border border-gray-200 shadow-md transition-all duration-300 backdrop-blur-[1px] group-hover:scale-105 group-hover:-translate-y-8">
@@ -692,9 +840,47 @@ export default function LandingPage() {
 	                >
 	                  <RevealDiv className="relative inline-block">
 	                    <div className="rounded-lg px-8 py-6 backdrop-blur-lg max-w-[calc(100vw_-_64px)] w-[500px] flex flex-col items-center justify-center gap-3 bg-gradient-to-b from-[rgba(255,255,255,0.80)] to-[rgba(255,255,255,0.16)] shadow-[0px_4px_12px_0px_rgba(255,255,255,0.10)_inset,0px_0px_0px_6px_rgba(255,255,255,0.40),0px_1px_8px_0px_rgba(0,0,0,0.13),0px_2px_6px_0px_rgba(0,0,0,0.20)]">
-	                      <h3 className="hero-text-tobias font-semibold text-title-secondary md:text-title-primary leading-[130%] tracking-[-0.56px] text-center" style={{ fontSize: '38px', fontWeight: 300, letterSpacing: '-1px', lineHeight: '38px', color: '#0A0A0A' }}>
-	                        Join Our Community
+	                      <div className="relative">
+	                      <h3 className="select-none hero-text-tobias">
+	                      <span className="leading-none block" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px', color: '#0A0A0A' }}>
+	                      <span className="relative">
+                      <span className="inline-block -translate-y-[0.135em] opacity-0">
+                      Join Our Community
+                      </span>
+	                      <span ref={containerRefJoin} className="px-[5%] -mx-[5%] block absolute inset-0 pointer overflow-hidden" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px' }}>
+	                      <svg className="select-none pointer-events-none" height="100%" width="100%" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+	                      <defs>
+	                      <linearGradient id="textHoverEffectGradient-join" cx="50%" cy="50%" gradientTransform="rotate(-10)" gradientUnits="userSpaceOnUse">
+	                      <stop offset="0%" stopColor="#320F1E" />
+	                      <stop offset="8.56%" stopColor="#C83228" />
+	                      <stop offset="25.06%" stopColor="#FB873F" />
+	                      <stop offset="37.56%" stopColor="#D2DC91" />
+	                      <stop offset="50.06%" stopColor="#5A8250" />
+	                      <stop offset="62.06%" stopColor="#002314" />
+	                      <stop offset="74.06%" stopColor="#00143C" />
+	                      <stop offset="86.06%" stopColor="#2873D7" />
+	                      <stop offset="95.06%" stopColor="#9BC3FF" />
+	                      </linearGradient>
+	                      <radialGradient id="textHoverEffectRevealMask-join" cx={`${mousePosJoin.x}%`} cy={`${mousePosJoin.y}%`} gradientUnits="userSpaceOnUse" r="40%">
+	                      <stop offset="30%" stopColor="white" />
+	                      <stop offset="100%" stopColor="black" />
+	                      </radialGradient>
+	                      <mask id="textHoverEffectMask-join">
+	                      <rect height="100%" width="100%" fill="url(#textHoverEffectRevealMask-join)" x="0%" y="0" />
+	                      </mask>
+	                      </defs>
+                      <text className="text-[1em] fill-current text-shadow-ascii-contrast" dominantBaseline="middle" textAnchor="middle" x="50%" y="55%">
+                      Join Our Community
+                      </text>
+                      <text className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]" dominantBaseline="middle" fill="url(#textHoverEffectGradient-join)" mask="url(#textHoverEffectMask-join)" opacity="1" textAnchor="middle" x="50%" y="55%">
+                      Join Our Community
+                      </text>
+	                      </svg>
+	                      </span>
+	                      </span>
+	                      </span>
 	                      </h3>
+	                      </div>
 	                      <p className="text-[15px] leading-[140%] text-center" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
 	                        Connect with researchers, share insights, and stay updated on Surbee
 	                      </p>

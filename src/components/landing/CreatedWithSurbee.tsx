@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import localFont from "next/font/local";
-import GradientTitle from "@/components/landing/GradientTitle";
 
 const tobiasLight = localFont({
   src: "../../../Font/Tobiasfont/Tobias-TRIAL-Light.ttf",
@@ -190,15 +189,66 @@ export default function CreatedWithSurbee() {
       setHoveredCard((current) => (current === cardIndex ? null : current));
     };
 
+  const [mousePosCreated, setMousePosCreated] = useState({ x: 50, y: 50 });
+  const containerRefCreated = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (containerRefCreated.current) {
+        const rect = containerRefCreated.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        setMousePosCreated({ x, y });
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
   return (
     <section className={`w-full mb-[84px] ${tobiasLight.variable}`}>
-      <GradientTitle
-        as="h1"
-        text="Created with Surbee"
-        align="center"
-        className="text-title-secondary md:text-title-primary max-w-[335px] md:max-w-[820px] mx-auto mb-[66px]"
-        sizePx={67}
-      />
+      <div className="relative text-center">
+        <h1 className="select-none hero-text-tobias">
+          <span className="leading-none block" style={{ fontSize: '67px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '67px', color: '#0A0A0A' }}>
+            <span className="relative">
+              <span className="inline-block -translate-y-[0.135em] opacity-0">
+                Created with Surbee
+              </span>
+              <span ref={containerRefCreated} className="px-[5%] -mx-[5%] block absolute inset-0 pointer overflow-hidden" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '67px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '67px' }}>
+                <svg className="select-none pointer-events-none" height="100%" width="100%" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="textHoverEffectGradient-created" cx="50%" cy="50%" gradientTransform="rotate(-10)" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stopColor="#320F1E" />
+                      <stop offset="8.56%" stopColor="#C83228" />
+                      <stop offset="25.06%" stopColor="#FB873F" />
+                      <stop offset="37.56%" stopColor="#D2DC91" />
+                      <stop offset="50.06%" stopColor="#5A8250" />
+                      <stop offset="62.06%" stopColor="#002314" />
+                      <stop offset="74.06%" stopColor="#00143C" />
+                      <stop offset="86.06%" stopColor="#2873D7" />
+                      <stop offset="95.06%" stopColor="#9BC3FF" />
+                    </linearGradient>
+                    <radialGradient id="textHoverEffectRevealMask-created" cx={`${mousePosCreated.x}%`} cy={`${mousePosCreated.y}%`} gradientUnits="userSpaceOnUse" r="40%">
+                      <stop offset="30%" stopColor="white" />
+                      <stop offset="100%" stopColor="black" />
+                    </radialGradient>
+                    <mask id="textHoverEffectMask-created">
+                      <rect height="100%" width="100%" fill="url(#textHoverEffectRevealMask-created)" x="0%" y="0" />
+                    </mask>
+                  </defs>
+                  <text className="text-[1em] fill-current text-shadow-ascii-contrast" dominantBaseline="middle" textAnchor="middle" x="50%" y="55%">
+                    Created with Surbee
+                  </text>
+                  <text className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]" dominantBaseline="middle" fill="url(#textHoverEffectGradient-created)" mask="url(#textHoverEffectMask-created)" opacity="1" textAnchor="middle" x="50%" y="55%">
+                    Created with Surbee
+                  </text>
+                </svg>
+              </span>
+            </span>
+          </span>
+        </h1>
+      </div>
       <div className="max-w-[1400px] aspect-[1440/692] mx-auto relative">
         <div className="h-full">
           <div className="relative h-full mx-auto">

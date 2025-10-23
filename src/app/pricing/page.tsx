@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ImageKitProvider, Image as IKImage } from "@imagekit/next";
+import { Check } from "lucide-react";
 import PricingCards from "@/components/pricing/PricingCards";
 
 export default function PricingPage() {
@@ -27,7 +28,7 @@ export default function PricingPage() {
 
   return (
     <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
-    <div className="min-h-screen w-full" style={{ backgroundColor: "#FEFFFC" }}>
+    <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: "#FEFFFC" }}>
       {/* Top Navigation (full-width) with blur */}
 	  <nav className="sticky inset-x-0 top-0 nav-gradient z-50"
         style={{
@@ -35,7 +36,7 @@ export default function PricingPage() {
         }}
       >
 		<div className="flex h-20 items-center justify-between gap-4 pl-48 pr-6">
-		  <div className="text-2xl font-semibold tracking-[-0.02em] pl-5 md:pl-8 xl:pl-12 2xl:pl-30" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>surbee</div>
+		  <div className="text-2xl font-semibold tracking-[-0.02em] pl-5 md:pl-8 xl:pl-12" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>surbee</div>
           <div className="flex items-center gap-6">
             <a href="/landing" className="text-sm hover:text-neutral-800 transition-all duration-300 ease-out" style={{ color: '#0A0A0A', fontFamily: 'var(--font-inter), sans-serif' }}>
               Home
@@ -152,7 +153,7 @@ export default function PricingPage() {
         </aside>
 
         {/* Main Content - occupies the rest of the page width */}
-        <main className={`ml-48 w-full pt-12`}> {/* ml must equal sidebar width; pt offset for navbar */}
+        <main className={`ml-48 w-full pt-12 overflow-hidden`}> {/* ml must equal sidebar width; pt offset for navbar */}
         <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 2xl:px-16 pt-8 pb-20">
           <header className="mb-8 text-center">
             <div className="relative">
@@ -162,7 +163,7 @@ export default function PricingPage() {
                     <span className="inline-block -translate-y-[0.135em] opacity-0">
                       Pricing
                     </span>
-                    <span ref={containerRefPricing} className="px-[5%] -mx-[5%] block absolute inset-0 pointer" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '54px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '54px' }}>
+                    <span ref={containerRefPricing} className="px-[5%] -mx-[5%] block absolute inset-0 pointer overflow-hidden" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '54px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '54px' }}>
                       <svg className="select-none pointer-events-none" height="100%" width="100%" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
                         <defs>
                           <linearGradient id="textHoverEffectGradient-pricing" cx="50%" cy="50%" gradientTransform="rotate(-10)" gradientUnits="userSpaceOnUse">
@@ -262,11 +263,11 @@ export default function PricingPage() {
                   </p>
                   <p className="text-neutral-600 mt-3">Everything in Pro, plus:</p>
                   <ul className="mt-3 space-y-2" role="list">
-                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> Centralized team billing</li>
-                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> Usage analytics and reporting</li>
-                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> Org-wide privacy mode controls</li>
-                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> Role-based access control</li>
-                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> SAML/OIDC SSO</li>
+                    <li className="flex items-center gap-3 text-neutral-600"><Check className="w-4 h-4 text-black flex-shrink-0" />Centralized team billing</li>
+                    <li className="flex items-center gap-3 text-neutral-600"><Check className="w-4 h-4 text-black flex-shrink-0" />Usage analytics and reporting</li>
+                    <li className="flex items-center gap-3 text-neutral-600"><Check className="w-4 h-4 text-black flex-shrink-0" />Org-wide privacy mode controls</li>
+                    <li className="flex items-center gap-3 text-neutral-600"><Check className="w-4 h-4 text-black flex-shrink-0" />Role-based access control</li>
+                    <li className="flex items-center gap-3 text-neutral-600"><Check className="w-4 h-4 text-black flex-shrink-0" />SAML/OIDC SSO</li>
                   </ul>
                 </div>
                 <div className="mt-4">
@@ -289,12 +290,12 @@ export default function PricingPage() {
                   </p>
                   <p className="text-neutral-600 mt-3">Everything in Teams, plus:</p>
                   <ul className="mt-3 space-y-2" role="list">
-                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> Pooled usage</li>
-                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> Invoice/PO billing</li>
-                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> SCIM seat management</li>
-                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> AI code tracking API and audit logs</li>
-                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> Granular admin and model controls</li>
-                    <li className="flex gap-x-2 text-neutral-600"><span>✓</span> Priority support and account management</li>
+                    <li className="flex items-center gap-3 text-neutral-600"><Check className="w-4 h-4 text-black flex-shrink-0" />Pooled usage</li>
+                    <li className="flex items-center gap-3 text-neutral-600"><Check className="w-4 h-4 text-black flex-shrink-0" />Invoice/PO billing</li>
+                    <li className="flex items-center gap-3 text-neutral-600"><Check className="w-4 h-4 text-black flex-shrink-0" />SCIM seat management</li>
+                    <li className="flex items-center gap-3 text-neutral-600"><Check className="w-4 h-4 text-black flex-shrink-0" />AI code tracking API and audit logs</li>
+                    <li className="flex items-center gap-3 text-neutral-600"><Check className="w-4 h-4 text-black flex-shrink-0" />Granular admin and model controls</li>
+                    <li className="flex items-center gap-3 text-neutral-600"><Check className="w-4 h-4 text-black flex-shrink-0" />Priority support and account management</li>
                   </ul>
                 </div>
                 <div className="mt-4">
