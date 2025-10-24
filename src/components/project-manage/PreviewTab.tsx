@@ -55,6 +55,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { themeColors } from '@/lib/theme/colors';
 
 interface PreviewTabProps {
   projectId: string;
@@ -196,50 +197,96 @@ const ElementsSidebar: React.FC<{
   })).filter(category => category.elements.length > 0 || searchTerm === '');
 
   return (
-    <div className="p-4" style={{ backgroundColor: '#2A2A2A', color: 'white' }}>
-      <div className="mb-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+    <div style={{
+      backgroundColor: themeColors.dark.background.secondary,
+      color: themeColors.dark.foreground.primary,
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+      {/* Search Header */}
+      <div style={{
+        padding: '15px',
+        borderBottom: `1px solid ${themeColors.dark.border.primary}`
+      }}>
+        <div style={{ position: 'relative' }}>
           <input
             type="text"
             placeholder="Search elements..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-10 pl-10 pr-3 text-sm rounded-xl focus:outline-none"
             style={{
-              backgroundColor: '#1C1C1C',
-              color: 'white',
-              border: '1px solid #404040'
+              width: '100%',
+              height: '30px',
+              paddingLeft: '32px',
+              paddingRight: '8px',
+              backgroundColor: themeColors.dark.input.background,
+              color: themeColors.dark.foreground.primary,
+              border: `1px solid ${themeColors.dark.input.border}`,
+              borderRadius: '8px',
+              fontSize: '12px',
+              fontWeight: '500',
+              outline: 'none',
+              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             }}
           />
+          <Search style={{
+            position: 'absolute',
+            left: '10px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '14px',
+            height: '14px',
+            color: themeColors.dark.foreground.muted
+          }} />
         </div>
       </div>
 
-      <div className="space-y-2">
+      {/* Scrollable Categories */}
+      <div style={{
+        flex: '1',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        padding: '0 15px 15px',
+      }}>
         {filteredCategories.map(category => (
-          <div key={category.id}>
+          <div key={category.id} style={{ position: 'relative', width: '100%' }}>
+            {/* Panel Header */}
             <button
               onClick={() => toggleCategory(category.id)}
-              className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-600 transition-colors"
-              style={{ backgroundColor: 'transparent' }}
+              style={{
+                width: '100%',
+                height: '48px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                borderTop: `1px solid ${themeColors.dark.border.primary}`,
+                backgroundColor: 'transparent',
+                border: 'none',
+                color: themeColors.dark.foreground.primary,
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                padding: '0',
+                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              }}
             >
-              <div className="flex items-center gap-3">
-                <category.icon className="w-4 h-4 text-gray-400" />
-                <span className="text-sm font-medium text-white">{category.name}</span>
-              </div>
+              <category.icon style={{ width: '16px', height: '16px', marginRight: '8px', color: themeColors.dark.foreground.muted }} />
+              <span>{category.name}</span>
+              <div style={{ flex: '1' }} />
               {category.expanded ? (
-                <ChevronDown className="w-4 h-4 text-gray-400" />
+                <ChevronDown style={{ width: '14px', height: '14px', color: themeColors.dark.foreground.muted }} />
               ) : (
-                <ChevronRight className="w-4 h-4 text-gray-400" />
+                <ChevronRight style={{ width: '14px', height: '14px', color: themeColors.dark.foreground.muted }} />
               )}
             </button>
 
+            {/* Panel Content */}
             {category.expanded && (
-              <div className="ml-7 mt-2 space-y-1">
+              <div style={{ paddingBottom: '10px' }}>
                 {category.elements.map(element => (
                   <div
                     key={element.id}
-                    className="flex items-center gap-3 p-2 rounded-lg cursor-grab hover:bg-gray-600 transition-colors"
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData('application/json', JSON.stringify(element));
@@ -247,11 +294,39 @@ const ElementsSidebar: React.FC<{
                     onMouseEnter={() => onElementHover?.(element)}
                     onMouseLeave={() => onElementHover?.(null)}
                     onClick={() => onElementAdd(element)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '8px',
+                      marginBottom: '2px',
+                      backgroundColor: 'transparent',
+                      borderRadius: '8px',
+                      cursor: 'grab',
+                      transition: 'background-color 0.15s',
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = themeColors.dark.sidebar.hover}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <div className="w-6 h-6 flex items-center justify-center rounded" style={{ backgroundColor: '#1C1C1C' }}>
-                      <element.icon className="w-4 h-4 text-gray-400" />
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: themeColors.dark.background.primary,
+                      borderRadius: '6px',
+                      marginRight: '10px',
+                    }}>
+                      <element.icon style={{ width: '16px', height: '16px', color: themeColors.dark.foreground.muted }} />
                     </div>
-                    <span className="text-sm text-gray-300">{element.name}</span>
+                    <span style={{
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      color: themeColors.dark.foreground.primary,
+                      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    }}>
+                      {element.name}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -296,78 +371,218 @@ const PropertiesPanel: React.FC<{
 
   if (!selectedElement) {
     return (
-      <div className="p-4" style={{ backgroundColor: '#2A2A2A', color: 'white' }}>
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <MousePointer className="w-8 h-8 mb-3 text-gray-400" />
-          <p className="text-sm text-gray-400">Select an element to edit its properties</p>
-        </div>
+      <div style={{
+        backgroundColor: themeColors.dark.background.secondary,
+        color: themeColors.dark.foreground.primary,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px 20px',
+      }}>
+        <MousePointer style={{ width: '32px', height: '32px', color: themeColors.dark.foreground.muted, marginBottom: '12px' }} />
+        <p style={{
+          fontSize: '12px',
+          color: themeColors.dark.foreground.muted,
+          textAlign: 'center',
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        }}>
+          Select an element to edit its properties
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="p-4" style={{ backgroundColor: '#2A2A2A', color: 'white' }}>
-      <div className="mb-6">
-        <div className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: '#1C1C1C' }}>
+    <div style={{
+      backgroundColor: themeColors.dark.background.secondary,
+      color: themeColors.dark.foreground.primary,
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+      {/* Selected Element Header */}
+      <div style={{
+        padding: '15px',
+        borderBottom: `1px solid ${themeColors.dark.border.primary}`,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+      }}>
+        <div style={{
+          width: '28px',
+          height: '28px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: themeColors.dark.background.primary,
+          borderRadius: '6px',
+        }}>
           {selectedElement.tag === 'div' ? (
-            <Square className="w-4 h-4 text-gray-400" />
+            <Square style={{ width: '16px', height: '16px', color: themeColors.dark.foreground.muted }} />
           ) : selectedElement.tag === 'button' ? (
-            <Square className="w-4 h-4 text-gray-400" />
+            <Square style={{ width: '16px', height: '16px', color: themeColors.dark.foreground.muted }} />
           ) : selectedElement.tag === 'input' ? (
-            <Edit3 className="w-4 h-4 text-gray-400" />
+            <Edit3 style={{ width: '16px', height: '16px', color: themeColors.dark.foreground.muted }} />
           ) : selectedElement.tag === 'img' ? (
-            <Image className="w-4 h-4 text-gray-400" />
+            <Image style={{ width: '16px', height: '16px', color: themeColors.dark.foreground.muted }} />
           ) : (
-            <FileText className="w-4 h-4 text-gray-400" />
+            <FileText style={{ width: '16px', height: '16px', color: themeColors.dark.foreground.muted }} />
           )}
-          <span className="text-sm font-medium text-white">
-            {selectedElement.text || selectedElement.tag}
-          </span>
         </div>
+        <span style={{
+          fontSize: '12px',
+          fontWeight: '600',
+          color: themeColors.dark.foreground.primary,
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        }}>
+          {selectedElement.text || selectedElement.tag}
+        </span>
       </div>
 
-      <div className="space-y-2 mb-6">
-        <button
-          onClick={() => setActiveSection('design')}
-          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
-            activeSection === 'design' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-600'
-          }`}
-        >
-          <Palette className="w-4 h-4" />
-          <span className="text-sm font-medium">Design</span>
-        </button>
-        <button
-          onClick={() => setActiveSection('layout')}
-          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
-            activeSection === 'layout' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-600'
-          }`}
-        >
-          <Layout className="w-4 h-4" />
-          <span className="text-sm font-medium">Layout</span>
-        </button>
-        <button
-          onClick={() => setActiveSection('effects')}
-          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
-            activeSection === 'effects' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-600'
-          }`}
-        >
-          <Zap className="w-4 h-4" />
-          <span className="text-sm font-medium">Effects</span>
-        </button>
-        <button
-          onClick={() => setActiveSection('cursor')}
-          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
-            activeSection === 'cursor' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-600'
-          }`}
-        >
-          <Mouse className="w-4 h-4" />
-          <span className="text-sm font-medium">Cursor</span>
-        </button>
-      </div>
+      {/* Scrollable Content */}
+      <div style={{
+        flex: '1',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        padding: '0 15px 15px',
+      }}>
+        {/* Section Panels */}
+        <div>
+          {/* Design Panel */}
+          <button
+            onClick={() => setActiveSection('design')}
+            style={{
+              width: '100%',
+              height: '48px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              borderTop: `1px solid ${themeColors.dark.border.primary}`,
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: activeSection === 'design' ? themeColors.dark.accent.primary : themeColors.dark.foreground.primary,
+              fontSize: '12px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              padding: '0',
+              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            }}
+          >
+            <Palette style={{ width: '16px', height: '16px', marginRight: '8px', color: activeSection === 'design' ? themeColors.dark.accent.primary : themeColors.dark.foreground.muted }} />
+            <span>Design</span>
+            <div style={{ flex: '1' }} />
+            <ChevronDown style={{
+              width: '14px',
+              height: '14px',
+              color: themeColors.dark.foreground.muted,
+              transform: activeSection === 'design' ? 'rotate(0deg)' : 'rotate(-90deg)',
+              transition: 'transform 0.2s',
+            }} />
+          </button>
 
-      <div className="space-y-6">
-        {activeSection === 'design' && (
-          <div className="space-y-6">
+          {/* Layout Panel */}
+          <button
+            onClick={() => setActiveSection('layout')}
+            style={{
+              width: '100%',
+              height: '48px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              borderTop: `1px solid ${themeColors.dark.border.primary}`,
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: activeSection === 'layout' ? themeColors.dark.accent.primary : themeColors.dark.foreground.primary,
+              fontSize: '12px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              padding: '0',
+              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            }}
+          >
+            <Layout style={{ width: '16px', height: '16px', marginRight: '8px', color: activeSection === 'layout' ? themeColors.dark.accent.primary : themeColors.dark.foreground.muted }} />
+            <span>Layout</span>
+            <div style={{ flex: '1' }} />
+            <ChevronDown style={{
+              width: '14px',
+              height: '14px',
+              color: themeColors.dark.foreground.muted,
+              transform: activeSection === 'layout' ? 'rotate(0deg)' : 'rotate(-90deg)',
+              transition: 'transform 0.2s',
+            }} />
+          </button>
+
+          {/* Effects Panel */}
+          <button
+            onClick={() => setActiveSection('effects')}
+            style={{
+              width: '100%',
+              height: '48px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              borderTop: `1px solid ${themeColors.dark.border.primary}`,
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: activeSection === 'effects' ? themeColors.dark.accent.primary : themeColors.dark.foreground.primary,
+              fontSize: '12px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              padding: '0',
+              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            }}
+          >
+            <Zap style={{ width: '16px', height: '16px', marginRight: '8px', color: activeSection === 'effects' ? themeColors.dark.accent.primary : themeColors.dark.foreground.muted }} />
+            <span>Effects</span>
+            <div style={{ flex: '1' }} />
+            <ChevronDown style={{
+              width: '14px',
+              height: '14px',
+              color: themeColors.dark.foreground.muted,
+              transform: activeSection === 'effects' ? 'rotate(0deg)' : 'rotate(-90deg)',
+              transition: 'transform 0.2s',
+            }} />
+          </button>
+
+          {/* Cursor Panel */}
+          <button
+            onClick={() => setActiveSection('cursor')}
+            style={{
+              width: '100%',
+              height: '48px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              borderTop: `1px solid ${themeColors.dark.border.primary}`,
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: activeSection === 'cursor' ? themeColors.dark.accent.primary : themeColors.dark.foreground.primary,
+              fontSize: '12px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              padding: '0',
+              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            }}
+          >
+            <Mouse style={{ width: '16px', height: '16px', marginRight: '8px', color: activeSection === 'cursor' ? themeColors.dark.accent.primary : themeColors.dark.foreground.muted }} />
+            <span>Cursor</span>
+            <div style={{ flex: '1' }} />
+            <ChevronDown style={{
+              width: '14px',
+              height: '14px',
+              color: themeColors.dark.foreground.muted,
+              transform: activeSection === 'cursor' ? 'rotate(0deg)' : 'rotate(-90deg)',
+              transition: 'transform 0.2s',
+            }} />
+          </button>
+        </div>
+
+        {/* Panel Content Area */}
+        <div className="space-y-6">
+          {activeSection === 'design' && (
+            <div className="space-y-6">
             {/* Typography for text elements */}
             {selectedElement.type === 'text' && (
               <div className="space-y-4">
@@ -911,18 +1126,18 @@ const PropertiesPanel: React.FC<{
                     onClick={() => onElementUpdate({ cursor: cursor.preview })}
                     className="h-auto p-3 flex flex-col items-center gap-2"
                     title={cursor.name}
-                    style={{ backgroundColor: '#1C1C1C', borderColor: '#404040', color: 'white' }}
+                    style={{ backgroundColor: themeColors.dark.background.primary, borderColor: themeColors.dark.border.primary, color: themeColors.dark.foreground.primary }}
                   >
                     <div
                       className="w-8 h-8 flex items-center justify-center rounded"
                       style={{
                         cursor: cursor.preview,
-                        backgroundColor: '#2A2A2A'
+                        backgroundColor: themeColors.dark.background.tertiary
                       }}
                     >
-                      <Mouse className="w-4 h-4 text-gray-400" />
+                      <Mouse className="w-4 h-4" style={{ color: themeColors.dark.foreground.muted }} />
                     </div>
-                    <span className="text-xs text-gray-300">{cursor.name}</span>
+                    <span className="text-xs" style={{ color: themeColors.dark.foreground.secondary }}>{cursor.name}</span>
                   </Button>
                 ))}
               </div>
@@ -952,7 +1167,7 @@ const PropertiesPanel: React.FC<{
                       variant="outline"
                       size="sm"
                       className="w-full justify-start"
-                      style={{ backgroundColor: '#1C1C1C', borderColor: '#404040', color: 'white' }}
+                      style={{ backgroundColor: themeColors.dark.background.primary, borderColor: themeColors.dark.border.primary, color: themeColors.dark.foreground.primary }}
                     >
                       <Upload className="w-4 h-4 mr-2" />
                       Upload Image
@@ -963,6 +1178,7 @@ const PropertiesPanel: React.FC<{
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
@@ -1020,387 +1236,11 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ projectId, sandboxBundle
   const zoomLevels = [25, 50, 75, 100, 125, 150, 200];
 
   return (
-    <div className="flex flex-col h-full" style={{ backgroundColor: '#1C1C1C' }}>
-      {/* Framer-Style Floating Toolbar - Dark Version */}
-      <div className="flex items-center justify-center" style={{
-        backgroundColor: '#1C1C1C',
-        padding: '20px 0',
-        position: 'relative',
-      }}>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'stretch',
-          justifyContent: 'flex-start',
-          borderRadius: '15px',
-          height: '50px',
-          backgroundColor: '#1a1a1a',
-          gap: '10px',
-          padding: '10px',
-        }}>
-          {/* Edit Button - White */}
-          <button
-            onClick={handleOpenInNewTab}
-            style={{
-              border: 'none',
-              borderRadius: '8px',
-              margin: '0px',
-              outline: 'none',
-              textDecoration: 'none',
-              transition: 'background-color 0.15s, color 0.15s',
-              position: 'relative',
-              appearance: 'none',
-              fontSize: '12px',
-              fontWeight: '600',
-              userSelect: 'none',
-              padding: '0px 12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#ffffff',
-              color: '#000000',
-              cursor: 'pointer',
-              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-              gap: '8px',
-            }}
-          >
-            <Edit2 style={{ width: '16px', height: '16px' }} />
-            <span>Edit</span>
-          </button>
-
-          {/* Divider */}
-          <div style={{
-            width: '1px',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          }} />
-
-          {/* Select Tool Button */}
-          <button
-            onClick={() => setSelectedTool('select')}
-            title="Select"
-            onMouseEnter={(e) => {
-              if (selectedTool !== 'select') {
-                e.currentTarget.style.color = '#ffffff';
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (selectedTool !== 'select') {
-                e.currentTarget.style.color = '#888888';
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }
-            }}
-            style={{
-              border: 'none',
-              borderRadius: '8px',
-              margin: '0px',
-              outline: 'none',
-              transition: 'background-color 0.15s, color 0.15s',
-              position: 'relative',
-              appearance: 'none',
-              backgroundColor: selectedTool === 'select' ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
-              color: selectedTool === 'select' ? '#ffffff' : '#888888',
-              fontSize: '12px',
-              fontWeight: '600',
-              userSelect: 'none',
-              padding: '0px',
-              display: 'flex',
-              width: '30px',
-              height: '30px',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <MousePointer style={{ width: '20px', height: '20px' }} />
-          </button>
-
-          {/* Cursor Tool Button */}
-          <button
-            onClick={() => setSelectedTool('cursor')}
-            title="Cursor"
-            onMouseEnter={(e) => {
-              if (selectedTool !== 'cursor') {
-                e.currentTarget.style.color = '#ffffff';
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (selectedTool !== 'cursor') {
-                e.currentTarget.style.color = '#888888';
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }
-            }}
-            style={{
-              border: 'none',
-              borderRadius: '8px',
-              margin: '0px',
-              outline: 'none',
-              transition: 'background-color 0.15s, color 0.15s',
-              position: 'relative',
-              appearance: 'none',
-              backgroundColor: selectedTool === 'cursor' ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
-              color: selectedTool === 'cursor' ? '#ffffff' : '#888888',
-              fontSize: '12px',
-              fontWeight: '600',
-              userSelect: 'none',
-              padding: '0px',
-              display: 'flex',
-              width: '30px',
-              height: '30px',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <Mouse style={{ width: '20px', height: '20px' }} />
-          </button>
-
-          {/* Divider after mouse */}
-          <div style={{
-            width: '1px',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          }} />
-
-          {/* Device Icons - Icon Only */}
-          <button
-            onClick={() => setDevice('desktop')}
-            title="Desktop"
-            onMouseEnter={(e) => {
-              if (device !== 'desktop') {
-                e.currentTarget.style.color = '#ffffff';
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (device !== 'desktop') {
-                e.currentTarget.style.color = '#888888';
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }
-            }}
-            style={{
-              border: 'none',
-              borderRadius: '8px',
-              margin: '0px',
-              outline: 'none',
-              transition: 'background-color 0.15s, color 0.15s',
-              position: 'relative',
-              appearance: 'none',
-              backgroundColor: device === 'desktop' ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
-              color: device === 'desktop' ? '#ffffff' : '#888888',
-              fontSize: '12px',
-              fontWeight: '600',
-              userSelect: 'none',
-              padding: '0px',
-              display: 'flex',
-              width: '30px',
-              height: '30px',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <Monitor style={{ width: '20px', height: '20px' }} />
-          </button>
-
-          <button
-            onClick={() => setDevice('tablet')}
-            title="Tablet"
-            onMouseEnter={(e) => {
-              if (device !== 'tablet') {
-                e.currentTarget.style.color = '#ffffff';
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (device !== 'tablet') {
-                e.currentTarget.style.color = '#888888';
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }
-            }}
-            style={{
-              border: 'none',
-              borderRadius: '8px',
-              margin: '0px',
-              outline: 'none',
-              transition: 'background-color 0.15s, color 0.15s',
-              position: 'relative',
-              appearance: 'none',
-              backgroundColor: device === 'tablet' ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
-              color: device === 'tablet' ? '#ffffff' : '#888888',
-              fontSize: '12px',
-              fontWeight: '600',
-              userSelect: 'none',
-              padding: '0px',
-              display: 'flex',
-              width: '30px',
-              height: '30px',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <Tablet style={{ width: '20px', height: '20px' }} />
-          </button>
-
-          <button
-            onClick={() => setDevice('mobile')}
-            title="Mobile"
-            onMouseEnter={(e) => {
-              if (device !== 'mobile') {
-                e.currentTarget.style.color = '#ffffff';
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (device !== 'mobile') {
-                e.currentTarget.style.color = '#888888';
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }
-            }}
-            style={{
-              border: 'none',
-              borderRadius: '8px',
-              margin: '0px',
-              outline: 'none',
-              transition: 'background-color 0.15s, color 0.15s',
-              position: 'relative',
-              appearance: 'none',
-              backgroundColor: device === 'mobile' ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
-              color: device === 'mobile' ? '#ffffff' : '#888888',
-              fontSize: '12px',
-              fontWeight: '600',
-              userSelect: 'none',
-              padding: '0px',
-              display: 'flex',
-              width: '30px',
-              height: '30px',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <Smartphone style={{ width: '20px', height: '20px' }} />
-          </button>
-
-          {/* Zoom Control with Dropdown */}
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => setShowZoomDropdown(!showZoomDropdown)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0px 7px',
-                borderRadius: '8px',
-                position: 'relative',
-                width: '70px',
-                height: '30px',
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                color: '#ffffff',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontVariantNumeric: 'tabular-nums',
-                fontWeight: '500',
-                lineHeight: '12px',
-                userSelect: 'none',
-                gap: '2px',
-                border: 'none',
-                outline: 'none',
-              }}
-            >
-              <span>{zoomLevel}%</span>
-              <ChevronDown style={{ width: '8px', height: '8px', color: '#999999' }} />
-            </button>
-
-            {showZoomDropdown && (
-              <div style={{
-                position: 'absolute',
-                top: '35px',
-                left: '0',
-                backgroundColor: '#2A2A2A',
-                borderRadius: '8px',
-                padding: '4px',
-                minWidth: '80px',
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
-                zIndex: 1000,
-              }}>
-                {zoomLevels.map((level) => (
-                  <button
-                    key={level}
-                    onClick={() => {
-                      setZoomLevel(level);
-                      setShowZoomDropdown(false);
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      backgroundColor: zoomLevel === level ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      textAlign: 'left',
-                      transition: 'background-color 0.15s',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (zoomLevel !== level) {
-                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (zoomLevel !== level) {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }
-                    }}
-                  >
-                    {level}%
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Divider */}
-          <div style={{
-            width: '1px',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          }} />
-
-          {/* Upgrade Button - Blue Tinted */}
-          <button
-            type="button"
-            style={{
-              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-              padding: '0px 12px 1px',
-              border: 'none',
-              borderRadius: '8px',
-              margin: '0px',
-              outline: 'none',
-              textDecoration: 'none',
-              transition: 'background-color 0.2s',
-              position: 'relative',
-              height: '30px',
-              appearance: 'none',
-              userSelect: 'none',
-              fontSize: '12px',
-              fontWeight: '600',
-              backgroundColor: 'rgba(0, 153, 255, .2)',
-              boxShadow: 'none',
-              color: '#0099ff',
-              cursor: 'pointer',
-            }}
-          >
-            Upgrade Now
-          </button>
-        </div>
-      </div>
-
+    <div className="flex flex-col h-full" style={{ backgroundColor: themeColors.dark.background.primary, position: 'relative' }}>
       {/* Main Three-Column Layout */}
-      <div className="flex-1 grid grid-cols-[300px_1fr_340px] gap-6 p-6 h-[calc(100vh-120px)]">
+      <div className="flex-1 grid grid-cols-[300px_1fr_340px] gap-6 px-6 pt-3 pb-32 h-full">
         {/* Left Sidebar - Elements */}
-        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#2A2A2A' }}>
+        <div className="rounded-2xl overflow-hidden h-full" style={{ backgroundColor: themeColors.dark.background.secondary, border: `1px solid ${themeColors.dark.border.primary}` }}>
           <ElementsSidebar
             onElementAdd={handleElementAdd}
             onElementHover={setHoveredElement}
@@ -1481,7 +1321,7 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ projectId, sandboxBundle
         </div>
 
         {/* Right Sidebar - Properties */}
-        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#2A2A2A' }}>
+        <div className="rounded-2xl overflow-hidden h-full" style={{ backgroundColor: themeColors.dark.background.secondary, border: `1px solid ${themeColors.dark.border.primary}` }}>
           <PropertiesPanel
               selectedElement={selectedElement}
             onElementUpdate={handleElementUpdate}
@@ -1489,6 +1329,385 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ projectId, sandboxBundle
           </div>
       </div>
 
+      {/* Framer-Style Floating Toolbar - Fixed at Bottom */}
+      <div className="flex items-center justify-center" style={{
+        position: 'fixed',
+        bottom: '20px',
+        left: '0',
+        right: '0',
+        zIndex: 1000,
+        pointerEvents: 'none',
+      }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'stretch',
+          justifyContent: 'flex-start',
+          borderRadius: '15px',
+          height: '50px',
+          backgroundColor: themeColors.dark.background.secondary,
+          gap: '10px',
+          padding: '10px',
+          pointerEvents: 'auto',
+        }}>
+          {/* Edit Button - White */}
+          <button
+            onClick={handleOpenInNewTab}
+            style={{
+              border: 'none',
+              borderRadius: '8px',
+              margin: '0px',
+              outline: 'none',
+              textDecoration: 'none',
+              transition: 'background-color 0.15s, color 0.15s',
+              position: 'relative',
+              appearance: 'none',
+              fontSize: '12px',
+              fontWeight: '600',
+              userSelect: 'none',
+              padding: '0px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#ffffff',
+              color: '#000000',
+              cursor: 'pointer',
+              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              gap: '8px',
+            }}
+          >
+            <Edit2 style={{ width: '16px', height: '16px' }} />
+            <span>Edit</span>
+          </button>
+
+          {/* Divider */}
+          <div style={{
+            width: '1px',
+            backgroundColor: themeColors.dark.border.primary,
+          }} />
+
+          {/* Select Tool Button */}
+          <button
+            onClick={() => setSelectedTool('select')}
+            title="Select"
+            onMouseEnter={(e) => {
+              if (selectedTool !== 'select') {
+                e.currentTarget.style.color = themeColors.dark.foreground.primary;
+                e.currentTarget.style.backgroundColor = themeColors.dark.sidebar.hover;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (selectedTool !== 'select') {
+                e.currentTarget.style.color = themeColors.dark.foreground.muted;
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
+            style={{
+              border: 'none',
+              borderRadius: '8px',
+              margin: '0px',
+              outline: 'none',
+              transition: 'background-color 0.15s, color 0.15s',
+              position: 'relative',
+              appearance: 'none',
+              backgroundColor: selectedTool === 'select' ? themeColors.dark.sidebar.hover : 'transparent',
+              color: selectedTool === 'select' ? themeColors.dark.foreground.primary : themeColors.dark.foreground.muted,
+              fontSize: '12px',
+              fontWeight: '600',
+              userSelect: 'none',
+              padding: '0px',
+              display: 'flex',
+              width: '30px',
+              height: '30px',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <MousePointer style={{ width: '20px', height: '20px' }} />
+          </button>
+
+          {/* Cursor Tool Button */}
+          <button
+            onClick={() => setSelectedTool('cursor')}
+            title="Cursor"
+            onMouseEnter={(e) => {
+              if (selectedTool !== 'cursor') {
+                e.currentTarget.style.color = themeColors.dark.foreground.primary;
+                e.currentTarget.style.backgroundColor = themeColors.dark.sidebar.hover;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (selectedTool !== 'cursor') {
+                e.currentTarget.style.color = themeColors.dark.foreground.muted;
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
+            style={{
+              border: 'none',
+              borderRadius: '8px',
+              margin: '0px',
+              outline: 'none',
+              transition: 'background-color 0.15s, color 0.15s',
+              position: 'relative',
+              appearance: 'none',
+              backgroundColor: selectedTool === 'cursor' ? themeColors.dark.sidebar.hover : 'transparent',
+              color: selectedTool === 'cursor' ? themeColors.dark.foreground.primary : themeColors.dark.foreground.muted,
+              fontSize: '12px',
+              fontWeight: '600',
+              userSelect: 'none',
+              padding: '0px',
+              display: 'flex',
+              width: '30px',
+              height: '30px',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <Mouse style={{ width: '20px', height: '20px' }} />
+          </button>
+
+          {/* Divider after mouse */}
+          <div style={{
+            width: '1px',
+            backgroundColor: themeColors.dark.border.primary,
+          }} />
+
+          {/* Device Icons - Icon Only */}
+          <button
+            onClick={() => setDevice('desktop')}
+            title="Desktop"
+            onMouseEnter={(e) => {
+              if (device !== 'desktop') {
+                e.currentTarget.style.color = themeColors.dark.foreground.primary;
+                e.currentTarget.style.backgroundColor = themeColors.dark.sidebar.hover;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (device !== 'desktop') {
+                e.currentTarget.style.color = themeColors.dark.foreground.muted;
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
+            style={{
+              border: 'none',
+              borderRadius: '8px',
+              margin: '0px',
+              outline: 'none',
+              transition: 'background-color 0.15s, color 0.15s',
+              position: 'relative',
+              appearance: 'none',
+              backgroundColor: device === 'desktop' ? themeColors.dark.sidebar.hover : 'transparent',
+              color: device === 'desktop' ? themeColors.dark.foreground.primary : themeColors.dark.foreground.muted,
+              fontSize: '12px',
+              fontWeight: '600',
+              userSelect: 'none',
+              padding: '0px',
+              display: 'flex',
+              width: '30px',
+              height: '30px',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <Monitor style={{ width: '20px', height: '20px' }} />
+          </button>
+
+          <button
+            onClick={() => setDevice('tablet')}
+            title="Tablet"
+            onMouseEnter={(e) => {
+              if (device !== 'tablet') {
+                e.currentTarget.style.color = themeColors.dark.foreground.primary;
+                e.currentTarget.style.backgroundColor = themeColors.dark.sidebar.hover;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (device !== 'tablet') {
+                e.currentTarget.style.color = themeColors.dark.foreground.muted;
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
+            style={{
+              border: 'none',
+              borderRadius: '8px',
+              margin: '0px',
+              outline: 'none',
+              transition: 'background-color 0.15s, color 0.15s',
+              position: 'relative',
+              appearance: 'none',
+              backgroundColor: device === 'tablet' ? themeColors.dark.sidebar.hover : 'transparent',
+              color: device === 'tablet' ? themeColors.dark.foreground.primary : themeColors.dark.foreground.muted,
+              fontSize: '12px',
+              fontWeight: '600',
+              userSelect: 'none',
+              padding: '0px',
+              display: 'flex',
+              width: '30px',
+              height: '30px',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <Tablet style={{ width: '20px', height: '20px' }} />
+          </button>
+
+          <button
+            onClick={() => setDevice('mobile')}
+            title="Mobile"
+            onMouseEnter={(e) => {
+              if (device !== 'mobile') {
+                e.currentTarget.style.color = themeColors.dark.foreground.primary;
+                e.currentTarget.style.backgroundColor = themeColors.dark.sidebar.hover;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (device !== 'mobile') {
+                e.currentTarget.style.color = themeColors.dark.foreground.muted;
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
+            style={{
+              border: 'none',
+              borderRadius: '8px',
+              margin: '0px',
+              outline: 'none',
+              transition: 'background-color 0.15s, color 0.15s',
+              position: 'relative',
+              appearance: 'none',
+              backgroundColor: device === 'mobile' ? themeColors.dark.sidebar.hover : 'transparent',
+              color: device === 'mobile' ? themeColors.dark.foreground.primary : themeColors.dark.foreground.muted,
+              fontSize: '12px',
+              fontWeight: '600',
+              userSelect: 'none',
+              padding: '0px',
+              display: 'flex',
+              width: '30px',
+              height: '30px',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <Smartphone style={{ width: '20px', height: '20px' }} />
+          </button>
+
+          {/* Zoom Control with Dropdown */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowZoomDropdown(!showZoomDropdown)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0px 7px',
+                borderRadius: '8px',
+                position: 'relative',
+                width: '70px',
+                height: '30px',
+                backgroundColor: themeColors.dark.sidebar.hover,
+                color: themeColors.dark.foreground.primary,
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontVariantNumeric: 'tabular-nums',
+                fontWeight: '500',
+                lineHeight: '12px',
+                userSelect: 'none',
+                gap: '2px',
+                border: 'none',
+                outline: 'none',
+              }}
+            >
+              <span>{zoomLevel}%</span>
+              <ChevronDown style={{ width: '8px', height: '8px', color: themeColors.dark.foreground.muted }} />
+            </button>
+
+            {showZoomDropdown && (
+              <div style={{
+                position: 'absolute',
+                top: '35px',
+                left: '0',
+                backgroundColor: themeColors.dark.background.tertiary,
+                borderRadius: '8px',
+                padding: '4px',
+                minWidth: '80px',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
+                zIndex: 1000,
+              }}>
+                {zoomLevels.map((level) => (
+                  <button
+                    key={level}
+                    onClick={() => {
+                      setZoomLevel(level);
+                      setShowZoomDropdown(false);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      backgroundColor: zoomLevel === level ? themeColors.dark.sidebar.hover : 'transparent',
+                      color: themeColors.dark.foreground.primary,
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      textAlign: 'left',
+                      transition: 'background-color 0.15s',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (zoomLevel !== level) {
+                        e.currentTarget.style.backgroundColor = themeColors.dark.border.secondary;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (zoomLevel !== level) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }
+                    }}
+                  >
+                    {level}%
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div style={{
+            width: '1px',
+            backgroundColor: themeColors.dark.border.primary,
+          }} />
+
+          {/* Upgrade Button - Blue Tinted */}
+          <button
+            type="button"
+            style={{
+              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              padding: '0px 12px 1px',
+              border: 'none',
+              borderRadius: '8px',
+              margin: '0px',
+              outline: 'none',
+              textDecoration: 'none',
+              transition: 'background-color 0.2s',
+              position: 'relative',
+              height: '30px',
+              appearance: 'none',
+              userSelect: 'none',
+              fontSize: '12px',
+              fontWeight: '600',
+              backgroundColor: themeColors.dark.accent.subtle,
+              boxShadow: 'none',
+              color: themeColors.dark.accent.primary,
+              cursor: 'pointer',
+            }}
+          >
+            Upgrade Now
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

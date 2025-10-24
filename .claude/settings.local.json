@@ -53,8 +53,9 @@
       "Bash(git remote add:*)",
       "Bash(git remote set-url:*)",
       "Bash(git branch:*)",
-      "WebFetch(domain:21st.dev)"
-      
+      "WebFetch(domain:21st.dev)",
+      "Bash(start \"http://localhost:3001/project/test123/manage\")",
+      "Read(//e/Surbee_Lyra_v1/**)"
     ],
     "deny": [],
     "ask": [],
@@ -65,5 +66,4 @@
       "E:\\e\\Surbee_Lyra_v1"
     ]
   }
-  
 }

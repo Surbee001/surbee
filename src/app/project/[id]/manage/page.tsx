@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TypeformButton, TypeformButtonContainer } from '@/components/ui/typeform-button';
 import { AuthGuard } from '@/components/auth/AuthGuard';
+import { EditorNavbar } from '@/components/project-manage/EditorNavbar';
 import { PreviewTab } from '@/components/project-manage/PreviewTab';
 import { ResultsTab } from '@/components/project-manage/ResultsTab';
 import { AnalyticsTab } from '@/components/project-manage/AnalyticsTab';
@@ -300,64 +301,30 @@ export default function ProjectManagePage() {
 
   return (
     <AuthGuard>
-      <div className="flex flex-col h-screen" style={{ backgroundColor: '#1C1C1C' }}>
-        {/* Top Control Container */}
-        <div className="flex items-center justify-center p-6" style={{ backgroundColor: '#1C1C1C' }}>
-          <div className="flex items-center gap-4">
-            <Button
-              onClick={handleBack}
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-600"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+      <div className="flex flex-col h-screen" style={{ backgroundColor: '#0f0f0f' }}>
+        {/* Framer-Style Editor Navbar */}
+        <EditorNavbar
+          projectId={projectId}
+          projectName="Customer Feedback Survey"
+          onPublish={() => console.log('Publishing...')}
+        />
 
-            <div className="w-px h-6" style={{ backgroundColor: '#404040' }} />
-
-            <TypeformButtonContainer>
-              <TypeformButton
-                isActive={activeTab === 'preview'}
-                onClick={() => setActiveTab('preview')}
-              >
-                Preview
-              </TypeformButton>
-              <TypeformButton
-                isActive={activeTab === 'results'}
-                onClick={() => setActiveTab('results')}
-              >
-                Results
-              </TypeformButton>
-              <TypeformButton
-                isActive={activeTab === 'analytics'}
-                onClick={() => setActiveTab('analytics')}
-              >
-                Analytics
-              </TypeformButton>
-              <TypeformButton
-                isActive={activeTab === 'share'}
-                onClick={() => setActiveTab('share')}
-              >
-                Share
-              </TypeformButton>
-            </TypeformButtonContainer>
-          </div>
-        </div>
-
-        {/* Tab Content - Full Width */}
-        <div className="flex-1 overflow-hidden">
+        {/* Tab Content - Full Width with top padding for navbar */}
+        <div className="flex-1 overflow-hidden min-h-0" style={{ paddingTop: '80px' }}>
           {activeTab === 'preview' && <PreviewTab projectId={projectId} sandboxBundle={sandboxBundle} />}
           {activeTab === 'results' && <ResultsTab projectId={projectId} />}
           {activeTab === 'analytics' && <AnalyticsTab projectId={projectId} />}
           {activeTab === 'share' && <ShareTab projectId={projectId} />}
         </div>
 
-        {/* Ask Surbee Component - Sticky at Bottom */}
-        <div className="ask-surbee-container">
-          <AskSurbeeComponent />
-        </div>
+        {/* Ask Surbee Component - Sticky at Bottom - Hidden for Preview Tab */}
+        {activeTab !== 'preview' && (
+          <div className="ask-surbee-container">
+            <AskSurbeeComponent />
+          </div>
+        )}
       </div>
-      
+
       {/* Global Styles for Button Hover Effect */}
       <style
         dangerouslySetInnerHTML={{
