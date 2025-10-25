@@ -2,8 +2,11 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import VideoSection from "./VideoSection";
+import ChatInputLight from "@/components/ui/chat-input-light";
+import { useRouter } from "next/navigation";
 
 export default function HeroSection() {
+  const router = useRouter();
   const [mousePos1, setMousePos1] = useState({ x: 79, y: 99 });
   const [mousePos2, setMousePos2] = useState({ x: 68, y: 3.9 });
   const containerRef1 = useRef<HTMLSpanElement>(null);
@@ -18,7 +21,7 @@ export default function HeroSection() {
         const y1 = ((e.clientY - rect1.top) / rect1.height) * 100;
         setMousePos1({ x: x1, y: y1 });
       }
-      
+
       // Track mouse for second text
       if (containerRef2.current) {
         const rect2 = containerRef2.current.getBoundingClientRect();
@@ -31,6 +34,18 @@ export default function HeroSection() {
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
+
+  // Handle chat input submission
+  const handleChatSubmit = (message: string, images?: string[]) => {
+    if (!message.trim()) return;
+
+    // Redirect to survey builder with the initial prompt
+    const projectId = `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    try {
+      sessionStorage.setItem('surbee_initial_prompt', message.trim());
+    } catch {}
+    router.push(`/project/${projectId}`);
+  };
 
   return (
     <div className="relative flex h-full flex-col justify-center items-center min-h-[80vh] -mt-12 md:-mt-20">
@@ -185,15 +200,15 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* CTA Button */}
-      <div className="flex justify-center mt-8 mb-8">
-        <a
-          href="/test-login"
-          className="px-8 py-4 text-base font-medium bg-black text-white hover:bg-neutral-800 transition-all duration-300 ease-out w-full md:w-auto text-center uppercase"
-          style={{ fontFamily: 'var(--font-inter), sans-serif', borderRadius: '9999px', letterSpacing: '0.04em' }}
-        >
-          Start Building
-        </a>
+      {/* Chat Input */}
+      <div className="w-full max-w-2xl mx-auto mt-8 mb-8 px-4">
+        <ChatInputLight
+          onSendMessage={handleChatSubmit}
+          placeholder="Ask Surbee to draft a survey..."
+          className="chat-input-landing"
+          theme="white"
+          disableRotatingPlaceholders={false}
+        />
       </div>
 
       {/* Video Section */}
