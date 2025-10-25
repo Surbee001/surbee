@@ -37,26 +37,29 @@ const tobiasLight = localFont({
   display: "swap",
 });
 
+// TODO: Replace with actual Diatype font files when available
+// For now, using Epilogue as a temporary substitute that has a similar clean, modern look
 const diatype = localFont({
   src: [
     {
-      path: "../../../public/fonts/Diatype-Regular.woff2",
+      path: "../../../Font/Epilogue_Complete/Fonts/WEB/fonts/Epilogue-Regular.woff2",
       weight: "400",
       style: "normal",
     },
     {
-      path: "../../../public/fonts/Diatype-Medium.woff2",
+      path: "../../../Font/Epilogue_Complete/Fonts/WEB/fonts/Epilogue-Medium.woff2",
       weight: "500",
       style: "normal",
     },
     {
-      path: "../../../public/fonts/Diatype-Bold.woff2",
+      path: "../../../Font/Epilogue_Complete/Fonts/WEB/fonts/Epilogue-Bold.woff2",
       weight: "700",
       style: "normal",
     },
   ],
   variable: "--font-diatype",
   display: "swap",
+  fallback: ["system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
 });
 
 export default function LandingPage() {

@@ -201,6 +201,7 @@ export default function HeroSection() {
   font-family: var(--font-diatype), var(--font-inter), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Note: Currently using Epilogue as temporary substitute for Diatype */
 }
 
 .bsmnt-text-display-sm {
