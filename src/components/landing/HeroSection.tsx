@@ -80,27 +80,36 @@ export default function HeroSection() {
 
       {/* Centered Hero Text - "Craft exceptional survey experiences" */}
       <div className="relative flex-1 flex items-center justify-center text-center">
-        <div className="relative">
+        <div ref={containerRef1} className="relative">
           <h1 className="select-none hero-text-diatype">
-            <span className="leading-none block" style={{ fontSize: '72px', fontWeight: 400, letterSpacing: '-2px', lineHeight: '80px', color: '#0A0A0A' }}>
+            <span
+              className="leading-none block"
+              style={{
+                fontSize: 'clamp(48px, 5vw, 72px)',
+                fontWeight: 400,
+                letterSpacing: '-0.02em',
+                lineHeight: '1.1',
+                color: '#0A0A0A'
+              }}
+            >
               <span className="relative">
-                <span className="inline-block -translate-y-[0.135em] opacity-0">
-                  Craft exceptional,<br />survey experiences
+                <span className="inline-block opacity-0">
+                  Craft exceptional, survey experiences
                 </span>
-                <span ref={containerRef1} className="px-[5%] -mx-[5%] block absolute inset-0 pointer" style={{ fontFamily: 'var(--font-diatype), sans-serif', fontSize: '72px', fontWeight: 400, letterSpacing: '-2px', lineHeight: '80px' }}>
+                <span className="absolute inset-0 pointer-events-none">
                   <svg
-                    className="select-none pointer-events-none"
-                    height="100%"
-                    width="100%"
+                    className="select-none pointer-events-none w-full h-auto"
+                    viewBox="0 0 800 200"
                     aria-hidden="true"
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <defs>
                       <linearGradient
                         id="textHoverEffectGradient-hero"
-                        cx="50%"
-                        cy="50%"
-                        gradientTransform="rotate(-10)"
+                        x1="0%"
+                        y1="0%"
+                        x2="100%"
+                        y2="100%"
                         gradientUnits="userSpaceOnUse"
                       >
                         <stop offset="0%" stopColor="#320F1E" />
@@ -117,63 +126,54 @@ export default function HeroSection() {
                         id="textHoverEffectRevealMask-hero"
                         cx={`${mousePos1.x}%`}
                         cy={`${mousePos1.y}%`}
-                        gradientUnits="userSpaceOnUse"
                         r="40%"
+                        gradientUnits="userSpaceOnUse"
                       >
                         <stop offset="30%" stopColor="white" />
                         <stop offset="100%" stopColor="black" />
                       </radialGradient>
                       <mask id="textHoverEffectMask-hero">
                         <rect
-                          height="100%"
                           width="100%"
+                          height="100%"
                           fill="url(#textHoverEffectRevealMask-hero)"
-                          x="0%"
-                          y="0"
                         />
                       </mask>
                     </defs>
                     <text
-                      className="text-[1em] fill-current text-shadow-ascii-contrast"
+                      className="text-[1em] fill-current"
                       dominantBaseline="middle"
                       textAnchor="middle"
                       x="50%"
-                      y="45%"
+                      y="50%"
+                      style={{
+                        fontFamily: 'var(--font-diatype), sans-serif',
+                        fontSize: 'clamp(48px, 5vw, 72px)',
+                        fontWeight: 400,
+                        letterSpacing: '-0.02em',
+                        lineHeight: '1.1'
+                      }}
                     >
-                      Craft exceptional,
+                      Craft exceptional, survey experiences
                     </text>
                     <text
-                      className="text-[1em] fill-current text-shadow-ascii-contrast"
-                      dominantBaseline="middle"
-                      textAnchor="middle"
-                      x="50%"
-                      y="65%"
-                    >
-                      survey experiences
-                    </text>
-                    <text
-                      className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]"
+                      className="text-[1em]"
                       dominantBaseline="middle"
                       fill="url(#textHoverEffectGradient-hero)"
                       mask="url(#textHoverEffectMask-hero)"
                       opacity="1"
                       textAnchor="middle"
                       x="50%"
-                      y="45%"
+                      y="50%"
+                      style={{
+                        fontFamily: 'var(--font-diatype), sans-serif',
+                        fontSize: 'clamp(48px, 5vw, 72px)',
+                        fontWeight: 400,
+                        letterSpacing: '-0.02em',
+                        lineHeight: '1.1'
+                      }}
                     >
-                      Craft exceptional,
-                    </text>
-                    <text
-                      className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]"
-                      dominantBaseline="middle"
-                      fill="url(#textHoverEffectGradient-hero)"
-                      mask="url(#textHoverEffectMask-hero)"
-                      opacity="1"
-                      textAnchor="middle"
-                      x="50%"
-                      y="65%"
-                    >
-                      survey experiences
+                      Craft exceptional, survey experiences
                     </text>
                   </svg>
                 </span>
@@ -201,7 +201,7 @@ export default function HeroSection() {
   font-family: var(--font-diatype), var(--font-inter), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Note: Currently using Epilogue as temporary substitute for Diatype */
+  /* Using Epilogue Variable font (temporary substitute for Diatype Variable) */
 }
 
 .bsmnt-text-display-sm {

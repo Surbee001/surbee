@@ -37,24 +37,19 @@ const tobiasLight = localFont({
   display: "swap",
 });
 
-// TODO: Replace with actual Diatype font files when available
-// For now, using Epilogue as a temporary substitute that has a similar clean, modern look
+// TODO: Replace with actual Diatype variable font when available
+// For now, using Epilogue Variable as a temporary substitute
 const diatype = localFont({
   src: [
     {
-      path: "../../../Font/Epilogue_Complete/Fonts/WEB/fonts/Epilogue-Regular.woff2",
-      weight: "400",
+      path: "../../../Font/Epilogue_Complete/Fonts/WEB/fonts/Epilogue-Variable.woff2",
+      weight: "100 900",
       style: "normal",
     },
     {
-      path: "../../../Font/Epilogue_Complete/Fonts/WEB/fonts/Epilogue-Medium.woff2",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "../../../Font/Epilogue_Complete/Fonts/WEB/fonts/Epilogue-Bold.woff2",
-      weight: "700",
-      style: "normal",
+      path: "../../../Font/Epilogue_Complete/Fonts/WEB/fonts/Epilogue-VariableItalic.woff2",
+      weight: "100 900",
+      style: "italic",
     },
   ],
   variable: "--font-diatype",
