@@ -44,6 +44,16 @@ interface ThinkingStep {
   status: "thinking" | "complete";
 }
 
+interface FunctionCallItem {
+  id: string;
+  toolName: string;
+  fileName?: string;
+  linesAdded?: number;
+  linesDeleted?: number;
+  status: "pending" | "complete";
+  timestamp: Date;
+}
+
 type WorkflowContextChatMessage = {
   role: "user" | "assistant";
   text: string;
@@ -166,6 +176,27 @@ const buildChatSummary = (history: WorkflowContextChatMessage[], limit = 4): str
 
   return lines.length > 0 ? lines.join("\n") : null;
 };
+
+// Simple preview-only component for main area (no code editor)
+function ProjectPreviewOnly({
+  providerProps,
+}: {
+  providerProps: SandboxProviderProps;
+}) {
+  return (
+    <SandboxProvider {...providerProps}>
+      <div className="h-full w-full bg-[#0a0a0a]">
+        <SandpackPreview
+          className="h-full w-full"
+          showRefreshButton={false}
+          showNavigator={false}
+          showOpenInCodeSandbox={false}
+          style={{ backgroundColor: "#0a0a0a" }}
+        />
+      </div>
+    </SandboxProvider>
+  );
+}
 
 function ProjectSandboxView({
   showConsole,
@@ -845,6 +876,7 @@ export default function ProjectPage() {
   
   const [thinkingHtmlStream, setThinkingHtmlStream] = useState<string>('');
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
+  const [functionCalls, setFunctionCalls] = useState<FunctionCallItem[]>([]);
   const plannerSummarySeenRef = useRef(false);
   const plannerFallbackSentRef = useRef(false);
   const builderSummarySeenRef = useRef(false);
@@ -977,7 +1009,7 @@ export default function ProjectPage() {
     },
   }), [sandboxConfig]);
   const sandboxAvailable = Boolean(sandboxBundle);
-  
+
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const publishMenuRef = useRef<HTMLDivElement>(null);
@@ -1241,25 +1273,13 @@ export default function ProjectPage() {
   }, [extractHighlightsFromSteps]);
 
   const ensurePlannerSummary = useCallback(() => {
-    if (!plannerSummarySeenRef.current && !plannerFallbackSentRef.current) {
-      const fallbackSummary = buildPlannerFallbackSummary().trim();
-      if (fallbackSummary) {
-        addAgentMessage(fallbackSummary, 'SurbeeBuildPlanner', { isSummary: true });
-      }
-      plannerFallbackSentRef.current = true;
-    }
+    // Summaries are now filtered out in the UI, so we don't need to add fallback summaries
     enterPlannerSummaryPhase();
-  }, [addAgentMessage, buildPlannerFallbackSummary, enterPlannerSummaryPhase]);
+  }, [enterPlannerSummaryPhase]);
 
   const ensureBuilderSummary = useCallback(() => {
-    if (!builderSummarySeenRef.current && !builderFallbackSentRef.current) {
-      const fallbackSummary = buildBuilderFallbackSummary().trim();
-      if (fallbackSummary) {
-        addAgentMessage(fallbackSummary, 'SurbeeBuilder', { isSummary: true });
-      }
-      builderFallbackSentRef.current = true;
-    }
-  }, [addAgentMessage, buildBuilderFallbackSummary]);
+    // Summaries are now filtered out in the UI, so we don't need to add fallback summaries
+  }, []);
 
 
   const stop = () => {
@@ -1327,6 +1347,7 @@ export default function ProjectPage() {
     builderReasoningSnapshotRef.current = [];
     latestThinkingStepsRef.current = [];
     setThinkingSteps([]);
+    setFunctionCalls([]);
 
     let reasoningCounter = 0;
 
@@ -1424,6 +1445,9 @@ export default function ProjectPage() {
           if (!messageText) return;
 
           const isSummary = Boolean(event.isSummary);
+          const agentName = String(event.agent || '').toLowerCase();
+
+          // All messages (including summaries) go to chat
           setMessages((prev) => [
             ...prev,
             {
@@ -1435,21 +1459,43 @@ export default function ProjectPage() {
               isSummary,
             },
           ]);
-          registerAgentMessage(event.agent || undefined, isSummary);
 
           if (isSummary) {
-            const agentName = String(event.agent || '').toLowerCase();
             if (agentName.includes('surbeebuildplanner')) {
-              ensurePlannerSummary();
+              plannerSummarySeenRef.current = true;
             } else if (agentName.includes('surbeebuilder')) {
               builderSummarySeenRef.current = true;
             }
           }
+
+          registerAgentMessage(event.agent || undefined, isSummary);
           return;
         }
 
         if (event.type === 'tool_call') {
-          if (event.name === 'build_typescript_tailwind_project') {
+          // Add tool call to function calls list
+          const toolId = `tool-${Date.now()}-${reasoningCounter++}`;
+          const toolName = event.name || 'unknown_tool';
+
+          // Extract file name from arguments
+          let fileName: string | undefined;
+          if (event.arguments && typeof event.arguments === 'object') {
+            fileName = event.arguments.file_path || event.arguments.entry_file || event.arguments.component_name;
+          }
+
+          setFunctionCalls((prev) => [
+            ...prev,
+            {
+              id: toolId,
+              toolName,
+              fileName,
+              status: 'pending',
+              timestamp: new Date(),
+            },
+          ]);
+
+          // Handle specific tool calls
+          if (toolName === 'build_typescript_tailwind_project') {
             snapshotPlannerSteps();
             ensurePlannerSummary();
             setThinkingSteps((prev) => {
@@ -2120,13 +2166,7 @@ export default function ProjectPage() {
                   const isReasoningOnly = !message.isUser && message.text.trim().toLowerCase().startsWith("thought for ");
 
                   if (isReasoningOnly) {
-                    return (
-                      <div key={message.id} className="flex justify-start">
-                        <div className="text-xs text-muted-foreground italic">
-                          {message.text}
-                        </div>
-                      </div>
-                    );
+                    return null;
                   }
 
                   return (
@@ -2135,41 +2175,13 @@ export default function ProjectPage() {
                       className={`flex w-full ${message.isUser ? 'justify-end' : 'justify-start'}`}
                     >
                       {message.isUser ? (
-                        <div className="relative max-w-[80%] rounded-2xl bg-white text-black px-4 py-3 text-sm shadow-lg border border-zinc-200">
-                          <span className="block text-sm font-medium text-slate-900">
-                            You
-                          </span>
-                          <p className="mt-1 whitespace-pre-wrap text-slate-900/90">
+                        <div className="relative max-w-[80%] rounded-2xl bg-zinc-800/50 border border-zinc-700/50 px-4 py-3 text-sm">
+                          <p className="whitespace-pre-wrap text-left text-zinc-100">
                             {message.text}
                           </p>
-                          {message.timestamp && (
-                            <span className="mt-2 block text-right text-xs text-slate-500">
-                              {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                            </span>
-                          )}
                         </div>
                       ) : (
-                        <div
-                          className={
-                            message.isSummary
-                              ? "group relative max-w-full flex-1 rounded-2xl border border-blue-500/35 bg-blue-500/10 px-4 py-4 text-sm text-zinc-100 shadow-sm"
-                              : "group relative max-w-full flex-1 text-sm text-zinc-100 leading-relaxed"
-                          }
-                        >
-                          {(message.agent || message.isSummary) && (
-                            <div className="mb-2 flex items-center gap-2">
-                              {message.agent && (
-                                <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                                  {message.agent}
-                                </span>
-                              )}
-                              {message.isSummary && (
-                                <span className="inline-flex items-center rounded-full bg-blue-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-blue-200">
-                                  Summary
-                                </span>
-                              )}
-                            </div>
-                          )}
+                        <div className="group relative max-w-full flex-1 text-sm text-zinc-100 leading-relaxed">
                           <MarkdownRenderer content={message.text} className="prose-invert prose-sm max-w-none" />
                           <div className="mt-3">
                             <AIResponseActions
@@ -2197,21 +2209,27 @@ export default function ProjectPage() {
                     </div>
                   );
                 })}
-                {(isThinking || isBuilding) && (
-                  <div className="space-y-3">
-                    {isThinking && (
-                      <ThinkingDisplay steps={thinkingSteps} isThinking={isThinking} />
-                    )}
-                    {isBuilding && (
-                      <div className="rounded-2xl border border-zinc-800/70 bg-zinc-900/50 px-4 py-3">
-                        <ToolCall
-                          icon={<Hammer className="h-4 w-4 text-muted-foreground" />}
-                          label={buildingLabel}
-                          isActive
-                        />
-                      </div>
-                    )}
+                {/* Function Calls */}
+                {functionCalls.map((call) => (
+                  <div key={call.id} className="flex items-start gap-2">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-zinc-800/60 border border-zinc-700/50 px-3 py-1.5 text-xs">
+                      <span className="text-zinc-300">{call.toolName.replace(/_/g, ' ')}</span>
+                      {call.fileName && (
+                        <span className="text-zinc-400">• {call.fileName}</span>
+                      )}
+                      {call.linesAdded !== undefined && call.linesAdded > 0 && (
+                        <span className="text-green-400 font-medium">+{call.linesAdded}</span>
+                      )}
+                      {call.linesDeleted !== undefined && call.linesDeleted > 0 && (
+                        <span className="text-red-400 font-medium">-{call.linesDeleted}</span>
+                      )}
+                    </div>
                   </div>
+                ))}
+
+                {/* Thinking Display */}
+                {isThinking && (
+                  <ThinkingDisplay steps={thinkingSteps} isThinking={isThinking} />
                 )}
               </div>
             </div>
@@ -2551,8 +2569,13 @@ export default function ProjectPage() {
             ) : (
               <div className="flex-1 overflow-hidden flex items-center justify-center bg-[#0a0a0a]">
                 {/* Show loading animation while building but no HTML yet */}
-                {(isBuilding || isThinking) && !hasHtmlContent ? (
+                {isBuilding && !hasHtmlContent && !sandboxAvailable ? (
                   <AILoader text="Building" size={200} />
+                ) : sandboxAvailable ? (
+                  /* Show React preview when sandbox bundle is available */
+                  <div className="h-full w-full">
+                    <ProjectPreviewOnly providerProps={sandboxProviderProps} />
+                  </div>
                 ) : (
                   /* Device-sized container with smooth transitions on resize */
                   <div className={`relative ${getDeviceStyles()} transition-all duration-300 ease-in-out`}>

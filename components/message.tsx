@@ -331,33 +331,3 @@ export const PreviewMessage = memo(
   },
 );
 
-// TODO: Remove ThinkingMessage component when switching to real AI responses
-export const ThinkingMessage = () => {
-  const role = 'assistant';
-
-  return (
-    <motion.div
-      data-testid="message-assistant-loading"
-      className="w-full mx-auto max-w-3xl px-4"
-      initial={{ y: 5, opacity: 0 }}
-      animate={{ y: 0, opacity: 1, transition: { delay: 1 } }}
-      data-role={role}
-      layout={false}
-    >
-      <div className="flex gap-4 w-full">
-        <div className="flex flex-col gap-4 w-full">
-          <div className="flex items-center gap-3 font-headline text-secondary-foreground">
-            <div className="flex items-center justify-center w-6 h-6">
-              <TextShimmer className="w-5 h-5 text-primary" duration={1.5}>
-                <Brain size={20} />
-              </TextShimmer>
-            </div>
-            <TextShimmer className="text-lg font-medium" duration={1.5}>
-              Lyra is thinking...
-            </TextShimmer>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
