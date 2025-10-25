@@ -1,51 +1,35 @@
 # Diatype Font Setup
 
-## Current Status
-The landing page is currently using **Epilogue Variable** as a temporary substitute for Diatype Variable font.
+## ✅ Current Status
+The landing page is now using the **ABC Diatype Variable** font with full weight range (100-900).
 
-## ✅ Current Implementation
-- **Variable Font**: Using `Epilogue-Variable.woff2` with weight range 100-900
-- **Clean Layout**: Text displays as a proper sentence: "Craft exceptional, survey experiences"
-- **Responsive**: Uses `clamp()` for responsive font sizing
-- **Centered**: Hero text is perfectly centered in the viewport
-- **Interactive**: Maintains the gradient hover effect
+## Font Location
+- **Font Directory**: `public/fonts/ABC Diatype Variable/`
+- **Font File**: `ABCDiatypeVariable-Trial.woff2`
+- **Variable Font**: Supports weights 100-900
 
-## To Add Actual Diatype Variable Font
+## Implementation
+The font is configured as a variable font in `src/app/landing/page.tsx`:
 
-When you have the Diatype Variable font file, follow these steps:
-
-1. **Add Diatype Variable font file to this directory** (`public/fonts/`):
-   - `Diatype-Variable.woff2` (supports weight range 100-900)
-
-2. **Update the font configuration** in `src/app/landing/page.tsx`:
-   ```typescript
-   const diatype = localFont({
-     src: [
-       {
-         path: "../../../public/fonts/Diatype-Variable.woff2",
-         weight: "100 900",
-         style: "normal",
-       },
-       {
-         path: "../../../public/fonts/Diatype-VariableItalic.woff2",
-         weight: "100 900",
-         style: "italic",
-       },
-     ],
-     variable: "--font-diatype",
-     display: "swap",
-   });
-   ```
-
-3. **Update the comment** in the code to remove the "TODO" note.
+```typescript
+const diatype = localFont({
+  src: "../../../public/fonts/ABC Diatype Variable/ABCDiatypeVariable-Trial.woff2",
+  weight: "100 900",
+  style: "normal",
+  variable: "--font-diatype",
+  display: "swap",
+  fallback: ["system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+});
+```
 
 ## ✅ What's Working Now
 - ✅ **Variable Font**: Full weight range (100-900) support
-- ✅ **Clean Typography**: Proper sentence layout without overlapping text
+- ✅ **Clean Typography**: Proper two-line layout with space between lines
 - ✅ **Responsive Design**: Font scales beautifully across all screen sizes
 - ✅ **Interactive Effects**: Mouse hover reveals colorful gradient
 - ✅ **Performance**: Optimized with font-display: swap
 - ✅ **Accessibility**: Proper semantic markup and fallbacks
+- ✅ **Centered Layout**: Both text and announcement badge properly centered
 
 ## Alternative: Use System Font
 If Diatype is installed on your system, you can use it directly:

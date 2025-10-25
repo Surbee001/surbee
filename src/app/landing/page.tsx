@@ -37,21 +37,11 @@ const tobiasLight = localFont({
   display: "swap",
 });
 
-// TODO: Replace with actual Diatype variable font when available
-// For now, using Epilogue Variable as a temporary substitute
+// Using ABC Diatype Variable font from public/fonts/ABC Diatype Variable/
 const diatype = localFont({
-  src: [
-    {
-      path: "../../../Font/Epilogue_Complete/Fonts/WEB/fonts/Epilogue-Variable.woff2",
-      weight: "100 900",
-      style: "normal",
-    },
-    {
-      path: "../../../Font/Epilogue_Complete/Fonts/WEB/fonts/Epilogue-VariableItalic.woff2",
-      weight: "100 900",
-      style: "italic",
-    },
-  ],
+  src: "../../../public/fonts/ABC Diatype Variable/ABCDiatypeVariable-Trial.woff2",
+  weight: "100 900",
+  style: "normal",
   variable: "--font-diatype",
   display: "swap",
   fallback: ["system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
