@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import VideoSection from "./VideoSection";
 
 export default function HeroSection() {
   const [mousePos1, setMousePos1] = useState({ x: 79, y: 99 });
@@ -85,7 +86,7 @@ export default function HeroSection() {
             <span className="leading-none block" style={{ fontSize: '72px', fontWeight: 400, letterSpacing: '-2px', lineHeight: '80px', color: '#0A0A0A' }}>
               <span className="relative">
                 <span className="inline-block -translate-y-[0.135em] opacity-0">
-                  Craft exceptional,<br />survey experiences
+                  craft exceptional<br />survey experiences
                 </span>
                 <span ref={containerRef1} className="px-[5%] -mx-[5%] block absolute inset-0 pointer" style={{ fontFamily: 'var(--font-diatype), sans-serif', fontSize: '72px', fontWeight: 400, letterSpacing: '-2px', lineHeight: '80px' }}>
                   <svg
@@ -141,7 +142,7 @@ export default function HeroSection() {
                       x="400"
                       y="40"
                     >
-                      Craft exceptional,
+                      craft exceptional
                     </text>
                     <text
                       className="text-[1em] fill-current text-shadow-ascii-contrast"
@@ -162,7 +163,7 @@ export default function HeroSection() {
                       x="400"
                       y="40"
                     >
-                      Craft exceptional,
+                      craft exceptional
                     </text>
                     <text
                       className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]"
@@ -194,6 +195,9 @@ export default function HeroSection() {
           Start Building
         </a>
       </div>
+
+      {/* Video Section */}
+      <VideoSection />
 
       <style
         dangerouslySetInnerHTML={{
