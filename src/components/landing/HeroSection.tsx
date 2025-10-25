@@ -98,17 +98,17 @@ export default function HeroSection() {
       <div className="relative flex-1 flex items-center justify-center text-center pt-16">
         <div className="relative">
           <h1 className="select-none hero-text-diatype">
-            <span className="leading-none block" style={{ fontSize: '72px', fontWeight: 400, letterSpacing: '-2px', lineHeight: '80px', color: '#0A0A0A' }}>
+            <span className="leading-none block" style={{ fontSize: '72px', fontWeight: 400, letterSpacing: '-1px', lineHeight: '80px', color: '#0A0A0A' }}>
               <span className="relative">
                 <span className="inline-block -translate-y-[0.135em] opacity-0">
-                  craft exceptional<br />survey experiences
+                  craft exceptional survey experiences
                 </span>
-                <span ref={containerRef1} className="px-[5%] -mx-[5%] block absolute inset-0 pointer" style={{ fontFamily: 'var(--font-diatype), sans-serif', fontSize: '72px', fontWeight: 400, letterSpacing: '-2px', lineHeight: '80px' }}>
+                <span ref={containerRef1} className="px-[5%] -mx-[5%] block absolute inset-0 pointer" style={{ fontFamily: 'var(--font-diatype), sans-serif', fontSize: '72px', fontWeight: 400, letterSpacing: '-1px', lineHeight: '80px' }}>
                   <svg
                     className="select-none pointer-events-none"
                     height="100%"
                     width="100%"
-                    viewBox="0 0 800 160"
+                    viewBox="0 0 1000 100"
                     aria-hidden="true"
                     xmlns="http://www.w3.org/2000/svg"
                   >
@@ -154,19 +154,10 @@ export default function HeroSection() {
                       className="text-[1em] fill-current text-shadow-ascii-contrast"
                       dominantBaseline="middle"
                       textAnchor="middle"
-                      x="400"
-                      y="40"
+                      x="500"
+                      y="50"
                     >
-                      craft exceptional
-                    </text>
-                    <text
-                      className="text-[1em] fill-current text-shadow-ascii-contrast"
-                      dominantBaseline="middle"
-                      textAnchor="middle"
-                      x="400"
-                      y="120"
-                    >
-                      survey experiences
+                      craft exceptional survey experiences
                     </text>
                     <text
                       className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]"
@@ -175,22 +166,10 @@ export default function HeroSection() {
                       mask="url(#textHoverEffectMask-hero)"
                       opacity="1"
                       textAnchor="middle"
-                      x="400"
-                      y="40"
+                      x="500"
+                      y="50"
                     >
-                      craft exceptional
-                    </text>
-                    <text
-                      className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]"
-                      dominantBaseline="middle"
-                      fill="url(#textHoverEffectGradient-hero)"
-                      mask="url(#textHoverEffectMask-hero)"
-                      opacity="1"
-                      textAnchor="middle"
-                      x="400"
-                      y="120"
-                    >
-                      survey experiences
+                      craft exceptional survey experiences
                     </text>
                   </svg>
                 </span>
@@ -202,13 +181,17 @@ export default function HeroSection() {
 
       {/* Chat Input */}
       <div className="w-full max-w-2xl mx-auto mt-8 mb-8 px-4">
-        <ChatInputLight
-          onSendMessage={handleChatSubmit}
-          placeholder="Ask Surbee to draft a survey..."
-          className="chat-input-landing"
-          theme="white"
-          disableRotatingPlaceholders={false}
-        />
+        <div className="flex justify-center">
+          <div className="w-full max-w-lg">
+            <ChatInputLight
+              onSendMessage={handleChatSubmit}
+              placeholder="Ask Surbee to draft a survey..."
+              className="chat-input-landing"
+              theme="white"
+              disableRotatingPlaceholders={false}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Video Section */}
@@ -221,6 +204,16 @@ export default function HeroSection() {
   font-family: var(--font-diatype), var(--font-inter), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.chat-input-landing {
+  background-color: #f5f5f5 !important;
+  border-color: #d4d4d4 !important;
+}
+
+.chat-input-landing > div {
+  background-color: #f5f5f5 !important;
+  border-color: #d4d4d4 !important;
 }
 
 .bsmnt-text-display-sm {

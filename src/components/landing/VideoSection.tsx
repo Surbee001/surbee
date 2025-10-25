@@ -2,11 +2,8 @@ import React from "react";
 
 export default function VideoSection() {
   return (
-    <div className="relative w-full mx-auto mt-20 mb-8 px-[10px]">
-      <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-2xl" style={{
-        width: 'calc(100vw - 20px)',
-        maxWidth: 'none'
-      }}>
+    <div className="relative w-full mx-auto mt-48 mb-8">
+      <div className="relative aspect-video w-full rounded-3xl overflow-hidden bg-black shadow-2xl mx-[5px]">
         <button
           className="absolute cursor-pointer text-white h-full w-full inset-0 z-10"
           type="button"
