@@ -32,9 +32,9 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <div className="relative flex h-full flex-col justify-between gap-6 md:gap-8 min-h-[80vh] -mt-12 md:-mt-20">
+    <div className="relative flex h-full flex-col justify-center items-center min-h-[80vh] -mt-12 md:-mt-20">
       {/* Badge Announcement */}
-      <div className="mr-auto -mt-8 md:mt-0">
+      <div className="mr-auto -mt-8 md:mt-0 mb-8">
         <a
           className="x:focus-visible:nextra-focus flex group mr-auto"
           href="/pricing"
@@ -78,203 +78,127 @@ export default function HeroSection() {
         </a>
       </div>
 
-      {/* Top Hero Text - "Craft exceptional" */}
-      <div className="relative -mt-[400px]">
-        <h1 className="select-none hero-text-tobias">
-          <span className="self-start leading-none block" style={{ fontSize: '100px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '100px', color: '#0A0A0A' }}>
-            <span className="relative">
-              <span className="inline-block -translate-y-[0.135em] opacity-0">
-                Craft exceptional
-              </span>
-              <span ref={containerRef1} className="px-[5%] -mx-[5%] block absolute inset-0 pointer" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '100px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '100px' }}>
-                <svg
-                  className="select-none pointer-events-none"
-                  height="100%"
-                  width="100%"
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <defs>
-                    <linearGradient
-                      id="textHoverEffectGradient-_r_p_"
-                      cx="50%"
-                      cy="50%"
-                      gradientTransform="rotate(-10)"
-                      gradientUnits="userSpaceOnUse"
-                    >
-                      <stop offset="0%" stopColor="#320F1E" />
-                      <stop offset="8.56%" stopColor="#C83228" />
-                      <stop offset="25.06%" stopColor="#FB873F" />
-                      <stop offset="37.56%" stopColor="#D2DC91" />
-                      <stop offset="50.06%" stopColor="#5A8250" />
-                      <stop offset="62.06%" stopColor="#002314" />
-                      <stop offset="74.06%" stopColor="#00143C" />
-                      <stop offset="86.06%" stopColor="#2873D7" />
-                      <stop offset="95.06%" stopColor="#9BC3FF" />
-                    </linearGradient>
-                    <radialGradient
-                      id="textHoverEffectRevealMask-_r_p_"
-                      cx={`${mousePos1.x}%`}
-                      cy={`${mousePos1.y}%`}
-                      gradientUnits="userSpaceOnUse"
-                      r="40%"
-                    >
-                      <stop offset="30%" stopColor="white" />
-                      <stop offset="100%" stopColor="black" />
-                    </radialGradient>
-                    <mask id="textHoverEffectMask-_r_p_">
-                      <rect
-                        height="100%"
-                        width="100%"
-                        fill="url(#textHoverEffectRevealMask-_r_p_)"
-                        x="0%"
-                        y="0"
-                      />
-                    </mask>
-                  </defs>
-                  <text
-                    className="text-[1em] fill-current text-shadow-ascii-contrast"
-                    dominantBaseline="middle"
-                    textAnchor="middle"
-                    x="50%"
-                    y="55%"
+      {/* Centered Hero Text - "Craft exceptional survey experiences" */}
+      <div className="relative flex-1 flex items-center justify-center text-center">
+        <div className="relative">
+          <h1 className="select-none hero-text-diatype">
+            <span className="leading-none block" style={{ fontSize: '72px', fontWeight: 400, letterSpacing: '-2px', lineHeight: '80px', color: '#0A0A0A' }}>
+              <span className="relative">
+                <span className="inline-block -translate-y-[0.135em] opacity-0">
+                  Craft exceptional,<br />survey experiences
+                </span>
+                <span ref={containerRef1} className="px-[5%] -mx-[5%] block absolute inset-0 pointer" style={{ fontFamily: 'var(--font-diatype), sans-serif', fontSize: '72px', fontWeight: 400, letterSpacing: '-2px', lineHeight: '80px' }}>
+                  <svg
+                    className="select-none pointer-events-none"
+                    height="100%"
+                    width="100%"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
                   >
-                    Craft exceptional
-                  </text>
-                  <text
-                    className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]"
-                    dominantBaseline="middle"
-                    fill="url(#textHoverEffectGradient-_r_p_)"
-                    mask="url(#textHoverEffectMask-_r_p_)"
-                    opacity="1"
-                    textAnchor="middle"
-                    x="50%"
-                    y="55%"
-                  >
-                    Craft exceptional
-                  </text>
-                </svg>
-              </span>
-            </span>
-          </span>
-        </h1>
-      </div>
-
-      {/* Bottom Hero Text - "survey experiences" */}
-      <div ref={containerRef2} className="relative self-end -mt-8">
-        <h2 className="select-none hero-text-tobias">
-          <span className="leading-none block" style={{ fontSize: '100px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '100px', color: '#0A0A0A' }}>
-            <span className="relative">
-              <span className="inline-block -translate-y-[0.135em] opacity-0">
-                survey experiences
-              </span>
-              <span className="px-[5%] -mx-[5%] block absolute inset-0 pointer" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '100px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '100px' }}>
-                <svg
-                  className="select-none pointer-events-none"
-                  height="100%"
-                  width="100%"
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <defs>
-                    <linearGradient
-                      id="textHoverEffectGradient-_r_q_"
-                      cx="50%"
-                      cy="50%"
-                      gradientTransform="rotate(-10)"
-                      gradientUnits="userSpaceOnUse"
+                    <defs>
+                      <linearGradient
+                        id="textHoverEffectGradient-hero"
+                        cx="50%"
+                        cy="50%"
+                        gradientTransform="rotate(-10)"
+                        gradientUnits="userSpaceOnUse"
+                      >
+                        <stop offset="0%" stopColor="#320F1E" />
+                        <stop offset="8.56%" stopColor="#C83228" />
+                        <stop offset="25.06%" stopColor="#FB873F" />
+                        <stop offset="37.56%" stopColor="#D2DC91" />
+                        <stop offset="50.06%" stopColor="#5A8250" />
+                        <stop offset="62.06%" stopColor="#002314" />
+                        <stop offset="74.06%" stopColor="#00143C" />
+                        <stop offset="86.06%" stopColor="#2873D7" />
+                        <stop offset="95.06%" stopColor="#9BC3FF" />
+                      </linearGradient>
+                      <radialGradient
+                        id="textHoverEffectRevealMask-hero"
+                        cx={`${mousePos1.x}%`}
+                        cy={`${mousePos1.y}%`}
+                        gradientUnits="userSpaceOnUse"
+                        r="40%"
+                      >
+                        <stop offset="30%" stopColor="white" />
+                        <stop offset="100%" stopColor="black" />
+                      </radialGradient>
+                      <mask id="textHoverEffectMask-hero">
+                        <rect
+                          height="100%"
+                          width="100%"
+                          fill="url(#textHoverEffectRevealMask-hero)"
+                          x="0%"
+                          y="0"
+                        />
+                      </mask>
+                    </defs>
+                    <text
+                      className="text-[1em] fill-current text-shadow-ascii-contrast"
+                      dominantBaseline="middle"
+                      textAnchor="middle"
+                      x="50%"
+                      y="45%"
                     >
-                      <stop offset="0%" stopColor="#320F1E" />
-                      <stop offset="8.56%" stopColor="#C83228" />
-                      <stop offset="25.06%" stopColor="#FB873F" />
-                      <stop offset="37.56%" stopColor="#D2DC91" />
-                      <stop offset="50.06%" stopColor="#5A8250" />
-                      <stop offset="62.06%" stopColor="#002314" />
-                      <stop offset="74.06%" stopColor="#00143C" />
-                      <stop offset="86.06%" stopColor="#2873D7" />
-                      <stop offset="95.06%" stopColor="#9BC3FF" />
-                    </linearGradient>
-                    <radialGradient
-                      id="textHoverEffectRevealMask-_r_q_"
-                      cx={`${mousePos2.x}%`}
-                      cy={`${mousePos2.y}%`}
-                      gradientUnits="userSpaceOnUse"
-                      r="40%"
+                      Craft exceptional,
+                    </text>
+                    <text
+                      className="text-[1em] fill-current text-shadow-ascii-contrast"
+                      dominantBaseline="middle"
+                      textAnchor="middle"
+                      x="50%"
+                      y="65%"
                     >
-                      <stop offset="30%" stopColor="white" />
-                      <stop offset="100%" stopColor="black" />
-                    </radialGradient>
-                    <mask id="textHoverEffectMask-_r_q_">
-                      <rect
-                        height="100%"
-                        width="100%"
-                        fill="url(#textHoverEffectRevealMask-_r_q_)"
-                        x="0%"
-                        y="0"
-                      />
-                    </mask>
-                  </defs>
-                  <text
-                    className="text-[1em] fill-current text-shadow-ascii-contrast"
-                    dominantBaseline="middle"
-                    textAnchor="middle"
-                    x="50%"
-                    y="55%"
-                  >
-                    survey experiences
-                  </text>
-                  <text
-                    className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]"
-                    dominantBaseline="middle"
-                    fill="url(#textHoverEffectGradient-_r_q_)"
-                    mask="url(#textHoverEffectMask-_r_q_)"
-                    opacity="1"
-                    textAnchor="middle"
-                    x="50%"
-                    y="55%"
-                  >
-                    survey experiences
-                  </text>
-                </svg>
+                      survey experiences
+                    </text>
+                    <text
+                      className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]"
+                      dominantBaseline="middle"
+                      fill="url(#textHoverEffectGradient-hero)"
+                      mask="url(#textHoverEffectMask-hero)"
+                      opacity="1"
+                      textAnchor="middle"
+                      x="50%"
+                      y="45%"
+                    >
+                      Craft exceptional,
+                    </text>
+                    <text
+                      className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]"
+                      dominantBaseline="middle"
+                      fill="url(#textHoverEffectGradient-hero)"
+                      mask="url(#textHoverEffectMask-hero)"
+                      opacity="1"
+                      textAnchor="middle"
+                      x="50%"
+                      y="65%"
+                    >
+                      survey experiences
+                    </text>
+                  </svg>
+                </span>
               </span>
             </span>
-          </span>
-        </h2>
-      </div>
-
-      {/* Description and CTA Button */}
-      <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end -mt-96 md:-mt-[26rem]">
-        <p className="bsmnt-text-body-md md:bsmnt-text-body-lg max-w-[40rem] text-balance" style={{ color: '#6B7280', fontFamily: 'var(--font-inter), sans-serif', fontSize: '18px' }}>
-          <strong className="font-normal" style={{ color: '#0A0A0A' }}>
-            Create surveys that researchers trust and participants enjoy.
-          </strong>{" "}
-          AI-powered generation, fraud detection, and real-time analytics{" "}
-          <br className="hidden lg:block" /> all on our complete research platform.
-        </p>
-        <div className="flex w-full flex-col gap-3 md:flex-row md:justify-end">
-          <a
-            href="/test-login"
-            className="px-8 py-4 text-base font-medium bg-black text-white hover:bg-neutral-800 transition-all duration-300 ease-out w-full md:w-auto text-center uppercase"
-            style={{ fontFamily: 'var(--font-inter), sans-serif', borderRadius: '9999px', letterSpacing: '0.04em' }}
-          >
-            Start Building
-          </a>
+          </h1>
         </div>
+      </div>
+
+      {/* CTA Button */}
+      <div className="flex justify-center mt-8">
+        <a
+          href="/test-login"
+          className="px-8 py-4 text-base font-medium bg-black text-white hover:bg-neutral-800 transition-all duration-300 ease-out w-full md:w-auto text-center uppercase"
+          style={{ fontFamily: 'var(--font-inter), sans-serif', borderRadius: '9999px', letterSpacing: '0.04em' }}
+        >
+          Start Building
+        </a>
       </div>
 
       <style
         dangerouslySetInnerHTML={{
           __html: `
-@font-face {
-  font-family: 'Tobias';
-  src: url('/fonts/Tobias-TRIAL-Thin.ttf') format('truetype');
-  font-weight: 100;
-  font-style: normal;
-  font-display: swap;
-}
-
-.hero-text-tobias {
-  font-family: 'Tobias', var(--font-inter), sans-serif;
+.hero-text-diatype {
+  font-family: var(--font-diatype), var(--font-inter), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
