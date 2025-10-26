@@ -761,7 +761,9 @@ export default function LandingPage() {
 	          </RevealSection>
 
           {/* Footer */}
-          <Footer />
+          <RevealSection className="w-full max-w-[1920px] mx-auto px-5 md:px-8 xl:px-12 2xl:px-30">
+            <Footer />
+          </RevealSection>
       </main>
     </div>
 

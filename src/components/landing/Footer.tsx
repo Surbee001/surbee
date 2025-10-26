@@ -18,7 +18,7 @@ export default function Footer() {
 
   return (
     <footer className={`w-full ${diatype.variable}`} style={{ backgroundColor: "#FFFFFF", fontFamily: "var(--font-diatype), system-ui, sans-serif" }}>
-      <div className="max-w-[1920px] mx-auto px-5 md:px-8 xl:px-12 2xl:px-30 py-12 md:py-16">
+      <div className="py-12 md:py-16">
         {/* Main content area */}
         <div className="flex justify-between items-start gap-8">
           {/* Left side - Logo only */}
