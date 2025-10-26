@@ -102,10 +102,10 @@ export default function LandingPage() {
     <div className={`min-h-screen w-full ${epilogue.variable} ${tobiasLight.variable} ${diatype.variable}`} style={{ backgroundColor: "#FEFFFC", fontFamily: "var(--font-epilogue)" }}>
 
       {/* Main Content - full width without sidebar */}
-      <main className="w-full pt-12">
+      <main className="w-full pt-8">
           {/* Title and description (hero header) */}
           <RevealSection
-            className="w-full max-w-[1920px] mx-auto px-5 md:px-8 xl:px-12 2xl:px-30 pb-8 pt-4 xl:pb-20 xl:pt-12"
+            className="w-full max-w-[1920px] mx-auto px-5 md:px-8 xl:px-12 2xl:px-30 pb-8 pt-0 xl:pb-20 xl:pt-0"
           >
             <HeroSection />
           </RevealSection>

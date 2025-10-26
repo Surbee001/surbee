@@ -643,10 +643,10 @@ export default function ProjectsPage() {
                         <InfoIcon />
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent 
-                      side="bottom" 
+                    <TooltipContent
+                      side="bottom"
                       align="start"
-                      className="max-w-xs p-0 border-0 rounded-lg [&>svg]:!hidden [&>div>svg]:!hidden [&_svg]:!hidden"
+                      className="w-[280px] p-0 border-0 rounded-lg [&>svg]:!hidden [&>div>svg]:!hidden [&_svg]:!hidden"
                       style={{ backgroundColor: 'rgba(108, 108, 108, 0.8)' }}
                       sideOffset={8}
                       hideWhenDetached={false}
@@ -741,10 +741,10 @@ export default function ProjectsPage() {
                         <InfoIcon />
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent 
-                      side="bottom" 
+                    <TooltipContent
+                      side="bottom"
                       align="start"
-                      className="max-w-xs p-0 border-0 rounded-lg [&>svg]:!hidden [&>div>svg]:!hidden [&_svg]:!hidden"
+                      className="w-[280px] p-0 border-0 rounded-lg [&>svg]:!hidden [&>div>svg]:!hidden [&_svg]:!hidden"
                       style={{ backgroundColor: 'rgba(108, 108, 108, 0.8)' }}
                       sideOffset={8}
                       hideWhenDetached={false}

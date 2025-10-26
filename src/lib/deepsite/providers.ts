@@ -18,12 +18,6 @@ export const MODELS: AIModel[] = [
     autoProvider: "openai",
   },
   {
-    value: "gpt-4o",
-    label: "GPT-4o",
-    providers: ["openai"],
-    autoProvider: "openai",
-  },
-  {
     value: "gpt-4.1",
     label: "GPT-4.1",
     providers: ["openai"],

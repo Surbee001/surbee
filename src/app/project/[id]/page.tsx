@@ -2164,8 +2164,59 @@ export default function ProjectPage() {
                   const lastUserPrompt =
                     [...messages].slice(0, idx).reverse().find((m) => m.isUser)?.text || "";
                   const isReasoningOnly = !message.isUser && message.text.trim().toLowerCase().startsWith("thought for ");
+                  const isSummary = message.isSummary;
+                  const containsPlanHighlights = !message.isUser && message.text.includes("**Plan Highlights**");
+                  const containsImplementationHighlights = !message.isUser && message.text.includes("**Implementation Highlights**");
+                  const startsWithPlanner = !message.isUser && message.text.trim().toLowerCase().startsWith("surbeebuildplanner:");
+                  const startsWithBuilderFinished = !message.isUser && message.text.trim().toLowerCase().startsWith("surbeebuilder finished");
+                  const isReasoningAgent = message.agent && (
+                    message.agent.toLowerCase().includes('reasoning') ||
+                    message.agent.toLowerCase().includes('think') ||
+                    message.agent.toLowerCase().includes('planner') ||
+                    message.agent.toLowerCase().includes('categorize') ||
+                    message.agent.toLowerCase().includes('optimizer') ||
+                    message.agent.toLowerCase().includes('guard') ||
+                    message.agent.toLowerCase().includes('fail') ||
+                    message.agent.toLowerCase().includes('promptoptimizer') ||
+                    message.agent.toLowerCase().includes('surbeefail')
+                  );
+                  const containsReasoningKeywords = !message.isUser && (
+                    message.text.toLowerCase().includes("reasoning:") ||
+                    message.text.toLowerCase().includes("step-by-step reasoning") ||
+                    message.text.toLowerCase().includes("chain-of-thought") ||
+                    message.text.toLowerCase().includes("thought process") ||
+                    (message.text.toLowerCase().includes("thinking") && message.text.length < 200) ||
+                    (message.text.toLowerCase().includes("analyzing") && message.text.length < 200) ||
+                    (message.text.toLowerCase().includes("considering") && message.text.length < 200)
+                  );
+                  const containsJSONStructure = !message.isUser && (
+                    message.text.includes('"reasoning"') ||
+                    message.text.includes('"mode"') ||
+                    message.text.includes('"thought"')
+                  );
+                  const isShortReasoningMessage = !message.isUser && message.text.length < 150 && (
+                    message.text.toLowerCase().includes("think") ||
+                    message.text.toLowerCase().includes("plan") ||
+                    message.text.toLowerCase().includes("reason") ||
+                    message.text.toLowerCase().includes("consider") ||
+                    message.text.toLowerCase().includes("analyze") ||
+                    message.text.toLowerCase().includes("evaluate") ||
+                    message.text.includes("...") ||
+                    message.text.includes("•") ||
+                    message.text.includes("- ") ||
+                    (message.text.match(/\d+\./) && message.text.length < 100)
+                  );
+                  const isSurbeeAgentMessage = !message.isUser && (
+                    message.text.toLowerCase().includes("surbee") && (
+                      message.text.toLowerCase().includes("planner") ||
+                      message.text.toLowerCase().includes("builder") ||
+                      message.text.toLowerCase().includes("optimizer") ||
+                      message.text.toLowerCase().includes("categorize") ||
+                      message.text.toLowerCase().includes("fail")
+                    )
+                  );
 
-                  if (isReasoningOnly) {
+                  if (isReasoningOnly || isSummary || containsPlanHighlights || containsImplementationHighlights || startsWithPlanner || startsWithBuilderFinished || isReasoningAgent || containsReasoningKeywords || containsJSONStructure || isShortReasoningMessage || isSurbeeAgentMessage) {
                     return null;
                   }
 

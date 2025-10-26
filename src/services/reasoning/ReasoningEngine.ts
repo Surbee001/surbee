@@ -566,7 +566,7 @@ export class ReasoningEngine {
         console.warn(`GPT-5 responses API not available, falling back to chat completions: ${error}`);
         // Fallback to standard chat completions
         apiParams = {
-          model: 'gpt-4o-mini',
+          model: 'gpt-5-mini',
           messages,
           max_completion_tokens: this.getPhaseTokenLimit(type),
           temperature: reasoning === 'low' ? 0.3 : reasoning === 'medium' ? 0.7 : 0.9,
@@ -818,7 +818,7 @@ Original query: "${query}"`;
         console.warn(`GPT-5 responses API not available for final answer, falling back: ${error}`);
         // Fallback to standard chat completions
         apiParams = {
-          model: 'gpt-4o-mini',
+          model: 'gpt-5-mini',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: query }
@@ -971,7 +971,7 @@ Original query: "${query}"`;
       'gpt-5': 0.00003, // Approximate output pricing
       'gpt-5-mini': 0.000003, // GPT-5 mini pricing
       'gpt-5-nano': 0.000001, // GPT-5 nano pricing (even more efficient)
-      'gpt-4o-mini': 0.000003
+      'gpt-5-mini': 0.000003
     };
 
     return tokens * (pricing[model as keyof typeof pricing] || pricing['gpt-5-mini']);

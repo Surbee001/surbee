@@ -16,9 +16,11 @@ interface EditorNavbarProps {
   projectId: string;
   projectName?: string;
   onPublish?: () => void;
+  activeTab?: string;
+  onTabChange?: (tab: 'preview' | 'insights' | 'share') => void;
 }
 
-export function EditorNavbar({ projectId, projectName = "Untitled Survey", onPublish }: EditorNavbarProps) {
+export function EditorNavbar({ projectId, projectName = "Untitled Survey", onPublish, activeTab = 'preview', onTabChange }: EditorNavbarProps) {
   const router = useRouter();
 
   return (
@@ -63,7 +65,7 @@ export function EditorNavbar({ projectId, projectName = "Untitled Survey", onPub
         >
           <button
             type="button"
-            title="Surbee Menu"
+            title="Back to Projects"
             onClick={() => router.push('/dashboard/projects')}
             style={{
               WebkitFontSmoothing: "antialiased",
@@ -86,29 +88,15 @@ export function EditorNavbar({ projectId, projectName = "Untitled Survey", onPub
               color: themeColors.dark.foreground.primary,
               fontSize: "13px",
               fontWeight: 600,
-              width: "46px",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "4px",
+              gap: "6px",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "16px",
-                height: "16px",
-                color: themeColors.dark.foreground.primary,
-              }}
-            >
-              <SurbeeLogo className="w-4 h-4" />
-            </div>
-            <span style={{ paddingBottom: "2px", color: themeColors.dark.foreground.muted }}>
-              <ChevronDown style={{ width: "8px", height: "8px" }} />
-            </span>
+            <ChevronDown style={{ width: "16px", height: "16px", transform: "rotate(90deg)" }} />
+            <span style={{ paddingBottom: "1px" }}>Back</span>
           </button>
         </div>
 
@@ -149,10 +137,11 @@ export function EditorNavbar({ projectId, projectName = "Untitled Survey", onPub
             {/* Preview Button */}
             <button
               title="Preview"
+              onClick={() => onTabChange?.('preview')}
               style={{
                 boxSizing: "border-box",
                 WebkitFontSmoothing: "antialiased",
-                padding: "0px 10px 0px 7px",
+                padding: "0px 12px",
                 border: "none",
                 borderRadius: "8px",
                 margin: "0px",
@@ -163,35 +152,37 @@ export function EditorNavbar({ projectId, projectName = "Untitled Survey", onPub
                 display: "inline-flex",
                 height: "30px",
                 appearance: "none",
-                backgroundColor: "transparent",
-                color: themeColors.dark.foreground.muted,
+                backgroundColor: activeTab === 'preview' ? themeColors.dark.sidebar.hover : "transparent",
+                color: activeTab === 'preview' ? themeColors.dark.foreground.primary : themeColors.dark.foreground.muted,
                 fontSize: "12px",
                 fontWeight: 600,
                 userSelect: "none",
                 cursor: "pointer",
                 alignItems: "center",
-                gap: "8px",
+                justifyContent: "center",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = themeColors.dark.sidebar.hover;
                 e.currentTarget.style.color = themeColors.dark.foreground.primary;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-                e.currentTarget.style.color = themeColors.dark.foreground.muted;
+                if (activeTab !== 'preview') {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.color = themeColors.dark.foreground.muted;
+                }
               }}
             >
-              <Eye style={{ width: "18px", height: "18px" }} />
               <span style={{ paddingBottom: "1px" }}>Preview</span>
             </button>
 
-            {/* Results Button */}
+            {/* Insights Button (Combined Results + Analytics) */}
             <button
-              title="Results"
+              title="Insights"
+              onClick={() => onTabChange?.('insights')}
               style={{
                 boxSizing: "border-box",
                 WebkitFontSmoothing: "antialiased",
-                padding: "0px 10px 0px 7px",
+                padding: "0px 12px",
                 border: "none",
                 borderRadius: "8px",
                 margin: "0px",
@@ -202,74 +193,37 @@ export function EditorNavbar({ projectId, projectName = "Untitled Survey", onPub
                 display: "inline-flex",
                 height: "30px",
                 appearance: "none",
-                backgroundColor: "transparent",
-                color: themeColors.dark.foreground.muted,
+                backgroundColor: activeTab === 'insights' ? themeColors.dark.sidebar.hover : "transparent",
+                color: activeTab === 'insights' ? themeColors.dark.foreground.primary : themeColors.dark.foreground.muted,
                 fontSize: "12px",
                 fontWeight: 600,
                 userSelect: "none",
                 cursor: "pointer",
                 alignItems: "center",
-                gap: "8px",
+                justifyContent: "center",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = themeColors.dark.sidebar.hover;
                 e.currentTarget.style.color = themeColors.dark.foreground.primary;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-                e.currentTarget.style.color = themeColors.dark.foreground.muted;
+                if (activeTab !== 'insights') {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.color = themeColors.dark.foreground.muted;
+                }
               }}
             >
-              <BarChart3 style={{ width: "18px", height: "18px" }} />
-              <span style={{ paddingBottom: "1px" }}>Results</span>
-            </button>
-
-            {/* Analytics Button */}
-            <button
-              title="Analytics"
-              style={{
-                boxSizing: "border-box",
-                WebkitFontSmoothing: "antialiased",
-                padding: "0px 10px 0px 7px",
-                border: "none",
-                borderRadius: "8px",
-                margin: "0px",
-                outline: "none",
-                textDecoration: "none",
-                transition: "background-color 0.15s, color 0.15s",
-                position: "relative",
-                display: "inline-flex",
-                height: "30px",
-                appearance: "none",
-                backgroundColor: "transparent",
-                color: themeColors.dark.foreground.muted,
-                fontSize: "12px",
-                fontWeight: 600,
-                userSelect: "none",
-                cursor: "pointer",
-                alignItems: "center",
-                gap: "8px",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = themeColors.dark.sidebar.hover;
-                e.currentTarget.style.color = themeColors.dark.foreground.primary;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-                e.currentTarget.style.color = themeColors.dark.foreground.muted;
-              }}
-            >
-              <TrendingUp style={{ width: "18px", height: "18px" }} />
-              <span style={{ paddingBottom: "1px" }}>Analytics</span>
+              <span style={{ paddingBottom: "1px" }}>Insights</span>
             </button>
 
             {/* Share Button */}
             <button
               title="Share"
+              onClick={() => onTabChange?.('share')}
               style={{
                 boxSizing: "border-box",
                 WebkitFontSmoothing: "antialiased",
-                padding: "0px 10px 0px 7px",
+                padding: "0px 12px",
                 border: "none",
                 borderRadius: "8px",
                 margin: "0px",
@@ -280,25 +234,26 @@ export function EditorNavbar({ projectId, projectName = "Untitled Survey", onPub
                 display: "inline-flex",
                 height: "30px",
                 appearance: "none",
-                backgroundColor: "transparent",
-                color: themeColors.dark.foreground.muted,
+                backgroundColor: activeTab === 'share' ? themeColors.dark.sidebar.hover : "transparent",
+                color: activeTab === 'share' ? themeColors.dark.foreground.primary : themeColors.dark.foreground.muted,
                 fontSize: "12px",
                 fontWeight: 600,
                 userSelect: "none",
                 cursor: "pointer",
                 alignItems: "center",
-                gap: "8px",
+                justifyContent: "center",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = themeColors.dark.sidebar.hover;
                 e.currentTarget.style.color = themeColors.dark.foreground.primary;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-                e.currentTarget.style.color = themeColors.dark.foreground.muted;
+                if (activeTab !== 'share') {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.color = themeColors.dark.foreground.muted;
+                }
               }}
             >
-              <Share2 style={{ width: "18px", height: "18px" }} />
               <span style={{ paddingBottom: "1px" }}>Share</span>
             </button>
           </div>

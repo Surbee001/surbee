@@ -132,8 +132,63 @@
   pointer-events: auto; /* Re-enable pointer events for the component itself */
 }
 
-.ask-surbee-widget:hover {
-  transform: translateX(-50%) scale(1.02);
+/* Ask Surbee Widget Styles */
+.ask-surbee-widget {
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+/* Chat message animations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ask-surbee-widget .animate-slide-in {
+  animation: slideInUp 0.3s ease-out;
+}
+
+/* Loading animation */
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-4px);
+  }
+  60% {
+    transform: translateY(-2px);
+  }
+}
+
+.ask-surbee-widget .animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+/* Custom scrollbar for chat messages */
+.ask-surbee-widget .overflow-y-auto::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ask-surbee-widget .overflow-y-auto::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.ask-surbee-widget .overflow-y-auto::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.ask-surbee-widget .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 /* Responsive */
@@ -170,8 +225,21 @@
   }
 
   .ask-surbee-widget {
-    width: 200px !important;
+    width: 120px !important; /* Compact width for mobile */
     bottom: 0.5rem !important;
+  }
+
+  /* Mobile expanded state (focused or has text) */
+  .ask-surbee-widget[style*="355px"] {
+    width: calc(100vw - 2rem) !important;
+    max-width: 320px !important;
+  }
+
+  /* Mobile chat state */
+  .ask-surbee-widget[style*="500px"] {
+    width: calc(100vw - 2rem) !important;
+    max-width: 400px !important;
+    height: 350px !important;
   }
 
   /* Focus state handled by React state - mobile widths handled inline */
@@ -1692,4 +1760,264 @@
     width: 100%;
     justify-content: center;
   }
+}
+
+/* ===================================
+   ENHANCED COMPONENTS STYLES
+   =================================== */
+
+/* AI Insights & Summary Components */
+.ai-insights-gradient {
+  background: linear-gradient(135deg, rgba(106, 165, 194, 0.05), rgba(255, 109, 103, 0.05));
+}
+
+.ai-badge {
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Quality Score Badges */
+.quality-badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  fontWeight: 600;
+}
+
+.quality-badge.excellent {
+  background: rgba(134, 239, 172, 0.2);
+  color: #86efac;
+}
+
+.quality-badge.good {
+  background: rgba(252, 211, 77, 0.2);
+  color: #fcd34d;
+}
+
+.quality-badge.needs-attention {
+  background: rgba(252, 165, 165, 0.2);
+  color: #fca5a5;
+}
+
+/* Sentiment Components */
+.sentiment-bar {
+  height: 48px;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  background: rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.sentiment-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  transition: width 0.3s ease;
+}
+
+/* Completion Funnel Styles */
+.funnel-step {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.funnel-step:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.funnel-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.funnel-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Analytics Toggle Enhancements */
+.analytics-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.analytics-toggle-btn.active {
+  font-weight: 600;
+}
+
+/* Export Button Styles */
+.export-btn-primary {
+  background: #86efac;
+  color: #0f0f0f;
+  transition: background 0.15s ease;
+}
+
+.export-btn-primary:hover {
+  background: #6ee896;
+}
+
+.export-btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  transition: background 0.15s ease;
+}
+
+.export-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Response Quality Dashboard Additions */
+.quality-chart-bar {
+  flex: 1;
+  background: rgba(147, 197, 253, 0.3);
+  border-radius: 4px 4px 0 0;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.quality-chart-bar:hover {
+  background: rgba(147, 197, 253, 0.5);
+}
+
+/* Pattern Correlation Cards */
+.correlation-card {
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid;
+}
+
+.correlation-card.positive {
+  background: rgba(134, 239, 172, 0.05);
+  border-color: rgba(134, 239, 172, 0.2);
+}
+
+.correlation-card.neutral {
+  background: rgba(147, 197, 253, 0.05);
+  border-color: rgba(147, 197, 253, 0.2);
+}
+
+.correlation-card.warning {
+  background: rgba(252, 165, 165, 0.05);
+  border-color: rgba(252, 165, 165, 0.2);
+}
+
+/* Keyword Tags */
+.keyword-tag {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: inline-block;
+  transition: all 0.15s ease;
+}
+
+.keyword-tag:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Sentiment Quote Cards */
+.sentiment-quote {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  border-left: 3px solid;
+}
+
+.sentiment-quote.positive {
+  border-left-color: #86efac;
+}
+
+.sentiment-quote.neutral {
+  border-left-color: #93c5fd;
+}
+
+.sentiment-quote.negative {
+  border-left-color: #fca5a5;
+}
+
+/* Responsive Enhancements for New Components */
+@media (max-width: 768px) {
+  .quality-chart-bar {
+    min-width: 40px;
+  }
+
+  .analytics-toggle-btn {
+    font-size: 13px;
+    padding: 10px 16px;
+  }
+
+  .export-btn-primary,
+  .export-btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .correlation-card {
+    padding: 12px;
+  }
+}
+
+/* Animation Classes */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Glassmorphism Effects */
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient Backgrounds */
+.gradient-ai {
+  background: linear-gradient(135deg, rgba(106, 165, 194, 0.1), rgba(255, 109, 103, 0.1));
+}
+
+.gradient-success {
+  background: linear-gradient(135deg, rgba(134, 239, 172, 0.05), rgba(147, 197, 253, 0.05));
 }

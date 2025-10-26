@@ -242,7 +242,7 @@ Respond with ONLY a JSON object:
 }`;
 
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini', // Using mini for fast classification
+        model: 'gpt-5-mini', // Using mini for fast classification
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Query: "${query}"` }

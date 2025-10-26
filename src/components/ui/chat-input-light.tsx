@@ -23,6 +23,7 @@ interface ChatInputLightProps {
   disableRotatingPlaceholders?: boolean; // optional, disables rotating placeholders
   isBusy?: boolean;
   onStop?: () => void;
+  borderRadius?: string; // optional, custom border radius (default: 32px)
 }
 
 export default function ChatInputLight({ 
@@ -43,6 +44,7 @@ export default function ChatInputLight({
   disableRotatingPlaceholders = false,
   isBusy = false,
   onStop,
+  borderRadius = '32px',
 }: ChatInputLightProps) {
   const [chatText, setChatText] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -278,7 +280,7 @@ export default function ChatInputLight({
         ref={chatboxContainerRef}
         className={`relative flex flex-col max-h-[40rem] min-h-[122px] z-10 transition-all duration-500`}
         style={{ 
-          borderRadius: '32px',
+          borderRadius: borderRadius,
           border: shouldGlow ? '1px solid rgba(255, 255, 255, 0.8)' : '1px solid var(--surbee-border-accent)',
           backgroundColor: theme === 'white' ? '#FFFFFF' : '#2C2C2C',
           boxShadow: shouldGlow ? '0 0 20px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.2)' : 'none'

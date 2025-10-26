@@ -443,10 +443,31 @@ const initSandbox = tool({
         "tailwindcss": "^3.4.0",
         "autoprefixer": "^10.4.0",
         "postcss": "^8.4.0",
-        "@radix-ui/react-slot": "^1.0.0",
+        // Radix UI primitives for shadcn/ui
+        "@radix-ui/react-slot": "^1.0.2",
+        "@radix-ui/react-label": "^2.0.2",
+        "@radix-ui/react-dialog": "^1.0.5",
+        "@radix-ui/react-dropdown-menu": "^2.0.6",
+        "@radix-ui/react-select": "^2.0.0",
+        "@radix-ui/react-checkbox": "^1.0.4",
+        "@radix-ui/react-radio-group": "^1.1.3",
+        "@radix-ui/react-switch": "^1.0.3",
+        "@radix-ui/react-tabs": "^1.0.4",
+        "@radix-ui/react-toast": "^1.1.5",
+        "@radix-ui/react-tooltip": "^1.0.7",
+        "@radix-ui/react-popover": "^1.0.7",
+        "@radix-ui/react-alert-dialog": "^1.0.5",
+        "@radix-ui/react-progress": "^1.0.3",
+        "@radix-ui/react-separator": "^1.0.3",
+        "@radix-ui/react-slider": "^1.1.2",
+        "@radix-ui/react-avatar": "^1.0.4",
+        "@radix-ui/react-accordion": "^1.1.2",
+        // Shadcn utilities
         "class-variance-authority": "^0.7.0",
         "clsx": "^2.0.0",
         "tailwind-merge": "^2.0.0",
+        "tailwindcss-animate": "^1.0.7",
+        // Icons
         "lucide-react": "^0.294.0",
       },
       devDependencies: {
@@ -575,6 +596,36 @@ module.exports = {
       throw new Error('Failed to create globals.css file');
     }
 
+    // Create tsconfig.json with path mappings
+    const tsconfigPath = path.join(rootDir, "tsconfig.json");
+    const tsconfigContent = {
+      compilerOptions: {
+        target: "ES2020",
+        useDefineForClassFields: true,
+        lib: ["ES2020", "DOM", "DOM.Iterable"],
+        module: "ESNext",
+        skipLibCheck: true,
+        moduleResolution: "bundler",
+        allowImportingTsExtensions: true,
+        resolveJsonModule: true,
+        isolatedModules: true,
+        noEmit: true,
+        jsx: "react-jsx",
+        strict: true,
+        noUnusedLocals: true,
+        noUnusedParameters: true,
+        noFallthroughCasesInSwitch: true,
+        baseUrl: ".",
+        paths: {
+          "@/*": ["./src/*"]
+        }
+      },
+      include: ["src"],
+      references: [{ path: "./tsconfig.node.json" }]
+    };
+    await fs.writeFile(tsconfigPath, JSON.stringify(tsconfigContent, null, 2));
+    console.log('[init_sandbox] Created tsconfig.json at:', tsconfigPath);
+
     // Create shadcn/ui utils
     const utilsPath = path.join(rootDir, "src", "lib", "utils.ts");
     await fs.mkdir(path.dirname(utilsPath), { recursive: true });
@@ -589,10 +640,11 @@ export function cn(...inputs: ClassValue[]) {
     // Verify utils file was created
     try {
       await fs.access(utilsPath);
-      console.log('[init_sandbox] Verified utils.ts exists');
+      await fs.access(tsconfigPath);
+      console.log('[init_sandbox] Verified utils.ts and tsconfig.json exist');
     } catch (error) {
-      console.error('[init_sandbox] Failed to verify utils.ts exists:', error);
-      throw new Error('Failed to create utils.ts file');
+      console.error('[init_sandbox] Failed to verify utils.ts or tsconfig.json exists:', error);
+      throw new Error('Failed to create utils.ts or tsconfig.json file');
     }
 
     // Create initial files
@@ -946,35 +998,9 @@ const renderPreview = tool({
       const content = await fs.readFile(entryPath, "utf-8");
       console.log('[render_preview] Compiling and rendering survey:', entryPath);
 
-      // For now, return the raw content as HTML since we don't have a full React renderer
-      // In a production system, this would compile TSX to JS and render with React
-      const html = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${project_name} Survey Preview</title>
-  <!--
-    Note: Using Tailwind CDN for agent-generated previews.
-    This allows AI agents to use Tailwind classes when building surveys.
-    TODO: Replace with compiled CSS bundle for production deployments.
-    See: https://tailwindcss.com/docs/installation for production setup
-  -->
-  <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-  <style>
-    ${globalsCss}
-  </style>
-</head>
-<body class="bg-background text-foreground min-h-screen">
-  <div id="root" class="container mx-auto px-4 py-8 max-w-2xl">
-    <!-- Survey component would be rendered here -->
-    <div class="prose prose-lg max-w-none">
-      <pre class="bg-gray-50 p-6 rounded-lg border overflow-x-auto text-sm"><code>${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
-    </div>
-  </div>
-</body>
-</html>`;
+      // For React surveys, we don't return HTML - the Sandpack preview handles rendering
+      // This placeholder is just for fallback compatibility
+      const html = undefined;
 
       // Read all created files for the code preview
       const sourceFiles: Record<string, string> = {};
@@ -1824,14 +1850,14 @@ Hello! I'm Surbee, and I'm sorry for the inconvenience-sometimes, my safeguards 
 - Focus on kindness, capability, and user encouragement.
 - Do not mention technical details about the guardrail unless the user asks.
 - Do not provide suggestions unless explicitly prompted.`,
-  model: "gpt-5-nano",
+  model: "gpt-5-mini",
   modelSettings: {
     reasoning: {
       effort: "low",
-      summary: "auto",
+      summary: null,
     },
     store: false,
-    maxTurns: 20,
+    maxTurns: 50,
   },
 });
 
@@ -1913,15 +1939,15 @@ Output:
 # Task Reminder
 
 Carefully categorize user intention as �ASK Mode� (discussion/planning/information) or �Build Mode� (requesting new survey/questionnaire content or change), ensuring stepwise reasoning precedes the conclusive label, and always prioritize �plan�-related terms above create/generate unless the latter is the explicit, dominant intent. Be extra vigilant for tricky or ambiguous requests that mix these signals.`,
-  model: "gpt-5-nano",
+  model: "gpt-5-mini",
   outputType: CategorizeSchema,
   modelSettings: {
     reasoning: {
       effort: "low",
-      summary: "auto",
+      summary: null,
     },
     store: true,
-    maxTurns: 20,
+    maxTurns: 50,
   },
 });
 
@@ -1994,10 +2020,10 @@ Clarifying user intent and audience first is mandatory. Always present your reas
   modelSettings: {
     reasoning: {
       effort: "low",
-      summary: "auto",
+      summary: null,
     },
     store: true,
-    maxTurns: 20,
+    maxTurns: 50,
   },
 });
 
@@ -2023,29 +2049,69 @@ Output: "Create a customer satisfaction survey with rating scales and open-ended
 
 Input: "Create a detailed employee engagement survey for a tech startup with 50 employees"
 Output: "Create a detailed employee engagement survey for a tech startup with 50 employees, including questions about workplace culture, job satisfaction, career development, and team dynamics."`,
-  model: "gpt-5-nano",
+  model: "gpt-5-mini",
   modelSettings: {
     reasoning: {
       effort: "low",
-      summary: "auto",
+      summary: null,
     },
     store: true,
-    maxTurns: 20,
+    maxTurns: 50,
   },
 });
 
 const surbeebuildplanner = new Agent({
   name: "SurbeeBuildPlanner",
-  instructions: `Plan surveys simply. Analyze user request and create a brief plan for what survey to build. Keep it concise and actionable.`,
-  model: "gpt-5-mini",
+  instructions: `You are SurbeeBuildPlanner. Analyze the user's request and create a structured plan for the SurbeeBuilder agent.
+
+**Your Job:**
+Extract and communicate these details to the builder:
+
+1. **Survey Type & Purpose**: What kind of survey (feedback, assessment, registration, etc.)
+2. **Questions**: List the specific questions or question types needed
+3. **Design Requirements**:
+   - Google Font requested (default to 'Inter' if not specified)
+   - Any color/branding preferences
+   - Any specific layout requests
+4. **Flow**: Single-page vs multi-step, question order, any conditional logic
+
+**CRITICAL - Design Defaults:**
+If user doesn't specify design details, include these defaults:
+- Font: Inter
+- Style: Clean, professional, Typeform-inspired
+- Colors: White background, blue accent buttons
+- Layout: Centered, one question per step
+
+**Output Format:**
+Create a clear, structured plan in markdown that includes:
+
+**Survey Type:** [type]
+**Questions:**
+1. [question 1]
+2. [question 2]
+...
+
+**Design:**
+- Font: [Google Font name]
+- Style: [style notes]
+- Colors: [color preferences]
+
+**Flow:**
+[Description of how questions flow]
+
+**Special Requirements:**
+[Any unique features, validation, or logic]
+
+Keep it concise but complete - this plan will be handed directly to SurbeeBuilder.`,
+  model: "gpt-5",
   outputType: SurbeebuildplannerSchema,
   modelSettings: {
     reasoning: {
       effort: "low",
-      summary: "auto",
+      summary: null,
     },
     store: true,
-    maxTurns: 20,
+    maxTurns: 50,
   },
 });
 
@@ -2062,7 +2128,47 @@ const SURBEE_BUILDER_INSTRUCTIONS = [
   "- Make it responsive and accessible",
   "- Output only the survey component code",
   "",
-  "✨ **STYLING:** Make it look amazing with Typeform-style design",
+  "✨ **DESIGN SYSTEM - CRITICAL**",
+  "Follow this exact design system for ALL surveys:",
+  "",
+  "**Typography:**",
+  "- ALWAYS use the Google Font requested by the user (e.g., 'Inter', 'Poppins', 'Montserrat')",
+  "- Import in src/styles/survey.css: @import url('https://fonts.googleapis.com/css2?family=FontName:wght@400;500;600;700&display=swap');",
+  "- Set font-family in survey.css body: font-family: 'FontName', sans-serif;",
+  "- Headings: text-2xl md:text-3xl lg:text-4xl font-semibold",
+  "- Questions: text-lg md:text-xl font-medium",
+  "- Body text: text-base leading-relaxed",
+  "- Helper text: text-sm text-zinc-400",
+  "",
+  "**Spacing (CRITICAL - no elements should touch):**",
+  "- Container padding: px-6 py-8 md:px-12 md:py-16",
+  "- Between sections: space-y-12 md:space-y-16",
+  "- Between questions: space-y-8 md:space-y-10",
+  "- Between input and label: space-y-3",
+  "- Between buttons: gap-4",
+  "- Card padding: p-6 md:p-8",
+  "",
+  "**Colors (NO generic AI gradients):**",
+  "- Background: bg-white or bg-zinc-50",
+  "- Cards: bg-white with border border-zinc-200",
+  "- Text primary: text-zinc-900",
+  "- Text secondary: text-zinc-600",
+  "- Accent (buttons): Use user's brand color or bg-blue-600 hover:bg-blue-700",
+  "- AVOID: Gradients unless specifically requested by user",
+  "- Focus states: ring-2 ring-blue-500 ring-offset-2",
+  "",
+  "**Components (USE SHADCN):**",
+  "- Buttons: Use shadcn Button component with variants",
+  "- Inputs: Use shadcn Input component",
+  "- Cards: Use shadcn Card components",
+  "- Radio/Checkbox: Use shadcn RadioGroup and Checkbox",
+  "- Progress: Create custom with shadcn Progress",
+  "",
+  "**Layout:**",
+  "- Max width: max-w-2xl mx-auto (centered, not full width)",
+  "- Responsive: Always use md: and lg: breakpoints",
+  "- One question per screen (Typeform style)",
+  "- Smooth transitions: transition-all duration-300",
   "",
   "**Core Outcomes**",
   "- Convert the planner's intent (plus any user follow ups) into a complete survey UI composed of strongly-typed React components.",
@@ -2140,39 +2246,142 @@ const SURBEE_BUILDER_INSTRUCTIONS = [
   "4. Use install_package only if you need additional dependencies",
   "5. Use render_preview({ project_name: \"survey-name\" }) for final output",
 
-  "**Component Management**",
-  "- Create separate component files using create_file.",
-  "- Use create_shadcn_component for pre-built shadcn/ui components (button, input, card, etc.).",
-  "- Use shadcn/ui components via the cn() utility function already available.",
-  "- Import components: import { Button } from '@/components/ui/button'.",
-  "- All components should be in src/components/ directory.",
+  "**Component Management & Context**",
+  "CRITICAL: Create files in this exact order to maintain context:",
+  "1. FIRST: Create src/styles/survey.css with Google Font import and base styles",
+  "2. SECOND: Create utility components (src/lib/cn.ts, src/lib/utils.ts)",
+  "3. THIRD: Create shadcn UI components using create_shadcn_component (button, input, card, etc.)",
+  "4. FOURTH: Create custom components in src/components/ that USE the shadcn components",
+  "5. LAST: Create src/Survey.tsx that imports and composes everything",
+  "",
+  "Example workflow:",
+  "```",
+  "// Step 1: Create base styles",
+  "create_file({ project_name, file_path: 'src/styles/survey.css', content: `",
+  "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');",
+  "",
+  "@tailwind base;",
+  "@tailwind components;",
+  "@tailwind utilities;",
+  "",
+  "body { font-family: 'Inter', sans-serif; }",
+  "` })",
+  "",
+  "// Step 2: Create shadcn button",
+  "create_shadcn_component({ project_name, component_name: 'button', component_type: 'button' })",
+  "",
+  "// Step 3: Create custom QuestionCard that uses Button",
+  "create_file({ project_name, file_path: 'src/components/QuestionCard.tsx', content: `",
+  "import { Button } from '@/components/ui/button';",
+  "",
+  "export function QuestionCard({ question, onNext }) {",
+  "  return (",
+  "    <div className='p-6 md:p-8 space-y-6'>",
+  "      <h2 className='text-lg md:text-xl font-medium'>{question}</h2>",
+  "      <Button onClick={onNext}>Continue</Button>",
+  "    </div>",
+  "  );",
+  "}",
+  "` })",
+  "",
+  "// Step 4: Create main Survey that imports QuestionCard",
+  "create_file({ project_name, file_path: 'src/Survey.tsx', content: `",
+  "import './styles/survey.css';",
+  "import { QuestionCard } from './components/QuestionCard';",
+  "// ... rest of Survey component",
+  "` })",
+  "```",
+  "",
+  "- ALWAYS create shadcn components BEFORE creating custom components that use them",
+  "- ALWAYS import styles at the top of Survey.tsx",
+  "- ALWAYS use relative imports for custom components",
+  "- ALWAYS use @ alias for shadcn components",
 
   "**Dependency Management**",
   "- Use install_package to add new dependencies before creating components that need them.",
   "- Announce packages before installing: 'Installing @radix-ui/react-dialog for modal functionality'.",
   "- All shadcn/ui dependencies are pre-installed.",
 
-  "**CRITICAL**",
-  "- Build components individually using create_file/update_file, not via a single tool call.",
-  "- Each component should be a separate file with proper imports.",
-  "- Use render_preview only at the end to generate final output.",
-  "- Do not output raw HTML - everything should be TSX components.",
-  "- Always call init_sandbox FIRST before any file operations.",
+  "**CRITICAL QUALITY CHECKLIST**",
+  "Before calling render_preview, verify:",
+  "✓ Google Font is imported in survey.css and applied to body",
+  "✓ All spacing follows the design system (no touching elements)",
+  "✓ Shadcn components are used for buttons, inputs, cards",
+  "✓ No generic AI gradients unless user requested",
+  "✓ Typography hierarchy is consistent",
+  "✓ Components are created in correct order (styles → shadcn → custom → Survey)",
+  "✓ All imports are correct (relative for custom, @ for shadcn)",
+  "✓ Survey is centered with max-w-2xl mx-auto",
+  "✓ Responsive breakpoints (md:, lg:) are used",
+  "✓ One question per screen with smooth transitions",
+  "",
+  "**EXAMPLE: Perfect Survey Component Structure**",
+  "```tsx",
+  "// src/Survey.tsx - GOOD EXAMPLE",
+  "import { useState } from 'react';",
+  "import './styles/survey.css';",
+  "import { Button } from '@/components/ui/button';",
+  "import { Input } from '@/components/ui/input';",
+  "import { Card, CardContent } from '@/components/ui/card';",
+  "",
+  "export default function Survey() {",
+  "  const [step, setStep] = useState(0);",
+  "",
+  "  return (",
+  "    <div className='min-h-screen bg-white flex items-center justify-center px-6 py-8'>",
+  "      <div className='max-w-2xl w-full space-y-8'>",
+  "        <Card className='border-zinc-200'>",
+  "          <CardContent className='p-6 md:p-8 space-y-6'>",
+  "            <h1 className='text-2xl md:text-3xl font-semibold text-zinc-900'>",
+  "              What's your name?",
+  "            </h1>",
+  "            <div className='space-y-3'>",
+  "              <Input ",
+  "                placeholder='Enter your name'",
+  "                className='text-base'",
+  "              />",
+  "              <p className='text-sm text-zinc-400'>",
+  "                We'll use this to personalize your experience",
+  "              </p>",
+  "            </div>",
+  "            <div className='flex gap-4 pt-4'>",
+  "              <Button className='bg-blue-600 hover:bg-blue-700'>",
+  "                Continue",
+  "              </Button>",
+  "            </div>",
+  "          </CardContent>",
+  "        </Card>",
+  "      </div>",
+  "    </div>",
+  "  );",
+  "}",
+  "```",
+  "",
+  "**ANTI-PATTERNS TO AVOID**",
+  "❌ Using gradients without user request: bg-gradient-to-r from-purple-500 to-pink-500",
+  "❌ Ignoring Google Font: Not importing or applying user's requested font",
+  "❌ Elements touching: <div><h1>Title</h1><p>Text</p></div> (needs space-y)",
+  "❌ Inconsistent spacing: Some buttons with gap-2, others with gap-6",
+  "❌ Full-width layouts: Not using max-w-2xl mx-auto",
+  "❌ Missing shadcn: Creating custom buttons instead of using Button component",
+  "❌ Wrong import order: Importing Survey.tsx before creating its dependencies",
+  "",
+  "REMEMBER: Quality over speed. Take time to create each file properly in order.",
 ].join("\n");
 
 const surbeebuilder = new Agent({
   name: "SurbeeBuilder",
   instructions: SURBEE_BUILDER_INSTRUCTIONS,
-  model: "gpt-5-mini",
+  model: "gpt-5",
   tools: [initSandbox, createFile, readFile, updateFile, deleteFile, listFiles, installPackage, runCommand, renderPreview, createShadcnComponent, webSearchPreview],
   modelSettings: {
-    parallelToolCalls: false, // Disable parallel calls to avoid confusion
+    parallelToolCalls: false, // Disable parallel calls to ensure correct order
     reasoning: {
-      effort: "low", // Reduce reasoning effort
-      summary: "auto", // Auto-choose summary level (best balance)
+      effort: "medium", // Increase reasoning for better quality
+      summary: null, // Prevent reasoning output from exceeding limits
     },
     store: true, // Enable store for conversation persistence
-    maxTurns: 20, // Increase max turns limit
+    maxTurns: 50, // Increase max turns to allow more file creation
   },
 });
 
@@ -2244,17 +2453,123 @@ You have access to tools including build_typescript_tailwind_project and webSear
 
 REMINDER: Always analyze for intended audience and purpose, adapt the tone and complexity of questions to the context, and ensure all survey questions feel well-crafted and appropriate�not generic�before outputting the final code.`,
 
-  model: "gpt-4o",
+  model: "gpt-5",
   tools: [initSandbox, createFile, readFile, updateFile, deleteFile, listFiles, installPackage, runCommand, renderPreview, createShadcnComponent, webSearchPreview],
   modelSettings: {
     parallelToolCalls: true,
     reasoning: {
       effort: "medium",
-      summary: "auto",
+      summary: null,
     },
     store: true,
+    maxTurns: 50,
   },
 });
+
+// Auto-verification: Check for common errors before showing to user
+interface VerificationError {
+  file: string;
+  issue: string;
+  suggestion: string;
+}
+
+const verifyProjectFiles = (files: Record<string, string>): VerificationError[] => {
+  const errors: VerificationError[] = [];
+
+  // Check each file for missing imports
+  for (const [filePath, content] of Object.entries(files)) {
+    if (!filePath.endsWith('.tsx') && !filePath.endsWith('.ts')) continue;
+
+    // Find all imports from @/components/ui/*
+    const importRegex = /from\s+['"]@\/components\/ui\/([^'"]+)['"]/g;
+    const matches = content.matchAll(importRegex);
+
+    for (const match of matches) {
+      const componentName = match[1];
+      const expectedPath = `/src/components/ui/${componentName}.tsx`;
+
+      // Check if the imported component file exists
+      if (!files[expectedPath]) {
+        errors.push({
+          file: filePath,
+          issue: `Missing component: @/components/ui/${componentName}`,
+          suggestion: `Create ${expectedPath} or use create_shadcn_component tool to add it`
+        });
+      }
+    }
+
+    // Check for other common missing imports
+    const relativeImportRegex = /from\s+['"]\.\.?\/([^'"]+)['"]/g;
+    const relativeMatches = content.matchAll(relativeImportRegex);
+
+    for (const match of relativeMatches) {
+      const importPath = match[1];
+      // Resolve relative path
+      const fileDir = filePath.substring(0, filePath.lastIndexOf('/'));
+      let resolvedPath = importPath;
+
+      if (importPath.startsWith('./')) {
+        resolvedPath = `${fileDir}/${importPath.substring(2)}`;
+      } else if (importPath.startsWith('../')) {
+        const parentDir = fileDir.substring(0, fileDir.lastIndexOf('/'));
+        resolvedPath = `${parentDir}/${importPath.substring(3)}`;
+      }
+
+      // Add .tsx or .ts if not present
+      const possiblePaths = [
+        `/${resolvedPath}`,
+        `/${resolvedPath}.tsx`,
+        `/${resolvedPath}.ts`,
+        `/${resolvedPath}/index.tsx`,
+        `/${resolvedPath}/index.ts`,
+      ];
+
+      const exists = possiblePaths.some(p => files[p]);
+      if (!exists && !importPath.includes('node_modules')) {
+        errors.push({
+          file: filePath,
+          issue: `Missing import: ${importPath}`,
+          suggestion: `Create the missing file: ${resolvedPath}.tsx or ${resolvedPath}.ts`
+        });
+      }
+    }
+  }
+
+  return errors;
+};
+
+const formatVerificationErrors = (errors: VerificationError[]): string => {
+  if (errors.length === 0) return '';
+
+  // Group errors by type
+  const shadcnErrors = errors.filter(err => err.issue.includes('@/components/ui/'));
+  const otherErrors = errors.filter(err => !err.issue.includes('@/components/ui/'));
+
+  let message = `⚠️ AUTO-FIX REQUIRED: Found ${errors.length} compilation error(s):\n\n`;
+
+  if (shadcnErrors.length > 0) {
+    message += '🎨 Missing shadcn/ui components:\n';
+    shadcnErrors.forEach((err, idx) => {
+      const componentName = err.issue.match(/@\/components\/ui\/([^'"]+)/)?.[1];
+      if (componentName) {
+        message += `${idx + 1}. Missing: ${componentName}\n`;
+        message += `   → Fix: create_shadcn_component({ project_name: "...", component_name: "${componentName}", component_type: "${componentName}" })\n\n`;
+      }
+    });
+  }
+
+  if (otherErrors.length > 0) {
+    message += '\n📁 Other missing files:\n';
+    otherErrors.forEach((err, idx) => {
+      message += `${idx + 1}. ${err.issue}\n`;
+      message += `   → ${err.suggestion}\n\n`;
+    });
+  }
+
+  message += '\n✅ ACTION REQUIRED: Use the appropriate tools above to create ALL missing files, then call render_preview again.';
+
+  return message;
+};
 
 const approvalRequest = (_message: string) => {
   return true;
@@ -2565,7 +2880,7 @@ export const runWorkflow = async (
 
     if (onItemStream) {
       console.log('[Workflow] Running agent with stream...');
-      const streamResult = await runner.run(agent, input, { stream: true });
+      const streamResult = await runner.run(agent, input, { stream: true, maxTurns: 50 });
       console.log('[Workflow] Stream started');
       
       // Process events in real-time as they arrive
@@ -2604,7 +2919,7 @@ export const runWorkflow = async (
       return streamResult;
     }
 
-    const result = await runner.run(agent, input);
+    const result = await runner.run(agent, input, { maxTurns: 50 });
     for (const item of result.newItems ?? []) {
       await emitRunItem(item);
     }
@@ -2779,13 +3094,73 @@ export const runWorkflow = async (
       conversationHistory.push(planInputItem);
     }
 
-    const surbeebuilderResultTemp = await executeAgent(
+    let surbeebuilderResultTemp = await executeAgent(
       surbeebuilder,
       builderInputs
     );
     conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
     await emitBuilderSummaryMessage();
-    
+
+    // Auto-verification: Check and fix errors before showing to user
+    const MAX_AUTO_FIX_ATTEMPTS = 3;
+    let autoFixAttempt = 0;
+
+    while (autoFixAttempt < MAX_AUTO_FIX_ATTEMPTS) {
+      const currentSerializedItems = streamedSerializedItems.slice();
+      const currentRenderResult = currentSerializedItems
+        .filter(
+          (item): item is Extract<SerializedRunItem, { type: "tool_result" }> =>
+            item.type === "tool_result" && item.name === "render_preview"
+        )
+        .pop();
+
+      // Check if we have files to verify
+      if (currentRenderResult?.files) {
+        const verificationErrors = verifyProjectFiles(currentRenderResult.files);
+
+        if (verificationErrors.length > 0) {
+          autoFixAttempt++;
+          console.log(`[Workflow] Found ${verificationErrors.length} errors, auto-fixing (attempt ${autoFixAttempt}/${MAX_AUTO_FIX_ATTEMPTS})...`);
+
+          await notifyProgress(`Fixing ${verificationErrors.length} issue${verificationErrors.length > 1 ? 's' : ''}...`);
+
+          // Create error fix message
+          const errorMessage = formatVerificationErrors(verificationErrors);
+          const fixInputItem: AgentInputItem = {
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text: errorMessage,
+              },
+            ],
+          };
+
+          // Retry with error context
+          conversationHistory.push(fixInputItem);
+          surbeebuilderResultTemp = await executeAgent(
+            surbeebuilder,
+            [fixInputItem],
+            "Auto-fixing errors..."
+          );
+          conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
+          await emitBuilderSummaryMessage();
+
+          // Continue loop to verify again
+          continue;
+        }
+      }
+
+      // No errors found, break out of loop
+      break;
+    }
+
+    if (autoFixAttempt >= MAX_AUTO_FIX_ATTEMPTS) {
+      console.log('[Workflow] Max auto-fix attempts reached, returning current state');
+    } else if (autoFixAttempt > 0) {
+      console.log(`[Workflow] Successfully fixed all issues in ${autoFixAttempt} attempt(s)`);
+    }
+
     // Use already-serialized items instead of re-serializing
     const allSerializedItems = streamedSerializedItems.slice(); // Get all streamed items
     
@@ -2799,7 +3174,7 @@ export const runWorkflow = async (
         .pop();
 
     const htmlFromTool =
-      latestRenderResult?.content ??
+      latestRenderResult?.html ??
       (typeof surbeebuilderResultTemp.finalOutput === "string" && looksLikeHtml(surbeebuilderResultTemp.finalOutput)
         ? surbeebuilderResultTemp.finalOutput
         : undefined);
@@ -2815,7 +3190,7 @@ export const runWorkflow = async (
       items: allSerializedItems,
       html: htmlFromTool,
       source_files: latestRenderResult?.files,
-      entry_file: latestRenderResult?.entry_file,
+      entry_file: latestRenderResult?.entry,
       dependencies: latestRenderResult?.dependencies,
       devDependencies: latestRenderResult?.devDependencies,
     };
@@ -2863,13 +3238,73 @@ export const runWorkflow = async (
     const plannerEndIndex = streamedSerializedItems.length;
 
     if (approvalRequest("Should we proceed with this plan?")) {
-      const surbeebuilderResultTemp = await executeAgent(
+      let surbeebuilderResultTemp = await executeAgent(
         surbeebuilder,
         [...conversationHistory]
       );
       conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
       await emitBuilderSummaryMessage();
-      
+
+      // Auto-verification: Check and fix errors before showing to user
+      const MAX_AUTO_FIX_ATTEMPTS = 3;
+      let autoFixAttempt = 0;
+
+      while (autoFixAttempt < MAX_AUTO_FIX_ATTEMPTS) {
+        const currentSerializedItems = streamedSerializedItems.slice();
+        const currentRenderResult = currentSerializedItems
+          .filter(
+            (item): item is Extract<SerializedRunItem, { type: "tool_result" }> =>
+              item.type === "tool_result" && item.name === "render_preview"
+          )
+          .pop();
+
+        // Check if we have files to verify
+        if (currentRenderResult?.files) {
+          const verificationErrors = verifyProjectFiles(currentRenderResult.files);
+
+          if (verificationErrors.length > 0) {
+            autoFixAttempt++;
+            console.log(`[Workflow] Found ${verificationErrors.length} errors, auto-fixing (attempt ${autoFixAttempt}/${MAX_AUTO_FIX_ATTEMPTS})...`);
+
+            await notifyProgress(`Fixing ${verificationErrors.length} issue${verificationErrors.length > 1 ? 's' : ''}...`);
+
+            // Create error fix message
+            const errorMessage = formatVerificationErrors(verificationErrors);
+            const fixInputItem: AgentInputItem = {
+              role: "user",
+              content: [
+                {
+                  type: "input_text",
+                  text: errorMessage,
+                },
+              ],
+            };
+
+            // Retry with error context
+            conversationHistory.push(fixInputItem);
+            surbeebuilderResultTemp = await executeAgent(
+              surbeebuilder,
+              [fixInputItem],
+              "Auto-fixing errors..."
+            );
+            conversationHistory.push(...surbeebuilderResultTemp.newItems.map((item) => item.rawItem));
+            await emitBuilderSummaryMessage();
+
+            // Continue loop to verify again
+            continue;
+          }
+        }
+
+        // No errors found, break out of loop
+        break;
+      }
+
+      if (autoFixAttempt >= MAX_AUTO_FIX_ATTEMPTS) {
+        console.log('[Workflow] Max auto-fix attempts reached, returning current state');
+      } else if (autoFixAttempt > 0) {
+        console.log(`[Workflow] Successfully fixed all issues in ${autoFixAttempt} attempt(s)`);
+      }
+
       // Use already-serialized items instead of re-serializing
       const allItems = streamedSerializedItems.slice(); // Get all items
 
@@ -2883,7 +3318,7 @@ export const runWorkflow = async (
           .pop();
 
       const htmlFromTool =
-        latestRenderResult?.content ??
+        latestRenderResult?.html ??
         (typeof surbeebuilderResultTemp.finalOutput === "string" && looksLikeHtml(surbeebuilderResultTemp.finalOutput)
           ? surbeebuilderResultTemp.finalOutput
           : undefined);
@@ -2898,8 +3333,8 @@ export const runWorkflow = async (
         guardrails: guardrailsOutput,
         items: allItems,
         html: htmlFromTool,
-         source_files: latestRenderResult?.files || sourceFiles,
-         entry_file: latestRenderResult?.entry_file || entry_file,
+         source_files: latestRenderResult?.files,
+         entry_file: latestRenderResult?.entry,
          dependencies: latestRenderResult?.dependencies,
          devDependencies: latestRenderResult?.devDependencies,
       };

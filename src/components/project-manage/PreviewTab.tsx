@@ -1237,96 +1237,37 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ projectId, sandboxBundle
 
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: themeColors.dark.background.primary, position: 'relative' }}>
-      {/* Main Three-Column Layout */}
-      <div className="flex-1 grid grid-cols-[300px_1fr_340px] gap-6 px-6 pt-3 pb-32 h-full">
-        {/* Left Sidebar - Elements */}
-        <div className="rounded-2xl overflow-hidden h-full" style={{ backgroundColor: themeColors.dark.background.secondary, border: `1px solid ${themeColors.dark.border.primary}` }}>
-          <ElementsSidebar
-            onElementAdd={handleElementAdd}
-            onElementHover={setHoveredElement}
-          />
-        </div>
-
-        {/* Center - Preview Canvas - Full Size */}
-        <div className="flex items-center justify-center overflow-hidden">
+      {/* Main Single-Column Layout - Preview Only */}
+      <div className="flex-1 flex items-center justify-center px-6 pt-3 pb-32 h-full">
+        {/* Center - Preview Canvas - Enlarged */}
+        <div className="flex items-center justify-center overflow-hidden w-full h-full max-w-[1400px]">
           <div className={`bg-white overflow-hidden transition-all duration-300 ${
-            device === 'desktop' ? 'w-full h-full' :
-            device === 'tablet' ? 'w-[768px] h-full rounded-xl' :
-            'w-[375px] h-[667px] rounded-xl'
-          }`}>
+            device === 'desktop' ? 'w-full h-full rounded-2xl' :
+            device === 'tablet' ? 'w-[768px] h-full rounded-2xl' :
+            'w-[375px] h-[667px] rounded-2xl'
+          }`} style={{
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)'
+          }}>
             {sandboxBundle ? (
-              <div className="relative w-full h-full">
+              <div className="relative w-full h-full rounded-2xl overflow-hidden">
                 <iframe
                   src={`/project/${projectId}?sandbox=1`}
-                  className="w-full h-full border-none"
+                  className="w-full h-full border-none rounded-2xl"
                   title="Survey Preview"
                 />
-
-                {/* Overlay canvas elements for visual editing */}
-                <div className="absolute inset-0 pointer-events-none">
-                  {canvasElements.map(element => (
-                    <div
-                      key={element.id}
-                      className={`pointer-events-auto cursor-pointer border-2 transition-all duration-150 min-w-[40px] min-h-[40px] flex items-center justify-center ${
-                        selectedElement?.id === element.id ? 'border-blue-500 bg-blue-50' : 'border-transparent hover:border-blue-300'
-                      }`}
-                      style={element.styles}
-                      onClick={() => handleElementSelect(element)}
-                    >
-                      {element.type === 'text' && (
-                        <span>{element.text}</span>
-                      )}
-                      {element.type === 'button' && (
-                        <Button size="sm">{element.text}</Button>
-                      )}
-                      {element.type === 'image' && (
-                        <div className="bg-gray-100 border border-gray-300 rounded flex items-center justify-center min-w-[60px] min-h-[60px]">
-                          <Image className="w-6 h-6 text-gray-500" />
-                        </div>
-                      )}
-                      {element.type === 'input' && (
-                        <input
-                          type="text"
-                          placeholder={element.text}
-                          className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      )}
-                      {element.type === 'div' && (
-                        <div className="bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-600">
-                          {element.text}
-                        </div>
-                      )}
-                      {element.type === 'shape' && (
-                        <div className="bg-blue-500 rounded flex items-center justify-center">
-                          {element.tag === 'circle' && <Circle className="w-5 h-5 text-white" />}
-                          {element.tag === 'rectangle' && <Square className="w-5 h-5 text-white" />}
-                          {element.tag === 'triangle' && <Triangle className="w-5 h-5 text-white" />}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
               </div>
               ) : (
-              <div className="flex items-center justify-center w-full h-full bg-gray-50">
+              <div className="flex items-center justify-center w-full h-full bg-gray-50 rounded-2xl">
                 <div className="text-center">
                   <Layout className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                   <p className="text-gray-600">
-                    Drag elements from the left sidebar to start creating your survey
+                    Survey preview will appear here
                     </p>
                   </div>
                 </div>
               )}
           </div>
         </div>
-
-        {/* Right Sidebar - Properties */}
-        <div className="rounded-2xl overflow-hidden h-full" style={{ backgroundColor: themeColors.dark.background.secondary, border: `1px solid ${themeColors.dark.border.primary}` }}>
-          <PropertiesPanel
-              selectedElement={selectedElement}
-            onElementUpdate={handleElementUpdate}
-            />
-          </div>
       </div>
 
       {/* Framer-Style Floating Toolbar - Fixed at Bottom */}
