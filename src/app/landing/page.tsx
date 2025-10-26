@@ -761,7 +761,7 @@ export default function LandingPage() {
 	          </RevealSection>
 
           {/* Footer */}
-          <RevealSection className="py-8 mx-auto w-full max-w-[1400px] flex flex-col justify-center items-center">
+          <RevealSection className="mx-auto w-full max-w-[1400px] flex flex-col justify-center items-center rounded-lg">
             <Footer />
           </RevealSection>
       </main>
