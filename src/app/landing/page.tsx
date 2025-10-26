@@ -6,6 +6,7 @@ import localFont from "next/font/local";
 import TypingOverlay from "@/components/landing/TypingOverlay";
 import { ImageKitProvider, Image as IKImage } from "@imagekit/next";
 import CreatedWithSurbee from "@/components/landing/CreatedWithSurbee";
+import Footer from "@/components/landing/Footer";
 import GradientTitle from "@/components/landing/GradientTitle";
 import HeroSection from "@/components/landing/HeroSection";
 import PricingCards from "@/components/pricing/PricingCards";
@@ -51,12 +52,10 @@ export default function LandingPage() {
   const [mousePosFeatures, setMousePosFeatures] = useState({ x: 50, y: 50 });
   const [mousePosDetect, setMousePosDetect] = useState({ x: 50, y: 50 });
   const [mousePosCommunity, setMousePosCommunity] = useState({ x: 50, y: 50 });
-  const [mousePosTools, setMousePosTools] = useState({ x: 50, y: 50 });
   const [mousePosJoin, setMousePosJoin] = useState({ x: 50, y: 50 });
   const containerRefFeatures = useRef<HTMLSpanElement>(null);
   const containerRefDetect = useRef<HTMLSpanElement>(null);
   const containerRefCommunity = useRef<HTMLSpanElement>(null);
-  const containerRefTools = useRef<HTMLSpanElement>(null);
   const containerRefJoin = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -78,12 +77,6 @@ export default function LandingPage() {
         const x = ((e.clientX - rect.left) / rect.width) * 100;
         const y = ((e.clientY - rect.top) / rect.height) * 100;
         setMousePosCommunity({ x, y });
-      }
-      if (containerRefTools.current) {
-        const rect = containerRefTools.current.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        setMousePosTools({ x, y });
       }
       if (containerRefJoin.current) {
         const rect = containerRefJoin.current.getBoundingClientRect();
@@ -185,17 +178,17 @@ export default function LandingPage() {
 
           {/* Features title */}
           <section className="px-6 pt-24 pb-2 text-center">
-            <div className="relative">
+            <div className="relative w-full overflow-visible">
               <h2 className="select-none hero-text-tobias">
                 <span className="leading-none block" style={{ fontSize: '61px', fontWeight: 100, letterSpacing: '-2px', lineHeight: '51px', color: '#0A0A0A' }}>
                   <span className="relative">
                     <span className="inline-block -translate-y-[0.135em] opacity-0">
                       Here's what Surbee can do for you
                     </span>
-                    <span ref={containerRefFeatures} className="px-[5%] -mx-[5%] block absolute inset-0 pointer overflow-hidden" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '51px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '51px' }}>
+                    <span ref={containerRefFeatures} className="block absolute inset-0 pointer w-full overflow-visible" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '51px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '51px' }}>
                       <svg
-                        className="select-none pointer-events-none"
-                        height="100%"
+                        className="select-none pointer-events-none w-full"
+                        height="51px"
                         width="100%"
                         aria-hidden="true"
                         xmlns="http://www.w3.org/2000/svg"
@@ -239,23 +232,25 @@ export default function LandingPage() {
                           </mask>
                         </defs>
                         <text
-                          className="text-[1em] fill-current text-shadow-ascii-contrast"
+                          className="text-[51px] fill-current text-shadow-ascii-contrast"
                           dominantBaseline="middle"
                           textAnchor="middle"
                           x="50%"
-                          y="55%"
+                          y="50%"
+                          style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontWeight: 100, letterSpacing: '-4px' }}
                         >
                           Here's what Surbee can do for you
                         </text>
                         <text
-                          className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]"
+                          className="text-[51px] drop-shadow-[0_0_1px_var(--background,black)]"
                           dominantBaseline="middle"
                           fill="url(#textHoverEffectGradient-features)"
                           mask="url(#textHoverEffectMask-features)"
                           opacity="1"
                           textAnchor="middle"
                           x="50%"
-                          y="55%"
+                          y="50%"
+                          style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontWeight: 100, letterSpacing: '-4px' }}
                         >
                           Here's what Surbee can do for you
                         </text>
@@ -351,15 +346,15 @@ export default function LandingPage() {
 	                  <div className="relative w-full h-full min-h-[190px] sm:min-h-[170px] lg:min-h-auto flex flex-col justify-end">
 	                      <div className="flex flex-col gap-8 justify-end h-full">
 	                        <div className="flex flex-col gap-4">
-	                          <div className="relative">
+	                          <div className="relative w-full overflow-visible">
 	                          <h4 className="select-none hero-text-tobias">
 	                          <span className="leading-none block" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px', color: '#0A0A0A' }}>
 	                          <span className="relative">
 	                          <span className="inline-block -translate-y-[0.135em] opacity-0">
 	                          Detect Odd Behaviors & Bad Data
 	                          </span>
-	                          <span ref={containerRefDetect} className="px-[5%] -mx-[5%] block absolute inset-0 pointer overflow-hidden" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px' }}>
-	                          <svg className="select-none pointer-events-none" height="100%" width="100%" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+	                          <span ref={containerRefDetect} className="block absolute inset-0 pointer w-full overflow-visible" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px' }}>
+	                          <svg className="select-none pointer-events-none w-full" height="38px" width="100%" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
 	                          <defs>
 	                          <linearGradient id="textHoverEffectGradient-detect" cx="50%" cy="50%" gradientTransform="rotate(-10)" gradientUnits="userSpaceOnUse">
 	                          <stop offset="0%" stopColor="#320F1E" />
@@ -380,12 +375,12 @@ export default function LandingPage() {
 	                          <rect height="100%" width="100%" fill="url(#textHoverEffectRevealMask-detect)" x="0%" y="0" />
 	                          </mask>
 	                          </defs>
-	                          <text className="text-[1em] fill-current text-shadow-ascii-contrast" dominantBaseline="middle" textAnchor="middle" x="50%" y="55%">
-	                          Detect Odd Behaviors & Bad Data
-	                          </text>
-	                          <text className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]" dominantBaseline="middle" fill="url(#textHoverEffectGradient-detect)" mask="url(#textHoverEffectMask-detect)" opacity="1" textAnchor="middle" x="50%" y="55%">
-	                          Detect Odd Behaviors & Bad Data
-	                          </text>
+                          <text className="text-[38px] fill-current text-shadow-ascii-contrast" dominantBaseline="middle" textAnchor="middle" x="50%" y="50%" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontWeight: 100, letterSpacing: '-4px' }}>
+                          Detect Odd Behaviors & Bad Data
+                          </text>
+                          <text className="text-[38px] drop-shadow-[0_0_1px_var(--background,black)]" dominantBaseline="middle" fill="url(#textHoverEffectGradient-detect)" mask="url(#textHoverEffectMask-detect)" opacity="1" textAnchor="middle" x="50%" y="50%" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontWeight: 100, letterSpacing: '-4px' }}>
+                          Detect Odd Behaviors & Bad Data
+                          </text>
 	                          </svg>
 	                          </span>
 	                          </span>
@@ -489,15 +484,15 @@ export default function LandingPage() {
 	                  <div className="relative w-full h-full min-h-[190px] sm:min-h-[170px] lg:min-h-auto flex flex-col justify-end">
 	                      <div className="flex flex-col gap-8 justify-end h-full">
 	                        <div className="flex flex-col gap-4">
-	                          <div className="relative">
+	                          <div className="relative w-full overflow-visible">
 	                          <h4 className="select-none hero-text-tobias">
 	                          <span className="leading-none block" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px', color: '#0A0A0A' }}>
 	                          <span className="relative">
                           <span className="inline-block -translate-y-[0.135em] opacity-0">
                           Grow a Community<br />Around Your Surveys
                           </span>
-	                          <span ref={containerRefCommunity} className="px-[5%] -mx-[5%] block absolute inset-0 pointer overflow-hidden" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px' }}>
-	                          <svg className="select-none pointer-events-none" height="100%" width="100%" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+	                          <span ref={containerRefCommunity} className="block absolute inset-0 pointer w-full overflow-visible" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px' }}>
+	                          <svg className="select-none pointer-events-none w-full" height="60px" width="100%" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
 	                          <defs>
 	                          <linearGradient id="textHoverEffectGradient-community" cx="50%" cy="50%" gradientTransform="rotate(-10)" gradientUnits="userSpaceOnUse">
 	                          <stop offset="0%" stopColor="#320F1E" />
@@ -518,10 +513,10 @@ export default function LandingPage() {
 	                          <rect height="100%" width="100%" fill="url(#textHoverEffectRevealMask-community)" x="0%" y="0" />
 	                          </mask>
 	                          </defs>
-                          <text className="text-[1em] fill-current text-shadow-ascii-contrast" dominantBaseline="middle" textAnchor="middle" x="50%" y="55%">
+                          <text className="text-[38px] fill-current text-shadow-ascii-contrast" dominantBaseline="middle" textAnchor="middle" x="50%" y="50%" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontWeight: 100, letterSpacing: '-4px' }}>
                             Grow a Community<tspan x="50%" dy="1.2em">Around Your Surveys</tspan>
                           </text>
-                          <text className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]" dominantBaseline="middle" fill="url(#textHoverEffectGradient-community)" mask="url(#textHoverEffectMask-community)" opacity="1" textAnchor="middle" x="50%" y="55%">
+                          <text className="text-[38px] drop-shadow-[0_0_1px_var(--background,black)]" dominantBaseline="middle" fill="url(#textHoverEffectGradient-community)" mask="url(#textHoverEffectMask-community)" opacity="1" textAnchor="middle" x="50%" y="50%" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontWeight: 100, letterSpacing: '-4px' }}>
                             Grow a Community<tspan x="50%" dy="1.2em">Around Your Surveys</tspan>
                           </text>
 	                          </svg>
@@ -557,44 +552,10 @@ export default function LandingPage() {
           <RevealSection
             className="py-8 mx-auto w-full max-w-4xl flex flex-col justify-center items-center"
           >
-            <div className="relative">
-              <h2 className="select-none hero-text-tobias">
-                <span className="leading-none block" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px', color: '#0A0A0A' }}>
-                  <span className="relative">
-                    <span className="inline-block -translate-y-[0.135em] opacity-0">
-                      Connect the tools you already use
-                    </span>
-                    <span ref={containerRefTools} className="px-[5%] -mx-[5%] block absolute inset-0 pointer overflow-hidden" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px' }}>
-                      <svg className="select-none pointer-events-none" height="100%" width="100%" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                          <linearGradient id="textHoverEffectGradient-tools" cx="50%" cy="50%" gradientTransform="rotate(-10)" gradientUnits="userSpaceOnUse">
-                            <stop offset="0%" stopColor="#320F1E" />
-                            <stop offset="8.56%" stopColor="#C83228" />
-                            <stop offset="25.06%" stopColor="#FB873F" />
-                            <stop offset="37.56%" stopColor="#D2DC91" />
-                            <stop offset="50.06%" stopColor="#5A8250" />
-                            <stop offset="62.06%" stopColor="#002314" />
-                            <stop offset="74.06%" stopColor="#00143C" />
-                            <stop offset="86.06%" stopColor="#2873D7" />
-                            <stop offset="95.06%" stopColor="#9BC3FF" />
-                          </linearGradient>
-                          <radialGradient id="textHoverEffectRevealMask-tools" cx={`${mousePosTools.x}%`} cy={`${mousePosTools.y}%`} gradientUnits="userSpaceOnUse" r="40%">
-                            <stop offset="30%" stopColor="white" />
-                            <stop offset="100%" stopColor="black" />
-                          </radialGradient>
-                          <mask id="textHoverEffectMask-tools">
-                            <rect height="100%" width="100%" fill="url(#textHoverEffectRevealMask-tools)" x="0%" y="0" />
-                          </mask>
-                        </defs>
-                        <text className="text-[1em] fill-current text-shadow-ascii-contrast" dominantBaseline="middle" textAnchor="middle" x="50%" y="55%">
-                          Connect the tools you already use
-                        </text>
-                        <text className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]" dominantBaseline="middle" fill="url(#textHoverEffectGradient-tools)" mask="url(#textHoverEffectMask-tools)" opacity="1" textAnchor="middle" x="50%" y="55%">
-                          Connect the tools you already use
-                        </text>
-                      </svg>
-                    </span>
-                  </span>
+            <div className="relative w-full overflow-visible">
+              <h2 className="select-none text-center" style={{ fontFamily: 'var(--font-diatype), sans-serif' }}>
+                <span className="leading-none block" style={{ fontSize: '38px', fontWeight: 400, letterSpacing: '-2px', lineHeight: '46px', color: '#0A0A0A' }}>
+                  Connect the tools you already use
                 </span>
               </h2>
             </div>
@@ -732,15 +693,15 @@ export default function LandingPage() {
 	                >
 	                  <RevealDiv className="relative inline-block">
 	                    <div className="rounded-lg px-8 py-6 backdrop-blur-lg max-w-[calc(100vw_-_64px)] w-[500px] flex flex-col items-center justify-center gap-3 bg-gradient-to-b from-[rgba(255,255,255,0.80)] to-[rgba(255,255,255,0.16)] shadow-[0px_4px_12px_0px_rgba(255,255,255,0.10)_inset,0px_0px_0px_6px_rgba(255,255,255,0.40),0px_1px_8px_0px_rgba(0,0,0,0.13),0px_2px_6px_0px_rgba(0,0,0,0.20)]">
-	                      <div className="relative">
-	                      <h3 className="select-none hero-text-tobias">
+	                      <div className="relative w-full overflow-visible">
+	                      <h3 className="select-none hero-text-tobias text-center">
 	                      <span className="leading-none block" style={{ fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px', color: '#0A0A0A' }}>
 	                      <span className="relative">
                       <span className="inline-block -translate-y-[0.135em] opacity-0">
                       Join Our Community
                       </span>
-	                      <span ref={containerRefJoin} className="px-[5%] -mx-[5%] block absolute inset-0 pointer overflow-hidden" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px' }}>
-	                      <svg className="select-none pointer-events-none" height="100%" width="100%" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+	                      <span ref={containerRefJoin} className="block absolute inset-0 pointer w-full overflow-visible flex justify-center items-center" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontSize: '38px', fontWeight: 100, letterSpacing: '-4px', lineHeight: '38px' }}>
+	                      <svg className="select-none pointer-events-none w-full mx-auto" height="38px" width="100%" viewBox="0 0 100 38" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
 	                      <defs>
 	                      <linearGradient id="textHoverEffectGradient-join" cx="50%" cy="50%" gradientTransform="rotate(-10)" gradientUnits="userSpaceOnUse">
 	                      <stop offset="0%" stopColor="#320F1E" />
@@ -761,10 +722,10 @@ export default function LandingPage() {
 	                      <rect height="100%" width="100%" fill="url(#textHoverEffectRevealMask-join)" x="0%" y="0" />
 	                      </mask>
 	                      </defs>
-                      <text className="text-[1em] fill-current text-shadow-ascii-contrast" dominantBaseline="middle" textAnchor="middle" x="50%" y="55%">
+                      <text className="text-[38px] fill-current text-shadow-ascii-contrast" dominantBaseline="middle" textAnchor="middle" x="50" y="19" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontWeight: 100, letterSpacing: '-4px' }}>
                       Join Our Community
                       </text>
-                      <text className="text-[1em] drop-shadow-[0_0_1px_var(--background,black)]" dominantBaseline="middle" fill="url(#textHoverEffectGradient-join)" mask="url(#textHoverEffectMask-join)" opacity="1" textAnchor="middle" x="50%" y="55%">
+                      <text className="text-[38px] drop-shadow-[0_0_1px_var(--background,black)]" dominantBaseline="middle" fill="url(#textHoverEffectGradient-join)" mask="url(#textHoverEffectMask-join)" opacity="1" textAnchor="middle" x="50" y="19" style={{ fontFamily: 'Tobias, "Tobias Fallback", serif', fontWeight: 100, letterSpacing: '-4px' }}>
                       Join Our Community
                       </text>
 	                      </svg>
@@ -795,9 +756,12 @@ export default function LandingPage() {
                     </div>
 	                  </RevealDiv>
 	                </a>
-	              </RevealDiv>
-	            </RevealDiv>
+              </RevealDiv>
+            </RevealDiv>
 	          </RevealSection>
+
+          {/* Footer */}
+          <Footer />
       </main>
     </div>
 
