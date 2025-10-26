@@ -39,32 +39,32 @@ export default function Footer() {
             <div className="flex flex-col sm:flex-row gap-8 lg:gap-12">
               {/* Product column */}
               <div className="flex flex-col gap-4">
-                <h3 className="text-[13px] font-[600] uppercase tracking-[0.05em]" style={{ color: '#9CA3AF' }}>
+                <h3 className="text-[12px] font-[600] uppercase tracking-[0.05em]" style={{ color: '#9CA3AF' }}>
                   Product
                 </h3>
                 <div className="flex flex-col gap-3">
-                  <Link href="/earlyaccess" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="/earlyaccess" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Surbee Lyra
                   </Link>
-                  <Link href="#" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="#" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Surbee Cipher
                   </Link>
-                  <Link href="#" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="#" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Credit Network
                   </Link>
-                  <Link href="/pricing" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="/pricing" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Pricing
                   </Link>
-                  <Link href="/changelog" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="/changelog" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     What's New
                   </Link>
-                  <Link href="/students" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="/students" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     For Students
                   </Link>
-                  <Link href="#" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="#" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Enterprise
                   </Link>
-                  <Link href="#" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="#" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     AI Surveys
                   </Link>
                 </div>
@@ -72,35 +72,35 @@ export default function Footer() {
 
               {/* Resources column */}
               <div className="flex flex-col gap-4">
-                <h3 className="text-[13px] font-[600] uppercase tracking-[0.05em]" style={{ color: '#9CA3AF' }}>
+                <h3 className="text-[12px] font-[600] uppercase tracking-[0.05em]" style={{ color: '#9CA3AF' }}>
                   Resources
                 </h3>
                 <div className="flex flex-col gap-3">
-                  <Link href="/blog" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="/blog" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Blog
                   </Link>
-                  <Link href="/changelog" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="/changelog" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Changelog
                   </Link>
-                  <Link href="#" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="#" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Guides
                   </Link>
-                  <Link href="#" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="#" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     API Reference
                   </Link>
-                  <Link href="#" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="#" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Integration
                   </Link>
-                  <Link href="#" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="#" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     SDK
                   </Link>
-                  <Link href="https://discord.gg/krs577Qxqr" target="_blank" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="https://discord.gg/krs577Qxqr" target="_blank" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Discord
                   </Link>
-                  <Link href="#" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="#" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     X / Twitter
                   </Link>
-                  <Link href="#" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="#" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     GitHub
                   </Link>
                 </div>
@@ -108,35 +108,35 @@ export default function Footer() {
 
               {/* Company column */}
               <div className="flex flex-col gap-4">
-                <h3 className="text-[13px] font-[600] uppercase tracking-[0.05em]" style={{ color: '#9CA3AF' }}>
+                <h3 className="text-[12px] font-[600] uppercase tracking-[0.05em]" style={{ color: '#9CA3AF' }}>
                   Company
                 </h3>
                 <div className="flex flex-col gap-3">
-                  <Link href="/about" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="/about" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     About
                   </Link>
-                  <Link href="#" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="#" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Careers
                   </Link>
-                  <Link href="#" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="#" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Press
                   </Link>
-                  <Link href="/privacy" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="/privacy" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Privacy
                   </Link>
-                  <Link href="/terms" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="/terms" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Terms
                   </Link>
-                  <Link href="#" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="#" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Security
                   </Link>
-                  <Link href="#" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="#" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Support
                   </Link>
-                  <Link href="#" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="#" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Partners
                   </Link>
-                  <Link href="#" className="text-[15px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
+                  <Link href="#" className="text-[16px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                     Sales
                   </Link>
                 </div>
@@ -148,17 +148,14 @@ export default function Footer() {
         {/* Bottom section with copyright and social icons */}
         <div className="flex justify-between items-center pt-8 mt-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-            <p className="text-[13px] leading-[160%] text-left" style={{ color: '#9CA3AF' }}>
-              © 2025 Surbee. All rights reserved.
-            </p>
             <div className="flex items-center gap-6">
-              <Link href="/privacy" className="text-[13px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#9CA3AF' }}>
+              <Link href="/privacy" className="text-[12px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="text-[13px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#9CA3AF' }}>
+              <Link href="/terms" className="text-[12px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                 Terms of Service
               </Link>
-              <Link href="#" className="text-[13px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#9CA3AF' }}>
+              <Link href="#" className="text-[12px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
                 Cookie Policy
               </Link>
             </div>
