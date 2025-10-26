@@ -18,9 +18,9 @@ export default function Footer() {
 
   return (
     <footer className={`w-full ${diatype.variable}`} style={{ backgroundColor: "#F2F2F2", fontFamily: "var(--font-diatype), system-ui, sans-serif" }}>
-      <div className="py-12 md:py-16">
+      <div className="py-12 md:py-16 w-full">
         {/* Main content area */}
-        <div className="flex justify-between items-start gap-8">
+        <div className="flex justify-between items-start gap-8 max-w-none">
           {/* Left side - Logo only */}
           <div className="flex flex-col gap-6">
             {/* Logo */}
@@ -146,7 +146,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom section with copyright and social icons */}
-        <div className="flex justify-between items-center pt-8 mt-8">
+        <div className="flex justify-between items-center pt-8 mt-8 max-w-none">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
             <div className="flex items-center gap-6">
               <Link href="/privacy" className="text-[12px] leading-[160%] transition-colors hover:opacity-70" style={{ color: '#0A0A0A' }}>
