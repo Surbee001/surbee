@@ -7,7 +7,6 @@ import path from "path";
 import os from "os";
 import { randomUUID } from "crypto";
 import type { ComponentType, ReactElement } from "react";
-import { memoryManager } from "@/services/reasoning/MemoryManager";
 
 type GuardrailResult = any;
 
@@ -2946,7 +2945,7 @@ function buildContextPreface(context?: WorkflowContextPayload): string | null {
   return sections.join("\n\n");
 }
 
-export type WorkflowInput = { input_as_text: string; context?: WorkflowContextPayload; userId?: string };
+export type WorkflowInput = { input_as_text: string; context?: WorkflowContextPayload };
 
 export interface WorkflowResult {
   output_text: string;
@@ -3541,9 +3540,6 @@ export const runWorkflow = async (
       // Use already-serialized items instead of re-serializing
       const allItems = streamedSerializedItems.slice(); // Get all items
 
-      // Persist reasoning results before returning
-      await persistReasoningResults(allItems, workflow);
-
       // For IDE workflow, look for render_preview results
       const latestRenderResult =
         allItems
@@ -3576,9 +3572,7 @@ export const runWorkflow = async (
       };
     }
 
-    // Persist reasoning results for plan mode
     const planItems = streamedSerializedItems.slice(0, plannerEndIndex);
-    await persistReasoningResults(planItems, workflow);
 
     return {
       output_text: surbeeplannerResultTemp.finalOutput,
@@ -3590,66 +3584,3 @@ export const runWorkflow = async (
 
 }
 
-// Helper function to persist reasoning results
-async function persistReasoningResults(items: SerializedRunItem[], workflow: WorkflowInput) {
-  try {
-    // Collect all reasoning items from the workflow
-    const reasoningItems = items?.filter(item => item.type === 'reasoning') || [];
-    if (reasoningItems.length > 0) {
-      console.log(`[Workflow] Persisting ${reasoningItems.length} reasoning items to database`);
-
-      // Group reasoning items by agent/session for persistence
-      // Note: This is a simplified approach - in production you'd want more sophisticated
-      // reasoning result reconstruction
-      for (const item of reasoningItems) {
-        if (item.text && item.agent && item.id) {
-          // Create a minimal reasoning result for persistence using the existing ID
-          const reasoningResult = {
-            id: item.id, // Use the existing ID from serialization
-            query: workflow.input_as_text || 'Workflow query',
-            complexity: {
-              level: 'MODERATE' as const,
-              confidence: 0.8,
-              reason: 'Workflow-generated reasoning',
-              patterns: [],
-              estimatedDuration: 10,
-              tokenEstimate: item.text.length / 4, // Rough estimate
-              costEstimate: 0.001,
-              canUseCache: false
-            },
-            phases: [{
-              id: `phase_${Date.now()}`,
-              type: 'understanding' as const,
-              title: 'Workflow Reasoning',
-              content: item.text,
-              startTime: Date.now(),
-              duration: 1000,
-              tokenCount: item.text.length / 4,
-              confidence: 0.8,
-              isComplete: true
-            }],
-            finalAnswer: item.text,
-            totalTokens: item.text.length / 4,
-            totalCost: 0.001,
-            duration: 1000,
-            confidence: 0.8,
-            metadata: {
-              model: 'gpt-5',
-              startTime: Date.now(),
-              endTime: Date.now(),
-              cacheHit: false,
-              agent: item.agent
-            }
-          };
-
-          // Persist to database using a system user ID that doesn't get skipped
-          const userId = 'system-reasoning-user'; // Use system user for workflow reasoning
-          await memoryManager.storeReasoningSession(userId, reasoningResult.id, reasoningResult);
-        }
-      }
-    }
-  } catch (error) {
-    console.error('[Workflow] Failed to persist reasoning results:', error);
-    // Don't throw - this shouldn't break the workflow
-  }
-}
