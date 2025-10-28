@@ -1473,10 +1473,6 @@ function serializeRunItems(items: RunItem[]): SerializedRunItem[] {
             if (c && typeof c.text === 'string') return c.text;
             return '';
           }).filter(Boolean).join(' ');
-        } else if (content && typeof content === 'object' && 'map' in content) {
-          // Handle case where content has a map method but isn't an array
-          console.error('[serializeRunItems] Content has map method but is not array:', typeof content, content);
-          text = String(content);
         } else if (content && typeof content === 'object') {
           // Handle object content (single block)
           if (content.type === 'input_text' && typeof content.text === 'string') {
