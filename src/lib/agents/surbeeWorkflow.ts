@@ -1337,6 +1337,7 @@ const context = { guardrailLlm: client };
 export type SerializedRunItem =
   | {
       type: "message";
+      id: string;
       text: string;
       agent?: string;
       isHtml?: boolean;
@@ -1487,8 +1488,10 @@ function serializeRunItems(items: RunItem[]): SerializedRunItem[] {
         }
 
         const isSummary = rawItem?.__summary === true;
+        const messageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
         serialized.push({
           type: "message",
+          id: messageId,
           text,
           agent: agentName,
           isHtml: looksLikeHtml(text),

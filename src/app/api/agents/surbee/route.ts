@@ -227,7 +227,8 @@ export async function POST(request: NextRequest) {
 
         if (item.type === "message" && typeof item.text === "string" && !item.isHtml) {
           // Send messages as proper message events, not reasoning
-          const id = `msg-${Math.random().toString(36).slice(2, 9)}`;
+          // Use existing ID from serialization, or generate one if missing
+          const id = item.id || `msg-${Math.random().toString(36).slice(2, 9)}`;
           await batcher.addEvent({
             type: "message",
             id,
@@ -344,7 +345,7 @@ export async function POST(request: NextRequest) {
             if (item?.type === "reasoning" && typeof item?.text === "string" && item.text.trim()) {
               await sendReasoningLines(item.text, "reason-fallback", item.agent);
             } else if (item?.type === "message" && typeof item?.text === "string" && !item?.isHtml) {
-              const id = `msg-fallback-${Math.random().toString(36).slice(2, 9)}`;
+              const id = item.id || `msg-fallback-${Math.random().toString(36).slice(2, 9)}`;
               await batcher.addEvent({
                 type: "message",
                 id,
