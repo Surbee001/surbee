@@ -294,8 +294,8 @@ export class MemoryManager {
     reasoning: ReasoningResult,
     feedback?: { rating: number; text?: string }
   ): Promise<void> {
-    // Skip database storage for demo/mock users
-    if (userId === 'demo-user' || process.env.NEXT_PUBLIC_MOCK_PROJECT === 'true') {
+    // Skip database storage for demo/mock users, but allow system-reasoning-user
+    if ((userId === 'demo-user' || userId === 'demo-user-id' || process.env.NEXT_PUBLIC_MOCK_PROJECT === 'true') && userId !== 'system-reasoning-user') {
       console.log('Skipping database storage for demo user');
       return;
     }

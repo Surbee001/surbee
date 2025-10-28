@@ -3642,8 +3642,8 @@ async function persistReasoningResults(items: SerializedRunItem[], workflow: Wor
             }
           };
 
-          // Persist to database using user ID from workflow input or demo user
-          const userId = workflow.userId || 'demo-user-id'; // Use demo user ID as fallback
+          // Persist to database using a system user ID that doesn't get skipped
+          const userId = 'system-reasoning-user'; // Use system user for workflow reasoning
           await memoryManager.storeReasoningSession(userId, reasoningResult.id, reasoningResult);
         }
       }
