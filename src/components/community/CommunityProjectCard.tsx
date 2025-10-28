@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User } from 'lucide-react';
 import { Image as IKImage } from '@imagekit/next';
@@ -23,13 +23,18 @@ export const CommunityProjectCard: React.FC<CommunityProjectCardProps> = ({
   onRemix,
 }) => {
   const router = useRouter();
+  // Mock response count - in real implementation, this would come from props
+  // Using useState to avoid hydration mismatch
+  const [responseCount, setResponseCount] = useState(50);
+
+  useEffect(() => {
+    // Set random count only on client side to avoid hydration mismatch
+    setResponseCount(Math.floor(Math.random() * 500) + 50);
+  }, []);
 
   const handleCardClick = () => {
     router.push(`/project/${id}`);
   };
-
-  // Mock response count - in real implementation, this would come from props
-  const responseCount = Math.floor(Math.random() * 500) + 50;
 
   return (
     <div

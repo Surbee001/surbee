@@ -29,10 +29,9 @@ function AskSurbeeComponent({ activeTab, projectId }: { activeTab: TabType; proj
   const [showChat, setShowChat] = React.useState(false);
   const hasText = inputValue.trim().length > 0;
 
-  // Responsive widths - compact when not focused, expand when focused or has text
-  const compactWidth = '140px'; // Just fits "Ask Surbee"
-  const inputWidth = '355px';   // Input field width
-  const expandedWidth = showChat ? '500px' : (isFocused || hasText ? inputWidth : compactWidth);
+  // Responsive widths - expand more when showing chat
+  const baseWidth = '225px';
+  const expandedWidth = showChat ? '500px' : '355px';
   const chatHeight = showChat ? '400px' : '48px';
 
   const generateMockResponse = (question: string, tab: TabType) => {
@@ -253,145 +252,22 @@ Based on your question about **"${question}"**, here are the key insights:
         }}
       >
         {!showChat ? (
-          isFocused || hasText ? (
-            // Expanded mode - show input field when focused or has text
-            <form
-              className="relative h-full"
-              style={{
-                border: "0px solid rgb(229, 231, 235)",
-                boxSizing: "border-box",
-                position: "relative",
-              }}
-            >
-              <label
-                className="relative flex w-full h-full rounded-[24px] p-2 shadow-sm backdrop-blur-xl"
-                style={{
-                  border: "0px solid rgb(229, 231, 235)",
-                  boxSizing: "border-box",
-                  position: "relative",
-                  display: "flex",
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: "24px",
-                  backgroundColor: "rgba(255, 255, 255, 0.08)",
-                  padding: "0.5rem",
-                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                  backdropFilter: "blur(16px)",
-                }}
-              >
-                <input
-                  className="mx-3 w-full bg-transparent focus:outline-none text-white placeholder-gray-400"
-                  placeholder="Ask Surbee about your survey data..."
-                  aria-label="Message Surbee"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
-                  onKeyPress={handleKeyPress}
-                  style={{
-                    border: "0px solid rgb(229, 231, 235)",
-                    boxSizing: "border-box",
-                    margin: "0px",
-                    padding: "0px",
-                    fontFamily: "inherit",
-                    fontFeatureSettings: "inherit",
-                    fontVariationSettings: "inherit",
-                    color: "white",
-                    marginLeft: "0.75rem",
-                    marginRight: "0.75rem",
-                    height: "2rem",
-                    width: "100%",
-                    backgroundColor: "transparent",
-                    paddingInlineEnd: "2rem",
-                    fontSize: "0.875rem",
-                    lineHeight: "1.435rem",
-                    letterSpacing: "-0.01em",
-                    fontWeight: 400,
-                    textWrap: "pretty",
-                  }}
-                />
-              </label>
-              <button
-                className={`absolute top-2 h-8 w-8 flex-none rounded-full p-0 transition-all duration-200 ${
-                  hasText && !isLoading
-                    ? 'opacity-100 cursor-pointer hover:opacity-80 bg-white text-black'
-                    : 'opacity-50 cursor-not-allowed bg-gray-400 text-gray-600'
-                }`}
-                type="submit"
-                aria-label="Send prompt to Surbee"
-                disabled={!hasText || isLoading}
-                onClick={handleSubmit}
-                style={{
-                  border: "0px solid rgb(229, 231, 235)",
-                  boxSizing: "border-box",
-                  margin: "0px",
-                  fontFamily: "inherit",
-                  fontFeatureSettings: "inherit",
-                  fontVariationSettings: "inherit",
-                  fontSize: "100%",
-                  fontWeight: "inherit",
-                  lineHeight: "inherit",
-                  letterSpacing: "inherit",
-                  textTransform: "none",
-                  appearance: "button",
-                  backgroundImage: "none",
-                  position: "absolute",
-                  top: "0.5rem",
-                  height: "2rem",
-                  width: "2rem",
-                  flex: "0 0 auto",
-                  borderRadius: "9999px",
-                  padding: "0px",
-                  insetInlineEnd: "0.5rem",
-                  backgroundColor: hasText && !isLoading ? "white" : "rgba(255, 255, 255, 0.15)",
-                  color: hasText && !isLoading ? "black" : "rgba(255, 255, 255, 0.6)",
-                }}
-              >
-                {isLoading ? (
-                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <svg
-                    height="32"
-                    width="32"
-                    fill="none"
-                    viewBox="0 0 32 32"
-                    xmlns="http://www.w3.org/2000/svg"
-                    style={{
-                      border: "0px solid rgb(229, 231, 235)",
-                      boxSizing: "border-box",
-                      display: "block",
-                      verticalAlign: "middle",
-                    }}
-                  >
-                    <path
-                      d="M16 22L16 10M16 10L11 15M16 10L21 15"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.7"
-                      style={{
-                        border: "0px solid rgb(229, 231, 235)",
-                        boxSizing: "border-box",
-                      }}
-                    />
-                  </svg>
-                )}
-              </button>
-            </form>
-          ) : (
-            // Compact mode - just "Ask Surbee" text when not focused and no text
-            <div
-              className="relative h-full cursor-pointer"
-              onClick={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              tabIndex={0}
+          // Input mode
+          <form
+            className="relative h-full"
+            style={{
+              border: "0px solid rgb(229, 231, 235)",
+              boxSizing: "border-box",
+              position: "relative",
+            }}
+          >
+            <label
+              className="relative flex w-full h-full rounded-[24px] p-2 shadow-sm backdrop-blur-xl"
               style={{
                 border: "0px solid rgb(229, 231, 235)",
                 boxSizing: "border-box",
                 position: "relative",
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
                 width: "100%",
                 height: "100%",
                 borderRadius: "24px",
@@ -401,17 +277,105 @@ Based on your question about **"${question}"**, here are the key insights:
                 backdropFilter: "blur(16px)",
               }}
             >
-              <span
-                className="text-white font-medium select-none"
+              <input
+                className="mx-3 w-full bg-transparent focus:outline-none text-white placeholder-gray-400"
+                placeholder="Ask Surbee about your survey data..."
+                aria-label="Message Surbee"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                onKeyPress={handleKeyPress}
                 style={{
+                  border: "0px solid rgb(229, 231, 235)",
+                  boxSizing: "border-box",
+                  margin: "0px",
+                  padding: "0px",
+                  fontFamily: "inherit",
+                  fontFeatureSettings: "inherit",
+                  fontVariationSettings: "inherit",
+                  color: "white",
+                  marginLeft: "0.75rem",
+                  marginRight: "0.75rem",
+                  height: "2rem",
+                  width: "100%",
+                  backgroundColor: "transparent",
+                  paddingInlineEnd: "2rem",
                   fontSize: "0.875rem",
-                  fontWeight: 500,
+                  lineHeight: "1.435rem",
+                  letterSpacing: "-0.01em",
+                  fontWeight: 400,
+                  textWrap: "pretty",
                 }}
-              >
-                Ask Surbee
-              </span>
-            </div>
-          )
+              />
+            </label>
+            <button
+              className={`absolute top-2 h-8 w-8 flex-none rounded-full p-0 transition-all duration-200 ${
+                hasText && !isLoading
+                  ? 'opacity-100 cursor-pointer hover:opacity-80 bg-white text-black'
+                  : 'opacity-50 cursor-not-allowed bg-gray-400 text-gray-600'
+              }`}
+              type="submit"
+              aria-label="Send prompt to Surbee"
+              disabled={!hasText || isLoading}
+              onClick={handleSubmit}
+              style={{
+                border: "0px solid rgb(229, 231, 235)",
+                boxSizing: "border-box",
+                margin: "0px",
+                fontFamily: "inherit",
+                fontFeatureSettings: "inherit",
+                fontVariationSettings: "inherit",
+                fontSize: "100%",
+                fontWeight: "inherit",
+                lineHeight: "inherit",
+                letterSpacing: "inherit",
+                textTransform: "none",
+                appearance: "button",
+                backgroundImage: "none",
+                position: "absolute",
+                top: "0.5rem",
+                height: "2rem",
+                width: "2rem",
+                flex: "0 0 auto",
+                borderRadius: "9999px",
+                padding: "0px",
+                insetInlineEnd: "0.5rem",
+                backgroundColor: hasText && !isLoading ? "white" : "rgba(255, 255, 255, 0.15)",
+                color: hasText && !isLoading ? "black" : "rgba(255, 255, 255, 0.6)",
+              }}
+            >
+              {isLoading ? (
+                <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg
+                  height="32"
+                  width="32"
+                  fill="none"
+                  viewBox="0 0 32 32"
+                  xmlns="http://www.w3.org/2000/svg"
+                  style={{
+                    border: "0px solid rgb(229, 231, 235)",
+                    boxSizing: "border-box",
+                    display: "block",
+                    verticalAlign: "middle",
+                  }}
+                >
+                  <path
+                    d="M16 22L16 10M16 10L11 15M16 10L21 15"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.7"
+                    style={{
+                      border: "0px solid rgb(229, 231, 235)",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </svg>
+              )}
+            </button>
+          </form>
         ) : (
           // Chat mode
           <div

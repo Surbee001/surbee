@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import localFont from "next/font/local";
-import { SurbeeTagWithLogo } from "@/components/ui/SurbeeTag";
 
 type CardConfig = {
   src: string;
@@ -193,14 +192,14 @@ export default function CreatedWithSurbee() {
 
   return (
     <section className={`w-full mb-[84px] ${tobiasLight.variable}`}>
-      <div className="relative text-center">
-        <SurbeeTagWithLogo
-          variant="default"
-          showText={true}
-          className="bg-white/90 backdrop-blur-sm shadow-sm"
-        />
+      <div className="relative w-full overflow-visible">
+        <h2 className="select-none text-center" style={{ fontFamily: 'var(--font-diatype), sans-serif' }}>
+          <span className="leading-none block" style={{ fontSize: '38px', fontWeight: 400, letterSpacing: '-2px', lineHeight: '46px', color: '#0A0A0A' }}>
+            Created with Surbee
+          </span>
+        </h2>
       </div>
-      <div className="max-w-[1400px] aspect-[1440/692] mx-auto relative">
+      <div className="max-w-[1400px] aspect-[1440/692] mx-auto relative mt-12">
         <div className="h-full">
           <div className="relative h-full mx-auto">
             {CARD_CONFIGS.map((card, index) => {

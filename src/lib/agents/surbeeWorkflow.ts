@@ -2054,318 +2054,6 @@ Clarifying user intent and audience first is mandatory. Always present your reas
   },
 });
 
-// ===== SMART CONVERSATIONAL CONTEXT SYSTEM =====
-
-// Context store for reference-based retrieval
-const contextStore = new Map<string, AgentInputItem[]>();
-
-// Agent context needs configuration
-const AGENT_CONTEXT_NEEDS = {
-  promptoptimizer: {
-    needs: ['user_messages'],
-    slidingWindowSize: 2,
-    includeSystemSummary: true,
-  },
-  categorize: {
-    needs: ['user_messages', 'promptoptimizer_output'],
-    slidingWindowSize: 3,
-    includeSystemSummary: true,
-  },
-  surbeebuildplanner: {
-    needs: ['user_messages', 'promptoptimizer_output', 'categorize_output'],
-    slidingWindowSize: 4,
-    includeSystemSummary: true,
-  },
-  surbeebuilder: {
-    needs: ['user_messages', 'surbeebuildplanner_output', 'recent_conversation'],
-    slidingWindowSize: 5,
-    includeSystemSummary: true,
-    allowContextRetrieval: true, // Can request more context via tool
-  },
-  surbeeplanner: {
-    needs: ['user_messages', 'conversation_flow'],
-    slidingWindowSize: 5,
-    includeSystemSummary: true,
-  },
-} as const;
-
-type AgentName = keyof typeof AGENT_CONTEXT_NEEDS;
-
-interface CompressedMessage {
-  originalCount: number;
-  summary: string;
-  timeframe: string;
-  keyDecisions: string[];
-}
-
-// Compress older messages into summary
-function compressMessages(messages: AgentInputItem[]): CompressedMessage {
-  const keyDecisions: string[] = [];
-  let summaryParts: string[] = [];
-
-  for (const msg of messages) {
-    // Type guard: only process messages with role and content properties
-    if (!('role' in msg) || !('content' in msg)) {
-      continue; // Skip function_call types
-    }
-
-    let content = '';
-    try {
-      if (!msg.content) {
-        content = '';
-      } else if (typeof msg.content === 'string') {
-        content = msg.content;
-      } else if (Array.isArray(msg.content)) {
-        content = msg.content.map(c => typeof c === 'string' ? c : (c && c.type === 'input_text' ? c.text : '')).join(' ');
-      } else {
-        content = '';
-      }
-    } catch (e) {
-      console.error('[compressMessages] Error processing content:', e);
-      content = '';
-    }
-
-    // Extract key decisions (avoid reasoning fluff)
-    if (msg.role === 'assistant') {
-      // Look for concrete decisions, not reasoning
-      const agentName = (msg as any).agent || 'Assistant';
-
-      // Extract only final outputs, skip "I'll analyze..." type content
-      if (content.includes('plan:') || content.includes('questions:') || content.includes('design:')) {
-        const briefVersion = content.slice(0, 150).replace(/I'll|Let me|First,|Second,/g, '').trim();
-        keyDecisions.push(`${agentName}: ${briefVersion}...`);
-      } else {
-        // Just note the agent spoke, don't include full reasoning
-        summaryParts.push(`${agentName} responded`);
-      }
-    } else if (msg.role === 'user') {
-      // Keep user messages more complete
-      const briefUser = content.slice(0, 100);
-      keyDecisions.push(`User: ${briefUser}${content.length > 100 ? '...' : ''}`);
-    }
-  }
-
-  const summary = keyDecisions.length > 0
-    ? keyDecisions.join('; ')
-    : summaryParts.join(', ');
-
-  return {
-    originalCount: messages.length,
-    summary,
-    timeframe: `${messages.length} messages`,
-    keyDecisions,
-  };
-}
-
-// Generate context reference ID
-function generateContextId(): string {
-  return `ctx_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-}
-
-// Helper to check if an item has reasoning
-function hasReasoning(item: AgentInputItem): boolean {
-  return 'reasoning' in item && typeof (item as any).reasoning === 'string';
-}
-
-// Filter context for specific agent (preserves reasoning/message pairs)
-function filterContextForAgent(
-  agentName: AgentName,
-  fullHistory: AgentInputItem[],
-  contextId: string
-): AgentInputItem[] {
-  const config = AGENT_CONTEXT_NEEDS[agentName];
-  if (!config) return fullHistory; // Fallback to full history if not configured
-
-  const { slidingWindowSize, includeSystemSummary } = config;
-
-  // Store full history for reference
-  contextStore.set(contextId, fullHistory);
-
-  // Find the split point, but be careful about reasoning/message pairs
-  let splitIndex = Math.max(0, fullHistory.length - slidingWindowSize);
-
-  // Get initial recent window
-  let recentMessages = fullHistory.slice(splitIndex);
-
-  console.log(`[Context Filter] Initial window for ${agentName}: ${recentMessages.length} messages from index ${splitIndex}`);
-
-  // Check ALL items in recent window for reasoning references that might be outside the window
-  // Keep expanding the window until all reasoning items are included
-  let needsExpansion = true;
-  let iterations = 0;
-  const maxIterations = 20; // Safety limit
-
-  while (needsExpansion && iterations < maxIterations && splitIndex > 0) {
-    needsExpansion = false;
-    iterations++;
-
-    for (const item of recentMessages) {
-      if (hasReasoning(item)) {
-        const reasoningId = (item as any).reasoning;
-        const itemId = ('id' in item) ? (item as any).id : 'unknown';
-
-        // Check if this reasoning item is in the recent window
-        const reasoningInWindow = recentMessages.some(m => 'id' in m && m.id === reasoningId);
-
-        if (!reasoningInWindow) {
-          console.log(`[Context Filter] ⚠️ Message ${itemId} references reasoning ${reasoningId} which is NOT in window. Expanding...`);
-
-          // Reasoning is missing! Look backwards to find it
-          let found = false;
-          for (let i = splitIndex - 1; i >= 0; i--) {
-            const olderItem = fullHistory[i];
-            if ('id' in olderItem && olderItem.id === reasoningId) {
-              // Found it! Move split point to include this reasoning item
-              console.log(`[Context Filter] ✓ Found reasoning ${reasoningId} at index ${i}. Moving split from ${splitIndex} to ${i}`);
-              splitIndex = i;
-              recentMessages = fullHistory.slice(splitIndex);
-              needsExpansion = true; // Check again in case this reasoning has its own dependencies
-              found = true;
-              break;
-            }
-          }
-          if (!found) {
-            console.log(`[Context Filter] ❌ Could not find reasoning ${reasoningId} in history! This will cause an error.`);
-          }
-          if (needsExpansion) break; // Start checking from the beginning with expanded window
-        }
-      }
-    }
-  }
-
-  console.log(`[Context Filter] After ${iterations} iterations, final window: ${recentMessages.length} messages from index ${splitIndex}`);
-
-  // Final validation: check if any message still has missing reasoning
-  const orphanedMessages = recentMessages.filter(item => {
-    if (hasReasoning(item)) {
-      const reasoningId = (item as any).reasoning;
-      const hasReasoningItem = recentMessages.some(m => 'id' in m && m.id === reasoningId);
-      if (!hasReasoningItem) {
-        const itemId = ('id' in item) ? (item as any).id : 'unknown';
-        console.error(`[Context Filter] 🚨 ORPHANED MESSAGE DETECTED: ${itemId} references ${reasoningId} which is not in final window!`);
-        return true;
-      }
-    }
-    return false;
-  });
-
-  if (orphanedMessages.length > 0) {
-    console.error(`[Context Filter] 🚨 Found ${orphanedMessages.length} orphaned messages. Falling back to full history to prevent errors.`);
-    return fullHistory; // Safety fallback
-  }
-
-  // Now split with the adjusted index
-  const olderMessages = fullHistory.slice(0, splitIndex);
-
-  const filteredContext: AgentInputItem[] = [];
-
-  // Add compressed summary if there are older messages
-  if (olderMessages.length > 0 && includeSystemSummary) {
-    const compressed = compressMessages(olderMessages);
-
-    filteredContext.push({
-      role: 'system',
-      content: `[CONVERSATION SUMMARY]
-Previous context: ${compressed.summary}
-
-Key decisions from earlier:
-${compressed.keyDecisions.slice(0, 3).map((d, i) => `${i + 1}. ${d}`).join('\n')}
-
-Context Reference: ${contextId}
-(You can request full context if needed)
-
----
-Recent conversation continues below:`,
-    } as AgentInputItem);
-  }
-
-  // Add recent messages in full (maintains conversational tone and reasoning pairs)
-  filteredContext.push(...recentMessages);
-
-  console.log(`[Context Filter] ${agentName}: ${fullHistory.length} → ${filteredContext.length} messages (${Math.round((1 - filteredContext.length / fullHistory.length) * 100)}% reduction)`);
-
-  return filteredContext;
-}
-
-// Tool for Builder to request more context
-const requestContextTool = tool({
-  name: "request_full_context",
-  description: "Request full conversation history if you need more context. Use this if the summary doesn't have enough detail.",
-  parameters: z.object({
-    context_id: z.string(),
-    topic: z.string().nullable().optional().describe("Specific topic to search for (e.g., 'design preferences', 'original request')"),
-    agent_name: z.string().nullable().optional().describe("Filter by specific agent's messages"),
-  }),
-  execute: async (input) => {
-    const { context_id, topic, agent_name } = input;
-
-    const fullHistory = contextStore.get(context_id);
-    if (!fullHistory) {
-      return {
-        status: "error",
-        message: "Context not found. Continue with available information.",
-      };
-    }
-
-    // Filter by agent if specified
-    let relevant = agent_name
-      ? fullHistory.filter(msg => {
-          if (!('role' in msg)) return false; // Skip function_call types
-          return (msg as any).agent === agent_name || msg.role === 'user';
-        })
-      : fullHistory.filter(msg => 'role' in msg); // Only include messages with role
-
-    // Search by topic if specified
-    if (topic) {
-      relevant = relevant.filter(msg => {
-        if (!('role' in msg) || !('content' in msg)) return false; // Type guard
-        let content = '';
-        try {
-          if (!msg.content) {
-            content = '';
-          } else if (typeof msg.content === 'string') {
-            content = msg.content;
-          } else if (Array.isArray(msg.content)) {
-            content = msg.content.map(c => typeof c === 'string' ? c : (c && c.type === 'input_text' ? c.text : '')).join(' ');
-          }
-        } catch (e) {
-          console.error('[requestContextTool] Error processing content for topic filter:', e);
-          content = '';
-        }
-        return content.toLowerCase().includes(topic.toLowerCase());
-      });
-    }
-
-    // Format for return
-    const formatted = relevant.map(msg => {
-      if (!('role' in msg) || !('content' in msg)) return ''; // Type guard
-      const role = msg.role;
-      const agent = (msg as any).agent || '';
-      let content = '';
-      try {
-        if (!msg.content) {
-          content = '';
-        } else if (typeof msg.content === 'string') {
-          content = msg.content;
-        } else if (Array.isArray(msg.content)) {
-          content = msg.content.map(c => typeof c === 'string' ? c : (c && c.type === 'input_text' ? c.text : '')).join(' ');
-        }
-      } catch (e) {
-        console.error('[requestContextTool] Error processing content for formatting:', e);
-        content = '';
-      }
-
-      return `[${role}${agent ? `/${agent}` : ''}]: ${content}`;
-    }).filter(line => line !== '').join('\n\n');
-
-    return {
-      status: "success",
-      message: `Found ${relevant.length} relevant messages`,
-      context: formatted,
-    };
-  },
-});
-
 const promptoptimizer = new Agent({
   name: "PromptOptimizer",
   instructions: `You enhance user prompts for Surbee, a survey creation platform. Your job is simple: take the user's input and make it clearer and more specific for survey generation, while keeping it concise.
@@ -2531,7 +2219,7 @@ const surbeebuilder = new Agent({
   name: "SurbeeBuilder",
   instructions: SURBEE_BUILDER_INSTRUCTIONS,
   model: "gpt-5",
-  tools: [initSandbox, createFile, readFile, updateFile, deleteFile, listFiles, installPackage, runCommand, renderPreview, createShadcnComponent, webSearchPreview, requestContextTool],
+  tools: [initSandbox, createFile, readFile, updateFile, deleteFile, listFiles, installPackage, runCommand, renderPreview, createShadcnComponent, webSearchPreview],
   modelSettings: {
     parallelToolCalls: false, // Disable parallel calls to ensure correct order
     reasoning: {
@@ -2967,10 +2655,6 @@ export const runWorkflow = async (
   console.log('[Workflow] Starting workflow with input:', workflow.input_as_text?.substring(0, 100));
   console.log('[Workflow] Options:', { hasOnProgress: !!options.onProgress, hasOnItemStream: !!options.onItemStream });
 
-  // Generate context ID for this workflow run
-  const workflowContextId = generateContextId();
-  console.log('[Workflow] Context ID:', workflowContextId);
-
   const conversationHistory: AgentInputItem[] = [];
 
   const contextPreface = buildContextPreface(workflow.context);
@@ -3083,8 +2767,7 @@ export const runWorkflow = async (
   const executeAgent = async (
     agent: Agent<any, any>,
     input: AgentInputItem[],
-    progressLabel?: string,
-    useContextFiltering: boolean = true
+    progressLabel?: string
   ) => {
     console.log('[Workflow] Executing agent:', (agent as any)?.name || 'unknown', 'with label:', progressLabel);
 
@@ -3092,23 +2775,9 @@ export const runWorkflow = async (
       await notifyProgress(progressLabel);
     }
 
-    // Apply smart context filtering if enabled
-    let filteredInput = input;
-    if (useContextFiltering) {
-      const agentNameLower = ((agent as any)?.name || '').toLowerCase().replace(/[^a-z]/g, '') as AgentName;
-      if (AGENT_CONTEXT_NEEDS[agentNameLower]) {
-        filteredInput = filterContextForAgent(agentNameLower, input, workflowContextId);
-        console.log(`[executeAgent] Context filtering for ${(agent as any)?.name}: ${input.length} → ${filteredInput.length} messages (${Math.round((1 - filteredInput.length / input.length) * 100)}% reduction)`);
-      } else {
-        console.log(`[executeAgent] No filtering config for ${agentNameLower}, using full context`);
-      }
-    }
-
-    const agentStartIndex = streamedSerializedItems.length; // Track where this agent's items start
-
     if (onItemStream) {
       console.log('[Workflow] Running agent with stream...');
-      const streamResult = await runner.run(agent, filteredInput, { stream: true, maxTurns: 50 });
+      const streamResult = await runner.run(agent, input, { stream: true, maxTurns: 50 });
       console.log('[Workflow] Stream started');
       
       // Process events in real-time as they arrive
@@ -3147,7 +2816,7 @@ export const runWorkflow = async (
       return streamResult;
     }
 
-    const result = await runner.run(agent, filteredInput, { maxTurns: 50 });
+    const result = await runner.run(agent, input, { maxTurns: 50 });
     for (const item of result.newItems ?? []) {
       await emitRunItem(item);
     }

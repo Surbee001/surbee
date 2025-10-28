@@ -225,17 +225,11 @@
   }
 
   .ask-surbee-widget {
-    width: 120px !important; /* Compact width for mobile */
+    width: 200px !important;
     bottom: 0.5rem !important;
   }
 
-  /* Mobile expanded state (focused or has text) */
-  .ask-surbee-widget[style*="355px"] {
-    width: calc(100vw - 2rem) !important;
-    max-width: 320px !important;
-  }
-
-  /* Mobile chat state */
+  /* Mobile chat expansion */
   .ask-surbee-widget[style*="500px"] {
     width: calc(100vw - 2rem) !important;
     max-width: 400px !important;

@@ -116,7 +116,7 @@ export default function TestimonialCarousel() {
                     index === currentIndex ? 'opacity-100' : 'opacity-0'
                   }`}
                 >
-                  <p className="text-balance text-center text-black transition-all duration-700 ease-in-out transform" style={{ fontSize: '51px', fontFamily: 'Tobias, "Tobias Fallback", serif', fontWeight: 100, letterSpacing: '-2px', lineHeight: '51px' }}>
+                  <p className="text-balance text-center text-black transition-all duration-700 ease-in-out transform" style={{ fontSize: '51px', fontFamily: 'var(--font-diatype), sans-serif', fontWeight: 400, letterSpacing: '-2px', lineHeight: '51px' }}>
                     <span className="inline-block transition-all duration-700 ease-in-out">
                       {testimonial.text}
                     </span>
