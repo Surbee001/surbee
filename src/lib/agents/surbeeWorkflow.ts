@@ -3531,6 +3531,9 @@ export const runWorkflow = async (
       // Use already-serialized items instead of re-serializing
       const allItems = streamedSerializedItems.slice(); // Get all items
 
+      // Persist reasoning results before returning
+      await persistReasoningResults(allItems, workflow);
+
       // For IDE workflow, look for render_preview results
       const latestRenderResult =
         allItems
@@ -3563,18 +3566,25 @@ export const runWorkflow = async (
       };
     }
 
+    // Persist reasoning results for plan mode
+    const planItems = streamedSerializedItems.slice(0, plannerEndIndex);
+    await persistReasoningResults(planItems, workflow);
+
     return {
       output_text: surbeeplannerResultTemp.finalOutput,
       stage: "plan",
       guardrails: guardrailsOutput,
-      items: streamedSerializedItems.slice(0, plannerEndIndex),
+      items: planItems,
     };
   }
 
-  // Persist reasoning results to prevent orphaned message references
+}
+
+// Helper function to persist reasoning results
+async function persistReasoningResults(items: SerializedRunItem[], workflow: WorkflowInput) {
   try {
     // Collect all reasoning items from the workflow
-    const reasoningItems = allSerializedItems?.filter(item => item.type === 'reasoning') || [];
+    const reasoningItems = items?.filter(item => item.type === 'reasoning') || [];
     if (reasoningItems.length > 0) {
       console.log(`[Workflow] Persisting ${reasoningItems.length} reasoning items to database`);
 
@@ -3632,7 +3642,4 @@ export const runWorkflow = async (
     console.error('[Workflow] Failed to persist reasoning results:', error);
     // Don't throw - this shouldn't break the workflow
   }
-
-  // Fallback: should not reach here, but handle gracefully
-  throw new Error("Unexpected workflow state - mode was neither ASK nor BUILD");
-};
+}
