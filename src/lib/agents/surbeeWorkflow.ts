@@ -1344,6 +1344,7 @@ export type SerializedRunItem =
     }
   | {
       type: "reasoning";
+      id: string;
       text: string;
       agent?: string;
     }
@@ -1494,8 +1495,10 @@ function serializeRunItems(items: RunItem[]): SerializedRunItem[] {
       case "reasoning_item": {
         const reasoningText = extractReasoningText(rawItem);
         if (reasoningText) {
+          const reasoningId = `rs_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
           serialized.push({
             type: "reasoning",
+            id: reasoningId,
             text: reasoningText,
             agent: agentName,
           });
@@ -3592,10 +3595,10 @@ async function persistReasoningResults(items: SerializedRunItem[], workflow: Wor
       // Note: This is a simplified approach - in production you'd want more sophisticated
       // reasoning result reconstruction
       for (const item of reasoningItems) {
-        if (item.text && item.agent) {
-          // Create a minimal reasoning result for persistence
+        if (item.text && item.agent && item.id) {
+          // Create a minimal reasoning result for persistence using the existing ID
           const reasoningResult = {
-            id: `rs_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+            id: item.id, // Use the existing ID from serialization
             query: workflow.input_as_text || 'Workflow query',
             complexity: {
               level: 'MODERATE' as const,
