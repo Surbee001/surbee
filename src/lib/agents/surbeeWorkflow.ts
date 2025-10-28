@@ -7,6 +7,7 @@ import path from "path";
 import os from "os";
 import { randomUUID } from "crypto";
 import type { ComponentType, ReactElement } from "react";
+import { memoryManager } from "@/services/reasoning/MemoryManager";
 
 type GuardrailResult = any;
 
@@ -1458,7 +1459,28 @@ function serializeRunItems(items: RunItem[]): SerializedRunItem[] {
 
     switch (type) {
       case "message_output_item": {
-        const text = typeof (item as any)?.content === "string" ? (item as any).content : "";
+        let text = "";
+        const content = (item as any)?.content;
+
+        if (typeof content === "string") {
+          text = content;
+        } else if (Array.isArray(content)) {
+          // Handle array content (blocks)
+          text = content.map(c => {
+            if (typeof c === 'string') return c;
+            if (c && c.type === 'input_text' && typeof c.text === 'string') return c.text;
+            if (c && typeof c.text === 'string') return c.text;
+            return '';
+          }).filter(Boolean).join(' ');
+        } else if (content && typeof content === 'object') {
+          // Handle object content (single block)
+          if (content.type === 'input_text' && typeof content.text === 'string') {
+            text = content.text;
+          } else if (typeof content.text === 'string') {
+            text = content.text;
+          }
+        }
+
         const isSummary = rawItem?.__summary === true;
         serialized.push({
           type: "message",
@@ -2027,6 +2049,318 @@ Clarifying user intent and audience first is mandatory. Always present your reas
   },
 });
 
+// ===== SMART CONVERSATIONAL CONTEXT SYSTEM =====
+
+// Context store for reference-based retrieval
+const contextStore = new Map<string, AgentInputItem[]>();
+
+// Agent context needs configuration
+const AGENT_CONTEXT_NEEDS = {
+  promptoptimizer: {
+    needs: ['user_messages'],
+    slidingWindowSize: 2,
+    includeSystemSummary: true,
+  },
+  categorize: {
+    needs: ['user_messages', 'promptoptimizer_output'],
+    slidingWindowSize: 3,
+    includeSystemSummary: true,
+  },
+  surbeebuildplanner: {
+    needs: ['user_messages', 'promptoptimizer_output', 'categorize_output'],
+    slidingWindowSize: 4,
+    includeSystemSummary: true,
+  },
+  surbeebuilder: {
+    needs: ['user_messages', 'surbeebuildplanner_output', 'recent_conversation'],
+    slidingWindowSize: 5,
+    includeSystemSummary: true,
+    allowContextRetrieval: true, // Can request more context via tool
+  },
+  surbeeplanner: {
+    needs: ['user_messages', 'conversation_flow'],
+    slidingWindowSize: 5,
+    includeSystemSummary: true,
+  },
+} as const;
+
+type AgentName = keyof typeof AGENT_CONTEXT_NEEDS;
+
+interface CompressedMessage {
+  originalCount: number;
+  summary: string;
+  timeframe: string;
+  keyDecisions: string[];
+}
+
+// Compress older messages into summary
+function compressMessages(messages: AgentInputItem[]): CompressedMessage {
+  const keyDecisions: string[] = [];
+  let summaryParts: string[] = [];
+
+  for (const msg of messages) {
+    // Type guard: only process messages with role and content properties
+    if (!('role' in msg) || !('content' in msg)) {
+      continue; // Skip function_call types
+    }
+
+    let content = '';
+    try {
+      if (!msg.content) {
+        content = '';
+      } else if (typeof msg.content === 'string') {
+        content = msg.content;
+      } else if (Array.isArray(msg.content)) {
+        content = msg.content.map(c => typeof c === 'string' ? c : (c && c.type === 'input_text' ? c.text : '')).join(' ');
+      } else {
+        content = '';
+      }
+    } catch (e) {
+      console.error('[compressMessages] Error processing content:', e);
+      content = '';
+    }
+
+    // Extract key decisions (avoid reasoning fluff)
+    if (msg.role === 'assistant') {
+      // Look for concrete decisions, not reasoning
+      const agentName = (msg as any).agent || 'Assistant';
+
+      // Extract only final outputs, skip "I'll analyze..." type content
+      if (content.includes('plan:') || content.includes('questions:') || content.includes('design:')) {
+        const briefVersion = content.slice(0, 150).replace(/I'll|Let me|First,|Second,/g, '').trim();
+        keyDecisions.push(`${agentName}: ${briefVersion}...`);
+      } else {
+        // Just note the agent spoke, don't include full reasoning
+        summaryParts.push(`${agentName} responded`);
+      }
+    } else if (msg.role === 'user') {
+      // Keep user messages more complete
+      const briefUser = content.slice(0, 100);
+      keyDecisions.push(`User: ${briefUser}${content.length > 100 ? '...' : ''}`);
+    }
+  }
+
+  const summary = keyDecisions.length > 0
+    ? keyDecisions.join('; ')
+    : summaryParts.join(', ');
+
+  return {
+    originalCount: messages.length,
+    summary,
+    timeframe: `${messages.length} messages`,
+    keyDecisions,
+  };
+}
+
+// Generate context reference ID
+function generateContextId(): string {
+  return `ctx_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+}
+
+// Helper to check if an item has reasoning
+function hasReasoning(item: AgentInputItem): boolean {
+  return 'reasoning' in item && typeof (item as any).reasoning === 'string';
+}
+
+// Filter context for specific agent (preserves reasoning/message pairs)
+function filterContextForAgent(
+  agentName: AgentName,
+  fullHistory: AgentInputItem[],
+  contextId: string
+): AgentInputItem[] {
+  const config = AGENT_CONTEXT_NEEDS[agentName];
+  if (!config) return fullHistory; // Fallback to full history if not configured
+
+  const { slidingWindowSize, includeSystemSummary } = config;
+
+  // Store full history for reference
+  contextStore.set(contextId, fullHistory);
+
+  // Find the split point, but be careful about reasoning/message pairs
+  let splitIndex = Math.max(0, fullHistory.length - slidingWindowSize);
+
+  // Get initial recent window
+  let recentMessages = fullHistory.slice(splitIndex);
+
+  console.log(`[Context Filter] Initial window for ${agentName}: ${recentMessages.length} messages from index ${splitIndex}`);
+
+  // Check ALL items in recent window for reasoning references that might be outside the window
+  // Keep expanding the window until all reasoning items are included
+  let needsExpansion = true;
+  let iterations = 0;
+  const maxIterations = 20; // Safety limit
+
+  while (needsExpansion && iterations < maxIterations && splitIndex > 0) {
+    needsExpansion = false;
+    iterations++;
+
+    for (const item of recentMessages) {
+      if (hasReasoning(item)) {
+        const reasoningId = (item as any).reasoning;
+        const itemId = ('id' in item) ? (item as any).id : 'unknown';
+
+        // Check if this reasoning item is in the recent window
+        const reasoningInWindow = recentMessages.some(m => 'id' in m && m.id === reasoningId);
+
+        if (!reasoningInWindow) {
+          console.log(`[Context Filter] ⚠️ Message ${itemId} references reasoning ${reasoningId} which is NOT in window. Expanding...`);
+
+          // Reasoning is missing! Look backwards to find it
+          let found = false;
+          for (let i = splitIndex - 1; i >= 0; i--) {
+            const olderItem = fullHistory[i];
+            if ('id' in olderItem && olderItem.id === reasoningId) {
+              // Found it! Move split point to include this reasoning item
+              console.log(`[Context Filter] ✓ Found reasoning ${reasoningId} at index ${i}. Moving split from ${splitIndex} to ${i}`);
+              splitIndex = i;
+              recentMessages = fullHistory.slice(splitIndex);
+              needsExpansion = true; // Check again in case this reasoning has its own dependencies
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            console.log(`[Context Filter] ❌ Could not find reasoning ${reasoningId} in history! This will cause an error.`);
+          }
+          if (needsExpansion) break; // Start checking from the beginning with expanded window
+        }
+      }
+    }
+  }
+
+  console.log(`[Context Filter] After ${iterations} iterations, final window: ${recentMessages.length} messages from index ${splitIndex}`);
+
+  // Final validation: check if any message still has missing reasoning
+  const orphanedMessages = recentMessages.filter(item => {
+    if (hasReasoning(item)) {
+      const reasoningId = (item as any).reasoning;
+      const hasReasoningItem = recentMessages.some(m => 'id' in m && m.id === reasoningId);
+      if (!hasReasoningItem) {
+        const itemId = ('id' in item) ? (item as any).id : 'unknown';
+        console.error(`[Context Filter] 🚨 ORPHANED MESSAGE DETECTED: ${itemId} references ${reasoningId} which is not in final window!`);
+        return true;
+      }
+    }
+    return false;
+  });
+
+  if (orphanedMessages.length > 0) {
+    console.error(`[Context Filter] 🚨 Found ${orphanedMessages.length} orphaned messages. Falling back to full history to prevent errors.`);
+    return fullHistory; // Safety fallback
+  }
+
+  // Now split with the adjusted index
+  const olderMessages = fullHistory.slice(0, splitIndex);
+
+  const filteredContext: AgentInputItem[] = [];
+
+  // Add compressed summary if there are older messages
+  if (olderMessages.length > 0 && includeSystemSummary) {
+    const compressed = compressMessages(olderMessages);
+
+    filteredContext.push({
+      role: 'system',
+      content: `[CONVERSATION SUMMARY]
+Previous context: ${compressed.summary}
+
+Key decisions from earlier:
+${compressed.keyDecisions.slice(0, 3).map((d, i) => `${i + 1}. ${d}`).join('\n')}
+
+Context Reference: ${contextId}
+(You can request full context if needed)
+
+---
+Recent conversation continues below:`,
+    } as AgentInputItem);
+  }
+
+  // Add recent messages in full (maintains conversational tone and reasoning pairs)
+  filteredContext.push(...recentMessages);
+
+  console.log(`[Context Filter] ${agentName}: ${fullHistory.length} → ${filteredContext.length} messages (${Math.round((1 - filteredContext.length / fullHistory.length) * 100)}% reduction)`);
+
+  return filteredContext;
+}
+
+// Tool for Builder to request more context
+const requestContextTool = tool({
+  name: "request_full_context",
+  description: "Request full conversation history if you need more context. Use this if the summary doesn't have enough detail.",
+  parameters: z.object({
+    context_id: z.string(),
+    topic: z.string().nullable().optional().describe("Specific topic to search for (e.g., 'design preferences', 'original request')"),
+    agent_name: z.string().nullable().optional().describe("Filter by specific agent's messages"),
+  }),
+  execute: async (input) => {
+    const { context_id, topic, agent_name } = input;
+
+    const fullHistory = contextStore.get(context_id);
+    if (!fullHistory) {
+      return {
+        status: "error",
+        message: "Context not found. Continue with available information.",
+      };
+    }
+
+    // Filter by agent if specified
+    let relevant = agent_name
+      ? fullHistory.filter(msg => {
+          if (!('role' in msg)) return false; // Skip function_call types
+          return (msg as any).agent === agent_name || msg.role === 'user';
+        })
+      : fullHistory.filter(msg => 'role' in msg); // Only include messages with role
+
+    // Search by topic if specified
+    if (topic) {
+      relevant = relevant.filter(msg => {
+        if (!('role' in msg) || !('content' in msg)) return false; // Type guard
+        let content = '';
+        try {
+          if (!msg.content) {
+            content = '';
+          } else if (typeof msg.content === 'string') {
+            content = msg.content;
+          } else if (Array.isArray(msg.content)) {
+            content = msg.content.map(c => typeof c === 'string' ? c : (c && c.type === 'input_text' ? c.text : '')).join(' ');
+          }
+        } catch (e) {
+          console.error('[requestContextTool] Error processing content for topic filter:', e);
+          content = '';
+        }
+        return content.toLowerCase().includes(topic.toLowerCase());
+      });
+    }
+
+    // Format for return
+    const formatted = relevant.map(msg => {
+      if (!('role' in msg) || !('content' in msg)) return ''; // Type guard
+      const role = msg.role;
+      const agent = (msg as any).agent || '';
+      let content = '';
+      try {
+        if (!msg.content) {
+          content = '';
+        } else if (typeof msg.content === 'string') {
+          content = msg.content;
+        } else if (Array.isArray(msg.content)) {
+          content = msg.content.map(c => typeof c === 'string' ? c : (c && c.type === 'input_text' ? c.text : '')).join(' ');
+        }
+      } catch (e) {
+        console.error('[requestContextTool] Error processing content for formatting:', e);
+        content = '';
+      }
+
+      return `[${role}${agent ? `/${agent}` : ''}]: ${content}`;
+    }).filter(line => line !== '').join('\n\n');
+
+    return {
+      status: "success",
+      message: `Found ${relevant.length} relevant messages`,
+      context: formatted,
+    };
+  },
+});
+
 const promptoptimizer = new Agent({
   name: "PromptOptimizer",
   instructions: `You enhance user prompts for Surbee, a survey creation platform. Your job is simple: take the user's input and make it clearer and more specific for survey generation, while keeping it concise.
@@ -2116,264 +2450,83 @@ Keep it concise but complete - this plan will be handed directly to SurbeeBuilde
 });
 
 const SURBEE_BUILDER_INSTRUCTIONS = [
-  "You are SurbeeBuilder. Build surveys using this SIMPLE 3-step process:",
+  "You are SurbeeBuilder. Create BEAUTIFUL Typeform-style surveys using a mandatory checklist.",
   "",
-  "STEP 1: init_sandbox({ project_name: \"survey-name\" })",
-  "STEP 2: create_file({ project_name: \"survey-name\", file_path: \"src/Survey.tsx\", content: \"survey component code\" })",
-  "STEP 3: render_preview({ project_name: \"survey-name\" })",
+  "🎯 **MANDATORY CHECKLIST - COMPLETE IN ORDER:**",
   "",
-  "🎯 **INSTRUCTIONS:**",
-  "- Create a complete, working survey component in src/Survey.tsx",
-  "- Use shadcn/ui components for beautiful styling",
-  "- Make it responsive and accessible",
-  "- Output only the survey component code",
+  "□ STEP 1: init_sandbox({ project_name: 'survey' })",
+  "□ STEP 2: Create shadcn components you'll need",
+  "   Example: create_shadcn_component({ component_name: 'button', component_type: 'button' })",
+  "□ STEP 3: Create Survey.tsx with THIS EXACT STRUCTURE:",
   "",
-  "✨ **DESIGN SYSTEM - CRITICAL**",
-  "Follow this exact design system for ALL surveys:",
-  "",
-  "**Typography:**",
-  "- ALWAYS use the Google Font requested by the user (e.g., 'Inter', 'Poppins', 'Montserrat')",
-  "- Import in src/styles/survey.css: @import url('https://fonts.googleapis.com/css2?family=FontName:wght@400;500;600;700&display=swap');",
-  "- Set font-family in survey.css body: font-family: 'FontName', sans-serif;",
-  "- Headings: text-2xl md:text-3xl lg:text-4xl font-semibold",
-  "- Questions: text-lg md:text-xl font-medium",
-  "- Body text: text-base leading-relaxed",
-  "- Helper text: text-sm text-zinc-400",
-  "",
-  "**Spacing (CRITICAL - no elements should touch):**",
-  "- Container padding: px-6 py-8 md:px-12 md:py-16",
-  "- Between sections: space-y-12 md:space-y-16",
-  "- Between questions: space-y-8 md:space-y-10",
-  "- Between input and label: space-y-3",
-  "- Between buttons: gap-4",
-  "- Card padding: p-6 md:p-8",
-  "",
-  "**Colors (NO generic AI gradients):**",
-  "- Background: bg-white or bg-zinc-50",
-  "- Cards: bg-white with border border-zinc-200",
-  "- Text primary: text-zinc-900",
-  "- Text secondary: text-zinc-600",
-  "- Accent (buttons): Use user's brand color or bg-blue-600 hover:bg-blue-700",
-  "- AVOID: Gradients unless specifically requested by user",
-  "- Focus states: ring-2 ring-blue-500 ring-offset-2",
-  "",
-  "**Components (USE SHADCN):**",
-  "- Buttons: Use shadcn Button component with variants",
-  "- Inputs: Use shadcn Input component",
-  "- Cards: Use shadcn Card components",
-  "- Radio/Checkbox: Use shadcn RadioGroup and Checkbox",
-  "- Progress: Create custom with shadcn Progress",
-  "",
-  "**Layout:**",
-  "- Max width: max-w-2xl mx-auto (centered, not full width)",
-  "- Responsive: Always use md: and lg: breakpoints",
-  "- One question per screen (Typeform style)",
-  "- Smooth transitions: transition-all duration-300",
-  "",
-  "**Core Outcomes**",
-  "- Convert the planner's intent (plus any user follow ups) into a complete survey UI composed of strongly-typed React components.",
-  "- Structure the project exactly like a mini app: entry component at src/Survey.tsx, shared subcomponents in src/components/..., helpers in src/lib/..., styles in src/styles/survey.css, and optional assets under public/....",
-  "- Style exclusively with Tailwind utility classes or Tailwind-powered helper classes declared in src/styles/survey.css. Avoid inline styles or CSS-in-JS.",
-  "- Preserve and improve existing survey HTML context. When the user highlights a specific element, prefer surgical refactors over wholesale rewrites.",
-  "- Deliver the bundle via a single build_typescript_tailwind_project call with no raw HTML in your final answer.",
-  "",
-  "**Project Bundle Requirements**",
-  "- Emit a global stylesheet at src/styles/survey.css containing the Tailwind directives, shared tokens, and any Google Font imports (for example, @import url(\"https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap\");).",
-  "- Populate the files array with objects shaped like { path, content, encoding? } so the runtime can recreate every source file you generated.",
-  "- Import that stylesheet at the top of the root survey component (for example, import \"./styles/survey.css\").",
-  "- Keep the root survey wrapper annotated with data-surbee-flow and wrap each logical step in data-surbee-step=\"step-id\". Provide navigation controls with data-surbee-action=\"next\", \"prev\", or \"submit\" as appropriate.",
-  "- Give every question container data-surbee-question=\"question-id\", unique ids/names, accessible labels, helper text where relevant, and focus-visible Tailwind styles.",
-  "- Encode conditional logic in readable metadata (for example, data-surbee-condition=\"score>=8\") or JSON stored inside <script type=\"application/json\" data-surbee-logic> blocks so downstream engines can wire behaviour.",
-  "- Use lucide-react for all iconography. Include sr-only text for icons that convey meaning or mark them aria-hidden=\"true\" when decorative.",
-  "- When the user supplies images, reference them with descriptive alt text and place new assets under public/assets/.",
-  "- Factor layout shells, cards, question clusters, progress indicators, and similar constructs into separate components.",
-  "",
-  "**Dependencies & Assets**",
-  "- Tailwind, Inter, and lucide-react are the baseline. If you need other libraries (for example, @headlessui/react or animation helpers) add them to the dependencies array in the tool call and explain why they are required before you invoke the tool.",
-  "- Keep dependencies lightweight. Prefer small utilities you author yourself when practical.",
-  "- Binary assets may be included via base64 payloads by setting encoding to \"base64\" on individual entries in the files array.",
-  "",
-  "**Process Checklist**",
-  "1. Create the survey project: init_sandbox({ project_name: \"survey-name\" })",
-  "2. Build the main survey component in src/Survey.tsx using create_file",
-  "3. Create any supporting components (Progress, Questions, etc.) using create_file",
-  "4. Use render_preview to generate the final survey",
-  "",
-  "**Example Tool Calls (new IDE workflow)**",
-  "- init_sandbox({ project_name: \"my-survey\", initial_files: {} })",
-  "- create_file({ project_name: \"my-survey\", file_path: \"src/Survey.tsx\", content: \"...\" })",
-  "- create_file({ project_name: \"my-survey\", file_path: \"src/components/QuestionCard.tsx\", content: \"...\" })",
-  "- render_preview({ project_name: \"my-survey\" })",
-  "",
-  "**Context Awareness**",
-  "- Respect the HTML provided in <CurrentSurveyHTML> by reusing structural ideas and class names unless the user requests a rebuild.",
-  "- When an element is highlighted, update that subtree by editing or creating the owning component rather than regenerating the entire flow.",
-  "- Match breakpoints to the active device (desktop, tablet, phone) noted in context.",
-  "",
-  "**Survey Flow & Logic Requirements**",
-  "- Wrap steps and sections with data-surbee-step and include human-friendly headings.",
-  "- Provide navigation with clear affordances, keyboard focus, and disabled states controlled via data attributes for the runtime.",
-  "- Encode branching and validation in data-surbee-logic attributes or JSON. Never introduce a branch without an exit path.",
-  "- Supply a completion or summary step with CTA(s) or follow-up instructions.",
-  "",
-  "**Quality Checklist**",
-  "- Every question should have a unique id/name, accessible label, aria descriptions, helper text when useful, consistent spacing, and sr-only instructions as needed.",
-  "- Progressive disclosure (for example, accordions) must use semantic buttons and aria-expanded state.",
-  "- Use tasteful motion (for example, transition or animate-in) only when it supports clarity.",
-  "- Default typography, spacing, and color palette should echo Surbee's premium aesthetic (Inter, rounded corners, soft drop shadows, zinc surfaces, restrained gradients).",
-  "",
-  "**Available Tools**",
-  "🎯 CORE TOOLS (use these in order):",
-  "1. init_sandbox – Initialize project (call once first)",
-  "2. create_file – Create survey components",
-  "3. render_preview – Generate final survey",
-  "",
-  "🔧 UTILITY TOOLS (use as needed):",
-  "- read_file – Read existing files",
-  "- update_file – Modify files",
-  "- delete_file – Remove files",
-  "- list_files – Explore directories",
-  "- install_package – Add dependencies",
-  "- run_command – Execute commands",
-  "- create_shadcn_component – Create UI components",
-  "- webSearchPreview – Research patterns",
-
-  "**Sandbox IDE Workflow**",
-  "⚠️ CRITICAL: Always call init_sandbox FIRST to create the project environment!",
-  "1. init_sandbox({ project_name: \"survey-name\", initial_files: {} })",
-  "2. Create your main survey file: create_file({ project_name: \"survey-name\", file_path: \"src/Survey.tsx\", content: \"your survey component code\" })",
-  "3. Create supporting components as needed using create_file",
-  "4. Use install_package only if you need additional dependencies",
-  "5. Use render_preview({ project_name: \"survey-name\" }) for final output",
-
-  "**Component Management & Context**",
-  "CRITICAL: Create files in this exact order to maintain context:",
-  "1. FIRST: Create src/styles/survey.css with Google Font import and base styles",
-  "2. SECOND: Create utility components (src/lib/cn.ts, src/lib/utils.ts)",
-  "3. THIRD: Create shadcn UI components using create_shadcn_component (button, input, card, etc.)",
-  "4. FOURTH: Create custom components in src/components/ that USE the shadcn components",
-  "5. LAST: Create src/Survey.tsx that imports and composes everything",
-  "",
-  "Example workflow:",
-  "```",
-  "// Step 1: Create base styles",
-  "create_file({ project_name, file_path: 'src/styles/survey.css', content: `",
-  "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');",
-  "",
-  "@tailwind base;",
-  "@tailwind components;",
-  "@tailwind utilities;",
-  "",
-  "body { font-family: 'Inter', sans-serif; }",
-  "` })",
-  "",
-  "// Step 2: Create shadcn button",
-  "create_shadcn_component({ project_name, component_name: 'button', component_type: 'button' })",
-  "",
-  "// Step 3: Create custom QuestionCard that uses Button",
-  "create_file({ project_name, file_path: 'src/components/QuestionCard.tsx', content: `",
-  "import { Button } from '@/components/ui/button';",
-  "",
-  "export function QuestionCard({ question, onNext }) {",
-  "  return (",
-  "    <div className='p-6 md:p-8 space-y-6'>",
-  "      <h2 className='text-lg md:text-xl font-medium'>{question}</h2>",
-  "      <Button onClick={onNext}>Continue</Button>",
-  "    </div>",
-  "  );",
-  "}",
-  "` })",
-  "",
-  "// Step 4: Create main Survey that imports QuestionCard",
-  "create_file({ project_name, file_path: 'src/Survey.tsx', content: `",
-  "import './styles/survey.css';",
-  "import { QuestionCard } from './components/QuestionCard';",
-  "// ... rest of Survey component",
-  "` })",
-  "```",
-  "",
-  "- ALWAYS create shadcn components BEFORE creating custom components that use them",
-  "- ALWAYS import styles at the top of Survey.tsx",
-  "- ALWAYS use relative imports for custom components",
-  "- ALWAYS use @ alias for shadcn components",
-
-  "**Dependency Management**",
-  "- Use install_package to add new dependencies before creating components that need them.",
-  "- Announce packages before installing: 'Installing @radix-ui/react-dialog for modal functionality'.",
-  "- All shadcn/ui dependencies are pre-installed.",
-
-  "**CRITICAL QUALITY CHECKLIST**",
-  "Before calling render_preview, verify:",
-  "✓ Google Font is imported in survey.css and applied to body",
-  "✓ All spacing follows the design system (no touching elements)",
-  "✓ Shadcn components are used for buttons, inputs, cards",
-  "✓ No generic AI gradients unless user requested",
-  "✓ Typography hierarchy is consistent",
-  "✓ Components are created in correct order (styles → shadcn → custom → Survey)",
-  "✓ All imports are correct (relative for custom, @ for shadcn)",
-  "✓ Survey is centered with max-w-2xl mx-auto",
-  "✓ Responsive breakpoints (md:, lg:) are used",
-  "✓ One question per screen with smooth transitions",
-  "",
-  "**EXAMPLE: Perfect Survey Component Structure**",
   "```tsx",
-  "// src/Survey.tsx - GOOD EXAMPLE",
+  "'use client';",
   "import { useState } from 'react';",
-  "import './styles/survey.css';",
   "import { Button } from '@/components/ui/button';",
   "import { Input } from '@/components/ui/input';",
-  "import { Card, CardContent } from '@/components/ui/card';",
   "",
   "export default function Survey() {",
   "  const [step, setStep] = useState(0);",
-  "",
+  "  ",
   "  return (",
-  "    <div className='min-h-screen bg-white flex items-center justify-center px-6 py-8'>",
-  "      <div className='max-w-2xl w-full space-y-8'>",
-  "        <Card className='border-zinc-200'>",
-  "          <CardContent className='p-6 md:p-8 space-y-6'>",
-  "            <h1 className='text-2xl md:text-3xl font-semibold text-zinc-900'>",
-  "              What's your name?",
-  "            </h1>",
-  "            <div className='space-y-3'>",
-  "              <Input ",
-  "                placeholder='Enter your name'",
-  "                className='text-base'",
-  "              />",
-  "              <p className='text-sm text-zinc-400'>",
-  "                We'll use this to personalize your experience",
-  "              </p>",
-  "            </div>",
-  "            <div className='flex gap-4 pt-4'>",
-  "              <Button className='bg-blue-600 hover:bg-blue-700'>",
-  "                Continue",
-  "              </Button>",
-  "            </div>",
-  "          </CardContent>",
-  "        </Card>",
+  "    <div className=\"min-h-screen bg-zinc-50 px-6 py-12\">",
+  "      <div className=\"max-w-2xl mx-auto\">",
+  "        <div className=\"bg-white rounded-2xl p-12 shadow-sm border border-zinc-200\">",
+  "          <h1 className=\"text-4xl font-semibold mb-8\">Welcome ✨</h1>",
+  "          <div className=\"space-y-8\">",
+  "            {/* Questions here */}",
+  "          </div>",
+  "        </div>",
   "      </div>",
   "    </div>",
   "  );",
   "}",
   "```",
   "",
-  "**ANTI-PATTERNS TO AVOID**",
-  "❌ Using gradients without user request: bg-gradient-to-r from-purple-500 to-pink-500",
-  "❌ Ignoring Google Font: Not importing or applying user's requested font",
-  "❌ Elements touching: <div><h1>Title</h1><p>Text</p></div> (needs space-y)",
-  "❌ Inconsistent spacing: Some buttons with gap-2, others with gap-6",
-  "❌ Full-width layouts: Not using max-w-2xl mx-auto",
-  "❌ Missing shadcn: Creating custom buttons instead of using Button component",
-  "❌ Wrong import order: Importing Survey.tsx before creating its dependencies",
+  "□ STEP 4: render_preview({ project_name: 'survey' })",
+  "□ STEP 5: VERIFY checklist:",
+  "   - Used shadcn <Button> and <Input> (not raw HTML)",
+  "   - Container has: px-6 py-12",
+  "   - Card has: p-12, rounded-2xl, border",
+  "   - Centered: max-w-2xl mx-auto",
+  "   - Spacing: mb-8 between elements",
   "",
-  "REMEMBER: Quality over speed. Take time to create each file properly in order.",
+  "⚠️ **NON-NEGOTIABLE SPACING:**",
+  "- Outer: px-6 py-12",
+  "- Card: p-12, rounded-2xl",
+  "- Title: mb-8",
+  "- Questions: space-y-8",
+  "- Labels: mb-3",
+  "",
+  "⚠️ **NON-NEGOTIABLE COMPONENTS:**",
+  "- Use <Button> from '@/components/ui/button'",
+  "- Use <Input> from '@/components/ui/input'",
+  "- NEVER use raw <button> or <input>",
+  "",
+  "",
+  "📋 **REPORT PROGRESS AS YOU GO:**",
+  "After each step, say: '✅ Completed: [step name]'",
+  "Example:",
+  "  ✅ Completed: init_sandbox",
+  "  ✅ Completed: Created button component",
+  "  ✅ Completed: Created Survey.tsx",
+  "",
+  "🚫 **WHAT NOT TO DO:**",
+  "❌ Using <button> or <input> (use shadcn components)",
+  "❌ No spacing (p-0, m-0)",
+  "❌ Full-width (missing max-w-2xl mx-auto)",
+  "❌ Creating Survey.tsx before components",
+  "",
+  "That's it! Just follow the checklist above.",
+  "",
+  "Remember: Quality > Speed. Use the EXACT structure from STEP 3. Report progress after each step.",
 ].join("\n");
 
 const surbeebuilder = new Agent({
   name: "SurbeeBuilder",
   instructions: SURBEE_BUILDER_INSTRUCTIONS,
   model: "gpt-5",
-  tools: [initSandbox, createFile, readFile, updateFile, deleteFile, listFiles, installPackage, runCommand, renderPreview, createShadcnComponent, webSearchPreview],
+  tools: [initSandbox, createFile, readFile, updateFile, deleteFile, listFiles, installPackage, runCommand, renderPreview, createShadcnComponent, webSearchPreview, requestContextTool],
   modelSettings: {
     parallelToolCalls: false, // Disable parallel calls to ensure correct order
     reasoning: {
@@ -2476,11 +2629,11 @@ interface VerificationError {
 const verifyProjectFiles = (files: Record<string, string>): VerificationError[] => {
   const errors: VerificationError[] = [];
 
-  // Check each file for missing imports
+  // Check each file
   for (const [filePath, content] of Object.entries(files)) {
     if (!filePath.endsWith('.tsx') && !filePath.endsWith('.ts')) continue;
 
-    // Find all imports from @/components/ui/*
+    // ===== CHECK 1: Missing component imports =====
     const importRegex = /from\s+['"]@\/components\/ui\/([^'"]+)['"]/g;
     const matches = content.matchAll(importRegex);
 
@@ -2488,23 +2641,79 @@ const verifyProjectFiles = (files: Record<string, string>): VerificationError[] 
       const componentName = match[1];
       const expectedPath = `/src/components/ui/${componentName}.tsx`;
 
-      // Check if the imported component file exists
       if (!files[expectedPath]) {
         errors.push({
           file: filePath,
-          issue: `Missing component: @/components/ui/${componentName}`,
-          suggestion: `Create ${expectedPath} or use create_shadcn_component tool to add it`
+          issue: `Missing shadcn component: ${componentName}`,
+          suggestion: `create_shadcn_component({ component_name: "${componentName}", component_type: "${componentName}" })`
         });
       }
     }
 
-    // Check for other common missing imports
+    // ===== CHECK 2: Using raw HTML instead of shadcn =====
+    if (filePath.includes('Survey.tsx')) {
+      // Check for raw <button> instead of <Button>
+      if (content.match(/<button[\s>]/i) && !content.includes('import { Button }')) {
+        errors.push({
+          file: filePath,
+          issue: 'Using raw <button> instead of shadcn Button',
+          suggestion: 'Replace <button> with <Button> from @/components/ui/button'
+        });
+      }
+
+      // Check for raw <input> instead of <Input>
+      if (content.match(/<input[\s/>]/i) && !content.includes('import { Input }')) {
+        errors.push({
+          file: filePath,
+          issue: 'Using raw <input> instead of shadcn Input',
+          suggestion: 'Replace <input> with <Input> from @/components/ui/input'
+        });
+      }
+
+      // ===== CHECK 3: Missing proper spacing classes =====
+      const hasOuterPadding = content.includes('px-6') && content.includes('py-12');
+      if (!hasOuterPadding) {
+        errors.push({
+          file: filePath,
+          issue: 'Missing outer container padding (px-6 py-12)',
+          suggestion: 'Add className="min-h-screen bg-zinc-50 px-6 py-12" to outer div'
+        });
+      }
+
+      const hasCentering = content.includes('max-w-2xl') && content.includes('mx-auto');
+      if (!hasCentering) {
+        errors.push({
+          file: filePath,
+          issue: 'Missing centering (max-w-2xl mx-auto)',
+          suggestion: 'Add className="max-w-2xl mx-auto" to container div'
+        });
+      }
+
+      const hasCardPadding = content.includes('p-12') || content.includes('p-8');
+      if (!hasCardPadding) {
+        errors.push({
+          file: filePath,
+          issue: 'Missing card padding (p-12)',
+          suggestion: 'Add className="p-12" to card div'
+        });
+      }
+
+      const hasRoundedCorners = content.includes('rounded-2xl') || content.includes('rounded-xl');
+      if (!hasRoundedCorners) {
+        errors.push({
+          file: filePath,
+          issue: 'Missing rounded corners (rounded-2xl)',
+          suggestion: 'Add className="rounded-2xl" to card div'
+        });
+      }
+    }
+
+    // ===== CHECK 4: Missing relative imports =====
     const relativeImportRegex = /from\s+['"]\.\.?\/([^'"]+)['"]/g;
     const relativeMatches = content.matchAll(relativeImportRegex);
 
     for (const match of relativeMatches) {
       const importPath = match[1];
-      // Resolve relative path
       const fileDir = filePath.substring(0, filePath.lastIndexOf('/'));
       let resolvedPath = importPath;
 
@@ -2515,21 +2724,18 @@ const verifyProjectFiles = (files: Record<string, string>): VerificationError[] 
         resolvedPath = `${parentDir}/${importPath.substring(3)}`;
       }
 
-      // Add .tsx or .ts if not present
       const possiblePaths = [
         `/${resolvedPath}`,
         `/${resolvedPath}.tsx`,
         `/${resolvedPath}.ts`,
-        `/${resolvedPath}/index.tsx`,
-        `/${resolvedPath}/index.ts`,
       ];
 
       const exists = possiblePaths.some(p => files[p]);
       if (!exists && !importPath.includes('node_modules')) {
         errors.push({
           file: filePath,
-          issue: `Missing import: ${importPath}`,
-          suggestion: `Create the missing file: ${resolvedPath}.tsx or ${resolvedPath}.ts`
+          issue: `Missing file: ${importPath}`,
+          suggestion: `Create ${resolvedPath}.tsx`
         });
       }
     }
@@ -2730,7 +2936,7 @@ function buildContextPreface(context?: WorkflowContextPayload): string | null {
   return sections.join("\n\n");
 }
 
-export type WorkflowInput = { input_as_text: string; context?: WorkflowContextPayload };
+export type WorkflowInput = { input_as_text: string; context?: WorkflowContextPayload; userId?: string };
 
 export interface WorkflowResult {
   output_text: string;
@@ -2755,7 +2961,11 @@ export const runWorkflow = async (
 ): Promise<WorkflowResult> => {
   console.log('[Workflow] Starting workflow with input:', workflow.input_as_text?.substring(0, 100));
   console.log('[Workflow] Options:', { hasOnProgress: !!options.onProgress, hasOnItemStream: !!options.onItemStream });
-  
+
+  // Generate context ID for this workflow run
+  const workflowContextId = generateContextId();
+  console.log('[Workflow] Context ID:', workflowContextId);
+
   const conversationHistory: AgentInputItem[] = [];
 
   const contextPreface = buildContextPreface(workflow.context);
@@ -2868,19 +3078,32 @@ export const runWorkflow = async (
   const executeAgent = async (
     agent: Agent<any, any>,
     input: AgentInputItem[],
-    progressLabel?: string
+    progressLabel?: string,
+    useContextFiltering: boolean = true
   ) => {
     console.log('[Workflow] Executing agent:', (agent as any)?.name || 'unknown', 'with label:', progressLabel);
-    
+
     if (progressLabel) {
       await notifyProgress(progressLabel);
+    }
+
+    // Apply smart context filtering if enabled
+    let filteredInput = input;
+    if (useContextFiltering) {
+      const agentNameLower = ((agent as any)?.name || '').toLowerCase().replace(/[^a-z]/g, '') as AgentName;
+      if (AGENT_CONTEXT_NEEDS[agentNameLower]) {
+        filteredInput = filterContextForAgent(agentNameLower, input, workflowContextId);
+        console.log(`[executeAgent] Context filtering for ${(agent as any)?.name}: ${input.length} → ${filteredInput.length} messages (${Math.round((1 - filteredInput.length / input.length) * 100)}% reduction)`);
+      } else {
+        console.log(`[executeAgent] No filtering config for ${agentNameLower}, using full context`);
+      }
     }
 
     const agentStartIndex = streamedSerializedItems.length; // Track where this agent's items start
 
     if (onItemStream) {
       console.log('[Workflow] Running agent with stream...');
-      const streamResult = await runner.run(agent, input, { stream: true, maxTurns: 50 });
+      const streamResult = await runner.run(agent, filteredInput, { stream: true, maxTurns: 50 });
       console.log('[Workflow] Stream started');
       
       // Process events in real-time as they arrive
@@ -2919,7 +3142,7 @@ export const runWorkflow = async (
       return streamResult;
     }
 
-    const result = await runner.run(agent, input, { maxTurns: 50 });
+    const result = await runner.run(agent, filteredInput, { maxTurns: 50 });
     for (const item of result.newItems ?? []) {
       await emitRunItem(item);
     }
@@ -3346,6 +3569,68 @@ export const runWorkflow = async (
       guardrails: guardrailsOutput,
       items: streamedSerializedItems.slice(0, plannerEndIndex),
     };
+  }
+
+  // Persist reasoning results to prevent orphaned message references
+  try {
+    // Collect all reasoning items from the workflow
+    const reasoningItems = allSerializedItems?.filter(item => item.type === 'reasoning') || [];
+    if (reasoningItems.length > 0) {
+      console.log(`[Workflow] Persisting ${reasoningItems.length} reasoning items to database`);
+
+      // Group reasoning items by agent/session for persistence
+      // Note: This is a simplified approach - in production you'd want more sophisticated
+      // reasoning result reconstruction
+      for (const item of reasoningItems) {
+        if (item.text && item.agent) {
+          // Create a minimal reasoning result for persistence
+          const reasoningResult = {
+            id: `rs_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+            query: workflow.input_as_text || 'Workflow query',
+            complexity: {
+              level: 'MODERATE' as const,
+              confidence: 0.8,
+              reason: 'Workflow-generated reasoning',
+              patterns: [],
+              estimatedDuration: 10,
+              tokenEstimate: item.text.length / 4, // Rough estimate
+              costEstimate: 0.001,
+              canUseCache: false
+            },
+            phases: [{
+              id: `phase_${Date.now()}`,
+              type: 'understanding' as const,
+              title: 'Workflow Reasoning',
+              content: item.text,
+              startTime: Date.now(),
+              duration: 1000,
+              tokenCount: item.text.length / 4,
+              confidence: 0.8,
+              isComplete: true
+            }],
+            finalAnswer: item.text,
+            totalTokens: item.text.length / 4,
+            totalCost: 0.001,
+            duration: 1000,
+            confidence: 0.8,
+            metadata: {
+              model: 'gpt-5',
+              startTime: Date.now(),
+              endTime: Date.now(),
+              cacheHit: false,
+              agent: item.agent
+            }
+          };
+
+          // Persist to database using user ID from workflow input or demo user
+          const userId = workflow.userId || 'demo-user-id'; // Use demo user ID as fallback
+          await memoryManager.storeReasoningSession(userId, reasoningResult.id, reasoningResult);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('[Workflow] Failed to persist reasoning results:', error);
+    // Don't throw - this shouldn't break the workflow
   }
 
   // Fallback: should not reach here, but handle gracefully

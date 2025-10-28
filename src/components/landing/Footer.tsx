@@ -17,7 +17,7 @@ export default function Footer() {
   const [hoveredSocial, setHoveredSocial] = useState<string | null>(null);
 
   return (
-    <footer className={`w-full ${diatype.variable}`} style={{ backgroundColor: "#F2F2F2", fontFamily: "var(--font-diatype), system-ui, sans-serif" }}>
+    <footer className={`w-full ${diatype.variable} rounded-md`} style={{ backgroundColor: "#F2F2F2", fontFamily: "var(--font-diatype), system-ui, sans-serif" }}>
       <div className="px-8 md:px-12 xl:px-16 py-12 md:py-16 w-full">
         {/* Main content area */}
         <div className="flex justify-between items-start gap-8">

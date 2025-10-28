@@ -761,7 +761,7 @@ export default function LandingPage() {
 	          </RevealSection>
 
           {/* Footer */}
-          <RevealSection className="mx-auto w-full max-w-[1400px] flex flex-col justify-center items-center rounded-lg">
+          <RevealSection className="mt-8 mb-8 w-full px-6 pb-8">
             <Footer />
           </RevealSection>
       </main>
