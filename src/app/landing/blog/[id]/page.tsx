@@ -147,13 +147,13 @@ export default function BlogPost({ params }: { params: { id: string } }) {
             Pricing
           </a>
             <a
-                href="/test-login"
+                href="/login"
               className="rounded-full border border-neutral-300 bg-white px-4 py-1.5 text-sm text-[#171717] hover:bg-neutral-100"
             >
               Log in
             </a>
             <a
-                href="/test-login"
+                href="/signup"
               className="rounded-full bg-neutral-900 px-4 py-1.5 text-sm text-white hover:bg-black"
             >
               Sign up

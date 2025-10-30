@@ -43,14 +43,14 @@ export default function PricingPage() {
             </a>
           <div className="flex items-center gap-2">
             <a
-              href="/test-login"
+              href="/login"
               className="px-4 py-1.5 text-sm font-medium border bg-white text-black hover:bg-neutral-50 transition-all duration-300 ease-out"
               style={{ fontFamily: 'var(--font-inter), sans-serif', borderRadius: '12px', borderColor: '#e5e7eb' }}
             >
               Log in
             </a>
             <a
-              href="/test-login"
+              href="/signup"
               className="px-4 py-1.5 text-sm font-medium bg-black text-white hover:bg-neutral-800 transition-all duration-300 ease-out"
               style={{ fontFamily: 'var(--font-inter), sans-serif', borderRadius: '12px' }}
             >

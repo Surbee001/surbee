@@ -2,7 +2,7 @@
 import { cn } from "@/lib/utils"
 
 import { ShiningText } from "./shining-text"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 interface ThinkingStep {
   id: string
@@ -14,17 +14,12 @@ interface ThinkingDisplayProps {
   steps: ThinkingStep[]
   duration?: number
   isThinking?: boolean
+  isLatest?: boolean // Is this the latest/current thinking (show checkpoints)
   className?: string
 }
 
-export function ThinkingDisplay({ steps, duration = 0, isThinking = false, className }: ThinkingDisplayProps) {
-  const [isOpen, setIsOpen] = useState(true)
-
-  useEffect(() => {
-    if (!isThinking) {
-      setIsOpen(false)
-    }
-  }, [isThinking])
+export function ThinkingDisplay({ steps, duration = 0, isThinking = false, isLatest = true, className }: ThinkingDisplayProps) {
+  const [isOpen, setIsOpen] = useState(true) // Always open by default
 
   return (
     <div className={cn("relative my-1 min-h-6", className)}>
@@ -54,6 +49,8 @@ export function ThinkingDisplay({ steps, duration = 0, isThinking = false, class
                   content={step.content}
                   status={step.status}
                   isLast={index === steps.length - 1}
+                  isLatest={isLatest}
+                  isActive={isThinking && index === steps.length - 1}
                   zIndex={index}
                 />
               ))}
@@ -69,11 +66,69 @@ interface ThinkingStepProps {
   content: string
   status: "thinking" | "complete"
   isLast: boolean
+  isLatest: boolean // Is this in the latest thinking display (show checkpoints)
+  isActive: boolean // Is this the currently streaming step (pulse animation)
   zIndex: number
 }
 
-function ThinkingStep({ content, status, isLast, zIndex }: ThinkingStepProps) {
+// Simple markdown parser for basic formatting
+function parseMarkdown(text: string) {
+  return text
+    // Bold: **text** or __text__
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__(.+?)__/g, '<strong>$1</strong>')
+    // Italic: *text* or _text_
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/_(.+?)_/g, '<em>$1</em>')
+    // Code: `text`
+    .replace(/`(.+?)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-xs">$1</code>')
+}
+
+// Parse structured reasoning with titles
+function parseStructuredReasoning(content: string): { title?: string; body: string } {
+  // Check for **text** pattern as title
+  const boldTitleMatch = content.match(/^\*\*(.+?)\*\*\s*\n(.+)/s)
+  if (boldTitleMatch) {
+    return {
+      title: boldTitleMatch[1].trim(),
+      body: boldTitleMatch[2].trim()
+    }
+  }
+
+  // Check if content has a title pattern:
+  // - First line is short (< 60 chars) and doesn't end with punctuation like . , ! ?
+  // - Followed by rest of content
+  const lines = content.split('\n')
+
+  if (lines.length > 1) {
+    const firstLine = lines[0].trim()
+    const restContent = lines.slice(1).join('\n').trim()
+
+    // Check if first line looks like a title
+    // (short, doesn't end with common punctuation, and has content after it)
+    if (
+      firstLine.length > 0 &&
+      firstLine.length < 60 &&
+      restContent.length > 0 &&
+      !/[.!?,;:]$/.test(firstLine)
+    ) {
+      return {
+        title: firstLine,
+        body: restContent
+      }
+    }
+  }
+
+  return { body: content }
+}
+
+function ThinkingStep({ content, status, isLast, isLatest, isActive, zIndex }: ThinkingStepProps) {
   const isComplete = status === "complete"
+  const { title, body } = parseStructuredReasoning(content)
+  const htmlBody = parseMarkdown(body)
+
+  // Show checkpoint only for latest thinking, dots for previous
+  const showCheckpoint = isLatest && title
 
   return (
     <div
@@ -86,7 +141,8 @@ function ThinkingStep({ content, status, isLast, zIndex }: ThinkingStepProps) {
       <div className="relative flex w-full items-start gap-2 overflow-clip">
         <div className="flex h-full w-4 shrink-0 flex-col items-center">
           <div className="flex h-5 shrink-0 items-center justify-center">
-            {isComplete ? (
+            {showCheckpoint && isComplete ? (
+              // Checkpoint (only for latest thinking with titles)
               <svg
                 className="h-[15px] w-[15px] text-primary"
                 height="20"
@@ -103,14 +159,30 @@ function ThinkingStep({ content, status, isLast, zIndex }: ThinkingStepProps) {
                 />
               </svg>
             ) : (
-              <div className="bg-muted-foreground/40 h-[6px] w-[6px] rounded-full" />
+              // Dot (with optional pulse animation for active step)
+              <div
+                className={cn(
+                  "h-[6px] w-[6px] rounded-full",
+                  isActive
+                    ? "bg-primary animate-pulse" // Active step pulses
+                    : "bg-muted-foreground/40"
+                )}
+              />
             )}
           </div>
           {!isLast && <div className="bg-border h-full w-[1px] rounded-full" />}
         </div>
         <div className="w-full" style={{ marginBottom: isLast ? "0px" : "12px" }}>
+          {title && (
+            <div className="text-sm font-semibold text-foreground mb-1">
+              {title}
+            </div>
+          )}
           <div className="text-sm w-full break-words">
-            <span className="text-muted-foreground">{content}</span>
+            <span
+              className="text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: htmlBody }}
+            />
           </div>
         </div>
       </div>

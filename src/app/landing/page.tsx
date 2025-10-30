@@ -129,7 +129,7 @@ export default function LandingPage() {
               >
 	                <a
 	                  className="cursor-pointer pointer-events-auto group"
-	                  href="/test-login"
+	                  href="/login"
                 >
 	                  <RevealDiv
                       className="relative inline-block"

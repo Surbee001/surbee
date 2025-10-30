@@ -290,22 +290,24 @@ export default function HeroSection() {
 
         {/* Right side - Fixed */}
         <div className="flex gap-2" id="nav-buttons">
-          <button 
-            className="px-4 py-1 rounded-lg font-medium transition-all duration-200 cursor-pointer" 
+          <a
+            href="/login"
+            className="px-4 py-1 rounded-lg font-medium transition-all duration-200 cursor-pointer"
             style={{ backgroundColor: '#F2F2F2', color: '#171717', fontFamily: 'var(--font-diatype), sans-serif', minHeight: '28px', fontSize: '16px' }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#E8E8E8'; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#F2F2F2'; }}
           >
             Login
-          </button>
-          <button 
-            className="px-4 py-1 rounded-lg font-medium transition-all duration-200 cursor-pointer" 
+          </a>
+          <a
+            href="/signup"
+            className="px-4 py-1 rounded-lg font-medium transition-all duration-200 cursor-pointer"
             style={{ backgroundColor: '#171717', color: '#ffffff', fontFamily: 'var(--font-diatype), sans-serif', minHeight: '28px', fontSize: '16px' }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#000000'; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#171717'; }}
           >
             Sign Up
-          </button>
+          </a>
         </div>
       </div>
 

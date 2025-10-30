@@ -47,3 +47,6 @@ polipo.log
 
 # Sentry Config File
 .env.sentry-build-plugin
+nodejs/
+node.pkg
+v0-clone-app/
