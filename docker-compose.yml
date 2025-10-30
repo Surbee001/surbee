@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_INDEX=${PINECONE_INDEX:-survey-patterns}
+      - FRAUD_API_URL=${FRAUD_API_URL:-http://fraud-detector:8000}
+    depends_on:
+      - redis
+      - fraud-detector
+    volumes:
+      - ./uploads:/app/uploads
+
+  # Postgres removed (using Supabase hosted DB)
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  fraud-detector:
+    build: ./ml-service
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_PATH=/app/models/fraud_model.pkl
+    volumes:
+      - ./ml-models:/app/models
+
+  worker:
+    build: .
+    command: pnpm run worker
+    environment:
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
+

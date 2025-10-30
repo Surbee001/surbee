@@ -1,0 +1,2 @@
+export { useBehavior } from './BehaviorProvider'
+

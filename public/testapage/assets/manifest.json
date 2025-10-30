@@ -1,0 +1,162 @@
+[
+  {
+    "src": "/_next/image?url=%2Fimages%2Fcofunder-logo-flower.avif&w=256&q=75",
+    "fileUrl": "https://cofounder.co/images/cofunder-logo-flower.avif",
+    "fileName": "cofunder-logo-flower.avif"
+  },
+  {
+    "src": "/_next/image?url=%2Fimages%2Fhero-anim-bg-2.png&w=3840&q=75",
+    "fileUrl": "https://cofounder.co/images/hero-anim-bg-2.png",
+    "fileName": "hero-anim-bg-2.png"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fother-tool.dd5a1084.avif&w=96&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/other-tool.dd5a1084.avif",
+    "fileName": "other-tool.dd5a1084.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flinear.1c44320d.avif&w=256&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/linear.1c44320d.avif",
+    "fileName": "linear.1c44320d.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fslack.b35ec1a3.avif&w=256&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/slack.b35ec1a3.avif",
+    "fileName": "slack.b35ec1a3.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgmail.e5bdc0e4.avif&w=256&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/gmail.e5bdc0e4.avif",
+    "fileName": "gmail.e5bdc0e4.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-calendar.2438840b.avif&w=256&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/google-calendar.2438840b.avif",
+    "fileName": "google-calendar.2438840b.avif"
+  },
+  {
+    "src": "/images/linear.svg",
+    "fileUrl": "https://cofounder.co/images/linear.svg",
+    "fileName": "linear.svg"
+  },
+  {
+    "src": "/images/notion.svg",
+    "fileUrl": "https://cofounder.co/images/notion.svg",
+    "fileName": "notion.svg"
+  },
+  {
+    "src": "/_next/image?url=%2Fimages%2Fai-anim-bg.png&w=3840&q=75",
+    "fileUrl": "https://cofounder.co/images/ai-anim-bg.png",
+    "fileName": "ai-anim-bg.png"
+  },
+  {
+    "src": "/_next/image?url=%2Fimages%2Fagents-bg-img.png&w=3840&q=75",
+    "fileUrl": "https://cofounder.co/images/agents-bg-img.png",
+    "fileName": "agents-bg-img.png"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fairtable.f153f282.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/airtable.f153f282.avif",
+    "fileName": "airtable.f153f282.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fattio.bb561be4.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/attio.bb561be4.avif",
+    "fileName": "attio.bb561be4.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-sheets.0ca29299.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/google-sheets.0ca29299.avif",
+    "fileName": "google-sheets.0ca29299.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-docs.f7ba532d.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/google-docs.f7ba532d.avif",
+    "fileName": "google-docs.f7ba532d.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-calendar.2438840b.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/google-calendar.2438840b.avif",
+    "fileName": "google-calendar.2438840b-1.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgmail.e5bdc0e4.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/gmail.e5bdc0e4.avif",
+    "fileName": "gmail.e5bdc0e4-1.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fintercom.64399410.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/intercom.64399410.avif",
+    "fileName": "intercom.64399410.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fnotion.f18f0582.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/notion.f18f0582.avif",
+    "fileName": "notion.f18f0582.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flimitless.70cd9c81.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/limitless.70cd9c81.avif",
+    "fileName": "limitless.70cd9c81.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flinear.1c44320d.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/linear.1c44320d.avif",
+    "fileName": "linear.1c44320d-1.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Floops.66c08dd0.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/loops.66c08dd0.avif",
+    "fileName": "loops.66c08dd0.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fmetabase.d38bb0ee.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/metabase.d38bb0ee.avif",
+    "fileName": "metabase.d38bb0ee.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fpeople-data-labs.9aafd8bf.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/people-data-labs.9aafd8bf.avif",
+    "fileName": "people-data-labs.9aafd8bf.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fposthog.0fe60258.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/posthog.0fe60258.avif",
+    "fileName": "posthog.0fe60258.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fslack.b35ec1a3.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/slack.b35ec1a3.avif",
+    "fileName": "slack.b35ec1a3-1.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgithub.0fa38615.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/github.0fa38615.avif",
+    "fileName": "github.0fa38615.avif"
+  },
+  {
+    "src": "/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgoogle-slides.b68e7a05.avif&w=128&q=75&dpl=dpl_HY9P3FzB29EFnuuhHdxrrNak6CfD",
+    "fileUrl": "https://cofounder.co/_next/static/media/google-slides.b68e7a05.avif",
+    "fileName": "google-slides.b68e7a05.avif"
+  },
+  {
+    "src": "/_next/image?url=%2Fimages%2Fblaine-davis.png&w=256&q=75",
+    "fileUrl": "https://cofounder.co/images/blaine-davis.png",
+    "fileName": "blaine-davis.png"
+  },
+  {
+    "src": "/_next/image?url=%2Fimages%2Fsabina-cabrera.png&w=256&q=75",
+    "fileUrl": "https://cofounder.co/images/sabina-cabrera.png",
+    "fileName": "sabina-cabrera.png"
+  },
+  {
+    "src": "/_next/image?url=%2Fimages%2Fpoststamp.png&w=640&q=75",
+    "fileUrl": "https://cofounder.co/images/poststamp.png",
+    "fileName": "poststamp.png"
+  },
+  {
+    "src": "/images/heart.svg",
+    "fileUrl": "https://cofounder.co/images/heart.svg",
+    "fileName": "heart.svg"
+  }
+]

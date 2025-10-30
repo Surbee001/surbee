@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey Builder Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #4338ca;
+        }
+        button.invalid {
+            background: #dc2626;
+        }
+        button.invalid:hover {
+            background: #b91c1c;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            min-height: 100px;
+        }
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .message.user {
+            background: #eff6ff;
+            border-left: 3px solid #3b82f6;
+        }
+        .message.ai {
+            background: #f0fdf4;
+            border-left: 3px solid #22c55e;
+        }
+        .message.error {
+            background: #fef2f2;
+            border-left: 3px solid #ef4444;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Survey Builder Test Interface</h1>
+    
+    <div class="test-section">
+        <h2>Quick Tests</h2>
+        <p>Click to test different request types:</p>
+        
+        <h3>✅ Valid Requests (Should Build)</h3>
+        <button onclick="testRequest('Create a customer satisfaction survey with 5 questions')">
+            Customer Survey
+        </button>
+        <button onclick="testRequest('Build a contact form with name, email, and message fields')">
+            Contact Form
+        </button>
+        <button onclick="testRequest('Make a quiz about JavaScript with 5 multiple choice questions')">
+            JavaScript Quiz
+        </button>
+        <button onclick="testRequest('Create a feedback questionnaire for a restaurant')">
+            Restaurant Feedback
+        </button>
+        
+        <h3>❌ Invalid Requests (Should Refuse)</h3>
+        <button class="invalid" onclick="testRequest('Create a landing page for my business')">
+            Landing Page
+        </button>
+        <button class="invalid" onclick="testRequest('Build an e-commerce website')">
+            E-commerce Site
+        </button>
+        <button class="invalid" onclick="testRequest('Make a dashboard with charts and analytics')">
+            Analytics Dashboard
+        </button>
+        <button class="invalid" onclick="testRequest('Create a blog website')">
+            Blog Website
+        </button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Custom Request</h2>
+        <input type="text" id="customPrompt" placeholder="Enter your request..." style="width: 70%; padding: 10px; border-radius: 4px; border: 1px solid #d1d5db;">
+        <button onclick="testCustom()">Send</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Messages</h2>
+        <div id="messages" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Preview</h2>
+        <iframe id="preview" srcdoc="<p>Preview will appear here...</p>"></iframe>
+    </div>
+
+    <script>
+        const messagesDiv = document.getElementById('messages');
+        const previewFrame = document.getElementById('preview');
+        
+        function addMessage(text, type = 'ai') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = text;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function clearMessages() {
+            messagesDiv.innerHTML = '';
+            previewFrame.srcdoc = '<p>Loading...</p>';
+        }
+        
+        async function testRequest(prompt) {
+            clearMessages();
+            addMessage(prompt, 'user');
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/website-builder/ask-ai', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-forwarded-for': 'test-client'
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        provider: 'deepseek',
+                        model: 'deepseek-chat',
+                        html: ''
+                    })
+                });
+                
+                if (!response.ok) {
+                    addMessage(`Error: Request failed with status ${response.status}`, 'error');
+                    return;
+                }
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let result = '';
+                let htmlExtracted = false;
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value);
+                    result += chunk;
+                    
+                    // Try to extract HTML from the result
+                    const htmlMatch = result.match(/<!DOCTYPE html>[\s\S]*?<\/html>/i);
+                    if (htmlMatch && !htmlExtracted) {
+                        previewFrame.srcdoc = htmlMatch[0];
+                        htmlExtracted = true;
+                        addMessage('✅ Survey/form generated successfully!', 'ai');
+                    }
+                }
+                
+                if (!htmlExtracted) {
+                    // No HTML found, likely a refusal
+                    const cleanText = result.replace(/<[^>]*>/g, '').trim();
+                    if (cleanText) {
+                        addMessage(cleanText, 'error');
+                    } else {
+                        addMessage('No response received', 'error');
+                    }
+                    previewFrame.srcdoc = '<p>No preview available - request was refused or failed.</p>';
+                }
+                
+            } catch (error) {
+                addMessage(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function testCustom() {
+            const input = document.getElementById('customPrompt');
+            if (input.value.trim()) {
+                testRequest(input.value.trim());
+            }
+        }
+        
+        // Allow Enter key in custom input
+        document.getElementById('customPrompt').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                testCustom();
+            }
+        });
+    </script>
+</body>
+</html>

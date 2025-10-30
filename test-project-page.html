@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Project Page Prompting</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 5px;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 10px;
+            background: #333;
+            border-radius: 5px;
+        }
+        .error {
+            color: #ff6b6b;
+        }
+        .success {
+            color: #51cf66;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Project Page Prompting</h1>
+
+        <div id="status">
+            <p>Status: <span id="statusText">Ready</span></p>
+            <p>Console Errors: <span id="errorCount">0</span></p>
+            <div id="errorLog"></div>
+        </div>
+
+        <div>
+            <button onclick="testPrompt('Create a simple landing page')">Test Simple Prompt</button>
+            <button onclick="testPrompt('Add a navigation bar with Home, About, and Contact links')">Test Navigation Prompt</button>
+            <button onclick="testPrompt('Make the design more modern with a dark theme')">Test Design Prompt</button>
+        </div>
+
+        <iframe id="projectFrame" src="http://localhost:3001/project/test123?mock=1"></iframe>
+
+        <script>
+            let errorCount = 0;
+            const errorLog = document.getElementById('errorLog');
+            const statusText = document.getElementById('statusText');
+            const errorCountEl = document.getElementById('errorCount');
+
+            // Monitor iframe for errors
+            window.addEventListener('message', (event) => {
+                if (event.data.type === 'error') {
+                    errorCount++;
+                    errorCountEl.textContent = errorCount;
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'error';
+                    errorDiv.textContent = `Error: ${event.data.message}`;
+                    errorLog.appendChild(errorDiv);
+                }
+            });
+
+            async function testPrompt(prompt) {
+                statusText.textContent = `Testing: "${prompt}"`;
+                statusText.className = '';
+
+                try {
+                    const iframe = document.getElementById('projectFrame');
+
+                    // Send prompt to iframe
+                    iframe.contentWindow.postMessage({
+                        type: 'test-prompt',
+                        prompt: prompt
+                    }, '*');
+
+                    // Wait for response
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+
+                    statusText.textContent = 'Prompt sent successfully';
+                    statusText.className = 'success';
+                } catch (error) {
+                    statusText.textContent = `Failed: ${error.message}`;
+                    statusText.className = 'error';
+                    errorCount++;
+                    errorCountEl.textContent = errorCount;
+                }
+            }
+
+            // Check if page loads successfully
+            const iframe = document.getElementById('projectFrame');
+            iframe.onload = () => {
+                statusText.textContent = 'Page loaded successfully';
+                statusText.className = 'success';
+
+                // Try to access console errors from iframe
+                try {
+                    const iframeWindow = iframe.contentWindow;
+                    const originalError = iframeWindow.console.error;
+                    iframeWindow.console.error = function(...args) {
+                        errorCount++;
+                        errorCountEl.textContent = errorCount;
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'error';
+                        errorDiv.textContent = `Console Error: ${args.join(' ')}`;
+                        errorLog.appendChild(errorDiv);
+                        originalError.apply(iframeWindow.console, args);
+                    };
+                } catch (e) {
+                    console.log('Cannot access iframe console due to CORS');
+                }
+            };
+
+            iframe.onerror = (error) => {
+                statusText.textContent = 'Failed to load page';
+                statusText.className = 'error';
+                errorCount++;
+                errorCountEl.textContent = errorCount;
+            };
+        </script>
+    </div>
+</body>
+</html>

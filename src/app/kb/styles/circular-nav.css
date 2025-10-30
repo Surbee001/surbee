@@ -1,0 +1,310 @@
+/* Knowledge Base Circular Navigation Styles */
+
+/* Custom animations for circular navigation */
+@keyframes rotate-in {
+  from {
+    transform: rotate(-180deg) scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 0.95;
+  }
+}
+
+@keyframes draw-line {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes expand-branch {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-from-center {
+  from {
+    transform: scale(0.3) translate(0, 0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translate(var(--final-x), var(--final-y));
+    opacity: 1;
+  }
+}
+
+/* Base circular navigation container */
+.circular-nav-container {
+  position: relative;
+  width: 600px;
+  height: 600px;
+  user-select: none;
+}
+
+/* Central hub styles */
+.central-hub {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+}
+
+.central-hub:hover {
+  transform: translate(-50%, -50%) scale(1.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.central-hub:active {
+  transform: translate(-50%, -50%) scale(0.98);
+}
+
+/* Branch container */
+.branch-container {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: rotate-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.branch-container.selected {
+  transform: scale(1.4);
+  border-width: 3px;
+  z-index: 5;
+}
+
+.branch-container:hover:not(.selected) {
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.branch-container:active {
+  transform: scale(1.05);
+}
+
+/* Connection lines */
+.connection-line {
+  stroke: black;
+  stroke-width: 1;
+  opacity: 0.3;
+  transition: all 0.3s ease;
+  stroke-dasharray: 300;
+  animation: draw-line 1s ease-out forwards;
+}
+
+.connection-line.active {
+  opacity: 0.8;
+  stroke-width: 2;
+}
+
+/* Search button positioning */
+.search-button {
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  animation: expand-branch 0.4s ease-out 0.6s both;
+}
+
+.search-button:hover {
+  transform: translateX(-50%) scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Document upload overlay */
+.upload-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+/* Category branch panel */
+.category-panel {
+  background: white;
+  border: 2px solid black;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  animation: expand-branch 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Document card animations */
+.document-card {
+  transition: all 0.2s ease;
+}
+
+.document-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Smooth transitions for all interactive elements */
+.kb-interactive {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.kb-interactive:hover {
+  transform: scale(1.02);
+}
+
+.kb-interactive:active {
+  transform: scale(0.98);
+}
+
+/* Loading animation for document processing */
+@keyframes document-processing {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.05) rotate(180deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+    opacity: 0.7;
+  }
+}
+
+.processing {
+  animation: document-processing 2s linear infinite;
+}
+
+/* Text truncation utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Custom scrollbar for document lists */
+.kb-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.kb-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.kb-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.kb-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .circular-nav-container {
+    width: 400px;
+    height: 400px;
+  }
+  
+  .central-hub {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .branch-container {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .category-panel {
+    max-width: 90vw;
+    max-height: 70vh;
+  }
+}
+
+/* Dark mode support (if needed in future) */
+@media (prefers-color-scheme: dark) {
+  .central-hub,
+  .branch-container,
+  .category-panel {
+    background: white; /* Keep white for strict B&W theme */
+    border-color: black;
+  }
+}
+
+/* Focus states for accessibility */
+.central-hub:focus,
+.branch-container:focus,
+.search-button:focus {
+  outline: 2px solid black;
+  outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .circular-nav-container *,
+  .kb-interactive {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

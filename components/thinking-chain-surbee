@@ -1,0 +1,324 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+
+interface ThinkingStep {
+  id: string
+  type: "thinking" | "planning" | "coding" | "summary"
+  content: string
+  duration?: number
+  codeContent?: string
+  filename?: string
+}
+
+const mockSteps: ThinkingStep[] = [
+  {
+    id: "1",
+    type: "thinking",
+    content:
+      "The user wants a modern gradient gallery page with the following requirements:\nMain page shows 8 colors in a 2x4 grid centered on the page\nNo text, titles, or other elements on the main page\nTapping a gradient transitions to a lightbox showing a card with color details\nSmooth animation for the layout transition\n\nThis seems like a PureFrontend application - it's just a color gallery with interactive transitions, no backend needed.\n\nI need to:\nCreate a component for the gradient gallery\nCreate a component for the lightbox/modal with color details\nHandle the transition animations between states\nUse a 2x4 grid layout\nGenerate some beautiful gradient colors\nImplement smooth animations for the transitions",
+    duration: 3,
+  },
+  {
+    id: "2",
+    type: "planning",
+    content:
+      "I'll create a modern gradient gallery with 8 beautiful gradients in a 2x4 grid. When a user taps a gradient, it will smoothly transition to a lightbox showing detailed information about the colors including hex codes, color names, and gradient details.",
+  },
+  {
+    id: "3",
+    type: "coding",
+    content: "Creating gradient gallery component...",
+    filename: "/components/GradientGallery.tsx",
+    codeContent: `import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Dialog, DialogContent } from './ui/dialog'
+import { Button } from './ui/button'
+import { X, Edit3, Save, Undo } from 'lucide-react'
+
+interface Gradient {
+  id: number
+  name: string
+  description: string
+  colors: {
+    primary: string
+    secondary: string
+    primaryName: string
+    secondaryName: string
+  }
+  css: string
+}
+
+const gradients: Gradient[] = [
+  {
+    id: 1,
+    name: "Ocean Breeze",
+    description: "A calming gradient reminiscent of ocean waves meeting the sky",
+    colors: {
+      primary: "#667eea",
+      secondary: "#764ba2",
+      primaryName: "Periwinkle Blue",
+      secondaryName: "Royal Purple"
+    },
+    css: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+  },
+  // ... more gradients
+]
+
+export default function GradientGallery() {
+  const [selectedGradient, setSelectedGradient] = useState<Gradient | null>(null)
+  
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6">
+      {gradients.map((gradient) => (
+        <motion.div
+          key={gradient.id}
+          className="aspect-square rounded-lg cursor-pointer"
+          style={{ background: gradient.css }}
+          whileHover={{ scale: 1.05 }}
+          onClick={() => setSelectedGradient(gradient)}
+        />
+      ))}
+    </div>
+  )
+}`,
+  },
+  {
+    id: "4",
+    type: "summary",
+    content:
+      "I've created a beautiful gradient gallery with 8 stunning gradients arranged in a 2×4 grid. Each gradient has smooth hover effects and when tapped, transitions into a detailed lightbox showing the gradient name, description, individual color swatches with names and hex codes, and the CSS code. The animations use Motion for smooth layout transitions and the interface is clean and modern with no unnecessary elements on the main page.",
+  },
+]
+
+export function ThinkingChainUI() {
+  const [prompt, setPrompt] = useState("")
+  const [isRunning, setIsRunning] = useState(false)
+  const [currentStep, setCurrentStep] = useState<number>(-1)
+  const [isThinkingExpanded, setIsThinkingExpanded] = useState(false)
+  const [thinkingDuration, setThinkingDuration] = useState(0)
+  const [showThinkingTime, setShowThinkingTime] = useState(false)
+
+  const startThinking = () => {
+    if (!prompt.trim()) return
+
+    setIsRunning(true)
+    setCurrentStep(0)
+    setIsThinkingExpanded(true)
+    setThinkingDuration(0)
+    setShowThinkingTime(false)
+  }
+
+  useEffect(() => {
+    if (currentStep === 0 && isRunning) {
+      // Thinking phase with timer
+      const interval = setInterval(() => {
+        setThinkingDuration((prev) => prev + 0.1)
+      }, 100)
+
+      const timeout = setTimeout(() => {
+        clearInterval(interval)
+        setShowThinkingTime(true)
+        setTimeout(() => {
+          setIsThinkingExpanded(false)
+          setCurrentStep(1)
+        }, 1500)
+      }, 3000)
+
+      return () => {
+        clearInterval(interval)
+        clearTimeout(timeout)
+      }
+    }
+  }, [currentStep, isRunning])
+
+  useEffect(() => {
+    if (currentStep > 0 && currentStep < mockSteps.length && isRunning) {
+      const timeout = setTimeout(
+        () => {
+          if (currentStep < mockSteps.length - 1) {
+            setCurrentStep((prev) => prev + 1)
+          } else {
+            setIsRunning(false)
+          }
+        },
+        mockSteps[currentStep].type === "coding" ? 4000 : 2000,
+      )
+
+      return () => clearTimeout(timeout)
+    }
+  }, [currentStep, isRunning])
+
+  const reset = () => {
+    setIsRunning(false)
+    setCurrentStep(-1)
+    setIsThinkingExpanded(false)
+    setThinkingDuration(0)
+    setShowThinkingTime(false)
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      {/* Input Section */}
+      <div className="mb-6">
+        <Textarea
+          placeholder="Describe what you want to build..."
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          className="mb-4 bg-[#3a3a3a] border-[#555] text-white placeholder:text-gray-400"
+          rows={3}
+        />
+        <div className="flex gap-2">
+          <Button
+            onClick={startThinking}
+            disabled={isRunning || !prompt.trim()}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isRunning ? "Processing..." : "Generate"}
+          </Button>
+          {isRunning && (
+            <Button
+              onClick={reset}
+              variant="outline"
+              className="border-[#555] text-white hover:bg-[#3a3a3a] bg-transparent"
+            >
+              Stop
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Thinking Chain */}
+      <div className="space-y-4">
+        {/* Thinking Dropdown */}
+        <AnimatePresence>
+          {currentStep >= 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="py-2"
+            >
+              {showThinkingTime ? (
+                <span className="text-gray-300">Thought for {thinkingDuration.toFixed(1)}s</span>
+              ) : (
+                <div className="shimmer-text">
+                  <span
+                    className="bg-gradient-to-r from-transparent via-white to-transparent bg-clip-text text-transparent"
+                    style={{
+                      backgroundSize: "200% 100%",
+                      animation: "shimmer 2s infinite",
+                    }}
+                  >
+                    Thinking
+                  </span>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Planning Phase */}
+        <AnimatePresence>
+          {currentStep >= 1 && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="py-2">
+              <p className="text-gray-300 leading-relaxed">{mockSteps[1].content}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Coding Phase */}
+        <AnimatePresence>
+          {currentStep >= 2 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-[#2c2c2c] rounded-lg border border-[#555] relative"
+            >
+              {/* File Header */}
+              <div className="flex items-center justify-between p-3 border-b border-[#555]">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-mono text-gray-300">{mockSteps[2].filename}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {currentStep === 2 && (
+                    <div className="shimmer-text text-sm">
+                      <span
+                        className="bg-gradient-to-r from-transparent via-white to-transparent bg-clip-text text-transparent"
+                        style={{
+                          backgroundSize: "200% 100%",
+                          animation: "shimmer 2s infinite",
+                        }}
+                      >
+                        Writing {mockSteps[2].filename}...
+                      </span>
+                    </div>
+                  )}
+                  <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+                </div>
+              </div>
+
+              {/* Code Content */}
+              <div className="relative h-48 overflow-hidden">
+                {/* Top fade */}
+                <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#2c2c2c] to-transparent z-10" />
+
+                {/* Code Content */}
+                <div className="p-4 font-mono text-sm overflow-y-auto h-full">
+                  <pre className="text-gray-300 whitespace-pre-wrap">
+                    <code
+                      dangerouslySetInnerHTML={{
+                        __html:
+                          mockSteps[2].codeContent
+                            ?.replace(
+                              /import|from|interface|const|export|default|function/g,
+                              '<span style="color: #fc9ce0">$&</span>',
+                            )
+                            .replace(/'[^']*'/g, '<span style="color: #fcb34a">$&</span>')
+                            .replace(/\b\d+\b/g, '<span style="color: #fcb34a">$&</span>') || "",
+                      }}
+                    />
+                  </pre>
+                </div>
+
+                {/* Bottom fade */}
+                <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#2c2c2c] to-transparent z-10" />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Summary Phase */}
+        <AnimatePresence>
+          {currentStep >= 3 && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="py-2 space-y-4">
+              <p className="text-gray-300 leading-relaxed">{mockSteps[3].content}</p>
+
+              <div className="border-t border-[#555] pt-4">
+                <p className="text-blue-400 mb-2">Next steps you could consider:</p>
+                <ul className="text-gray-300 space-y-1 text-sm">
+                  <li>• Add gradient copying to clipboard functionality</li>
+                  <li>• Include gradient export options (PNG, SVG)</li>
+                  <li>• Add a favorites system to save preferred gradients</li>
+                </ul>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <style jsx>{`
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .animate-shimmer {
+          animation: shimmer 2s infinite;
+        }
+      `}</style>
+    </div>
+  )
+}
