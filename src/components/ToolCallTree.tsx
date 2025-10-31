@@ -20,12 +20,26 @@ const QUIRKY_VERBS = [
   "Composing",
   "Mixing",
   "Forging",
+  "Bedazzling",
+  "Whisking",
+  "Knitting",
+  "Molding",
+  "Designing",
+  "Piecing",
+  "Stitching",
+  "Fusing",
+  "Blending",
+  "Shaping",
 ];
 
-function getQuirkyVerb(toolName: string): string {
-  // Use tool name to consistently pick the same verb
-  const hash = toolName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return QUIRKY_VERBS[hash % QUIRKY_VERBS.length];
+// Counter to ensure different verbs for each tool call instance
+let verbCounter = 0;
+
+function getQuirkyVerb(): string {
+  // Get a different verb each time by using counter + random offset
+  const index = (verbCounter + Math.floor(Math.random() * 5)) % QUIRKY_VERBS.length;
+  verbCounter = (verbCounter + 1) % QUIRKY_VERBS.length;
+  return QUIRKY_VERBS[index];
 }
 
 function countEdits(output: any): number {
@@ -66,7 +80,8 @@ interface ToolCallTreeProps {
 
 export function ToolCallTree({ toolName, output, isActive }: ToolCallTreeProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const quirkyVerb = getQuirkyVerb(toolName);
+  // Generate verb once when component mounts to keep it consistent for this instance
+  const [quirkyVerb] = useState(() => getQuirkyVerb());
   const editCount = countEdits(output);
   const editedFiles = getEditedFiles(output);
 
@@ -100,8 +115,8 @@ export function ToolCallTree({ toolName, output, isActive }: ToolCallTreeProps) 
           </svg>
         </div>
 
-        {/* Quirky verb and edit count */}
-        <span className="flex-shrink-0 font-normal">
+        {/* Quirky verb with shimmer effect when active */}
+        <span className={`flex-shrink-0 font-normal ${isActive ? 'animate-shimmer bg-gradient-to-r from-muted-foreground via-foreground to-muted-foreground bg-[length:200%_100%] bg-clip-text text-transparent' : ''}`}>
           {isActive ? `${quirkyVerb}...` : `${quirkyVerb}`}
         </span>
 

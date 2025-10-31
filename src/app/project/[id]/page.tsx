@@ -243,8 +243,17 @@ function ProjectSandboxView({
     return summaryParts.join(" | ");
   }, [bundle]);
 
+  // Create a stable key based on bundle content hash
+  const bundleKey = useMemo(() => {
+    if (!bundle) return "placeholder-project";
+    // Create a stable hash from entry + file count + dependency count
+    const fileKeys = Object.keys(bundle.files).sort().join(',');
+    const depsCount = (bundle.dependencies?.length || 0) + (bundle.devDependencies?.length || 0);
+    return `${bundle.entry}-${Object.keys(bundle.files).length}-${depsCount}-${fileKeys.slice(0, 50)}`;
+  }, [bundle]);
+
   return (
-    <SandboxProvider key={bundle ? `${bundle.entry}-${Object.keys(bundle.files).length}` : "placeholder-project"} {...providerProps}>
+    <SandboxProvider key={bundleKey} {...providerProps}>
       <SandboxLayout className="flex flex-col h-full !bg-[#0a0a0a] !border-none !rounded-none">
         {/* Top bar with info and download */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
@@ -321,6 +330,7 @@ function deriveSandboxConfig(bundle: SandboxBundle | null): {
   const dependencies = buildSandboxDependencies(bundle);
   let entryExists = false;
 
+  // Process all files - they should already be normalized from the useEffect
   for (const [filePath, contents] of Object.entries(bundle.files)) {
     const normalizedPath = normalizeSandboxPath(filePath);
     const code = typeof contents === "string" ? contents : "";
@@ -355,13 +365,14 @@ function deriveSandboxConfig(bundle: SandboxBundle | null): {
 
   const importSpecifier = toImportSpecifier(normalizedEntry);
 
-  // Debug: Log the import specifier
+  // Debug: Log the import specifier and verify file exists
   console.log('[deriveSandboxConfig] Entry:', normalizedEntry, 'Import:', importSpecifier);
+  console.log('[deriveSandboxConfig] Entry exists:', entryExists);
+  console.log('[deriveSandboxConfig] Available files:', Object.keys(files));
 
-  // Only create index.tsx if it doesn't exist
-  if (!files["/index.tsx"]) {
-    files["/index.tsx"] = {
-      code: `import React from "react";
+  // Always recreate index.tsx to ensure import path matches current entry
+  files["/index.tsx"] = {
+    code: `import React from "react";
 import { createRoot } from "react-dom/client";
 import SurveyExperience from "${importSpecifier}";
 import "./tailwind.css";
@@ -377,8 +388,7 @@ if (container) {
   );
 }
 `,
-    };
-  }
+  };
 
   // Add tailwind.css file if it doesn't exist
   if (!files["/tailwind.css"]) {
@@ -880,10 +890,21 @@ export default function ProjectPage() {
         if (part.type.startsWith('tool-') && part.state === 'output-available') {
           const output = part.output as any;
           if (output?.source_files && Object.keys(output.source_files).length > 0) {
-            // Create a proper SandboxBundle
+            // Normalize all file paths to have leading slashes
+            const normalizedFiles: Record<string, string> = {};
+            Object.entries(output.source_files).forEach(([path, content]) => {
+              const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+              normalizedFiles[normalizedPath] = content as string;
+            });
+
+            // Get entry point and normalize it
+            const rawEntry = output.entry_point || output.entry_file || output.entry || 'src/Survey.tsx';
+            const normalizedEntry = rawEntry.startsWith('/') ? rawEntry : `/${rawEntry}`;
+
+            // Create a proper SandboxBundle with normalized paths
             const bundle: SandboxBundle = {
-              files: output.source_files,
-              entry: output.entry_point || output.entry || 'src/Survey.tsx',
+              files: normalizedFiles,
+              entry: normalizedEntry,
               dependencies: output.dependencies || [],
               devDependencies: output.devDependencies || [],
             };
@@ -1728,7 +1749,7 @@ export default function ProjectPage() {
                       {msg.role === 'user' ? (
                         <div className="flex justify-end">
                           <div className="max-w-[80%]">
-                            <div className="rounded-lg px-6 py-3 bg-primary text-primary-foreground">
+                            <div className="rounded-2xl px-6 py-3 text-primary-foreground" style={{ backgroundColor: 'rgb(38, 38, 38)' }}>
                               {/* Show images if present (ImagePart format) */}
                               {(() => {
                                 // Filter image parts following ImagePart interface
@@ -1771,7 +1792,7 @@ export default function ProjectPage() {
                                 return null;
                               })()}
 
-                              <p className="text-sm whitespace-pre-wrap">
+                              <p className="whitespace-pre-wrap" style={{ fontSize: '16px' }}>
                                 {msg.parts.find(p => p.type === 'text')?.text || ''}
                               </p>
                             </div>
