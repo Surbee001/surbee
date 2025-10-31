@@ -63,12 +63,10 @@ export default function GeneralSettingsPage() {
               <div className="space-y-1">
                 {[
                   { icon: Settings, label: 'General', active: true, href: '/dashboard/settings/general' },
-                  { icon: User, label: 'Profile', active: false, href: '/dashboard/settings/profile' },
-                  { icon: Settings, label: 'Appearance', active: false, href: '/dashboard/settings' },
-                  { icon: Bell, label: 'Notifications', active: false, href: '/dashboard/settings/notifications' },
+                  { icon: HelpCircle, label: 'Account', active: false, href: '/dashboard/settings/account' },
                   { icon: Shield, label: 'Privacy & Security', active: false, href: '/dashboard/settings/privacy' },
                   { icon: CreditCard, label: 'Billing & Plans', active: false, href: '/dashboard/settings/billing' },
-                  { icon: HelpCircle, label: 'Account', active: false, href: '/dashboard/settings/account' },
+                  { icon: Settings, label: 'Connectors', active: false, href: '/dashboard/settings/connectors' },
                 ].map((item) => {
                   const Icon = item.icon;
                   return (
