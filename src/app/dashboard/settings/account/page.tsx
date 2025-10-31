@@ -172,12 +172,13 @@ export default function AccountSettingsPage() {
               
               <div className="space-y-1">
                 {[
+                  { icon: Settings, label: 'General', active: false, href: '/dashboard/settings/general' },
                   { icon: User, label: 'Profile', active: false, href: '/dashboard/settings/profile' },
                   { icon: Settings, label: 'Appearance', active: false, href: '/dashboard/settings' },
                   { icon: Bell, label: 'Notifications', active: false, href: '/dashboard/settings/notifications' },
                   { icon: Shield, label: 'Privacy & Security', active: false, href: '/dashboard/settings/privacy' },
                   { icon: CreditCard, label: 'Billing & Plans', active: false, href: '/dashboard/settings/billing' },
-                  { icon: HelpCircle, label: 'Help', active: true, href: '/dashboard/settings/account' },
+                  { icon: HelpCircle, label: 'Account', active: true, href: '/dashboard/settings/account' },
                 ].map((item) => {
                   const Icon = item.icon;
                   return (
@@ -416,72 +417,95 @@ export default function AccountSettingsPage() {
                 </CardContent>
               </Card>
 
-              {/* Account Information */}
+              {/* Account Management */}
               <Card style={{ backgroundColor: 'var(--surbee-card-bg)', borderColor: 'var(--surbee-card-border)' }}>
                 <CardHeader>
                   <CardTitle style={{ color: 'var(--surbee-fg-primary)' }}>
-                    Account Information
+                    Account Management
                   </CardTitle>
                   <CardDescription style={{ color: 'var(--surbee-fg-muted)' }}>
-                    Your account details and status.
+                    Manage your account settings and organization details
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="text-[14px] font-medium text-theme-primary mb-3">Account Details</h4>
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-[13px] text-theme-muted">Account ID:</span>
-                            <span className="text-[13px] text-theme-secondary">USR-2024-001234</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[13px] text-theme-muted">Member Since:</span>
-                            <span className="text-[13px] text-theme-secondary">January 2024</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[13px] text-theme-muted">Plan:</span>
-                            <span className="text-[13px] text-theme-secondary">Free</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[13px] text-theme-muted">Status:</span>
-                            <span className="text-[13px] text-green-400">Active</span>
-                          </div>
-                        </div>
+                  <div className="space-y-6">
+                    {/* Organization ID */}
+                    <div>
+                      <label className="text-[14px] font-medium mb-2 block" style={{ color: 'var(--surbee-fg-primary)' }}>
+                        Organization ID
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={user?.uid ? `org_${user.uid.substring(0, 16)}` : 'org_loading...'}
+                          readOnly
+                          className="flex-1 p-2.5 rounded-lg border text-[14px] font-mono"
+                          style={{
+                            backgroundColor: 'var(--surbee-bg-secondary)',
+                            borderColor: 'var(--surbee-border-accent)',
+                            color: 'var(--surbee-fg-primary)'
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            const orgId = user?.uid ? `org_${user.uid.substring(0, 16)}` : '';
+                            navigator.clipboard.writeText(orgId);
+                          }}
+                          className="px-4 py-2.5 rounded-lg border transition-colors text-[14px] font-medium"
+                          style={{
+                            borderColor: 'var(--surbee-border-accent)',
+                            backgroundColor: 'var(--surbee-sidebar-hover)',
+                            color: 'var(--surbee-fg-primary)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-active)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+                          }}
+                        >
+                          Copy
+                        </button>
                       </div>
-
-                      <div>
-                        <h4 className="text-[14px] font-medium text-theme-primary mb-3">Usage Statistics</h4>
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-[13px] text-theme-muted">Total Surveys:</span>
-                            <span className="text-[13px] text-theme-secondary">12</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[13px] text-theme-muted">Total Responses:</span>
-                            <span className="text-[13px] text-theme-secondary">1,247</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[13px] text-theme-muted">Data Export:</span>
-                            <span className="text-[13px] text-theme-secondary">8 times</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[13px] text-theme-muted">API Calls:</span>
-                            <span className="text-[13px] text-theme-secondary">450</span>
-                          </div>
-                        </div>
-                      </div>
+                      <p className="text-[12px] mt-1.5" style={{ color: 'var(--surbee-fg-muted)' }}>
+                        Use this ID for API integrations and support requests
+                      </p>
                     </div>
 
-                    <div className="h-px bg-theme-primary" />
+                    <div className="h-px" style={{ backgroundColor: 'var(--surbee-border-primary)' }} />
 
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-[14px] font-medium hover:bg-blue-700 transition-colors">
-                        Export Account Data
+                    {/* Account Actions */}
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => {
+                          // Logout logic here
+                          console.log('Logging out...');
+                        }}
+                        className="w-full px-4 py-3 rounded-lg border text-[14px] font-medium transition-colors flex items-center justify-center gap-2"
+                        style={{
+                          borderColor: 'var(--surbee-border-accent)',
+                          backgroundColor: 'var(--surbee-sidebar-hover)',
+                          color: 'var(--surbee-fg-primary)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-active)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+                        }}
+                      >
+                        Log Out
                       </button>
-                      <button className="flex-1 px-4 py-2 border border-theme-primary rounded-lg text-[14px] font-medium text-theme-secondary hover:bg-theme-secondary transition-colors">
-                        Download Usage Report
+
+                      <button
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                            console.log('Deleting account...');
+                          }
+                        }}
+                        className="w-full px-4 py-3 rounded-lg border border-red-500/30 text-[14px] font-medium transition-colors bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                      >
+                        Delete Account
                       </button>
                     </div>
                   </div>
