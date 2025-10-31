@@ -275,12 +275,111 @@ export const surbeLineReplace = tool({
     search: z.string().describe("  const handleTaskComplete = (taskId: string) => {\n    setTasks(tasks.map(task =>\n...\n    ));\n    onTaskUpdate?.(updatedTasks);\n  };"),
   }),
   execute: async ({ file_path, search, first_replaced_line, last_replaced_line, replace }) => {
-    // Placeholder - would integrate with actual line-based search and replace
-    return {
-      status: 'success',
-      message: `Replaced content in ${file_path} at lines ${first_replaced_line}-${last_replaced_line}`,
-      lines_affected: last_replaced_line - first_replaced_line + 1
-    };
+    console.log(`🔄 Line replace in ${file_path} at lines ${first_replaced_line}-${last_replaced_line}`);
+
+    if (!latestProjectName) {
+      console.error('❌ No project initialized. Call surb_init_sandbox first.');
+      return {
+        status: 'error',
+        message: 'No project initialized. Call surb_init_sandbox first.',
+      };
+    }
+
+    const files = projectFiles.get(latestProjectName);
+    const sandbox = sandboxInstances.get(latestProjectName);
+
+    if (!files || !sandbox) {
+      console.error(`❌ Project not found: ${latestProjectName}`);
+      return {
+        status: 'error',
+        message: `Project not found: ${latestProjectName}`,
+      };
+    }
+
+    try {
+      // Get current file content
+      const currentContent = files.files.get(file_path);
+      if (!currentContent) {
+        return {
+          status: 'error',
+          message: `File not found: ${file_path}. Use surbe_write to create it first.`,
+        };
+      }
+
+      // Split content into lines
+      const lines = currentContent.split('\n');
+
+      // Validate line numbers
+      if (first_replaced_line < 1 || last_replaced_line > lines.length || first_replaced_line > last_replaced_line) {
+        return {
+          status: 'error',
+          message: `Invalid line range: ${first_replaced_line}-${last_replaced_line}. File has ${lines.length} lines.`,
+        };
+      }
+
+      // Extract the section to be replaced (convert to 0-indexed)
+      const startIdx = first_replaced_line - 1;
+      const endIdx = last_replaced_line - 1;
+      const originalSection = lines.slice(startIdx, endIdx + 1).join('\n');
+
+      // Validate search pattern (handle ellipsis)
+      const searchLines = search.split('\n');
+      const hasEllipsis = searchLines.some(line => line.trim() === '...');
+
+      if (hasEllipsis) {
+        // For ellipsis mode, validate first and last few lines
+        const ellipsisIdx = searchLines.findIndex(line => line.trim() === '...');
+        const searchPrefix = searchLines.slice(0, ellipsisIdx).join('\n');
+        const searchSuffix = searchLines.slice(ellipsisIdx + 1).join('\n');
+
+        if (!originalSection.startsWith(searchPrefix) || !originalSection.endsWith(searchSuffix)) {
+          return {
+            status: 'error',
+            message: `Search pattern mismatch at lines ${first_replaced_line}-${last_replaced_line}. Expected content doesn't match actual content.`,
+          };
+        }
+      } else {
+        // Exact match required
+        if (originalSection !== search) {
+          return {
+            status: 'error',
+            message: `Search pattern mismatch at lines ${first_replaced_line}-${last_replaced_line}. Expected:\n${search}\n\nActual:\n${originalSection}`,
+          };
+        }
+      }
+
+      // Perform replacement
+      const newLines = [
+        ...lines.slice(0, startIdx),
+        ...replace.split('\n'),
+        ...lines.slice(endIdx + 1)
+      ];
+      const newContent = newLines.join('\n');
+
+      // Update in memory and E2B sandbox
+      files.files.set(file_path, newContent);
+      await sandbox.files.write(`/home/user/${file_path}`, newContent);
+
+      console.log(`✅ Replaced lines ${first_replaced_line}-${last_replaced_line} in ${file_path}`);
+
+      // Get all current files
+      const allFiles = getAllSourceFiles();
+
+      return {
+        status: 'success',
+        message: `Replaced lines ${first_replaced_line}-${last_replaced_line} in ${file_path}`,
+        file_path,
+        lines_affected: last_replaced_line - first_replaced_line + 1,
+        new_line_count: newLines.length,
+        source_files: allFiles,
+      };
+    } catch (error) {
+      console.error(`❌ Failed to replace lines: ${error}`);
+      return {
+        status: 'error',
+        message: `Failed to replace lines: ${error}`,
+      };
+    }
   },
 });
 

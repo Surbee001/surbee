@@ -1300,25 +1300,35 @@ STEP 1: Initialize Sandbox (if creating new components)
 - What happens next: Tool result is returned to you, continue to STEP 2
 
 STEP 2: Create/Modify Files (the actual implementation)
-- Tools: surbe_write (new files), surbe_line_replace (edit existing)
+- Tools:
+  - surbe_line_replace: PREFERRED for editing existing files (faster, more efficient)
+  - surbe_write: For creating new files or as fallback if line_replace fails
 - When: Immediately after sandbox is ready OR for any file changes
-- How many times: As many as needed - call surbe_write multiple times for multiple files
+- How many times: As many as needed - call tools multiple times for multiple files
 - Purpose: Actually implement the user's request
-- What happens next: Tool results returned, continue to STEP 3 or more file operations
+- CRITICAL: Always prefer surbe_line_replace over surbe_write when modifying existing files
+- What happens next: Tool results returned, continue to STEP 3
 
-STEP 3: Add Dependencies (if needed)
+STEP 3: Rebuild Preview (REQUIRED after file changes)
+- Tool: surbe_build_preview
+- When: IMMEDIATELY after creating/modifying any files
+- Purpose: Update the sandbox preview so users can see the changes
+- CRITICAL: The preview does NOT auto-update - you MUST call this tool after file modifications
+- What happens next: Tool result returned with updated preview, continue to STEP 4 or finish
+
+STEP 4: Add Dependencies (if needed)
 - Tool: surbe_add_dependency
 - When: After creating files that need external packages
 - Purpose: Add required npm packages
 - What happens next: Tool result returned, you can do more steps or finish
 
-STEP 4: Generate Images (if needed)
+STEP 5: Generate Images (if needed)
 - Tool: imagegen_generate_image
 - When: If the design needs custom images/graphics
 - Purpose: Create visual assets
 - What happens next: Image URL returned, you can download it or continue
 
-STEP 5: Final Summary (required)
+STEP 6: Final Summary (required)
 - Action: Provide a text response
 - When: After all tools have been called and work is complete
 - Purpose: Summarize what was done
@@ -1331,7 +1341,8 @@ Step 1: You think about the plan (in your reasoning)
 Step 2: Call surb_init_sandbox → get result → continue
 Step 3: Call surbe_write for Survey.tsx → get result → continue
 Step 4: Call surbe_write for styles → get result → continue
-Step 5: Provide text response: "Created survey with star rating component"
+Step 5: Call surbe_build_preview → get result → continue
+Step 6: Provide text response: "Created survey with star rating component"
 
 **CRITICAL: DO NOT STOP AFTER ONE TOOL CALL**
 - After surb_init_sandbox → CONTINUE with surbe_write
@@ -1351,6 +1362,7 @@ Response: "I'll create a satisfaction survey."
 [Calls surb_init_sandbox]
 [THEN IMMEDIATELY calls surbe_write for Survey.tsx]
 [THEN calls surbe_write for styles if needed]
+[THEN calls surbe_build_preview to update the sandbox]
 [THEN responds: "Survey created with 3 questions and email opt-in."]
 
 **Example of WRONG behavior (DO NOT DO THIS):**
@@ -1656,25 +1668,35 @@ STEP 1: Initialize Sandbox (if creating new components)
 - What happens next: Tool result is returned to you, continue to STEP 2
 
 STEP 2: Create/Modify Files (the actual implementation)
-- Tools: surbe_write (new files), surbe_line_replace (edit existing)
+- Tools:
+  - surbe_line_replace: PREFERRED for editing existing files (faster, more efficient)
+  - surbe_write: For creating new files or as fallback if line_replace fails
 - When: Immediately after sandbox is ready OR for any file changes
-- How many times: As many as needed - call surbe_write multiple times for multiple files
+- How many times: As many as needed - call tools multiple times for multiple files
 - Purpose: Actually implement the user's request
-- What happens next: Tool results returned, continue to STEP 3 or more file operations
+- CRITICAL: Always prefer surbe_line_replace over surbe_write when modifying existing files
+- What happens next: Tool results returned, continue to STEP 3
 
-STEP 3: Add Dependencies (if needed)
+STEP 3: Rebuild Preview (REQUIRED after file changes)
+- Tool: surbe_build_preview
+- When: IMMEDIATELY after creating/modifying any files
+- Purpose: Update the sandbox preview so users can see the changes
+- CRITICAL: The preview does NOT auto-update - you MUST call this tool after file modifications
+- What happens next: Tool result returned with updated preview, continue to STEP 4 or finish
+
+STEP 4: Add Dependencies (if needed)
 - Tool: surbe_add_dependency
 - When: After creating files that need external packages
 - Purpose: Add required npm packages
 - What happens next: Tool result returned, you can do more steps or finish
 
-STEP 4: Generate Images (if needed)
+STEP 5: Generate Images (if needed)
 - Tool: imagegen_generate_image
 - When: If the design needs custom images/graphics
 - Purpose: Create visual assets
 - What happens next: Image URL returned, you can download it or continue
 
-STEP 5: Final Summary (required)
+STEP 6: Final Summary (required)
 - Action: Provide a text response
 - When: After all tools have been called and work is complete
 - Purpose: Summarize what was done
@@ -1687,7 +1709,8 @@ Step 1: You think about the plan (in your reasoning)
 Step 2: Call surb_init_sandbox → get result → continue
 Step 3: Call surbe_write for Survey.tsx → get result → continue
 Step 4: Call surbe_write for styles → get result → continue
-Step 5: Provide text response: "Created survey with star rating component"
+Step 5: Call surbe_build_preview → get result → continue
+Step 6: Provide text response: "Created survey with star rating component"
 
 **CRITICAL: DO NOT STOP AFTER ONE TOOL CALL**
 - After surb_init_sandbox → CONTINUE with surbe_write
@@ -1707,6 +1730,7 @@ Response: "I'll create a satisfaction survey."
 [Calls surb_init_sandbox]
 [THEN IMMEDIATELY calls surbe_write for Survey.tsx]
 [THEN calls surbe_write for styles if needed]
+[THEN calls surbe_build_preview to update the sandbox]
 [THEN responds: "Survey created with 3 questions and email opt-in."]
 
 **Example of WRONG behavior (DO NOT DO THIS):**
