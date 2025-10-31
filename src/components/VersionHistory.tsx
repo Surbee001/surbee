@@ -1,5 +1,5 @@
 import React from 'react';
-import { RotateCcw, Clock } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 
 interface BundleVersion {
   id: string;
@@ -50,7 +50,6 @@ export function VersionHistory({ versions, currentVersionId, onRestore }: Versio
   if (versions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center px-4">
-        <Clock className="w-12 h-12 mb-3 opacity-40" style={{ color: 'var(--surbee-fg-secondary)' }} />
         <p className="text-sm" style={{ color: 'var(--surbee-fg-secondary)' }}>
           No version history yet
         </p>
