@@ -117,52 +117,46 @@ export default function GeneralSettingsPage() {
         className="flex-1 min-h-0 overflow-y-auto pr-4 space-y-6 pb-16"
         style={{ scrollbarWidth: 'thin' }}
       >
-        {/* Profile Section */}
+        {/* Profile & Preferences Section - Combined */}
         <Card style={{ backgroundColor: 'var(--surbee-card-bg)', borderColor: 'var(--surbee-card-border)' }}>
-          <CardHeader>
-            <CardTitle style={{ color: 'var(--surbee-fg-primary)' }}>
-              Profile
-            </CardTitle>
-            <CardDescription style={{ color: 'var(--surbee-fg-muted)' }}>
-              Update your profile information
-            </CardDescription>
-          </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {/* Profile Picture */}
+              {/* Full Name with Avatar */}
               <div>
-                <label className="text-[14px] font-medium mb-3 block" style={{ color: 'var(--surbee-fg-primary)' }}>
-                  Profile Picture
+                <label className="text-[16px] font-medium mb-3 block" style={{ color: 'var(--surbee-fg-primary)' }}>
+                  Full name
                 </label>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   <div
-                    className="w-20 h-20 rounded-full flex items-center justify-center overflow-hidden"
-                    style={{ backgroundColor: 'var(--surbee-sidebar-hover)' }}
+                    className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0"
+                    style={{ backgroundColor: 'var(--surbee-fg-primary)', color: 'var(--surbee-bg-primary)' }}
                   >
                     {profilePicture ? (
                       <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <User className="w-10 h-10" style={{ color: 'var(--surbee-fg-secondary)' }} />
+                      <span className="text-lg font-semibold">
+                        {name ? name.charAt(0).toUpperCase() : 'H'}
+                      </span>
                     )}
                   </div>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors"
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your name"
+                    className="flex-1 p-3 rounded-lg border text-[15px] transition-all"
                     style={{
-                      borderColor: 'var(--surbee-border-accent)',
-                      backgroundColor: 'var(--surbee-sidebar-hover)',
+                      backgroundColor: 'var(--surbee-bg-secondary)',
+                      borderColor: 'var(--surbee-card-border)',
                       color: 'var(--surbee-fg-primary)'
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-active)';
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--surbee-border-accent)';
                     }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--surbee-card-border)';
                     }}
-                  >
-                    <Upload className="w-4 h-4" />
-                    Upload Photo
-                  </button>
+                  />
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -173,54 +167,90 @@ export default function GeneralSettingsPage() {
                 </div>
               </div>
 
-              {/* Name */}
+              {/* What should Claude call you */}
               <div>
-                <label className="text-[14px] font-medium mb-2 block" style={{ color: 'var(--surbee-fg-primary)' }}>
-                  Name
+                <label className="text-[16px] font-medium mb-3 block" style={{ color: 'var(--surbee-fg-primary)' }}>
+                  What should Claude call you?
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your name"
-                  className="w-full p-2.5 rounded-lg border text-[14px] theme-input"
+                  placeholder="Hadi"
+                  className="w-full p-3 rounded-lg border text-[15px] transition-all"
                   style={{
                     backgroundColor: 'var(--surbee-bg-secondary)',
-                    borderColor: 'var(--surbee-border-accent)',
+                    borderColor: 'var(--surbee-card-border)',
                     color: 'var(--surbee-fg-primary)'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--surbee-border-accent)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--surbee-card-border)';
+                  }}
+                />
+              </div>
+
+              {/* Work Function - Optional */}
+              <div>
+                <label className="text-[16px] font-medium mb-3 block" style={{ color: 'var(--surbee-fg-primary)' }}>
+                  What best describes your work?
+                </label>
+                <select
+                  className="w-full p-3 rounded-lg border text-[15px] transition-all appearance-none cursor-pointer"
+                  style={{
+                    backgroundColor: 'var(--surbee-bg-secondary)',
+                    borderColor: 'var(--surbee-card-border)',
+                    color: 'var(--surbee-fg-primary)'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--surbee-border-accent)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--surbee-card-border)';
+                  }}
+                >
+                  <option>Select your work function</option>
+                  <option>Student</option>
+                  <option>Researcher</option>
+                  <option>Marketer</option>
+                  <option>Developer</option>
+                  <option>Designer</option>
+                  <option>Data Analyst</option>
+                  <option>Other</option>
+                </select>
+              </div>
+
+              {/* Personal Preferences */}
+              <div>
+                <label className="text-[16px] font-medium mb-1 block" style={{ color: 'var(--surbee-fg-primary)' }}>
+                  What personal preferences should Claude consider in responses?
+                </label>
+                <p className="text-[13px] mb-3" style={{ color: 'var(--surbee-fg-muted)' }}>
+                  Your preferences will apply to all conversations, within Anthropic's guidelines.{' '}
+                  <a href="#" className="underline">Learn about preferences</a>
+                </p>
+                <textarea
+                  value={personalPreferences}
+                  onChange={(e) => setPersonalPreferences(e.target.value)}
+                  placeholder="e.g. I primarily code in Python (not a coding beginner)"
+                  rows={4}
+                  className="w-full p-3 rounded-lg border text-[15px] resize-none transition-all"
+                  style={{
+                    backgroundColor: 'var(--surbee-bg-secondary)',
+                    borderColor: 'var(--surbee-card-border)',
+                    color: 'var(--surbee-fg-primary)'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--surbee-border-accent)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--surbee-card-border)';
                   }}
                 />
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* What should Surbee call you */}
-        <Card style={{ backgroundColor: 'var(--surbee-card-bg)', borderColor: 'var(--surbee-card-border)' }}>
-          <CardHeader>
-            <CardTitle style={{ color: 'var(--surbee-fg-primary)' }}>
-              What should Surbee call you?
-            </CardTitle>
-            <CardDescription style={{ color: 'var(--surbee-fg-muted)' }}>
-              Tell us your personal preferences so Claude can tailor responses to you
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <textarea
-              value={personalPreferences}
-              onChange={(e) => setPersonalPreferences(e.target.value)}
-              placeholder="Example: Call me Alex. I prefer concise responses with examples. I'm working on academic research projects..."
-              rows={5}
-              className="w-full p-3 rounded-lg border text-[14px] resize-none theme-input"
-              style={{
-                backgroundColor: 'var(--surbee-bg-secondary)',
-                borderColor: 'var(--surbee-border-accent)',
-                color: 'var(--surbee-fg-primary)'
-              }}
-            />
-            <p className="text-[12px] mt-2" style={{ color: 'var(--surbee-fg-muted)' }}>
-              These preferences will be considered in all AI responses to make them more personalized
-            </p>
           </CardContent>
         </Card>
 
