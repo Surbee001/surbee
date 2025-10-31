@@ -1066,17 +1066,18 @@ export default function ProjectPage() {
 
               // Save this bundle as a new version
               const versionId = `v${Date.now()}`;
-              const newVersion: BundleVersion = {
-                id: versionId,
-                timestamp: Date.now(),
-                bundle: bundle,
-                description: `Version ${bundleVersions.length + 1}`,
-                messageId: msg.id,
-              };
-
-              setBundleVersions(prev => [...prev, newVersion]);
+              setBundleVersions(prev => {
+                const newVersion: BundleVersion = {
+                  id: versionId,
+                  timestamp: Date.now(),
+                  bundle: bundle,
+                  description: `Version ${prev.length + 1}`,
+                  messageId: msg.id,
+                };
+                console.log('[Version History] Saved new version:', versionId, `(${prev.length + 1})`);
+                return [...prev, newVersion];
+              });
               setCurrentVersionId(versionId);
-              console.log('[Version History] Saved new version:', versionId);
             } else {
               console.log('[Bundle Update] Bundle unchanged, skipping update');
             }
