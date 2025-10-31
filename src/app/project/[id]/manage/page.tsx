@@ -9,6 +9,8 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 import { PreviewTab } from '@/components/project-manage/PreviewTab';
 import { UnifiedInsightsTab } from '@/components/project-manage/UnifiedInsightsTab';
 import { ShareTab } from '@/components/project-manage/ShareTab';
+import AppLayout from '@/components/layout/AppLayout';
+import { useTheme } from '@/hooks/useTheme';
 import './styles.css';
 import './share-styles.css';
 
@@ -642,12 +644,25 @@ export default function ProjectManagePage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState<TabType>('preview');
   const [underlineStyle, setUnderlineStyle] = useState({ left: 0, width: 0 });
+  const [isMounted, setIsMounted] = useState(false);
+  const [showBreadcrumb, setShowBreadcrumb] = useState(false);
   const tabRefs = {
     preview: React.useRef<HTMLButtonElement>(null),
     insights: React.useRef<HTMLButtonElement>(null),
     share: React.useRef<HTMLButtonElement>(null),
+  };
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const isDarkMode = isMounted && theme === 'dark';
+
+  const handleTitleClick = () => {
+    setShowBreadcrumb(!showBreadcrumb);
   };
 
   // Sandbox bundle state for preview - use default content
@@ -751,120 +766,160 @@ export default function ProjectManagePage() {
 
   return (
     <AuthGuard>
-      <div className="flex flex-col h-screen" style={{ backgroundColor: '#0f0f0f' }}>
-        {/* Simple Title Navigation */}
-        <div style={{
-          padding: '40px 32px 20px 32px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-        }}>
-          <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-            {/* Back Button and Tabs */}
-            <div style={{ position: 'relative' }}>
-              <div style={{ display: 'flex', gap: '48px', alignItems: 'baseline' }}>
-                {/* Back Button */}
-                <button
-                  onClick={handleBack}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'rgba(255, 255, 255, 0.3)',
-                    cursor: 'pointer',
-                    padding: 0,
-                    paddingBottom: '8px',
-                    transition: 'color 0.15s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.3)'}
-                >
-                  <ArrowLeft className="h-6 w-6" />
-                </button>
-                <button
-                  ref={tabRefs.preview}
-                  onClick={() => setActiveTab('preview')}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    fontFamily: 'var(--font-inter), sans-serif',
-                    fontWeight: activeTab === 'preview' ? '500' : '400',
-                    fontSize: '42px',
-                    lineHeight: '40px',
-                    letterSpacing: '-0.05em',
-                    color: activeTab === 'preview' ? 'white' : 'rgba(255, 255, 255, 0.3)',
-                    cursor: 'pointer',
-                    padding: 0,
-                    paddingBottom: '8px',
-                    transition: 'color 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => activeTab !== 'preview' && (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)')}
-                  onMouseLeave={(e) => activeTab !== 'preview' && (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.3)')}
-                >
-                  Preview
-                </button>
+      <AppLayout>
+        <div className="flex flex-col h-screen" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>
+          {/* Simple Title Navigation */}
+          <div style={{
+            padding: '40px 32px 20px 32px',
+            borderBottom: isDarkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)',
+          }}>
+            <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+              {/* Back Button and Tabs */}
+              <div style={{ position: 'relative' }}>
+                <div style={{ display: 'flex', gap: '48px', alignItems: 'baseline' }}>
+                  {/* Back Button */}
+                  <button
+                    onClick={handleBack}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
+                      cursor: 'pointer',
+                      padding: 0,
+                      paddingBottom: '8px',
+                      transition: 'color 0.15s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
+                  >
+                    <ArrowLeft className="h-6 w-6" />
+                  </button>
 
-                <button
-                  ref={tabRefs.insights}
-                  onClick={() => setActiveTab('insights')}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    fontFamily: 'var(--font-inter), sans-serif',
-                    fontWeight: activeTab === 'insights' ? '500' : '400',
-                    fontSize: '42px',
-                    lineHeight: '40px',
-                    letterSpacing: '-0.05em',
-                    color: activeTab === 'insights' ? 'white' : 'rgba(255, 255, 255, 0.3)',
-                    cursor: 'pointer',
-                    padding: 0,
-                    paddingBottom: '8px',
-                    transition: 'color 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => activeTab !== 'insights' && (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)')}
-                  onMouseLeave={(e) => activeTab !== 'insights' && (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.3)')}
-                >
-                  Insights
-                </button>
+                  {/* Project Title / Breadcrumb */}
+                  <div
+                    onClick={handleTitleClick}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: showBreadcrumb ? '16px' : '48px',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                    }}
+                  >
+                    {showBreadcrumb && (
+                      <>
+                        <span style={{
+                          fontFamily: 'var(--font-inter), sans-serif',
+                          fontWeight: '400',
+                          fontSize: '42px',
+                          lineHeight: '40px',
+                          letterSpacing: '-0.05em',
+                          color: isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
+                          paddingBottom: '8px',
+                          transition: 'all 0.3s ease',
+                        }}>
+                          Project
+                        </span>
+                        <span style={{
+                          fontFamily: 'var(--font-inter), sans-serif',
+                          fontSize: '42px',
+                          lineHeight: '40px',
+                          color: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+                          paddingBottom: '8px',
+                        }}>
+                          &gt;
+                        </span>
+                      </>
+                    )}
+                  </div>
 
-                <button
-                  ref={tabRefs.share}
-                  onClick={() => setActiveTab('share')}
+                  <button
+                    ref={tabRefs.preview}
+                    onClick={() => setActiveTab('preview')}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      fontFamily: 'var(--font-inter), sans-serif',
+                      fontWeight: activeTab === 'preview' ? '500' : '400',
+                      fontSize: '42px',
+                      lineHeight: '40px',
+                      letterSpacing: '-0.05em',
+                      color: activeTab === 'preview' ? 'var(--surbee-fg-primary)' : (isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'),
+                      cursor: 'pointer',
+                      padding: 0,
+                      paddingBottom: '8px',
+                      transition: 'color 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => activeTab !== 'preview' && (e.currentTarget.style.color = isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)')}
+                    onMouseLeave={(e) => activeTab !== 'preview' && (e.currentTarget.style.color = isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)')}
+                  >
+                    Preview
+                  </button>
+
+                  <button
+                    ref={tabRefs.insights}
+                    onClick={() => setActiveTab('insights')}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      fontFamily: 'var(--font-inter), sans-serif',
+                      fontWeight: activeTab === 'insights' ? '500' : '400',
+                      fontSize: '42px',
+                      lineHeight: '40px',
+                      letterSpacing: '-0.05em',
+                      color: activeTab === 'insights' ? 'var(--surbee-fg-primary)' : (isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'),
+                      cursor: 'pointer',
+                      padding: 0,
+                      paddingBottom: '8px',
+                      transition: 'color 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => activeTab !== 'insights' && (e.currentTarget.style.color = isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)')}
+                    onMouseLeave={(e) => activeTab !== 'insights' && (e.currentTarget.style.color = isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)')}
+                  >
+                    Insights
+                  </button>
+
+                  <button
+                    ref={tabRefs.share}
+                    onClick={() => setActiveTab('share')}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      fontFamily: 'var(--font-inter), sans-serif',
+                      fontWeight: activeTab === 'share' ? '500' : '400',
+                      fontSize: '42px',
+                      lineHeight: '40px',
+                      letterSpacing: '-0.05em',
+                      color: activeTab === 'share' ? 'var(--surbee-fg-primary)' : (isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'),
+                      cursor: 'pointer',
+                      padding: 0,
+                      paddingBottom: '8px',
+                      transition: 'color 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => activeTab !== 'share' && (e.currentTarget.style.color = isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)')}
+                    onMouseLeave={(e) => activeTab !== 'share' && (e.currentTarget.style.color = isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)')}
+                  >
+                    Share
+                  </button>
+                </div>
+
+                {/* Sliding underline */}
+                <div
                   style={{
-                    background: 'transparent',
-                    border: 'none',
-                    fontFamily: 'var(--font-inter), sans-serif',
-                    fontWeight: activeTab === 'share' ? '500' : '400',
-                    fontSize: '42px',
-                    lineHeight: '40px',
-                    letterSpacing: '-0.05em',
-                    color: activeTab === 'share' ? 'white' : 'rgba(255, 255, 255, 0.3)',
-                    cursor: 'pointer',
-                    padding: 0,
-                    paddingBottom: '8px',
-                    transition: 'color 0.15s ease',
+                    position: 'absolute',
+                    bottom: 0,
+                    left: underlineStyle.left,
+                    width: underlineStyle.width,
+                    height: '2px',
+                    backgroundColor: 'var(--surbee-fg-primary)',
+                    transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
-                  onMouseEnter={(e) => activeTab !== 'share' && (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)')}
-                  onMouseLeave={(e) => activeTab !== 'share' && (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.3)')}
-                >
-                  Share
-                </button>
+                />
               </div>
-
-              {/* Sliding underline */}
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: underlineStyle.left,
-                  width: underlineStyle.width,
-                  height: '2px',
-                  backgroundColor: 'white',
-                  transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                }}
-              />
             </div>
           </div>
-        </div>
 
         {/* Tab Content - Full Width */}
         <div className="flex-1 overflow-auto min-h-0" style={{ paddingTop: '32px' }}>
@@ -873,48 +928,14 @@ export default function ProjectManagePage() {
           {activeTab === 'share' && <ShareTab projectId={projectId} />}
         </div>
 
-        {/* Ask Surbee Component - Sticky at Bottom - Hidden for Preview Tab */}
-        {activeTab !== 'preview' && (
-          <div className="ask-surbee-container">
-            <AskSurbeeComponent activeTab={activeTab} projectId={projectId} />
-          </div>
-        )}
-      </div>
-
-      {/* Global Styles for Button Hover Effect */}
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-html {
-  border: 0px solid;
-  box-sizing: border-box;
-  -webkit-font-smoothing: antialiased;
-  line-height: 1.5;
-  text-size-adjust: 100%;
-  tab-size: 4;
-  font-variation-settings: normal;
-  -webkit-tap-highlight-color: transparent;
-  font-family: "__saans_cd5095","__saans_Fallback_cd5095",sans-serif;
-  font-feature-settings: "dlig", "ss07", "calt" 0;
-  appearance: none;
-  color-scheme: dark;
-}
-
-body {
-  border: 0px solid;
-  box-sizing: border-box;
-  -webkit-font-smoothing: antialiased;
-  margin: 0px;
-  line-height: inherit;
-  isolation: isolate;
-  display: flex;
-  flex-direction: column;
-  background-color: hsl(0 0% 8%/var(--tw-bg-opacity,1));
-  color: hsl(0 0% 100%/var(--tw-text-opacity,1));
-}
-`,
-        }}
-      />
+          {/* Ask Surbee Component - Sticky at Bottom - Hidden for Preview Tab */}
+          {activeTab !== 'preview' && (
+            <div className="ask-surbee-container">
+              <AskSurbeeComponent activeTab={activeTab} projectId={projectId} />
+            </div>
+          )}
+        </div>
+      </AppLayout>
     </AuthGuard>
   );
 }
