@@ -23,6 +23,7 @@ import { AILoader } from '@/components/ai-loader';
 import { cn } from "@/lib/utils";
 import { Response } from '@/components/ai-elements/response';
 import { ToolCallTree } from '@/components/ToolCallTree';
+import { VersionHistory } from '@/components/VersionHistory';
 import {
   SandboxProvider,
   SandboxLayout,
@@ -911,6 +912,14 @@ interface SandboxBundle {
   devDependencies?: string[];
 }
 
+interface BundleVersion {
+  id: string;
+  timestamp: number;
+  bundle: SandboxBundle;
+  description: string;
+  messageId?: string; // ID of the message that created this version
+}
+
 
 
 interface HistoryEntry {
@@ -1054,6 +1063,20 @@ export default function ProjectPage() {
               });
               prevBundleRef.current = bundleStr;
               setSandboxBundle(bundle);
+
+              // Save this bundle as a new version
+              const versionId = `v${Date.now()}`;
+              const newVersion: BundleVersion = {
+                id: versionId,
+                timestamp: Date.now(),
+                bundle: bundle,
+                description: `Version ${bundleVersions.length + 1}`,
+                messageId: msg.id,
+              };
+
+              setBundleVersions(prev => [...prev, newVersion]);
+              setCurrentVersionId(versionId);
+              console.log('[Version History] Saved new version:', versionId);
             } else {
               console.log('[Bundle Update] Bundle unchanged, skipping update');
             }
@@ -1137,6 +1160,8 @@ export default function ProjectPage() {
   const [sandboxBundle, setSandboxBundle] = useState<SandboxBundle | null>(null);
   const [sandboxError, setSandboxError] = useState<string | null>(null);
   const [rendererKey, setRendererKey] = useState(0);
+  const [bundleVersions, setBundleVersions] = useState<BundleVersion[]>([]);
+  const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const sandboxConfig = useMemo(() => {
     const config = deriveSandboxConfig(sandboxBundle);
     console.log('[Sandbox Config]', {
@@ -1281,6 +1306,19 @@ export default function ProjectPage() {
 
 
 
+
+  const handleRestoreVersion = useCallback((versionId: string) => {
+    const version = bundleVersions.find(v => v.id === versionId);
+    if (!version) {
+      console.error('[Version History] Version not found:', versionId);
+      return;
+    }
+
+    console.log('[Version History] Restoring version:', versionId);
+    setSandboxBundle(version.bundle);
+    setCurrentVersionId(versionId);
+    setSidebarView('chat'); // Switch back to chat view after restore
+  }, [bundleVersions]);
 
   const handleSubmit = async (message: string, images?: string[]) => {
     if (!message.trim() || status !== 'ready') return;
@@ -1842,52 +1880,13 @@ export default function ProjectPage() {
         {/* Chat Area in Sidebar */}
           <div className="flex-1 flex flex-col min-h-0">
             {sidebarView === 'history' ? (
-              /* History View */
-              <div className="flex-1 overflow-y-auto">
-                <div className="p-4 pr-4">
-                  <div className="mb-4" style={{ paddingLeft: '8px' }}>
-                    <h3 className="text-lg font-semibold text-white mb-2" style={{
-                      fontFamily: 'Sohne, sans-serif',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    lineHeight: '1.375rem'
-                  }}>History</h3>
-                </div>
-                <div className="space-y-2">
-                  {historyEntries.map((entry) => (
-                    <div key={entry.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-zinc-800/50 transition-colors cursor-pointer group">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm text-white font-medium truncate" style={{ fontFamily: 'Sohne, sans-serif' }}>
-                              {entry.prompt}
-                            </p>
-                            <span className="text-xs text-gray-500 bg-zinc-800 px-2 py-1 rounded whitespace-nowrap">
-                              v{entry.version}
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-400 mt-1">{formatHistoryDate(entry.timestamp)}</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleHistoryFlag(entry.id);
-                        }}
-                        className={`p-1 rounded transition-colors ${
-                          entry.isFlagged 
-                            ? 'text-yellow-400 hover:text-yellow-300' 
-                            : 'text-gray-500 hover:text-gray-300 opacity-0 group-hover:opacity-100'
-                        }`}
-                        title={entry.isFlagged ? 'Remove flag' : 'Flag this version'}
-                      >
-                        <Flag className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    ))}
-                  </div>
-                </div>
+              /* Version History View */
+              <div className="flex-1 overflow-hidden">
+                <VersionHistory
+                  versions={bundleVersions}
+                  currentVersionId={currentVersionId}
+                  onRestore={handleRestoreVersion}
+                />
               </div>
             ) : (
               /* Chat Messages View */
