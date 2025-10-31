@@ -3,10 +3,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemeSelector } from '@/components/ui/theme-selector';
-import { Upload, User as UserIcon } from 'lucide-react';
+import { Upload, Settings, User, Bell, Shield, CreditCard, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function GeneralSettingsPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const [name, setName] = useState(user?.displayName || '');
   const [profilePicture, setProfilePicture] = useState(user?.photoURL || '');
@@ -47,7 +49,63 @@ export default function GeneralSettingsPage() {
   };
 
   return (
-    <div className="relative h-full flex flex-col min-h-0">
+    <div className="min-h-screen flex flex-col overflow-hidden">
+      {/* Main Content Area */}
+      <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full max-w-6xl mx-auto">
+          {/* Settings Navigation */}
+          <div className="lg:col-span-1">
+            <div className="space-y-4">
+              <h1 className="projects-title">
+                Settings
+              </h1>
+
+              <div className="space-y-1">
+                {[
+                  { icon: Settings, label: 'General', active: true, href: '/dashboard/settings/general' },
+                  { icon: User, label: 'Profile', active: false, href: '/dashboard/settings/profile' },
+                  { icon: Settings, label: 'Appearance', active: false, href: '/dashboard/settings' },
+                  { icon: Bell, label: 'Notifications', active: false, href: '/dashboard/settings/notifications' },
+                  { icon: Shield, label: 'Privacy & Security', active: false, href: '/dashboard/settings/privacy' },
+                  { icon: CreditCard, label: 'Billing & Plans', active: false, href: '/dashboard/settings/billing' },
+                  { icon: HelpCircle, label: 'Account', active: false, href: '/dashboard/settings/account' },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.label}
+                      onClick={() => router.push(item.href)}
+                      className={`
+                        relative w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all duration-150 cursor-pointer mb-0.5
+                        ${item.active ? 'text-theme-primary' : 'text-theme-secondary hover:text-theme-primary'}
+                      `}
+                      style={{
+                        backgroundColor: item.active
+                          ? 'var(--surbee-sidebar-active)'
+                          : 'transparent',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!item.active) {
+                          e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!item.active) {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }
+                      }}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="text-[14px] font-medium">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* General Content - Only this scrolls */}
+          <div className="lg:col-span-3 relative h-full flex flex-col min-h-0">
       {/* Fade overlay at top - only show when scrolling */}
       <div className={`absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[var(--surbee-bg-primary)] to-transparent z-10 pointer-events-none transition-opacity duration-300 ${
         showFade ? 'opacity-100' : 'opacity-0'
@@ -237,6 +295,9 @@ export default function GeneralSettingsPage() {
           >
             Save Changes
           </button>
+        </div>
+      </div>
+          </div>
         </div>
       </div>
     </div>
