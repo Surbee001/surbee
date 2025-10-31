@@ -34,7 +34,7 @@ User: "make a product review questionnaire" -> Product Review`,
       maxTokens: 10,
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error: any) {
     console.error('Title generation error:', error);
     return new Response(error?.message || 'Failed to generate title', {

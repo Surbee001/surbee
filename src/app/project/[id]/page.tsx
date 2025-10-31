@@ -1162,18 +1162,7 @@ export default function ProjectPage() {
               if (done) break;
 
               const chunk = decoder.decode(value);
-              const lines = chunk.split('\n');
-
-              for (const line of lines) {
-                if (line.startsWith('0:')) {
-                  try {
-                    const text = JSON.parse(line.slice(2));
-                    streamedTitle += text;
-                  } catch (e) {
-                    // Skip invalid JSON
-                  }
-                }
-              }
+              streamedTitle += chunk;
             }
 
             if (streamedTitle.trim()) {
