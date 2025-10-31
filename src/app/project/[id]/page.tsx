@@ -1742,7 +1742,7 @@ export default function ProjectPage() {
               </div>
             ) : (
               /* Chat Messages View */
-              <div className="flex-1 overflow-y-auto pl-6 pr-6 py-6" ref={chatAreaRef}>
+              <div className="flex-1 overflow-y-auto px-5 py-6" ref={chatAreaRef}>
                 <div className="space-y-4">
                   {messages?.map((msg, idx) => (
                     <div key={msg.id} className="space-y-2">
@@ -1856,7 +1856,7 @@ export default function ProjectPage() {
           </div>
 
         {/* Chat Input */}
-        <div className="pl-4 pr-4 pb-3">
+        <div className="px-5 pb-3">
           <div className="relative ml-0 mr-0">
             {/* Chat input container to anchor controls to the box itself */}
             <div className="relative">
@@ -2229,7 +2229,7 @@ export default function ProjectPage() {
         <div className="flex-1 flex relative">
           {/* Restored rounded preview frame with border, like before */}
           <div
-            className="flex-1 flex flex-col relative rounded-[0.625rem] border mt-0 mr-3 mb-3 ml-2 overflow-hidden"
+            className="flex-1 flex flex-col relative rounded-[0.625rem] border mt-0 mr-5 mb-3 ml-0 overflow-hidden"
             style={{
               backgroundColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#242424' : '#F8F8F8',
               borderColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'var(--surbee-border-accent)' : 'rgba(0, 0, 0, 0.1)'
