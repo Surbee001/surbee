@@ -2391,7 +2391,7 @@ export default function ProjectPage() {
               >
                 {/* Show loading animation while AI is working */}
                 {(status === 'submitted' || status === 'streaming') && !sandboxAvailable ? (
-                  <AILoader text="Building" size={200} />
+                  <AILoader text="Building" size={120} />
                 ) : sandboxAvailable ? (
                   /* Show React preview when sandbox bundle is available */
                   <div className="h-full w-full">
