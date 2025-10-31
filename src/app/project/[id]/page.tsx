@@ -22,6 +22,7 @@ import { ToolCall } from '../../../../components/ThinkingUi/components/tool-call
 import { AILoader } from '@/components/ai-loader';
 import { cn } from "@/lib/utils";
 import { Response } from '@/components/ai-elements/response';
+import { ToolCallTree } from '@/components/ToolCallTree';
 import {
   SandboxProvider,
   SandboxLayout,
@@ -1796,16 +1797,17 @@ export default function ProjectPage() {
 
                           {/* Show all parts in chronological order (tool calls and text interleaved) */}
                           {msg.parts.map((part, partIdx) => {
-                            // Render tool calls
+                            // Render tool calls with tree structure
                             if (part.type.startsWith('tool-')) {
                               const toolName = part.type.replace('tool-', '');
                               const isActive = part.state === 'input-streaming' || part.state === 'input-available';
+                              const output = part.state === 'output-available' ? part.output : null;
 
                               return (
-                                <ToolCall
+                                <ToolCallTree
                                   key={`tool-${partIdx}`}
-                                  icon={<Hammer className="h-4 w-4" />}
-                                  label={toolName}
+                                  toolName={toolName}
+                                  output={output}
                                   isActive={isActive}
                                 />
                               );
