@@ -1856,7 +1856,7 @@ export default function ProjectPage() {
           </div>
 
         {/* Chat Input */}
-        <div className="px-4 pb-3">
+        <div className="pl-4 pr-2 pb-3">
           <div className="relative ml-0 mr-0">
             {/* Chat input container to anchor controls to the box itself */}
             <div className="relative">
