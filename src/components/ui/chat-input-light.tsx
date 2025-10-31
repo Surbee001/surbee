@@ -26,9 +26,9 @@ interface ChatInputLightProps {
   borderRadius?: string; // optional, custom border radius (default: 32px)
 }
 
-export default function ChatInputLight({ 
-  onSendMessage, 
-  isInputDisabled = false, 
+export default function ChatInputLight({
+  onSendMessage,
+  isInputDisabled = false,
   placeholder = "Type your message...",
   className = "",
   isEditMode = false,
@@ -47,7 +47,32 @@ export default function ChatInputLight({
   borderRadius = '32px',
 }: ChatInputLightProps) {
   const [chatText, setChatText] = useState("");
+  // Initialize theme by checking DOM immediately
+  const [detectedTheme, setDetectedTheme] = useState<'dark' | 'white'>(() => {
+    if (typeof document !== 'undefined') {
+      const isDark = document.documentElement.classList.contains('dark');
+      return isDark ? 'dark' : 'white';
+    }
+    return theme;
+  });
   const [files, setFiles] = useState<File[]>([]);
+
+  // Watch for theme changes
+  useEffect(() => {
+    const updateTheme = () => {
+      const isDark = document.documentElement.classList.contains('dark');
+      setDetectedTheme(isDark ? 'dark' : 'white');
+    };
+
+    // Watch for theme changes
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    return () => observer.disconnect();
+  }, []);
   const [filePreviews, setFilePreviews] = useState<{ [key: string]: string }>({});
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
@@ -270,8 +295,8 @@ export default function ChatInputLight({
   const hasMessage = chatText.trim().length > 0;
   const buttonDisabled = isBusy ? false : (!hasMessage || isInputDisabled);
   const buttonBaseClass = "flex justify-center items-center ease-in transition-all duration-150 cursor-pointer";
-  const idleActiveClass = theme === 'white' ? 'bg-black text-white p-1.5 rounded-full' : 'bg-white text-black p-1.5 rounded-full';
-  const idleInactiveClass = theme === 'white' ? 'text-gray-500 hover:text-gray-600 p-1.5 rounded-full' : 'text-gray-400 hover:text-gray-300 p-1.5 rounded-full';
+  const idleActiveClass = detectedTheme === 'white' ? 'bg-black text-white p-1.5 rounded-full' : 'bg-white text-black p-1.5 rounded-full';
+  const idleInactiveClass = detectedTheme === 'white' ? 'text-gray-500 hover:text-gray-600 p-1.5 rounded-full' : 'text-gray-400 hover:text-gray-300 p-1.5 rounded-full';
   const busyClass = idleActiveClass;
 
   return (
@@ -279,10 +304,14 @@ export default function ChatInputLight({
       <div 
         ref={chatboxContainerRef}
         className={`relative flex flex-col max-h-[40rem] min-h-[122px] z-10 transition-all duration-500`}
-        style={{ 
+        style={{
           borderRadius: borderRadius,
-          border: shouldGlow ? '1px solid rgba(255, 255, 255, 0.8)' : '1px solid var(--surbee-border-accent)',
-          backgroundColor: theme === 'white' ? '#FFFFFF' : '#2C2C2C',
+          border: shouldGlow
+            ? '1px solid rgba(255, 255, 255, 0.8)'
+            : detectedTheme === 'white'
+              ? '1px solid rgba(0, 0, 0, 0.1)'
+              : '1px solid var(--surbee-border-accent)',
+          backgroundColor: detectedTheme === 'white' ? '#F8F8F8' : '#242424',
           boxShadow: shouldGlow ? '0 0 20px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.2)' : 'none'
         }}
         onDragOver={handleDragOver}
@@ -358,7 +387,7 @@ export default function ChatInputLight({
               {/* Animated rotating placeholder overlay (shown only when empty and rotating enabled) */}
               {chatText.trim().length === 0 && !disableRotatingPlaceholders && (
                 <div
-                  className={`pointer-events-none absolute left-0 top-0 w-full select-none px-0 pt-0 overflow-hidden ${theme === 'white' ? 'text-gray-500' : 'text-gray-400'}`}
+                  className={`pointer-events-none absolute left-0 top-0 w-full select-none px-0 pt-0 overflow-hidden ${detectedTheme === 'white' ? 'text-gray-500' : 'text-gray-400'}`}
                   style={{
                     letterSpacing: "-0.01em",
                     fontWeight: 400,
@@ -411,10 +440,10 @@ export default function ChatInputLight({
                     overflowY: "auto",
                     outline: "transparent solid 2px",
                     outlineOffset: "2px",
-                    color: theme === 'white' ? "rgb(0, 0, 0)" : "rgb(255, 255, 255)",
+                    color: detectedTheme === 'white' ? "rgb(0, 0, 0)" : "rgb(255, 255, 255)",
                     opacity: isInputDisabled ? 0.5 : 1,
                     pointerEvents: isInputDisabled ? "none" : "auto",
-                    caretColor: theme === 'white' ? "rgb(0, 0, 0)" : "rgb(255, 255, 255)",
+                    caretColor: detectedTheme === 'white' ? "rgb(0, 0, 0)" : "rgb(255, 255, 255)",
                     fontFamily: "var(--font-epilogue), sans-serif",
                     // Additional subtle refinements to mirror provided textarea styles
                     letterSpacing: "-0.01em",
@@ -435,7 +464,7 @@ export default function ChatInputLight({
             <div className="flex flex-row gap-1 items-center min-w-0 flex-1">
               <button
                 onClick={() => uploadInputRef.current?.click()}
-                className={`inline-flex items-center justify-center rounded-md transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-[28px] w-7 ${theme === 'white' ? 'text-gray-700 hover:text-black hover:bg-black/5' : 'text-gray-300 hover:text-white hover:bg-white/5'}`}
+                className={`inline-flex items-center justify-center rounded-md transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-[28px] w-7 ${detectedTheme === 'white' ? 'text-gray-700 hover:text-black hover:bg-black/5' : 'text-gray-300 hover:text-white hover:bg-white/5'}`}
                 type="button"
                 disabled={isInputDisabled}
                 title="Add"
@@ -458,9 +487,9 @@ export default function ChatInputLight({
               {onToggleEditMode && (
                 <button
                   className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer border ${
-                    isEditMode 
-                      ? (theme === 'white' ? 'border-gray-300 bg-black text-white' : 'border-zinc-700/40 bg-white text-black') 
-                      : (theme === 'white' ? 'border-gray-300 text-gray-700 hover:text-black hover:bg-black/5' : 'border-zinc-700/40 text-gray-300 hover:text-white hover:bg-white/5')
+                    isEditMode
+                      ? (detectedTheme === 'white' ? 'border-gray-300 bg-black text-white' : 'border-zinc-700/40 bg-white text-black')
+                      : (detectedTheme === 'white' ? 'border-gray-300 text-gray-700 hover:text-black hover:bg-black/5' : 'border-zinc-700/40 text-gray-300 hover:text-white hover:bg-white/5')
                   }`}
                   type="button"
                   disabled={isInputDisabled}

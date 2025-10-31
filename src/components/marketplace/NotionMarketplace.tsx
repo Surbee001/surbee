@@ -198,14 +198,16 @@ function ProjectStyleCard({
       className="group w-full p-[2px] rounded-[12px] relative border flex flex-col gap-[5px] h-full"
       style={{
         cursor: "pointer",
-        backgroundColor: "#141414",
-        borderColor: 'var(--surbee-border-accent)'
+        backgroundColor: 'var(--surbee-card-bg)',
+        borderColor: 'transparent',
+        boxSizing: 'border-box'
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = '#f8f8f8';
+        const isDark = document.documentElement.classList.contains('dark');
+        e.currentTarget.style.borderColor = isDark ? '#f8f8f8' : '#000000';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = 'var(--surbee-border-accent)';
+        e.currentTarget.style.borderColor = 'transparent';
       }}
     >
       <div className="w-full flex justify-between">
@@ -218,10 +220,10 @@ function ProjectStyleCard({
             alt="User avatar"
           />
           <div className="text-sm flex flex-col justify-center h-[42px]">
-            <p className="text-white font-medium truncate max-w-[140px]" title={template.title}>
+            <p className="font-medium truncate max-w-[140px]" style={{ color: 'var(--surbee-fg-primary)' }} title={template.title}>
               {template.title}
             </p>
-            <div className="flex items-center gap-1 text-gray-400 text-xs">
+            <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--surbee-fg-secondary)' }}>
               <User className="w-3 h-3" />
               <span>{responseCount}</span>
             </div>

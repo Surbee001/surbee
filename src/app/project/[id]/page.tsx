@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronLeft, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy, Hammer, Code, Terminal, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronLeft, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy, Hammer, Code, Terminal, AlertTriangle, Settings as SettingsIcon, Sun, Moon, Laptop } from "lucide-react";
 import UserNameBadge from "@/components/UserNameBadge";
 import UserMenu from "@/components/ui/user-menu";
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -16,10 +16,12 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealtime } from '@/contexts/RealtimeContext';
+import { useTheme } from '@/hooks/useTheme';
 import { ThinkingDisplay } from '../../../../components/ThinkingUi/components/thinking-display';
 import { ToolCall } from '../../../../components/ThinkingUi/components/tool-call';
 import { AILoader } from '@/components/ai-loader';
 import { cn } from "@/lib/utils";
+import { Response } from '@/components/ai-elements/response';
 import {
   SandboxProvider,
   SandboxLayout,
@@ -795,6 +797,26 @@ export default function ProjectPage() {
   // Disabled for demo
   const subscribeToProject = () => {};
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
+
+  const handleNavigation = (path: string) => {
+    router.push(path);
+  };
+
+  const handleProfileAction = (action: string) => {
+    setIsUserMenuOpen(false);
+    switch (action) {
+      case 'settings':
+        handleNavigation('/dashboard/settings');
+        break;
+      case 'logout':
+        // Handle logout
+        handleNavigation('/');
+        break;
+      default:
+        break;
+    }
+  };
 
   // Check if this is a sandbox preview request
   const isSandboxPreview = searchParams?.get('sandbox') === '1';
@@ -827,10 +849,12 @@ export default function ProjectPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<{ [key: string]: string }>({});
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   // Reasoning and sandbox state
   const [reasoningByMessage, setReasoningByMessage] = useState<Record<string, ThinkingStep[]>>({});
-  const [reasoningStartTimes, setReasoningStartTimes] = useState<Record<string, number>>({});
+  const reasoningStartTimesRef = useRef<Record<string, number>>({});
+  const prevReasoningRef = useRef<string>('{}');
   const [sandboxContent, setSandboxContent] = useState<Record<string, string> | null>(null);
 
   // useChat hook for message handling
@@ -841,6 +865,7 @@ export default function ProjectPage() {
   });
 
   // Extract sandbox bundle from tool results
+  const prevBundleRef = useRef<string | null>(null);
   useEffect(() => {
     if (!messages || messages.length === 0) return;
 
@@ -861,7 +886,13 @@ export default function ProjectPage() {
               dependencies: output.dependencies || [],
               devDependencies: output.devDependencies || [],
             };
-            setSandboxBundle(bundle);
+
+            // Only update if bundle content has changed
+            const bundleStr = JSON.stringify(bundle);
+            if (bundleStr !== prevBundleRef.current) {
+              prevBundleRef.current = bundleStr;
+              setSandboxBundle(bundle);
+            }
             return; // Use the most recent source_files found
           }
         }
@@ -874,6 +905,14 @@ export default function ProjectPage() {
     if (!messages || messages.length === 0) return;
 
     const newReasoningByMessage: Record<string, ThinkingStep[]> = {};
+    const lastMessage = messages[messages.length - 1];
+
+    // If the last message is from assistant and we're streaming, start timer
+    if (lastMessage?.role === 'assistant' && status !== 'ready') {
+      if (!reasoningStartTimesRef.current[lastMessage.id]) {
+        reasoningStartTimesRef.current[lastMessage.id] = Date.now();
+      }
+    }
 
     messages.forEach((msg) => {
       if (msg.role !== 'assistant') return;
@@ -881,25 +920,39 @@ export default function ProjectPage() {
       const reasoningParts = msg.parts.filter(p => p.type === 'reasoning');
       if (reasoningParts.length === 0) return;
 
-      // Track start time if this is the first reasoning part for this message
-      setReasoningStartTimes(prev => {
-        if (!prev[msg.id]) {
-          return { ...prev, [msg.id]: Date.now() };
-        }
-        return prev;
-      });
+      // Determine if this is the last message and still streaming
+      const isLastMessage = msg.id === messages[messages.length - 1]?.id;
+      const isStreaming = status !== 'ready';
 
-      const steps: ThinkingStep[] = reasoningParts.map((part, idx) => ({
-        id: `${msg.id}-reasoning-${idx}`,
-        content: part.text || '',
-        status: 'complete' as const,
-      }));
+      // Track start time if this is the first reasoning part for this message
+      // OR if this is the last message and we're currently streaming
+      if (!reasoningStartTimesRef.current[msg.id] && (reasoningParts.length > 0 || (isLastMessage && isStreaming))) {
+        reasoningStartTimesRef.current[msg.id] = Date.now();
+      }
+
+      const steps: ThinkingStep[] = reasoningParts.map((part, idx) => {
+        // If this is the last reasoning part of the last message and we're streaming,
+        // mark it as thinking, otherwise complete
+        const isLastStep = idx === reasoningParts.length - 1;
+        const stepStatus = (isLastMessage && isStreaming && isLastStep) ? 'thinking' : 'complete';
+
+        return {
+          id: `${msg.id}-reasoning-${idx}`,
+          content: part.text || '',
+          status: stepStatus as const,
+        };
+      });
 
       newReasoningByMessage[msg.id] = steps;
     });
 
-    setReasoningByMessage(newReasoningByMessage);
-  }, [messages]);
+    // Only update if the content actually changed to avoid infinite loops
+    const newReasoningStr = JSON.stringify(newReasoningByMessage);
+    if (newReasoningStr !== prevReasoningRef.current) {
+      prevReasoningRef.current = newReasoningStr;
+      setReasoningByMessage(newReasoningByMessage);
+    }
+  }, [messages, status]);
 
   // Thinking chain state
   const [sidebarView, setSidebarView] = useState<SidebarView>('chat');
@@ -1064,7 +1117,62 @@ export default function ProjectPage() {
     if (!message.trim() || status !== 'ready') return;
 
     setHasStartedChat(true);
-    sendMessage({ text: message });
+
+    // Generate title from first message using AI if not already set
+    if (!autoGeneratedTitle && message.trim()) {
+      try {
+        const response = await fetch('/api/generate-title', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: message }),
+        });
+
+        if (response.ok && response.body) {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let streamedTitle = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (line.startsWith('0:')) {
+                try {
+                  const text = JSON.parse(line.slice(2));
+                  streamedTitle += text;
+                  setAutoGeneratedTitle(streamedTitle.trim());
+                } catch (e) {
+                  // Skip invalid JSON
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Title generation failed:', error);
+        // Fallback to simple title generation
+        const words = message.trim().split(/\s+/);
+        const titleWords = words.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+        setAutoGeneratedTitle(titleWords.join(' '));
+      }
+    }
+
+    // Send message with images if provided
+    if (images && images.length > 0) {
+      sendMessage({
+        text: message,
+        experimental_attachments: images.map(img => ({
+          contentType: 'image/jpeg',
+          url: img,
+        })),
+      });
+    } else {
+      sendMessage({ text: message });
+    }
   };
 
   const handleSandboxFixRequest = useCallback((errorMessage: string) => {
@@ -1367,31 +1475,188 @@ export default function ProjectPage() {
         isChatHidden ? 'w-0 opacity-0 pointer-events-none' : (isSidebarCollapsed ? 'w-16' : 'w-140')
       }`} style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
         {/* Profile Section at Top (match dashboard UserMenu) */}
-        <div className="profile-section relative">
-          <button
-            onClick={() => setIsCgihadiDropdownOpen(!isCgihadiDropdownOpen)}
-            className="flex items-center justify-between w-full px-3 py-2 hover:bg-white/5 transition-colors rounded-md"
-          >
-            <span className="text-sm font-medium text-gray-200 truncate">
-              {autoGeneratedTitle || 'Untitled Survey'}
+        <div className="profile-section relative h-14 flex items-center px-3">
+          <div className="sidebar-item w-full" onClick={() => setIsUserMenuOpen((v) => !v)} style={{ cursor: 'pointer' }}>
+            <span className="sidebar-item-label">
+              <span className="flex items-center gap-1">
+                <span style={{ fontWeight: 600, color: 'var(--surbee-fg-primary)' }}>
+                  {autoGeneratedTitle || 'Untitled Survey'}
+                </span>
+                {isUserMenuOpen ? <ChevronUp className="h-3 w-3" style={{ opacity: 0.6, color: 'var(--surbee-fg-primary)' }} /> : <ChevronDown className="h-3 w-3" style={{ opacity: 0.6, color: 'var(--surbee-fg-primary)' }} />}
+              </span>
             </span>
-            <motion.div
-              animate={{ rotate: isCgihadiDropdownOpen ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <ChevronDown className="w-4 h-4 text-gray-400" />
-            </motion.div>
-          </button>
+          </div>
+
+          {/* Overlay to close on outside click */}
+          {isUserMenuOpen && (
+            <div className="user-menu-overlay" onClick={() => setIsUserMenuOpen(false)} />
+          )}
+
           <AnimatePresence>
-            {isCgihadiDropdownOpen && (
+            {isUserMenuOpen && (
               <motion.div
-                className="absolute z-50 mt-2"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '60px',
+                  zIndex: 1200,
+                  border: 'none',
+                  background: 'hsl(0, 0%, 16%)',
+                  color: 'hsl(0, 0%, 100%)',
+                  borderRadius: '0.75rem',
+                  minWidth: '8rem',
+                  width: '17rem',
+                  padding: '0.5rem',
+                  boxShadow: 'none',
+                  backdropFilter: 'blur(32px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(32px) saturate(180%)',
+                  WebkitFontSmoothing: 'antialiased',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.25rem'
+                }}
+                role="menu"
               >
-                <UserMenu className="mt-2" onClose={() => setIsCgihadiDropdownOpen(false)} />
+                {/* User info header */}
+                <div className="user-menu-header-section">
+                  <div className="user-menu-username">Demo</div>
+                  <div className="user-menu-email">demo@example.com</div>
+                </div>
+
+                {/* Set up profile button */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard/settings'); }}
+                  className="user-menu-setup-profile"
+                >
+                  Set up profile
+                </button>
+
+                {/* Settings */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard/settings'); }}
+                  className="user-menu-item"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="user-menu-icon-circle">
+                      <SettingsIcon className="h-4 w-4" />
+                    </div>
+                    <span>Settings</span>
+                  </div>
+                </button>
+
+                {/* Theme selector */}
+                <div className="user-menu-theme-section">
+                  <div className="user-menu-theme-label">Theme</div>
+                  <div className="user-menu-theme-toggle">
+                    <button
+                      className={`user-menu-theme-btn ${theme === 'light' ? 'active' : ''}`}
+                      onClick={() => setTheme('light')}
+                      aria-label="Light theme"
+                    >
+                      <Sun className="h-4 w-4" />
+                    </button>
+                    <button
+                      className={`user-menu-theme-btn ${theme === 'dark' ? 'active' : ''}`}
+                      onClick={() => setTheme('dark')}
+                      aria-label="Dark theme"
+                    >
+                      <Moon className="h-4 w-4" />
+                    </button>
+                    <button
+                      className={`user-menu-theme-btn ${theme === 'system' ? 'active' : ''}`}
+                      onClick={() => setTheme('system')}
+                      aria-label="System theme"
+                    >
+                      <Laptop className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Pricing */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/pricing'); }}
+                  className="user-menu-item"
+                >
+                  <span>Pricing</span>
+                </button>
+
+                {/* Changelog */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/changelog'); }}
+                  className="user-menu-item"
+                >
+                  <span>Changelog</span>
+                </button>
+
+                {/* Blog */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/blog'); }}
+                  className="user-menu-item"
+                >
+                  <span>Blog</span>
+                </button>
+
+                {/* Give Feedback */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); }}
+                  className="user-menu-item"
+                >
+                  <span>Give Feedback</span>
+                </button>
+
+                {/* Support */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); window.open('/support', '_blank'); }}
+                  className="user-menu-item"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span>Support</span>
+                    <ExternalLink className="h-3.5 w-3.5 opacity-40" />
+                  </div>
+                </button>
+
+                {/* Log out */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); handleProfileAction('logout'); }}
+                  className="user-menu-item"
+                >
+                  <span>Log out</span>
+                </button>
+
+                {/* Footer */}
+                <div className="user-menu-footer">
+                  <button
+                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/privacy'); }}
+                    className="user-menu-footer-link"
+                  >
+                    Privacy
+                  </button>
+                  <button
+                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/terms'); }}
+                    className="user-menu-footer-link"
+                  >
+                    Terms
+                  </button>
+                  <button
+                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/copyright'); }}
+                    className="user-menu-footer-link"
+                  >
+                    Copyright
+                  </button>
+                  <button
+                    onClick={() => { setIsUserMenuOpen(false); window.open('https://x.com/surbee', '_blank'); }}
+                    className="user-menu-footer-link"
+                    aria-label="X (Twitter)"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1449,14 +1714,45 @@ export default function ProjectPage() {
               </div>
             ) : (
               /* Chat Messages View */
-              <div className="flex-1 overflow-y-auto pl-12 pr-6 py-6" ref={chatAreaRef}>
+              <div className="flex-1 overflow-y-auto pl-6 pr-6 py-6" ref={chatAreaRef}>
                 <div className="space-y-4">
                   {messages?.map((msg, idx) => (
                     <div key={msg.id} className="space-y-2">
                       {msg.role === 'user' ? (
                         <div className="flex justify-end">
                           <div className="max-w-[80%]">
-                            <div className="rounded-lg p-3 bg-primary text-primary-foreground">
+                            <div className="rounded-lg px-6 py-3 bg-primary text-primary-foreground">
+                              {/* Show images if present */}
+                              {(() => {
+                                const imageParts = msg.parts.filter(p => p.type === 'image');
+                                if (imageParts.length > 0) {
+                                  const imageSize = imageParts.length === 1 ? 'medium' : imageParts.length === 2 ? 'small' : 'xsmall';
+                                  const sizeClasses = {
+                                    medium: 'h-48 w-48',
+                                    small: 'h-32 w-32',
+                                    xsmall: 'h-24 w-24'
+                                  };
+
+                                  return (
+                                    <div className="flex flex-wrap gap-2 mb-3">
+                                      {imageParts.map((part, imgIdx) => (
+                                        <div
+                                          key={imgIdx}
+                                          className={`${sizeClasses[imageSize]} rounded-md overflow-hidden flex-shrink-0`}
+                                        >
+                                          <img
+                                            src={part.image}
+                                            alt={`Attachment ${imgIdx + 1}`}
+                                            className="w-full h-full object-cover"
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
+
                               <p className="text-sm whitespace-pre-wrap">
                                 {msg.parts.find(p => p.type === 'text')?.text || ''}
                               </p>
@@ -1465,16 +1761,18 @@ export default function ProjectPage() {
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {/* Show thinking display if this message has reasoning */}
-                          {reasoningByMessage[msg.id] && reasoningByMessage[msg.id].length > 0 && (
+                          {/* Show thinking display - show immediately when assistant is responding */}
+                          {(msg.role === 'assistant' && (
+                            reasoningByMessage[msg.id]?.length > 0 ||
+                            (idx === messages.length - 1 && status !== 'ready')
+                          )) && (
                             <div className="pl-0">
                               <ThinkingDisplay
-                                steps={reasoningByMessage[msg.id]}
-                                duration={reasoningStartTimes[msg.id]
-                                  ? Math.floor((Date.now() - reasoningStartTimes[msg.id]) / 1000)
+                                steps={reasoningByMessage[msg.id] || []}
+                                duration={reasoningStartTimesRef.current[msg.id]
+                                  ? Math.floor((Date.now() - reasoningStartTimesRef.current[msg.id]) / 1000)
                                   : 0}
-                                isThinking={false}
-                                isLatest={idx === messages.length - 1}
+                                isThinking={idx === messages.length - 1 && status !== 'ready'}
                               />
                             </div>
                           )}
@@ -1494,14 +1792,10 @@ export default function ProjectPage() {
                             );
                           })}
 
-                          {/* Show text content */}
+                          {/* Show text content with markdown */}
                           {msg.parts.filter(p => p.type === 'text').map((part, partIdx) => (
-                            <div key={partIdx} className="flex justify-start">
-                              <div className="max-w-[80%]">
-                                <div className="rounded-lg p-3 bg-muted shadow-sm">
-                                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{part.text}</p>
-                                </div>
-                              </div>
+                            <div key={partIdx} className="prose prose-sm dark:prose-invert max-w-none ai-response" style={{ fontSize: '16px' }}>
+                              <Response>{part.text}</Response>
                             </div>
                           ))}
                         </div>
@@ -1514,7 +1808,7 @@ export default function ProjectPage() {
           </div>
 
         {/* Chat Input */}
-        <div className="pl-8 pr-4 pb-3">
+        <div className="pl-4 pr-4 pb-3">
           <div className="relative ml-0 mr-0">
             {/* Chat input container to anchor controls to the box itself */}
             <div className="relative">
@@ -1592,109 +1886,156 @@ export default function ProjectPage() {
             >
               <Code className="w-4 h-4" />
             </button>
-            <button
-              className={`rounded-md transition-colors cursor-pointer ${
-                sidebarView === 'console'
-                  ? 'text-white bg-white/10'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
-              } ${!sandboxAvailable ? 'opacity-40 cursor-not-allowed' : ''}`}
-              onClick={() => sandboxAvailable && setSidebarView((current) => current === 'console' ? 'chat' : 'console')}
-              aria-pressed={sidebarView === 'console'}
-              title="Toggle console view"
-              style={{
-                fontFamily: 'Sohne, sans-serif',
-                padding: '8px 12px'
-              }}
-              disabled={!sandboxAvailable}
-            >
-              <Terminal className="w-4 h-4" />
-            </button>
           </div>
 
           {/* Center Section - Device Controls */}
           <div className="hidden md:flex flex-1 items-center justify-center">
-            <div className="relative flex h-8 min-w-[340px] max-w-[560px] items-center justify-between gap-2 rounded-md border border-zinc-800 bg-[#1a1a1a] px-2 text-sm page-dropdown">
-              {/* Device View Buttons */}
-              <div className="flex items-center gap-1">
-                <button 
+            <div className="relative flex h-8 min-w-[340px] max-w-[560px] items-center justify-between gap-2 rounded-full border px-1 text-sm page-dropdown" style={{
+              borderColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'var(--surbee-border-accent)' : 'rgba(0, 0, 0, 0.1)',
+              backgroundColor: 'var(--surbee-sidebar-bg)'
+            }}>
+              {/* Device View Buttons - Hidden on mobile */}
+              <div className="hidden md:flex items-center gap-0.5">
+                <button
                   onClick={() => setCurrentDevice('desktop')}
-                  className={`p-1 rounded transition-colors ${
-                    currentDevice === 'desktop' 
-                      ? 'bg-zinc-700/50 text-white' 
-                      : 'text-gray-400 hover:text-white hover:bg-zinc-700/30'
-                  }`}
+                  className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
+                  style={{
+                    backgroundColor: currentDevice === 'desktop'
+                      ? (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'rgba(113,113,122,0.5)' : 'rgba(0,0,0,0.1)')
+                      : 'transparent',
+                    color: currentDevice === 'desktop'
+                      ? 'var(--surbee-fg-primary)'
+                      : 'var(--surbee-fg-secondary)'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (currentDevice !== 'desktop') {
+                      const isDark = document.documentElement.classList.contains('dark');
+                      e.currentTarget.style.backgroundColor = isDark ? 'rgba(113,113,122,0.3)' : 'rgba(0,0,0,0.05)';
+                      e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (currentDevice !== 'desktop') {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                    }
+                  }}
                 >
                   <Monitor className="w-3.5 h-3.5" />
                 </button>
-                <button 
+                <button
                   onClick={() => setCurrentDevice('tablet')}
-                  className={`p-1 rounded transition-colors ${
-                    currentDevice === 'tablet' 
-                      ? 'bg-zinc-700/50 text-white' 
-                      : 'text-gray-400 hover:text-white hover:bg-zinc-700/30'
-                  }`}
+                  className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
+                  style={{
+                    backgroundColor: currentDevice === 'tablet'
+                      ? (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'rgba(113,113,122,0.5)' : 'rgba(0,0,0,0.1)')
+                      : 'transparent',
+                    color: currentDevice === 'tablet'
+                      ? 'var(--surbee-fg-primary)'
+                      : 'var(--surbee-fg-secondary)'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (currentDevice !== 'tablet') {
+                      const isDark = document.documentElement.classList.contains('dark');
+                      e.currentTarget.style.backgroundColor = isDark ? 'rgba(113,113,122,0.3)' : 'rgba(0,0,0,0.05)';
+                      e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (currentDevice !== 'tablet') {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                    }
+                  }}
                 >
                   <Tablet className="w-3.5 h-3.5" />
                 </button>
-                <button 
+                <button
                   onClick={() => setCurrentDevice('phone')}
-                  className={`p-1 rounded transition-colors ${
-                    currentDevice === 'phone' 
-                      ? 'bg-zinc-700/50 text-white' 
-                      : 'text-gray-400 hover:text-white hover:bg-zinc-700/30'
-                  }`}
+                  className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
+                  style={{
+                    backgroundColor: currentDevice === 'phone'
+                      ? (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'rgba(113,113,122,0.5)' : 'rgba(0,0,0,0.1)')
+                      : 'transparent',
+                    color: currentDevice === 'phone'
+                      ? 'var(--surbee-fg-primary)'
+                      : 'var(--surbee-fg-secondary)'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (currentDevice !== 'phone') {
+                      const isDark = document.documentElement.classList.contains('dark');
+                      e.currentTarget.style.backgroundColor = isDark ? 'rgba(113,113,122,0.3)' : 'rgba(0,0,0,0.05)';
+                      e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (currentDevice !== 'phone') {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                    }
+                  }}
                 >
                   <Smartphone className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              {/* Center: Route dropdown showing '/', '/contact', etc. */}
-              <div className="flex-1 flex items-center gap-2 px-1">
-                <div className="relative">
-                  <button
-                    onClick={togglePageDropdown}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-gray-200 hover:bg-zinc-700/30"
-                    title="Select page"
-                  >
-                    <span className="text-sm" style={{ fontFamily: 'Sohne, sans-serif' }}>{selectedRoute}</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
-                  </button>
-                  {isPageDropdownOpen && (
-                    <div className="absolute z-50 mt-1 w-48 bg-[#0f0f0f] border border-zinc-800 rounded-md shadow-xl">
-                      <div className="py-1 max-h-64 overflow-auto">
-                        {pages.map(p => (
-                          <button
-                            key={p.path}
-                            onClick={() => { setSelectedRoute(p.path); setIsPageDropdownOpen(false); setRendererKey(k => k+1); }}
-                            className={`w-full text-left px-3 py-1.5 text-sm hover:bg-white/5 ${selectedRoute === p.path ? 'text-white' : 'text-gray-300'}`}
-                          >
-                            {p.path}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              {/* Center: Route input */}
+              <div className="flex-1 flex items-center min-w-0 px-1">
+                <input
+                  type="text"
+                  value={selectedRoute}
+                  onChange={(e) => setSelectedRoute(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setRendererKey(k => k+1);
+                    }
+                  }}
+                  className="w-full bg-transparent border-none outline-none text-sm"
+                  placeholder="/"
+                  style={{
+                    color: 'var(--surbee-fg-primary)',
+                    fontFamily: 'Sohne, sans-serif'
+                  }}
+                />
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-1">
-                <button 
-                  onClick={() => {
-                    const previewUrl = `https://Surbee.dev/preview/${projectId}`;
-                    window.open(previewUrl, '_blank', 'width=1200,height=800');
-                  }}
-                  className="p-1 rounded text-gray-400 hover:text-white hover:bg-zinc-700/30 transition-colors"
+              <div className="flex items-center gap-0.5">
+                <a
+                  href={`https://Surbee.dev/preview/${projectId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
                   title="Open preview in new tab"
+                  style={{ color: 'var(--surbee-fg-secondary)' }}
+                  onMouseEnter={(e) => {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    e.currentTarget.style.backgroundColor = isDark ? 'rgba(113,113,122,0.3)' : 'rgba(0,0,0,0.05)';
+                    e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                  }}
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </button>
-                <button 
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                <button
                   onClick={() => setRendererKey((k) => k + 1)}
-                  className="p-1 rounded text-gray-400 hover:text-white hover:bg-zinc-700/30 transition-colors"
+                  className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
                   title="Refresh page"
+                  style={{ color: 'var(--surbee-fg-secondary)' }}
+                  onMouseEnter={(e) => {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    e.currentTarget.style.backgroundColor = isDark ? 'rgba(113,113,122,0.3)' : 'rgba(0,0,0,0.05)';
+                    e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                  }}
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
+                  <RotateCcw className="w-3 h-3" />
                 </button>
               </div>
             </div>
@@ -1702,17 +2043,65 @@ export default function ProjectPage() {
 
           {/* Right Section - Upgrade & Publish Buttons */}
           <div className="relative flex items-center gap-2">
-            {/* Share */}
-            <div className="relative">
-              <button
-                onClick={() => setIsShareOpen((v) => !v)}
-                className="p-1.5 rounded-md text-gray-300 hover:bg-white/10"
-                title="Share"
+            <button
+              className="relative px-3 py-1.5 font-medium text-sm transition-all duration-150 cursor-pointer rounded-[0.38rem]"
+              style={{
+                fontFamily: 'FK Grotesk, sans-serif',
+                fontSize: '14px',
+                fontWeight: 500,
+                lineHeight: '1.375rem',
+                backgroundColor: activeTopButton === 'upgrade'
+                  ? (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
+                  : 'transparent',
+                color: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#d1d5db' : '#000000'
+              }}
+              onMouseEnter={(e) => {
+                const isDark = document.documentElement.classList.contains('dark');
+                e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+              }}
+              onMouseLeave={(e) => {
+                if (activeTopButton !== 'upgrade') {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                } else {
+                  const isDark = document.documentElement.classList.contains('dark');
+                  e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+                }
+              }}
+              onClick={() => router.push('/dashboard/upgrade-plan')}
+            >
+              Upgrade
+            </button>
+            <button
+              onClick={() => {
+                setIsPublishOpen((v) => !v);
+                setActiveTopButton(activeTopButton === 'publish' ? null : 'publish');
+              }}
+              className="relative px-3 py-1.5 font-medium text-sm transition-all duration-150 cursor-pointer rounded-[0.38rem]"
+              style={{
+                fontFamily: 'FK Grotesk, sans-serif',
+                fontSize: '14px',
+                fontWeight: 500,
+                lineHeight: '1.375rem',
+                backgroundColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+                color: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#000000' : '#ffffff'
+              }}
+              onMouseEnter={(e) => {
+                const isDark = document.documentElement.classList.contains('dark');
+                e.currentTarget.style.opacity = '0.9';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '1';
+              }}
+            >
+              Publish
+            </button>
+            {isPublishOpen && (
+              <div
+                ref={publishMenuRef}
+                className="absolute top-full right-0 mt-2 w-[360px] bg-black border border-zinc-800 rounded-xl shadow-2xl z-50"
               >
-                <Share2 className="w-4 h-4" />
-              </button>
-              {isShareOpen && (
-                <div ref={shareMenuRef} className="absolute top-full right-0 mt-2 w-[320px] bg-black border border-zinc-800 rounded-xl shadow-2xl z-50 p-3">
+                <div className="p-4 space-y-3">
+                  {/* Share Section */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-400">Share</span>
@@ -1741,58 +2130,11 @@ export default function ProjectPage() {
                         </button>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between py-1">
-                      <span className="text-sm text-gray-300">Publish to community</span>
-                      <button
-                        onClick={() => setPublishToCommunity(v => !v)}
-                        className={`w-10 h-6 rounded-full relative transition-colors ${publishToCommunity ? 'bg-blue-600' : 'bg-zinc-700'}`}
-                        aria-pressed={publishToCommunity}
-                        title="Toggle publish to community"
-                      >
-                        <span className={`absolute top-0.5 ${publishToCommunity ? 'left-5' : 'left-0.5'} w-5 h-5 bg-white rounded-full transition-all`} />
-                      </button>
-                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-            <button
-              className={`relative px-3 py-1.5 font-medium text-sm transition-all duration-150 cursor-pointer rounded-[0.38rem] ${
-                activeTopButton === 'upgrade' ? 'bg-white/10 text-white' : 'text-gray-300 hover:bg-white/10'
-              }`}
-              style={{
-                fontFamily: 'FK Grotesk, sans-serif',
-                fontSize: '14px',
-                fontWeight: 500,
-                lineHeight: '1.375rem'
-              }}
-              onClick={() => router.push('/dashboard/upgrade-plan')}
-            >
-              Upgrade
-            </button>
-            <button
-              onClick={() => {
-                setIsPublishOpen((v) => !v);
-                setActiveTopButton(activeTopButton === 'publish' ? null : 'publish');
-              }}
-              className={`relative px-3 py-1.5 font-medium text-sm transition-all duration-150 cursor-pointer rounded-[0.38rem] ${
-                activeTopButton === 'publish' ? 'bg-white text-black' : 'bg-white text-black hover:opacity-90'
-              }`}
-              style={{
-                fontFamily: 'FK Grotesk, sans-serif',
-                fontSize: '14px',
-                fontWeight: 500,
-                lineHeight: '1.375rem'
-              }}
-            >
-              Publish
-            </button>
-            {isPublishOpen && (
-              <div
-                ref={publishMenuRef}
-                className="absolute top-full right-0 mt-2 w-[360px] bg-black border border-zinc-800 rounded-xl shadow-2xl z-50"
-              >
-                <div className="p-4 space-y-3">
+
+                  <div className="border-t border-zinc-800" />
+
+                  {/* Preview Section */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-400">Preview</span>
                     <a
@@ -1804,14 +2146,30 @@ export default function ProjectPage() {
                       <span className="truncate">Surbee.dev/preview/{projectId}</span>
                     </a>
                   </div>
+
                   <div className="border-t border-zinc-800" />
-                  <div className="space-y-2">
-                    <button className="w-full h-9 rounded-md bg-zinc-900 text-gray-200 text-sm font-medium hover:bg-zinc-800 transition-colors border border-zinc-800">
-                      Connect Domain
-                    </button>
-                    <button className="w-full h-9 rounded-md bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors border border-white/10">
-                      Publish to Surbee.dev
-                    </button>
+
+                  {/* Publish Options */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-sm text-gray-300">Publish to community</span>
+                      <button
+                        onClick={() => setPublishToCommunity(v => !v)}
+                        className={`w-10 h-6 rounded-full relative transition-colors ${publishToCommunity ? 'bg-blue-600' : 'bg-zinc-700'}`}
+                        aria-pressed={publishToCommunity}
+                        title="Toggle publish to community"
+                      >
+                        <span className={`absolute top-0.5 ${publishToCommunity ? 'left-5' : 'left-0.5'} w-5 h-5 bg-white rounded-full transition-all`} />
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      <button className="w-full h-9 rounded-md bg-zinc-900 text-gray-200 text-sm font-medium hover:bg-zinc-800 transition-colors border border-zinc-800">
+                        Connect Domain
+                      </button>
+                      <button className="w-full h-9 rounded-md bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors border border-white/10">
+                        Publish to Surbee.dev
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1822,7 +2180,13 @@ export default function ProjectPage() {
         {/* Main Content Area */}
         <div className="flex-1 flex relative">
           {/* Restored rounded preview frame with border, like before */}
-          <div className="flex-1 flex flex-col relative bg-[#0a0a0a] rounded-[0.625rem] border border-zinc-800 mt-0 mr-3 mb-3 ml-2 overflow-hidden">
+          <div
+            className="flex-1 flex flex-col relative rounded-[0.625rem] border mt-0 mr-3 mb-3 ml-2 overflow-hidden"
+            style={{
+              backgroundColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#242424' : '#F8F8F8',
+              borderColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'var(--surbee-border-accent)' : 'rgba(0, 0, 0, 0.1)'
+            }}
+          >
             {/* Show Sandbox View when code or console mode is active */}
             {(sidebarView === 'code' || sidebarView === 'console') && sandboxAvailable ? (
               <ProjectSandboxView
@@ -1832,7 +2196,12 @@ export default function ProjectPage() {
                 bundle={sandboxBundle}
               />
             ) : (
-              <div className="flex-1 overflow-hidden flex items-center justify-center bg-[#0a0a0a]">
+              <div
+                className="flex-1 overflow-hidden flex items-center justify-center"
+                style={{
+                  backgroundColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#242424' : '#F8F8F8'
+                }}
+              >
                 {/* Show loading animation while AI is working */}
                 {(status === 'submitted' || status === 'streaming') && !sandboxAvailable ? (
                   <AILoader text="Building" size={200} />
@@ -1843,7 +2212,7 @@ export default function ProjectPage() {
                   </div>
                 ) : (
                   /* Waiting for content */
-                  <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                  <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--surbee-fg-secondary)' }}>
                     <p>Start a conversation to see the preview</p>
                   </div>
                 )}

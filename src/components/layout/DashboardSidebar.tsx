@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/hooks/useTheme';
 import { api } from "@/lib/trpc/react";
 import { HelpCircle, Check, ChevronUp, ChevronDown, Gift, X, Copy, ArrowRight, ExternalLink, Settings as SettingsIcon, Sun, Moon, Laptop } from "lucide-react";
 
@@ -40,38 +41,10 @@ export default function DashboardSidebar() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
   const pathname = usePathname();
   const router = useRouter();
   const { signOut, user, userProfile } = useAuth();
-
-  // Theme toggle functionality
-  const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
-    setTheme(newTheme);
-
-    if (newTheme === 'system') {
-      // Use system preference
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      document.documentElement.classList.toggle('dark', systemTheme === 'dark');
-    } else {
-      // Set explicit theme
-      document.documentElement.classList.toggle('dark', newTheme === 'dark');
-    }
-
-    // Store preference in localStorage
-    localStorage.setItem('theme', newTheme);
-  };
-
-  // Initialize theme on mount
-  React.useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system' | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      handleThemeChange(savedTheme);
-    } else {
-      handleThemeChange('system');
-    }
-  }, []);
+  const { theme, setTheme } = useTheme();
 
   const handleSendFeedback = () => {
     if (feedbackText.trim()) {
@@ -128,7 +101,18 @@ export default function DashboardSidebar() {
         {/* Top Left: Surbee Logo (replaces profile toggle) */}
         <div className="profile-section">
           <div className="flex items-center justify-center w-full">
-            <img src={logoSrc} alt="Surbee" style={{ height: 40, width: 'auto', borderRadius: 8, objectFit: 'contain' }} />
+            <img
+              src={logoSrc}
+              alt="Surbee"
+              className="dark:invert"
+              style={{
+                height: 40,
+                width: 'auto',
+                borderRadius: 8,
+                objectFit: 'contain',
+                transition: 'filter 0.2s ease'
+              }}
+            />
           </div>
         </div>
 
@@ -226,21 +210,21 @@ export default function DashboardSidebar() {
                   <div className="user-menu-theme-toggle">
                     <button
                       className={`user-menu-theme-btn ${theme === 'light' ? 'active' : ''}`}
-                      onClick={() => handleThemeChange('light')}
+                      onClick={() => setTheme('light')}
                       aria-label="Light theme"
                     >
                       <Sun className="h-4 w-4" />
                     </button>
                     <button
                       className={`user-menu-theme-btn ${theme === 'dark' ? 'active' : ''}`}
-                      onClick={() => handleThemeChange('dark')}
+                      onClick={() => setTheme('dark')}
                       aria-label="Dark theme"
                     >
                       <Moon className="h-4 w-4" />
                     </button>
                     <button
                       className={`user-menu-theme-btn ${theme === 'system' ? 'active' : ''}`}
-                      onClick={() => handleThemeChange('system')}
+                      onClick={() => setTheme('system')}
                       aria-label="System theme"
                     >
                       <Laptop className="h-4 w-4" />

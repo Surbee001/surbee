@@ -541,7 +541,7 @@ function DashboardContent() {
                     }}
                   >
                     <h1 className="text-white text-center" style={{
-                      color: 'rgb(235, 235, 235)',
+                      color: 'var(--surbee-fg-primary)',
                       fontFamily: 'var(--font-inter), sans-serif',
                       fontSize: '42px',
                       lineHeight: '40px',
@@ -591,7 +591,7 @@ function DashboardContent() {
                         <div
                           className="text-base leading-relaxed w-full"
                           style={{
-                            color: message.isUser ? '#ffffff' : '#ffffff',
+                            color: 'var(--surbee-fg-primary)',
                             fontFamily: 'var(--font-inter), sans-serif',
                             lineHeight: '1.6',
                             wordWrap: 'break-word',
@@ -603,8 +603,9 @@ function DashboardContent() {
                             <div className="flex justify-end w-full">
                               <span
                                 className="text-white inline-block rounded-xl max-w-[85%] px-4 py-3 whitespace-pre-wrap break-words"
-                                style={{ 
-                                  backgroundColor: '#212121', 
+                                style={{
+                                  backgroundColor: 'var(--surbee-card-bg)',
+                                  color: 'var(--surbee-fg-primary)',
                                   overflowWrap: 'anywhere',
                                   fontSize: '16px',
                                   lineHeight: '1.5'
@@ -684,7 +685,7 @@ function DashboardContent() {
 
       {/* Community Examples Section - Outside constrained container */}
       <div className="relative w-full px-[10px] mt-80 pb-20">
-        <h2 
+        <h2
           className="text-center mb-10"
           style={{
             fontFamily: 'var(--font-inter), sans-serif',
@@ -692,7 +693,7 @@ function DashboardContent() {
             lineHeight: '28px',
             fontWeight: 500,
             letterSpacing: '-0.02em',
-            color: 'rgb(235, 235, 235)'
+            color: 'var(--surbee-fg-primary)'
           }}
         >
           Browse live community examples
@@ -714,8 +715,18 @@ function DashboardContent() {
         </div>
         
         <div className="text-center">
-          <button 
-            className="px-4 py-2 bg-white text-black text-sm rounded-md font-medium hover:bg-gray-100 transition-colors cursor-pointer"
+          <button
+            className="px-4 py-2 text-sm rounded-md font-medium transition-colors cursor-pointer"
+            style={{
+              backgroundColor: 'var(--surbee-accent-primary)',
+              color: 'var(--surbee-fg-inverse)'
+            }}
+            onMouseEnter={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = 'var(--surbee-accent-hover)';
+            }}
+            onMouseLeave={(e) => {
+              (e.target as HTMLButtonElement).style.backgroundColor = 'var(--surbee-accent-primary)';
+            }}
             onClick={() => {
               // Navigate to community page or show more cards
               console.log('See more community examples');

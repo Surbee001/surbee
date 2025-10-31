@@ -85,7 +85,9 @@
       "Bash(test:*)",
       "Read(//Applications/**)",
       "Read(//dev/**)",
-      "Bash(git filter-branch:*)"
+      "Bash(git filter-branch:*)",
+      "Bash(yes:*)",
+      "Bash(npx ai-elements@latest add:*)"
     ],
     "deny": [],
     "ask": [],
