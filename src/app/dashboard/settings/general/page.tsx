@@ -142,7 +142,7 @@ export default function GeneralSettingsPage() {
                     {profilePicture ? (
                       <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <UserIcon className="w-10 h-10" style={{ color: 'var(--surbee-fg-secondary)' }} />
+                      <User className="w-10 h-10" style={{ color: 'var(--surbee-fg-secondary)' }} />
                     )}
                   </div>
                   <button
