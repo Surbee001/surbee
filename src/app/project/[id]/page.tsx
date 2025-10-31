@@ -175,14 +175,42 @@ const buildChatSummary = (history: WorkflowContextChatMessage[], limit = 4): str
   return lines.length > 0 ? lines.join("\n") : null;
 };
 
+// Helper to create a stable bundle key for forcing Sandpack remounts
+function createBundleKey(files: Record<string, any>, entry: string): string {
+  if (!files || Object.keys(files).length === 0) return "empty";
+
+  // Create a hash from file paths and content lengths to detect changes
+  const fileSignature = Object.entries(files)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([path, file]) => `${path}:${file.code?.length || 0}`)
+    .join('|');
+
+  // Use a simple hash to keep key shorter
+  let hash = 0;
+  for (let i = 0; i < fileSignature.length; i++) {
+    const char = fileSignature.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+
+  return `${entry}-${Math.abs(hash)}`;
+}
+
 // Simple preview-only component for main area (no code editor)
 function ProjectPreviewOnly({
   providerProps,
 }: {
   providerProps: SandboxProviderProps;
 }) {
+  // Create a stable key to force remount when files change
+  const bundleKey = useMemo(() => {
+    return createBundleKey(providerProps.files || {}, providerProps.activeFile || '');
+  }, [providerProps.files, providerProps.activeFile]);
+
+  console.log('[ProjectPreviewOnly] Bundle key:', bundleKey);
+
   return (
-    <SandboxProvider {...providerProps}>
+    <SandboxProvider key={bundleKey} {...providerProps}>
       <div className="h-full w-full bg-[#0a0a0a]">
         <SandpackPreview
           className="h-full w-full"
@@ -284,14 +312,11 @@ function ProjectSandboxView({
     return summaryParts.join(" | ");
   }, [bundle]);
 
-  // Create a stable key based on bundle content hash
+  // Create a stable key based on bundle content to force remount on changes
   const bundleKey = useMemo(() => {
     if (!bundle) return "placeholder-project";
-    // Create a stable hash from entry + file count + dependency count
-    const fileKeys = Object.keys(bundle.files).sort().join(',');
-    const depsCount = (bundle.dependencies?.length || 0) + (bundle.devDependencies?.length || 0);
-    return `${bundle.entry}-${Object.keys(bundle.files).length}-${depsCount}-${fileKeys.slice(0, 50)}`;
-  }, [bundle]);
+    return createBundleKey(providerProps.files || {}, bundle.entry);
+  }, [bundle, providerProps.files]);
 
   return (
     <SandboxProvider key={bundleKey} {...providerProps}>
@@ -463,12 +488,27 @@ function deriveSandboxConfig(bundle: SandboxBundle | null): {
   console.log('[deriveSandboxConfig] Entry exists:', entryExists);
   console.log('[deriveSandboxConfig] Available files:', Object.keys(files));
 
+  // Collect all CSS imports
+  const cssImports: string[] = ["./tailwind.css"];
+
+  // Find all CSS files and import them
+  Object.keys(files).forEach(filePath => {
+    if (filePath.endsWith('.css') && filePath !== '/tailwind.css') {
+      // Import CSS files with relative paths
+      const importPath = filePath.startsWith('/') ? `.${filePath}` : `./${filePath}`;
+      console.log('[deriveSandboxConfig] Found CSS file:', filePath, '-> import:', importPath);
+      cssImports.push(importPath);
+    }
+  });
+
+  console.log('[deriveSandboxConfig] Total CSS imports:', cssImports);
+
   // Always recreate index.tsx to ensure import path matches current entry
   files["/index.tsx"] = {
     code: `import React from "react";
 import { createRoot } from "react-dom/client";
 import SurveyExperience from "${importSpecifier}";
-import "./tailwind.css";
+${cssImports.map(css => `import "${css}";`).join('\n')}
 
 const container = document.getElementById("root");
 
@@ -1006,8 +1046,16 @@ export default function ProjectPage() {
             // Only update if bundle content has changed
             const bundleStr = JSON.stringify(bundle);
             if (bundleStr !== prevBundleRef.current) {
+              console.log('[Bundle Update] New bundle extracted:', {
+                entry: bundle.entry,
+                fileCount: Object.keys(bundle.files).length,
+                files: Object.keys(bundle.files),
+                dependencies: bundle.dependencies,
+              });
               prevBundleRef.current = bundleStr;
               setSandboxBundle(bundle);
+            } else {
+              console.log('[Bundle Update] Bundle unchanged, skipping update');
             }
             return; // Use the most recent source_files found
           }
