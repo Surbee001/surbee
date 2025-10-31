@@ -1157,12 +1157,17 @@ export default function ProjectPage() {
       entry: "/index.tsx",
       main: "/index.tsx",
       dependencies: sandboxConfig.dependencies,
+      environment: "create-react-app",
     },
     options: {
       activeFile: sandboxConfig.activeFile,
       autorun: true,
       recompileMode: "immediate",
       recompileDelay: 300,
+      externalResources: [
+        "https://cdn.tailwindcss.com?plugins=forms,typography",
+        "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+      ],
     },
   }), [sandboxConfig]);
   const sandboxAvailable = Boolean(sandboxBundle);
