@@ -39,6 +39,14 @@ export async function POST(req: NextRequest) {
 
     console.log('📥 Received', messages?.length || 0, 'messages');
 
+    // Debug: Log if any messages have image parts
+    messages.forEach((msg, idx) => {
+      const imageParts = msg.parts?.filter((p: any) => p.type === 'image') || [];
+      if (imageParts.length > 0) {
+        console.log(`📷 Message ${idx} has ${imageParts.length} image(s)`);
+      }
+    });
+
     // Use the streaming workflow - it returns a streamText result
     const result = streamWorkflowV3({ messages });
 
