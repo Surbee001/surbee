@@ -1375,7 +1375,7 @@ Use this project name when calling tools.`;
     stopWhen: stepCountIs(10), // Allow up to 10 sequential tool calls
     providerOptions: {
       openai: {
-        reasoningEffort: 'medium',
+        reasoningEffort: 'low',
         reasoningSummary: 'auto',
       },
     },
@@ -1442,7 +1442,7 @@ export async function runWorkflowV3(
     },
     providerOptions: {
       openai: {
-        reasoningEffort: 'medium', // Enable extended thinking
+        reasoningEffort: 'low', // Enable extended thinking
         reasoningSummary: 'auto', // Show reasoning summary
       },
     },
