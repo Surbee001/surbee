@@ -1778,7 +1778,7 @@ export default function ProjectPage() {
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {/* Show thinking display - show immediately when assistant is responding */}
+                          {/* Show thinking display first - show immediately when assistant is responding */}
                           {(msg.role === 'assistant' && (
                             reasoningByMessage[msg.id]?.length > 0 ||
                             (idx === messages.length - 1 && status !== 'ready')
@@ -1794,27 +1794,35 @@ export default function ProjectPage() {
                             </div>
                           )}
 
-                          {/* Show tool calls */}
-                          {msg.parts.filter(p => p.type.startsWith('tool-')).map((part, partIdx) => {
-                            const toolName = part.type.replace('tool-', '');
-                            const isActive = part.state === 'input-streaming' || part.state === 'input-available';
+                          {/* Show all parts in chronological order (tool calls and text interleaved) */}
+                          {msg.parts.map((part, partIdx) => {
+                            // Render tool calls
+                            if (part.type.startsWith('tool-')) {
+                              const toolName = part.type.replace('tool-', '');
+                              const isActive = part.state === 'input-streaming' || part.state === 'input-available';
 
-                            return (
-                              <ToolCall
-                                key={partIdx}
-                                icon={<Hammer className="h-4 w-4" />}
-                                label={toolName}
-                                isActive={isActive}
-                              />
-                            );
+                              return (
+                                <ToolCall
+                                  key={`tool-${partIdx}`}
+                                  icon={<Hammer className="h-4 w-4" />}
+                                  label={toolName}
+                                  isActive={isActive}
+                                />
+                              );
+                            }
+
+                            // Render text content with markdown
+                            if (part.type === 'text') {
+                              return (
+                                <div key={`text-${partIdx}`} className="prose prose-sm dark:prose-invert max-w-none ai-response" style={{ fontSize: '16px' }}>
+                                  <Response>{part.text}</Response>
+                                </div>
+                              );
+                            }
+
+                            // Skip other part types (reasoning, image, etc.)
+                            return null;
                           })}
-
-                          {/* Show text content with markdown */}
-                          {msg.parts.filter(p => p.type === 'text').map((part, partIdx) => (
-                            <div key={partIdx} className="prose prose-sm dark:prose-invert max-w-none ai-response" style={{ fontSize: '16px' }}>
-                              <Response>{part.text}</Response>
-                            </div>
-                          ))}
                         </div>
                       )}
                     </div>
