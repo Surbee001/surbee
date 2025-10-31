@@ -1251,18 +1251,12 @@ COMMUNICATE ACTIONS: Before performing any changes, briefly inform the user what
 - Use **bold text** to emphasize key points and important information
 - Break up long responses into clear sections with headers
 - Add blank lines between sections for better spacing
-- Use inline `code` formatting for technical terms, file names, or code snippets
 
-**Example of proper formatting:**
-```
+**Example structure:**
 ## Features I'll implement
-
 1. **Searchable FAQ** - Users can search through questions
 2. **Contact page** - Form with validation
 3. **Modern design** - Following Stripe/Notion patterns
-
-Let me start by creating these components.
-```
 
 NEVER write paragraph dumps - structure your responses with headers, lists, and proper spacing.
 
@@ -1478,18 +1472,12 @@ COMMUNICATE ACTIONS: Before performing any changes, briefly inform the user what
 - Use **bold text** to emphasize key points and important information
 - Break up long responses into clear sections with headers
 - Add blank lines between sections for better spacing
-- Use inline `code` formatting for technical terms, file names, or code snippets
 
-**Example of proper formatting:**
-```
+**Example structure:**
 ## Features I'll implement
-
 1. **Searchable FAQ** - Users can search through questions
 2. **Contact page** - Form with validation
 3. **Modern design** - Following Stripe/Notion patterns
-
-Let me start by creating these components.
-```
 
 NEVER write paragraph dumps - structure your responses with headers, lists, and proper spacing.
 
