@@ -951,6 +951,14 @@ export default function ProjectPage() {
   const subscribeToProject = () => {};
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Prevent hydration errors by only checking theme on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const isDarkMode = isMounted && theme === 'dark';
 
   const handleNavigation = (path: string) => {
     router.push(path);
@@ -2130,7 +2138,7 @@ export default function ProjectPage() {
           {/* Center Section - Device Controls */}
           <div className="hidden md:flex flex-1 items-center justify-center">
             <div className="relative flex h-8 min-w-[340px] max-w-[560px] items-center justify-between gap-2 rounded-full border px-1 text-sm page-dropdown" style={{
-              borderColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'var(--surbee-border-accent)' : 'rgba(0, 0, 0, 0.1)',
+              borderColor: isDarkMode ? 'var(--surbee-border-accent)' : 'rgba(0, 0, 0, 0.1)',
               backgroundColor: 'var(--surbee-sidebar-bg)'
             }}>
               {/* Device View Buttons - Hidden on mobile */}
@@ -2140,7 +2148,7 @@ export default function ProjectPage() {
                   className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
                   style={{
                     backgroundColor: currentDevice === 'desktop'
-                      ? (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'rgba(113,113,122,0.5)' : 'rgba(0,0,0,0.1)')
+                      ? (isDarkMode ? 'rgba(113,113,122,0.5)' : 'rgba(0,0,0,0.1)')
                       : 'transparent',
                     color: currentDevice === 'desktop'
                       ? 'var(--surbee-fg-primary)'
@@ -2167,7 +2175,7 @@ export default function ProjectPage() {
                   className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
                   style={{
                     backgroundColor: currentDevice === 'tablet'
-                      ? (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'rgba(113,113,122,0.5)' : 'rgba(0,0,0,0.1)')
+                      ? (isDarkMode ? 'rgba(113,113,122,0.5)' : 'rgba(0,0,0,0.1)')
                       : 'transparent',
                     color: currentDevice === 'tablet'
                       ? 'var(--surbee-fg-primary)'
@@ -2194,7 +2202,7 @@ export default function ProjectPage() {
                   className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
                   style={{
                     backgroundColor: currentDevice === 'phone'
-                      ? (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'rgba(113,113,122,0.5)' : 'rgba(0,0,0,0.1)')
+                      ? (isDarkMode ? 'rgba(113,113,122,0.5)' : 'rgba(0,0,0,0.1)')
                       : 'transparent',
                     color: currentDevice === 'phone'
                       ? 'var(--surbee-fg-primary)'
@@ -2290,9 +2298,9 @@ export default function ProjectPage() {
                 fontWeight: 500,
                 lineHeight: '1.375rem',
                 backgroundColor: activeTopButton === 'upgrade'
-                  ? (typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
+                  ? (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
                   : 'transparent',
-                color: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#d1d5db' : '#000000'
+                color: isDarkMode ? '#d1d5db' : '#000000'
               }}
               onMouseEnter={(e) => {
                 const isDark = document.documentElement.classList.contains('dark');
@@ -2321,8 +2329,8 @@ export default function ProjectPage() {
                 fontSize: '14px',
                 fontWeight: 500,
                 lineHeight: '1.375rem',
-                backgroundColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
-                color: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#000000' : '#ffffff'
+                backgroundColor: isDarkMode ? '#ffffff' : '#000000',
+                color: isDarkMode ? '#000000' : '#ffffff'
               }}
               onMouseEnter={(e) => {
                 const isDark = document.documentElement.classList.contains('dark');
@@ -2422,8 +2430,8 @@ export default function ProjectPage() {
           <div
             className="flex-1 flex flex-col relative rounded-[0.625rem] border mt-0 mr-3 mb-3 ml-2 overflow-hidden"
             style={{
-              backgroundColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#242424' : '#F8F8F8',
-              borderColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'var(--surbee-border-accent)' : 'rgba(0, 0, 0, 0.1)'
+              backgroundColor: isDarkMode ? '#242424' : '#F8F8F8',
+              borderColor: isDarkMode ? 'var(--surbee-border-accent)' : 'rgba(0, 0, 0, 0.1)'
             }}
           >
             {/* Show Sandbox View when code or console mode is active */}
@@ -2439,7 +2447,7 @@ export default function ProjectPage() {
               <div
                 className="flex-1 overflow-hidden flex items-center justify-center"
                 style={{
-                  backgroundColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#242424' : '#F8F8F8'
+                  backgroundColor: isDarkMode ? '#242424' : '#F8F8F8'
                 }}
               >
                 {/* Show loading animation while AI is working */}
