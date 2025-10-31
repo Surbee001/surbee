@@ -1244,21 +1244,15 @@ COMMUNICATE ACTIONS: Before performing any changes, briefly inform the user what
 
 ## Response Formatting
 
-**ALWAYS use proper markdown formatting for better readability:**
-- Use **## Headers** for main sections and topics
-- Use **numbered lists (1., 2., 3.)** when describing steps or sequential items
-- Use **bullet points (-)** for feature lists or non-sequential items
-- Use **bold text** to emphasize key points and important information
-- Break up long responses into clear sections with headers
-- Add blank lines between sections for better spacing
+Format your responses in a friendly, conversational way while keeping them well-organized:
+- Break up information into digestible chunks with proper spacing
+- When describing multiple items or steps, use numbered lists naturally
+- Feel free to use headers (##) to organize longer responses, but only when it genuinely helps
+- Use **bold text** sparingly to highlight truly important points
+- Vary your formatting - don't rely on bullet points (-) for everything. Mix in natural paragraphs, numbered lists, and occasional bullets
+- Keep responses clean and scannable without being overly formal or rigid
 
-**Example structure:**
-## Features I'll implement
-1. **Searchable FAQ** - Users can search through questions
-2. **Contact page** - Form with validation
-3. **Modern design** - Following Stripe/Notion patterns
-
-NEVER write paragraph dumps - structure your responses with headers, lists, and proper spacing.
+The goal is readability and friendliness, not strict formatting rules. Write naturally while staying organized.
 
 ## CRITICAL EXECUTION RULES
 
@@ -1465,21 +1459,15 @@ COMMUNICATE ACTIONS: Before performing any changes, briefly inform the user what
 
 ## Response Formatting
 
-**ALWAYS use proper markdown formatting for better readability:**
-- Use **## Headers** for main sections and topics
-- Use **numbered lists (1., 2., 3.)** when describing steps or sequential items
-- Use **bullet points (-)** for feature lists or non-sequential items
-- Use **bold text** to emphasize key points and important information
-- Break up long responses into clear sections with headers
-- Add blank lines between sections for better spacing
+Format your responses in a friendly, conversational way while keeping them well-organized:
+- Break up information into digestible chunks with proper spacing
+- When describing multiple items or steps, use numbered lists naturally
+- Feel free to use headers (##) to organize longer responses, but only when it genuinely helps
+- Use **bold text** sparingly to highlight truly important points
+- Vary your formatting - don't rely on bullet points (-) for everything. Mix in natural paragraphs, numbered lists, and occasional bullets
+- Keep responses clean and scannable without being overly formal or rigid
 
-**Example structure:**
-## Features I'll implement
-1. **Searchable FAQ** - Users can search through questions
-2. **Contact page** - Form with validation
-3. **Modern design** - Following Stripe/Notion patterns
-
-NEVER write paragraph dumps - structure your responses with headers, lists, and proper spacing.
+The goal is readability and friendliness, not strict formatting rules. Write naturally while staying organized.
 
 ### SEO Requirements:
 

@@ -60,15 +60,15 @@ body {
 }
 
 .ai-response-markdown h1 {
-  font-size: 1.875rem;
-  font-weight: 700;
+  font-size: 19px;
+  font-weight: 600;
   margin-top: 1.5rem;
   margin-bottom: 1rem;
   line-height: 1.2;
 }
 
 .ai-response-markdown h2 {
-  font-size: 1.5rem;
+  font-size: 19px;
   font-weight: 600;
   margin-top: 1.25rem;
   margin-bottom: 0.875rem;
@@ -76,7 +76,7 @@ body {
 }
 
 .ai-response-markdown h3 {
-  font-size: 1.25rem;
+  font-size: 19px;
   font-weight: 600;
   margin-top: 1rem;
   margin-bottom: 0.75rem;

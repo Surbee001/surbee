@@ -1751,50 +1751,47 @@ export default function ProjectPage() {
                     <div key={msg.id} className="space-y-2">
                       {msg.role === 'user' ? (
                         <div className="flex justify-end">
-                          <div className="max-w-[80%]">
+                          <div className="max-w-[80%] space-y-2">
+                            {/* Show images above the bubble */}
+                            {(() => {
+                              const imageParts = msg.parts?.filter(p => p.type === 'image') || [];
+                              if (imageParts.length > 0) {
+                                const imageSize = imageParts.length === 1 ? 'small' : imageParts.length === 2 ? 'xsmall' : 'tiny';
+                                const sizeClasses = {
+                                  small: 'h-24 w-24',
+                                  xsmall: 'h-20 w-20',
+                                  tiny: 'h-16 w-16'
+                                };
+
+                                return (
+                                  <div className="flex flex-wrap gap-2 justify-end">
+                                    {imageParts.map((part, imgIdx) => {
+                                      const imageUrl = typeof part.image === 'string'
+                                        ? part.image
+                                        : part.image instanceof URL
+                                          ? part.image.toString()
+                                          : URL.createObjectURL(new Blob([part.image as any]));
+
+                                      return (
+                                        <div
+                                          key={imgIdx}
+                                          className={`${sizeClasses[imageSize]} rounded-md overflow-hidden flex-shrink-0`}
+                                        >
+                                          <img
+                                            src={imageUrl}
+                                            alt={`Attachment ${imgIdx + 1}`}
+                                            className="w-full h-full object-cover"
+                                          />
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
+
                             <div className="rounded-2xl px-6 py-3 text-primary-foreground" style={{ backgroundColor: 'rgb(38, 38, 38)' }}>
-                              {/* Show images if present (ImagePart format) */}
-                              {(() => {
-                                // Filter image parts following ImagePart interface
-                                const imageParts = msg.parts?.filter(p => p.type === 'image') || [];
-
-                                if (imageParts.length > 0) {
-                                  const imageSize = imageParts.length === 1 ? 'medium' : imageParts.length === 2 ? 'small' : 'xsmall';
-                                  const sizeClasses = {
-                                    medium: 'h-48 w-48',
-                                    small: 'h-32 w-32',
-                                    xsmall: 'h-24 w-24'
-                                  };
-
-                                  return (
-                                    <div className="flex flex-wrap gap-2 mb-3">
-                                      {imageParts.map((part, imgIdx) => {
-                                        // Handle both URL and data content (base64, Uint8Array, etc.)
-                                        const imageUrl = typeof part.image === 'string'
-                                          ? part.image
-                                          : part.image instanceof URL
-                                            ? part.image.toString()
-                                            : URL.createObjectURL(new Blob([part.image as any]));
-
-                                        return (
-                                          <div
-                                            key={imgIdx}
-                                            className={`${sizeClasses[imageSize]} rounded-md overflow-hidden flex-shrink-0`}
-                                          >
-                                            <img
-                                              src={imageUrl}
-                                              alt={`Attachment ${imgIdx + 1}`}
-                                              className="w-full h-full object-cover"
-                                            />
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              })()}
-
                               <p className="whitespace-pre-wrap" style={{ fontSize: '16px' }}>
                                 {msg.parts.find(p => p.type === 'text')?.text || ''}
                               </p>
@@ -1849,6 +1846,51 @@ export default function ProjectPage() {
                             // Skip other part types (reasoning, image, etc.)
                             return null;
                           })}
+
+                          {/* Action buttons - only show when message is complete */}
+                          {idx === messages.length - 1 && status === 'ready' && msg.parts.some(p => p.type === 'text') && (
+                            <div className="flex items-center gap-1 pt-1">
+                              <button
+                                onClick={() => {
+                                  const lastUserMsg = messages[idx - 1];
+                                  if (lastUserMsg?.role === 'user') {
+                                    const textPart = lastUserMsg.parts.find(p => p.type === 'text');
+                                    if (textPart?.text) {
+                                      handleSubmit(textPart.text);
+                                    }
+                                  }
+                                }}
+                                className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+                                title="Retry"
+                              >
+                                <RotateCcw className="w-4 h-4 text-muted-foreground" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const textContent = msg.parts.find(p => p.type === 'text')?.text || '';
+                                  navigator.clipboard.writeText(textContent);
+                                }}
+                                className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+                                title="Copy"
+                              >
+                                <Copy className="w-4 h-4 text-muted-foreground" />
+                              </button>
+                              <button
+                                className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+                                title="Thumbs up"
+                              >
+                                <ThumbsUp className="w-4 h-4 text-muted-foreground" />
+                              </button>
+                              <button
+                                className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+                                title="Thumbs down"
+                              >
+                                <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                                </svg>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
