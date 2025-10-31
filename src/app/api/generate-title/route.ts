@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       return new Response('Missing prompt', { status: 400 });
     }
 
-    const result = streamText({
+    const result = await streamText({
       model: openai('gpt-5-nano'),
       system: `You generate concise 2-3 word titles for survey projects based on user prompts.
 Rules:

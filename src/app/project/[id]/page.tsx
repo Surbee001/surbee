@@ -1724,9 +1724,20 @@ export default function ProjectPage() {
                             <div className="rounded-lg px-6 py-3 bg-primary text-primary-foreground">
                               {/* Show images if present */}
                               {(() => {
-                                const imageParts = msg.parts.filter(p => p.type === 'image');
-                                if (imageParts.length > 0) {
-                                  const imageSize = imageParts.length === 1 ? 'medium' : imageParts.length === 2 ? 'small' : 'xsmall';
+                                // Check for image parts (AI SDK format)
+                                const imageParts = msg.parts?.filter(p => p.type === 'image') || [];
+
+                                // Also check for experimental_attachments
+                                const attachments = (msg as any).experimental_attachments || [];
+                                const imageAttachments = attachments.filter((a: any) => a.contentType?.startsWith('image'));
+
+                                const allImages = [
+                                  ...imageParts.map(p => ({ url: p.image || (p as any).url })),
+                                  ...imageAttachments.map((a: any) => ({ url: a.url }))
+                                ];
+
+                                if (allImages.length > 0) {
+                                  const imageSize = allImages.length === 1 ? 'medium' : allImages.length === 2 ? 'small' : 'xsmall';
                                   const sizeClasses = {
                                     medium: 'h-48 w-48',
                                     small: 'h-32 w-32',
@@ -1735,13 +1746,13 @@ export default function ProjectPage() {
 
                                   return (
                                     <div className="flex flex-wrap gap-2 mb-3">
-                                      {imageParts.map((part, imgIdx) => (
+                                      {allImages.map((img, imgIdx) => (
                                         <div
                                           key={imgIdx}
                                           className={`${sizeClasses[imageSize]} rounded-md overflow-hidden flex-shrink-0`}
                                         >
                                           <img
-                                            src={part.image}
+                                            src={img.url}
                                             alt={`Attachment ${imgIdx + 1}`}
                                             className="w-full h-full object-cover"
                                           />
