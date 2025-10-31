@@ -201,17 +201,36 @@ function ProjectSandboxView({
   providerProps,
   onFixError,
   bundle,
+  viewMode = 'code',
 }: {
   showConsole: boolean;
   providerProps: SandboxProviderProps;
   onFixError: (errorMessage: string) => void;
   bundle: SandboxBundle | null;
+  viewMode?: 'code' | 'console';
 }) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
+  const downloadMenuRef = useRef<HTMLDivElement>(null);
 
-  const handleDownload = useCallback(async () => {
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!downloadMenuOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(e.target as Node)) {
+        setDownloadMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [downloadMenuOpen]);
+
+  const handleDownloadAll = useCallback(async () => {
     if (!bundle) return;
     setIsDownloading(true);
+    setDownloadMenuOpen(false);
     try {
       const JSZip = (await import("jszip")).default;
       const { saveAs } = await import("file-saver");
@@ -227,6 +246,28 @@ function ProjectSandboxView({
       setIsDownloading(false);
     }
   }, [bundle]);
+
+  const handleDownloadCurrentFile = useCallback(async () => {
+    if (!bundle) return;
+    const activeFile = Object.entries(bundle.files).find(([path]) =>
+      path === providerProps.files?.[path]?.active || path === bundle.entry
+    );
+    if (!activeFile) return;
+
+    setIsDownloading(true);
+    setDownloadMenuOpen(false);
+    try {
+      const { saveAs } = await import("file-saver");
+      const [filePath, contents] = activeFile;
+      const fileName = filePath.split('/').pop() || 'file.txt';
+      const blob = new Blob([contents ?? ""], { type: "text/plain;charset=utf-8" });
+      saveAs(blob, fileName);
+    } catch (error) {
+      console.error("[Sandbox] Failed to download file", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [bundle, providerProps.files]);
 
   const dependencySummary = useMemo(() => {
     if (!bundle) {
@@ -258,41 +299,93 @@ function ProjectSandboxView({
         {/* Top bar with info and download */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
           <span className="text-xs text-zinc-400 leading-relaxed">{dependencySummary}</span>
-          <button
-            type="button"
-            onClick={handleDownload}
-            disabled={!bundle || isDownloading}
-            className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {isDownloading ? "Preparing..." : "Download ZIP"}
-          </button>
+
+          {viewMode === 'code' ? (
+            // Download dropdown for code view
+            <div className="relative" ref={downloadMenuRef}>
+              <button
+                type="button"
+                onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
+                disabled={!bundle || isDownloading}
+                className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {isDownloading ? "Preparing..." : "Download"}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+
+              {downloadMenuOpen && (
+                <div className="absolute right-0 top-full mt-1 w-48 rounded-md border border-zinc-700 shadow-lg z-10" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
+                  <button
+                    onClick={handleDownloadCurrentFile}
+                    className="w-full px-3 py-2 text-left text-xs text-zinc-300 hover:bg-white/10 transition-colors"
+                  >
+                    Download Current File
+                  </button>
+                  <button
+                    onClick={handleDownloadAll}
+                    className="w-full px-3 py-2 text-left text-xs text-zinc-300 hover:bg-white/10 transition-colors border-t border-zinc-700"
+                  >
+                    Download All Files (ZIP)
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Simple download button for console view
+            <button
+              type="button"
+              onClick={handleDownloadAll}
+              disabled={!bundle || isDownloading}
+              className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {isDownloading ? "Preparing..." : "Download ZIP"}
+            </button>
+          )}
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* File Explorer */}
-          <SandpackFileExplorer className="w-56 shrink-0 border-r border-zinc-800 text-xs text-zinc-200" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }} />
+        {viewMode === 'code' ? (
+          // Code view: File tree on left, code editor on right (no preview)
+          <div className="flex-1 flex overflow-hidden">
+            {/* File Explorer */}
+            <SandpackFileExplorer className="w-64 shrink-0 border-r border-zinc-800 text-sm text-zinc-200" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }} />
 
-          {/* Code Editor */}
-          <SandpackCodeEditor
-            className="flex-1 min-w-0"
-            showLineNumbers
-            showInlineErrors
-            wrapContent
-            style={{ fontSize: 14, backgroundColor: '#0a0a0a' }}
-          />
-
-          {/* Preview */}
-          <div className="flex-1 border-l border-zinc-800 bg-[#0a0a0a]">
-            <SandpackPreview
-              className="h-full w-full"
-              showRefreshButton
-              showNavigator={false}
-              showOpenInCodeSandbox={false}
-              style={{ backgroundColor: "#0a0a0a" }}
+            {/* Code Editor - Full width */}
+            <SandpackCodeEditor
+              className="flex-1 min-w-0"
+              showLineNumbers
+              showInlineErrors
+              wrapContent
+              style={{ fontSize: 14, backgroundColor: '#0a0a0a' }}
             />
           </div>
-        </div>
+        ) : (
+          // Console view: File tree, code editor, and preview
+          <div className="flex-1 flex overflow-hidden">
+            {/* File Explorer */}
+            <SandpackFileExplorer className="w-56 shrink-0 border-r border-zinc-800 text-xs text-zinc-200" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }} />
+
+            {/* Code Editor */}
+            <SandpackCodeEditor
+              className="flex-1 min-w-0"
+              showLineNumbers
+              showInlineErrors
+              wrapContent
+              style={{ fontSize: 14, backgroundColor: '#0a0a0a' }}
+            />
+
+            {/* Preview */}
+            <div className="flex-1 border-l border-zinc-800 bg-[#0a0a0a]">
+              <SandpackPreview
+                className="h-full w-full"
+                showRefreshButton
+                showNavigator={false}
+                showOpenInCodeSandbox={false}
+                style={{ backgroundColor: "#0a0a0a" }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Console Panel at Bottom */}
         {showConsole && (
@@ -2284,6 +2377,7 @@ export default function ProjectPage() {
             {(sidebarView === 'code' || sidebarView === 'console') && sandboxAvailable ? (
               <ProjectSandboxView
                 showConsole={sidebarView === 'console'}
+                viewMode={sidebarView === 'code' ? 'code' : 'console'}
                 providerProps={sandboxProviderProps}
                 onFixError={handleSandboxFixRequest}
                 bundle={sandboxBundle}
