@@ -2229,7 +2229,7 @@ export default function ProjectPage() {
         <div className="flex-1 flex relative">
           {/* Restored rounded preview frame with border, like before */}
           <div
-            className="flex-1 flex flex-col relative rounded-[0.625rem] border mt-0 mr-4 mb-3 ml-0 overflow-hidden"
+            className="flex-1 flex flex-col relative rounded-[0.625rem] border mt-0 mr-3 mb-3 ml-2 overflow-hidden"
             style={{
               backgroundColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? '#242424' : '#F8F8F8',
               borderColor: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'var(--surbee-border-accent)' : 'rgba(0, 0, 0, 0.1)'
