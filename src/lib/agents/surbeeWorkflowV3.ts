@@ -1437,7 +1437,8 @@ export async function runWorkflowV3(
       }
 
       // Stop if we have a text response
-      return result.text && result.text.trim().length > 0;
+      const lastStepContent = lastStep?.text;
+      return !!(lastStepContent && lastStepContent.trim().length > 0);
     },
     providerOptions: {
       openai: {
