@@ -72,23 +72,7 @@ export const surbInitSandboxTool = tool({
         components: new Set(),
       });
 
-      console.log('📦 Setting up Node.js environment...');
-
-      // Install pnpm and create-react-app dependencies
-      const setupCommands = [
-        'apt-get update -qq',
-        'apt-get install -y -qq nodejs npm',
-        'npm install -g pnpm',
-      ];
-
-      for (const cmd of setupCommands) {
-        const result = await sandbox.commands.run(cmd);
-        if (result.exitCode !== 0) {
-          console.warn(`⚠️ Setup warning: ${cmd} exited with ${result.exitCode}`);
-        }
-      }
-
-      console.log('✅ Node.js environment ready');
+      console.log('✅ Sandbox ready (Node.js pre-installed in E2B)');
 
       return {
         status: 'success',
