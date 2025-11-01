@@ -10,7 +10,6 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { RealtimeProvider } from '@/contexts/RealtimeContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { ClerkProvider } from '@clerk/nextjs'
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = React.useState(() => new QueryClient({
@@ -55,26 +54,24 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   )
 
   return (
-    <ClerkProvider>
-      <ErrorBoundary>
-        <AuthProvider>
-          <ErrorBoundary>
-            <RealtimeProvider>
-              <ThemeProvider>
-                <api.Provider client={trpcClient} queryClient={queryClient}>
-                  <QueryClientProvider client={queryClient}>
-                    <ErrorBoundary>
-                      {children}
-                    </ErrorBoundary>
-                    <Toaster position="top-right" />
-                  </QueryClientProvider>
-                </api.Provider>
-              </ThemeProvider>
-            </RealtimeProvider>
-          </ErrorBoundary>
-        </AuthProvider>
-      </ErrorBoundary>
-    </ClerkProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <ErrorBoundary>
+          <RealtimeProvider>
+            <ThemeProvider>
+              <api.Provider client={trpcClient} queryClient={queryClient}>
+                <QueryClientProvider client={queryClient}>
+                  <ErrorBoundary>
+                    {children}
+                  </ErrorBoundary>
+                  <Toaster position="top-right" />
+                </QueryClientProvider>
+              </api.Provider>
+            </ThemeProvider>
+          </RealtimeProvider>
+        </ErrorBoundary>
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }
 

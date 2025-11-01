@@ -30,7 +30,6 @@ import {
 } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
 import type { Project } from '@/types/database';
 import { ProjectCard } from '@/components/project-card/ProjectCard';
 
@@ -418,7 +417,6 @@ const Pagination: React.FC<{
 
 export default function ProjectsPage() {
   const { user, loading: authLoading } = useAuth();
-  const { user: clerkUser } = useUser();
   const router = useRouter();
   const [projects, setProjects] = useState<ProjectWithStats[]>([]);
   const [loading, setLoading] = useState(true);
@@ -440,11 +438,11 @@ export default function ProjectsPage() {
   // Fetch real projects from MongoDB
   useEffect(() => {
     const fetchProjects = async () => {
-      if (!clerkUser) return;
+      if (!user) return;
 
       try {
         setLoading(true);
-        const response = await fetch(`/api/projects?userId=${clerkUser.id}`);
+        const response = await fetch(`/api/projects?userId=${user.id}`);
         if (response.ok) {
           const data = await response.json();
           setProjects(data.projects || []);
@@ -456,10 +454,10 @@ export default function ProjectsPage() {
       }
     };
 
-    if (clerkUser && !authLoading) {
+    if (user && !authLoading) {
       fetchProjects();
     }
-  }, [clerkUser, authLoading]);
+  }, [user, authLoading]);
 
   // Load pinned projects from localStorage
   useEffect(() => {
@@ -642,8 +640,8 @@ export default function ProjectsPage() {
   }
 
   // Redirect to login if not authenticated
-  if (!clerkUser) {
-    router.push('/auth/login');
+  if (!user) {
+    router.push('/login');
     return null;
   }
 
