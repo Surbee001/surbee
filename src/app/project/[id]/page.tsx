@@ -944,14 +944,19 @@ export default function ProjectPage() {
   const { id } = useParams() as { id?: string };
   const projectId: string | undefined = id;
   const searchParams = useSearchParams();
-  // Disabled for demo
-  const user = { id: 'demo-user' };
-  const authLoading = false;
-  // Disabled for demo
-  const subscribeToProject = () => {};
+  const { user, userProfile, signOut } = useAuth();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [isMounted, setIsMounted] = useState(false);
+
+  // Compute display name and initial letter
+  const displayName = useMemo(() => {
+    if (userProfile?.name) return userProfile.name;
+    const email = user?.email ?? "";
+    return email.split("@")[0] || "User";
+  }, [user, userProfile]);
+
+  const initialLetter = useMemo(() => (displayName?.[0]?.toUpperCase() || "U"), [displayName]);
 
   // Prevent hydration errors by only checking theme on client
   useEffect(() => {
@@ -971,8 +976,9 @@ export default function ProjectPage() {
         handleNavigation('/dashboard/settings');
         break;
       case 'logout':
-        // Handle logout
-        handleNavigation('/');
+        signOut().then(() => {
+          router.push('/');
+        });
         break;
       default:
         break;
@@ -1062,13 +1068,16 @@ export default function ProjectPage() {
   console.log('🔧 Initializing useChat with API:', '/api/agents/surbee-v3');
   console.log('🔧 Selected model for chat:', selectedModelRef.current);
 
+  // Memoize chat body to prevent re-initialization on every render
+  const chatBody = useMemo(() => ({
+    model: selectedModelRef.current,
+  }), []);
+
   const { messages, sendMessage, status } = useChat<ChatMessage>({
     transport: new DefaultChatTransport({
       api: '/api/agents/surbee-v3',
     }),
-    body: {
-      model: selectedModelRef.current,
-    },
+    body: chatBody,
     onError: (error: Error) => {
       console.error('🚨 Chat error:', error);
     },
@@ -1854,8 +1863,8 @@ export default function ProjectPage() {
               >
                 {/* User info header */}
                 <div className="user-menu-header-section">
-                  <div className="user-menu-username">Demo</div>
-                  <div className="user-menu-email">demo@example.com</div>
+                  <div className="user-menu-username">{displayName}</div>
+                  <div className="user-menu-email">{user?.email || 'you@example.com'}</div>
                 </div>
 
                 {/* Set up profile button */}
