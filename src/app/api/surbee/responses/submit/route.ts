@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/mongodb'
+import { supabase } from '@/lib/supabase-server'
 import { computeSuspicionScore } from '@/features/survey/behavior/scoring'
 
 // In-memory rate limiting store for anonymous users
@@ -62,7 +62,6 @@ export async function POST(req: NextRequest) {
     }
 
     const { score, flags } = computeSuspicionScore(metrics)
-    const db = await getDb()
 
     const responseData = {
       survey_id: surveyId,
@@ -82,19 +81,43 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString()
     }
 
-    const result = await db.collection('survey_responses').insertOne(responseData)
+    // Insert survey response
+    const { data: response, error: insertError } = await supabase
+      .from('survey_responses')
+      .insert([responseData])
+      .select()
+      .single()
+
+    if (insertError) {
+      return NextResponse.json({ success: false, error: insertError.message }, { status: 400 })
+    }
 
     // Update analytics aggregates
-    await db.collection('survey_analytics').updateOne(
-      { survey_id: surveyId },
-      {
-        $inc: { total_completions: 1 },
-        $set: { updated_at: new Date().toISOString() }
-      },
-      { upsert: true }
-    )
+    const { data: analytics } = await supabase
+      .from('survey_analytics')
+      .select('*')
+      .eq('survey_id', surveyId)
+      .single()
 
-    return NextResponse.json({ success: true, id: result.insertedId.toString(), fraudScore: score, flags })
+    if (analytics) {
+      await supabase
+        .from('survey_analytics')
+        .update({
+          total_completions: (analytics.total_completions || 0) + 1,
+          updated_at: new Date().toISOString()
+        })
+        .eq('survey_id', surveyId)
+    } else {
+      await supabase
+        .from('survey_analytics')
+        .insert([{
+          survey_id: surveyId,
+          total_completions: 1,
+          updated_at: new Date().toISOString()
+        }])
+    }
+
+    return NextResponse.json({ success: true, id: response?.id, fraudScore: score, flags })
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e?.message || 'submit_failed' }, { status: 400 })
   }

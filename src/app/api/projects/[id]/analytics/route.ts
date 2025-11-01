@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ProjectsService } from '@/lib/services/projects';
 import { AnalyticsService } from '@/lib/services/analytics';
-import { getDb } from '@/lib/mongodb';
+import { supabase } from '@/lib/supabase-server';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -42,14 +42,21 @@ export async function GET(request: NextRequest, context: RouteContext) {
     // Extract questions from survey schema
     const questions = extractQuestionsFromSchema(project.survey_schema);
 
-    // Fetch responses from MongoDB
-    const db = await getDb();
-    const responses = await db.collection('survey_responses')
-      .find({ survey_id: id })
-      .toArray();
+    // Fetch responses from Supabase
+    const { data: responses, error: responsesError } = await supabase
+      .from('survey_responses')
+      .select('*')
+      .eq('survey_id', id);
 
-    const mappedResponses = responses.map(r => ({
-      id: r._id.toString(),
+    if (responsesError) {
+      return NextResponse.json(
+        { error: responsesError.message },
+        { status: 500 }
+      );
+    }
+
+    const mappedResponses = (responses || []).map(r => ({
+      id: r.id,
       created_at: r.created_at,
       survey_id: r.survey_id,
       user_id: r.user_id,
