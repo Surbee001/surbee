@@ -1025,31 +1025,26 @@ export default function ProjectPage() {
   const prevReasoningRef = useRef<string>('{}');
   const [sandboxContent, setSandboxContent] = useState<Record<string, string> | null>(null);
 
-  // Get selected model from sessionStorage (read synchronously before useChat)
-  const getSelectedModel = () => {
-    if (typeof window === 'undefined') return 'gpt-5';
-    try {
-      const storedModel = sessionStorage.getItem('surbee_selected_model');
-      console.log('📖 READING FROM SESSION STORAGE:');
-      console.log('   - storedModel:', storedModel);
-      console.log('   - typeof storedModel:', typeof storedModel);
-      console.log('   - storedModel === "claude-haiku"?', storedModel === 'claude-haiku');
+  // Initialize with default value to prevent hydration mismatch
+  // Will be updated from sessionStorage in useEffect after mount
+  const selectedModelRef = useRef<'gpt-5' | 'claude-haiku'>('gpt-5');
+  const [selectedModel, setSelectedModel] = useState<'gpt-5' | 'claude-haiku'>('gpt-5');
 
-      if (storedModel) {
-        console.log('🤖 Loaded model from sessionStorage:', storedModel);
-        return storedModel;
+  // Read from sessionStorage after mount to avoid hydration mismatch
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedModel = sessionStorage.getItem('surbee_selected_model');
+        if (storedModel === 'gpt-5' || storedModel === 'claude-haiku') {
+          console.log('🤖 Loaded model from sessionStorage:', storedModel);
+          selectedModelRef.current = storedModel;
+          setSelectedModel(storedModel);
+        }
+      } catch (e) {
+        console.error('Failed to read model from sessionStorage:', e);
       }
-    } catch (e) {
-      console.error('Failed to read model from sessionStorage:', e);
     }
-    console.log('⚠️ No model in sessionStorage, defaulting to gpt-5');
-    return 'gpt-5';
-  };
-
-  const selectedModelRef = useRef(getSelectedModel());
-  const [selectedModel, setSelectedModel] = useState<'gpt-5' | 'claude-haiku'>(
-    selectedModelRef.current as 'gpt-5' | 'claude-haiku'
-  );
+  }, []);
 
   // Update sessionStorage when model changes
   const handleModelChange = useCallback((model: 'gpt-5' | 'claude-haiku') => {
