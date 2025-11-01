@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, startTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp, ChevronLeft, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy, Hammer, Code, Terminal, AlertTriangle, Settings as SettingsIcon, Sun, Moon, Laptop } from "lucide-react";
 import UserNameBadge from "@/components/UserNameBadge";
@@ -1139,22 +1139,27 @@ export default function ProjectPage() {
                 dependencies: bundle.dependencies,
               });
               prevBundleRef.current = bundleStr;
-              setSandboxBundle(bundle);
 
-              // Save this bundle as a new version
-              const versionId = `v${Date.now()}`;
-              setBundleVersions(prev => {
-                const newVersion: BundleVersion = {
-                  id: versionId,
-                  timestamp: Date.now(),
-                  bundle: bundle,
-                  description: `Version ${prev.length + 1}`,
-                  messageId: msg.id,
-                };
-                console.log('[Version History] Saved new version:', versionId, `(${prev.length + 1})`);
-                return [...prev, newVersion];
+              // Use startTransition to mark these updates as non-urgent
+              // This prevents them from blocking urgent updates and reduces re-render cascades
+              startTransition(() => {
+                setSandboxBundle(bundle);
+
+                // Save this bundle as a new version
+                const versionId = `v${Date.now()}`;
+                setBundleVersions(prev => {
+                  const newVersion: BundleVersion = {
+                    id: versionId,
+                    timestamp: Date.now(),
+                    bundle: bundle,
+                    description: `Version ${prev.length + 1}`,
+                    messageId: msg.id,
+                  };
+                  console.log('[Version History] Saved new version:', versionId, `(${prev.length + 1})`);
+                  return [...prev, newVersion];
+                });
+                setCurrentVersionId(versionId);
               });
-              setCurrentVersionId(versionId);
             } else {
               console.log('[Bundle Update] Bundle unchanged, skipping update');
             }
@@ -1228,7 +1233,11 @@ export default function ProjectPage() {
     if (newReasoningStr !== prevReasoningRef.current) {
       prevReasoningRef.current = newReasoningStr;
       lastProcessedReasoningRef.current = currentState;
-      setReasoningByMessage(newReasoningByMessage);
+
+      // Use startTransition to mark this as non-urgent update
+      startTransition(() => {
+        setReasoningByMessage(newReasoningByMessage);
+      });
     }
   }, [messages, status]);
 
