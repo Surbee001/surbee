@@ -150,15 +150,20 @@ export default function DashboardSidebar() {
           <div className="sidebar-item" onClick={() => setIsUserMenuOpen((v) => !v)}>
             <span className="sidebar-item-label">
               <span className="flex items-center gap-2">
-                <div className="profile-circle" style={{ width: 28, height: 28 }}>{initialLetter}</div>
+                <div className="profile-circle" style={{ width: 28, height: 28, overflow: 'hidden' }}>
+                  {user?.user_metadata?.picture ? (
+                    <img
+                      src={user.user_metadata.picture}
+                      alt={displayName}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    initialLetter
+                  )}
+                </div>
                 <span style={{ fontWeight: 600 }}>{displayName}</span>
               </span>
-              <span className="flex items-center gap-1">
-                <span className="text-xs" style={{ opacity: 0.8 }}>
-                  {typeof credits === 'number' ? `${credits} credits` : ''}
-                </span>
-                {isUserMenuOpen ? <ChevronUp className="h-3 w-3" style={{ opacity: 0.6 }} /> : <ChevronDown className="h-3 w-3" style={{ opacity: 0.6 }} />}
-              </span>
+              {isUserMenuOpen ? <ChevronUp className="h-3 w-3" style={{ opacity: 0.6 }} /> : <ChevronDown className="h-3 w-3" style={{ opacity: 0.6 }} />}
             </span>
           </div>
 

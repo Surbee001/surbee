@@ -491,7 +491,7 @@ export default function NotionMarketplace() {
             zIndex: 1,
           }}
         />
-        
+
         {/* Black Gradient Overlay */}
         <div
           style={{
@@ -504,7 +504,7 @@ export default function NotionMarketplace() {
             zIndex: 2,
           }}
         />
-        
+
         {/* Content */}
         <div
           className="hero-content-overlay"
@@ -538,71 +538,8 @@ export default function NotionMarketplace() {
               lineHeight: "1.4",
             }}
           >
-            Discover ready-to-use survey templates, take community polls, and find the perfect starting point for your research.
+            Coming soon: Community surveys and templates will be shared here as users publish them.
           </p>
-          <form
-            className="search-form-overlay"
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              width: "100%",
-            }}
-          >
-            <div
-              className="search-input-wrapper"
-              style={{
-                position: "relative",
-                width: "100%",
-                maxWidth: "300px",
-              }}
-            >
-              <div
-                className="search-icon-overlay"
-                style={{
-                  position: "absolute",
-                  left: "14px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  color: "rgb(119, 119, 119)",
-                  fontSize: "14px",
-                  pointerEvents: "none",
-                  zIndex: 1,
-                }}
-              >
-                <Search className="h-4 w-4" />
-              </div>
-              <input
-                id="search"
-                className="search-input-overlay"
-                name="search"
-                type="search"
-                autoComplete="off"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search…"
-                style={{
-                  width: "100%",
-                  height: "48px",
-                  padding: "12px 12px 12px 44px",
-                  borderRadius: "100px",
-                  backgroundColor: "rgba(24, 24, 24, 0.9)",
-                  border: "none",
-                  color: "#fff",
-                  fontSize: "15px",
-                  fontVariationSettings: '"opsz" 16, "wght" 480',
-                  outline: "none",
-                  backdropFilter: "blur(10px)",
-                }}
-              />
-            </div>
-            <style jsx>{`
-              input[type="search"]::-webkit-search-cancel-button {
-                -webkit-appearance: none;
-                color: #ffffff;
-                cursor: pointer;
-              }
-            `}</style>
-          </form>
         </div>
       </div>
 
@@ -615,34 +552,42 @@ export default function NotionMarketplace() {
           display: "flex",
           maxWidth: "1300px",
           flexDirection: "column",
+          minHeight: "500px",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-
-          {/* Featured Slideshow */}
-          <section className="space-y-6">
-            <div className="products-section_experimentalHeader__gIYKf">
-              <h2 className="products-section_headerHeading__hSnK_" style={{ fontSize: '20px' }}>Featured</h2>
-            </div>
-
-            <FeaturedSlideshow
-              templates={templateMatches}
-                  onRemixTemplate={handleRemixTemplate}
-                />
-          </section>
-
-          {/* Templates Grid Section */}
-          <TemplatesGridSection
-            templates={templateMatches}
-            onRemixTemplate={handleRemixTemplate}
-          />
-
-          {/* Surveys Grid Section */}
-          <SurveysGridSection
-            surveys={surveyMatches}
-            onTakeSurvey={handleTakeSurvey}
-          />
-
-        </main>
-      </div>
+        {/* Empty State */}
+        <div
+          style={{
+            textAlign: "center",
+            padding: "60px 20px",
+          }}
+        >
+          <div style={{ fontSize: '48px', marginBottom: '20px' }}>📭</div>
+          <h2
+            style={{
+              fontSize: '24px',
+              fontWeight: '600',
+              marginBottom: '12px',
+              color: 'var(--surbee-fg-primary)',
+            }}
+          >
+            No projects yet
+          </h2>
+          <p
+            style={{
+              fontSize: '16px',
+              color: 'var(--surbee-fg-secondary)',
+              maxWidth: '400px',
+              margin: '0 auto',
+              lineHeight: '1.5',
+            }}
+          >
+            When users publish their surveys and templates, they'll appear here for the community to discover and use.
+          </p>
+        </div>
+      </main>
+    </div>
   );
 }
