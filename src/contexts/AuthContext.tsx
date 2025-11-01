@@ -29,32 +29,53 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Mock user for demo mode - bypass all Supabase auth
-  const [user, setUser] = useState<User | null>({
-    id: 'demo-user-id',
-    email: 'demo@example.com',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    app_metadata: {},
-    user_metadata: {},
-    aud: 'authenticated',
-  } as User);
+  const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(false); // No loading for demo
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
+  // Initialize auth state from Supabase
   useEffect(() => {
-    // Load user profile from localStorage for demo mode
+    const initAuth = async () => {
+      try {
+        // Get current session
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user ?? null);
+      } catch (err) {
+        console.error('Error initializing auth:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event: AuthChangeEvent, session: Session | null) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
+
+  // Load user profile from localStorage
+  useEffect(() => {
     try {
       const savedProfile = localStorage.getItem('surbee_user_profile');
       const onboardingCompleted = localStorage.getItem('surbee_onboarding_completed');
-      
+
       if (savedProfile) {
         setUserProfile(JSON.parse(savedProfile));
       }
-      
+
       if (onboardingCompleted === 'true') {
         setHasCompletedOnboarding(true);
       }
@@ -64,26 +85,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    // Mock sign in for demo mode
-    setError(null);
-    return { error: null };
+    try {
+      setError(null);
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (signInError) {
+        setError(signInError.message);
+        return { error: signInError };
+      }
+      return { error: null };
+    } catch (err: any) {
+      setError(err.message);
+      return { error: err };
+    }
   };
 
   const signUp = async (email: string, password: string) => {
-    // Mock sign up for demo mode
-    setError(null);
-    return { error: null };
+    try {
+      setError(null);
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      if (signUpError) {
+        setError(signUpError.message);
+        return { error: signUpError };
+      }
+      return { error: null };
+    } catch (err: any) {
+      setError(err.message);
+      return { error: err };
+    }
   };
 
   const signOut = async () => {
-    // Mock sign out for demo mode
-    setError(null);
+    try {
+      await supabase.auth.signOut();
+      setError(null);
+    } catch (err: any) {
+      setError(err.message);
+    }
   };
 
   const signInWithOAuth = async (provider: 'github' | 'google') => {
-    // Mock OAuth for demo mode
-    setError(null);
-    return { error: null };
+    try {
+      setError(null);
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
+        },
+      });
+      if (oauthError) {
+        setError(oauthError.message);
+        return { error: oauthError };
+      }
+      return { error: null };
+    } catch (err: any) {
+      setError(err.message);
+      return { error: err };
+    }
   };
 
   const updateUserProfile = async (profile: UserProfile) => {

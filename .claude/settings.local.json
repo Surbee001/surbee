@@ -87,7 +87,8 @@
       "Read(//dev/**)",
       "Bash(git filter-branch:*)",
       "Bash(yes:*)",
-      "Bash(npx ai-elements@latest add:*)"
+      "Bash(npx ai-elements@latest add:*)",
+      "WebFetch(domain:mcp.supabase.com)"
     ],
     "deny": [],
     "ask": [],
