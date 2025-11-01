@@ -1275,6 +1275,8 @@ export default function ProjectPage() {
   const shareMenuRef = useRef<HTMLDivElement>(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [publishToCommunity, setPublishToCommunity] = useState(true);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
 
   // Initialize mock project on mount
   useEffect(() => {
@@ -1573,6 +1575,46 @@ export default function ProjectPage() {
     };
     setHistoryEntries(prev => [newEntry, ...prev]);
     setVersionCounter(prev => prev + 1);
+  };
+
+  const handlePublishSurvey = async () => {
+    if (!user || !projectId) {
+      alert('User or project ID not found');
+      return;
+    }
+
+    setIsPublishing(true);
+    try {
+      // TODO: Extract survey schema from generated components and save it
+      // For now, survey_schema should be populated by the workflow
+      // const { extractAndSaveSurveySchema } = await import('@/lib/services/schema-extractor');
+      // await extractAndSaveSurveySchema(projectId, user.id, { survey: generatedSurvey });
+
+      const response = await fetch(`/api/projects/${projectId}/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          surveySchema: project?.survey_schema
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to publish survey');
+      }
+
+      const data = await response.json();
+      setPublishedUrl(data.publishedUrl);
+      setProject(prev => prev ? { ...prev, status: 'published', published_url: data.publishedUrl } : null);
+
+      alert(`Survey published! Share this URL: /survey/${data.publishedUrl}`);
+    } catch (error: any) {
+      console.error('Publish error:', error);
+      alert(`Failed to publish: ${error.message}`);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const toggleHistoryFlag = (entryId: string) => {
@@ -2478,12 +2520,24 @@ export default function ProjectPage() {
                       </button>
                     </div>
                     <div className="space-y-2">
-                      <button className="w-full h-9 rounded-md bg-zinc-900 text-gray-200 text-sm font-medium hover:bg-zinc-800 transition-colors border border-zinc-800">
+                      <button
+                        disabled
+                        className="w-full h-9 rounded-md bg-zinc-900 text-gray-200 text-sm font-medium hover:bg-zinc-800 transition-colors border border-zinc-800 disabled:opacity-50"
+                      >
                         Connect Domain
                       </button>
-                      <button className="w-full h-9 rounded-md bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors border border-white/10">
-                        Publish to Surbee.dev
+                      <button
+                        onClick={handlePublishSurvey}
+                        disabled={isPublishing}
+                        className="w-full h-9 rounded-md bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors border border-white/10 disabled:opacity-50"
+                      >
+                        {isPublishing ? 'Publishing...' : 'Publish Survey'}
                       </button>
+                      {publishedUrl && (
+                        <div className="mt-2 p-2 bg-green-900/20 border border-green-700 rounded-md text-xs text-green-300">
+                          Published! URL: {publishedUrl}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

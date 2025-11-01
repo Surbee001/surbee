@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  ArrowLeft, 
-  Download, 
-  Share2, 
-  Edit, 
+import {
+  ArrowLeft,
+  Download,
+  Share2,
+  Edit,
   MoreVertical,
   BarChart3,
   Search,
@@ -14,19 +14,23 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Eye
+  Eye,
+  RefreshCw,
+  Wifi,
+  WifiOff,
+  Loader
 } from 'lucide-react';
 import { format, subDays, subHours } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -50,6 +54,7 @@ import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis } fro
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import type { Project } from '@/types/database';
+import { useAnalyticsStream } from '@/hooks/useAnalyticsStream';
 
 interface AnalyticsPageProps {
   params: {
@@ -220,14 +225,28 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
   const projectId = resolvedParams?.id;
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
-  const [loading, setLoading] = useState(true);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'partial' | 'abandoned'>('all');
   const [accuracyFilter, setAccuracyFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [showActionDropdown, setShowActionDropdown] = useState(false);
   const [comparePeriod, setComparePeriod] = useState<'last30' | 'vsPrev30'>('last30');
+
+  // Use the real-time analytics hook
+  const {
+    analytics: streamedAnalytics,
+    isConnected,
+    isLoading: analyticsLoading,
+    error: analyticsError,
+    usePolling,
+    refetch: refetchAnalytics
+  } = useAnalyticsStream({
+    projectId: projectId || '',
+    userId: user?.id || '',
+    onUpdate: (data) => {
+      console.log('Analytics updated:', data);
+    }
+  });
 
   // Build mock analytics data (fallback for missing user/project)
   const buildMockAnalytics = (): AnalyticsData => {
@@ -354,32 +373,6 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
   };
 
   // Fetch analytics data
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      if (!user || !projectId) {
-        setAnalyticsData(buildMockAnalytics());
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        const response = await fetch(`/api/projects/${projectId}/analytics?userId=${user.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setAnalyticsData(data.analytics);
-        } else {
-          console.error('Failed to fetch analytics');
-        }
-      } catch (error) {
-        console.error('Failed to fetch analytics:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (!authLoading) fetchAnalytics();
-  }, [user, authLoading, projectId]);
-
   const chartConfig = {
     responses: {
       label: "Responses",
@@ -391,9 +384,38 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
     },
   };
 
-
-  // Safe analytics data for UI (fallbacks to mock if missing)
-  const safeData = analyticsData ?? buildMockAnalytics();
+  // Safe analytics data for UI (use streamed data or fallback to mock)
+  const safeData = streamedAnalytics ?
+    {
+      project: {
+        id: projectId,
+        created_at: new Date().toISOString(),
+        updated_at: streamedAnalytics.lastUpdated,
+        title: streamedAnalytics.surveyTitle,
+        description: '',
+        user_id: user?.id || 'demo-user',
+        status: 'published' as const,
+      },
+      metrics: {
+        totalViews: streamedAnalytics.totalResponses,
+        totalResponses: streamedAnalytics.totalResponses,
+        completionRate: streamedAnalytics.completionRate,
+        avgCompletionTime: streamedAnalytics.averageCompletionTime || 0,
+        lastResponse: streamedAnalytics.responses[0]?.completed_at ? new Date(streamedAnalytics.responses[0].completed_at) : null,
+      },
+      accuracyMetrics: {
+        overallScore: 85,
+        attentionCheckPassRate: 92,
+        consistencyScore: 88,
+        speedAnomalies: 0,
+        patternFlags: 0,
+        qualityDistribution: { high: 0, medium: 0, low: 0 },
+      },
+      timelineData: [],
+      responses: streamedAnalytics.responses,
+      questionAnalytics: streamedAnalytics.questionsAnalytics,
+    }
+  : buildMockAnalytics();
 
   const filteredResponses = useMemo(() => {
     return safeData.responses.filter(response => {
@@ -520,7 +542,29 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
             </Button>
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
-              <p className="text-sm text-muted-foreground mt-1">{safeData.project.title}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {safeData.project.title}
+                {!analyticsLoading && (
+                  <span className="ml-3 inline-flex items-center gap-1.5">
+                    {isConnected ? (
+                      <>
+                        <Wifi className="w-3 h-3 text-green-500" />
+                        <span className="text-xs text-green-600">Live</span>
+                      </>
+                    ) : usePolling ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 text-blue-500" />
+                        <span className="text-xs text-blue-600">Polling</span>
+                      </>
+                    ) : (
+                      <>
+                        <WifiOff className="w-3 h-3 text-gray-400" />
+                        <span className="text-xs text-gray-500">Offline</span>
+                      </>
+                    )}
+                  </span>
+                )}
+              </p>
             </div>
           </div>
 

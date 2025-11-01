@@ -42,6 +42,10 @@ export async function POST(req: NextRequest) {
     const { surveyId, respondentId, responses, metrics, userId, sessionId } = await req.json()
     const clientIP = getClientIP(req);
 
+    // Validate that we have a sessionId (for anonymous tracking)
+    // If not provided, we should still track by IP
+    const trackingSessionId = sessionId || `session_${clientIP}`;
+
     // Check rate limiting for anonymous users (no userId)
     if (!userId) {
       const { allowed, remainingRequests } = checkRateLimit(clientIP);
@@ -72,7 +76,7 @@ export async function POST(req: NextRequest) {
       is_flagged: score >= 0.5,
       flag_reasons: flags.map((f: any) => f.code),
       user_id: userId || undefined,
-      session_id: sessionId || undefined,
+      session_id: trackingSessionId,
       ip_address: clientIP,
     }).select('id').single()
 
