@@ -1166,22 +1166,23 @@ export default function ProjectPage() {
   }, [messages]);
 
   // Convert reasoning parts to ThinkingSteps and track durations
+  // Use a ref to track the last processed messages/status to prevent unnecessary updates
+  const lastProcessedReasoningRef = useRef<{ messagesLength: number; status: string; }>({ messagesLength: 0, status: '' });
+
   useEffect(() => {
     if (!messages || messages.length === 0) return;
 
+    // Skip if we've already processed this exact state
+    const currentState = { messagesLength: messages.length, status };
+    if (
+      lastProcessedReasoningRef.current.messagesLength === currentState.messagesLength &&
+      lastProcessedReasoningRef.current.status === currentState.status
+    ) {
+      return;
+    }
+
     const newReasoningByMessage: Record<string, ThinkingStep[]> = {};
     const lastMessage = messages[messages.length - 1];
-
-    // DEBUG: Log all part types in messages
-    messages.forEach((msg, msgIdx) => {
-      if (msg.role === 'assistant' && msg.parts) {
-        const partTypes = msg.parts.map(p => p.type);
-        if (partTypes.some(t => t.includes('think') || t.includes('reason'))) {
-          console.log(`🧠 Message ${msgIdx} part types:`, partTypes);
-          console.log(`🧠 Full parts:`, msg.parts);
-        }
-      }
-    });
 
     // If the last message is from assistant and we're streaming, start timer
     if (lastMessage?.role === 'assistant' && status !== 'ready') {
@@ -1226,6 +1227,7 @@ export default function ProjectPage() {
     const newReasoningStr = JSON.stringify(newReasoningByMessage);
     if (newReasoningStr !== prevReasoningRef.current) {
       prevReasoningRef.current = newReasoningStr;
+      lastProcessedReasoningRef.current = currentState;
       setReasoningByMessage(newReasoningByMessage);
     }
   }, [messages, status]);
