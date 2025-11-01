@@ -1085,6 +1085,8 @@ export default function ProjectPage() {
 
   // Extract sandbox bundle from tool results
   const prevBundleRef = useRef<string | null>(null);
+  const processedMessageIdsRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     if (!messages || messages.length === 0) return;
 
@@ -1093,11 +1095,17 @@ export default function ProjectPage() {
       const msg = messages[i];
       if (msg.role !== 'assistant') continue;
 
+      // Skip if we've already processed this message
+      if (processedMessageIdsRef.current.has(msg.id)) continue;
+
       // Check ALL tool parts for source_files
       for (const part of msg.parts) {
         if (part.type.startsWith('tool-') && part.state === 'output-available') {
           const output = part.output as any;
           if (output?.source_files && Object.keys(output.source_files).length > 0) {
+            // Mark this message as processed
+            processedMessageIdsRef.current.add(msg.id);
+
             // Normalize all file paths to have leading slashes
             const normalizedFiles: Record<string, string> = {};
             Object.entries(output.source_files).forEach(([path, content]) => {
