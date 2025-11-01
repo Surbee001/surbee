@@ -196,4 +196,76 @@ export class ProjectsService {
       return { data: null, error: error as Error };
     }
   }
+
+  // Publish a project and make it publicly accessible
+  static async publishProject(
+    projectId: string,
+    userId: string,
+    surveySchema?: any
+  ): Promise<{ data: Project | null; error: Error | null }> {
+    try {
+      const project = projectsStore.get(projectId);
+
+      if (!project || project.user_id !== userId) {
+        return { data: null, error: new Error('Project not found') };
+      }
+
+      // Generate a short unique URL slug for the survey
+      const publishedUrl = `${projectId}_${Math.random().toString(36).substr(2, 6)}`;
+
+      const updatedProject: Project = {
+        ...project,
+        status: 'published',
+        published_url: publishedUrl,
+        published_at: new Date().toISOString(),
+        survey_schema: surveySchema || project.survey_schema,
+        updated_at: new Date().toISOString()
+      };
+
+      projectsStore.set(projectId, updatedProject);
+      return { data: updatedProject, error: null };
+    } catch (error) {
+      return { data: null, error: error as Error };
+    }
+  }
+
+  // Get a published project by its published URL (for public access)
+  static async getPublishedProject(publishedUrl: string): Promise<{ data: Project | null; error: Error | null }> {
+    try {
+      for (const project of projectsStore.values()) {
+        if (project.published_url === publishedUrl && project.status === 'published') {
+          return { data: project, error: null };
+        }
+      }
+      return { data: null, error: null };
+    } catch (error) {
+      return { data: null, error: error as Error };
+    }
+  }
+
+  // Update survey schema for a project
+  static async updateSurveySchema(
+    projectId: string,
+    userId: string,
+    surveySchema: any
+  ): Promise<{ data: Project | null; error: Error | null }> {
+    try {
+      const project = projectsStore.get(projectId);
+
+      if (!project || project.user_id !== userId) {
+        return { data: null, error: new Error('Project not found') };
+      }
+
+      const updatedProject = {
+        ...project,
+        survey_schema: surveySchema,
+        updated_at: new Date().toISOString()
+      };
+
+      projectsStore.set(projectId, updatedProject);
+      return { data: updatedProject, error: null };
+    } catch (error) {
+      return { data: null, error: error as Error };
+    }
+  }
 }
