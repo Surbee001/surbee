@@ -1,23 +1,49 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Github } from 'lucide-react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = () => {
     router.push('/dashboard');
   };
 
-  const handleGithubLogin = () => {
-    router.push('/dashboard');
+  const handleGithubLogin = async () => {
+    try {
+      setLoading(true);
+      await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
+        },
+      });
+    } catch (error) {
+      console.error('GitHub login error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleGoogleLogin = () => {
-    router.push('/dashboard');
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
+        },
+      });
+    } catch (error) {
+      console.error('Google login error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -34,14 +60,23 @@ export default function LoginPage() {
       </div>
 
       {/* Login Content - No Container Background */}
-      <div className="relative z-10 w-full max-w-sm mx-4 flex flex-col items-center">
+      <div className="relative z-10 w-full max-w-xs mx-4 flex flex-col items-center">
+        {/* Logo */}
+        <div className="mb-4">
+          <img
+            src="https://raw.githubusercontent.com/Surbee001/webimg/d31a230c841bc324c709964f3d9ab01daec67f8d/Surbee%20Logo%20Final.svg"
+            alt="Surbee"
+            className="h-24 brightness-0 invert"
+          />
+        </div>
+
         {/* Google Button */}
         <button
           onClick={handleGoogleLogin}
-          className="w-full bg-white text-gray-900 py-4 px-6 rounded-xl flex items-center justify-center space-x-3 hover:bg-gray-50 transition-all duration-200 transform hover:scale-[1.02] mb-4 shadow-lg"
+          className="w-full bg-white text-gray-900 py-3 px-5 rounded-full flex items-center justify-center space-x-3 hover:bg-gray-100 transition-colors duration-200 mb-3 shadow-lg cursor-pointer"
           style={{ fontFamily: 'FK Grotesk, sans-serif' }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24">
+          <svg width="18" height="18" viewBox="0 0 24 24">
             <path
               fill="#4285F4"
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -59,21 +94,21 @@ export default function LoginPage() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          <span className="text-base font-medium">Continue with Google</span>
+          <span className="text-sm font-medium">Continue with Google</span>
         </button>
 
         {/* Email Button */}
         <button
           onClick={handleLogin}
-          className="w-full bg-gray-400 text-white py-4 px-6 rounded-xl flex items-center justify-center space-x-3 hover:bg-gray-500 transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
+          className="w-full bg-black text-white py-3 px-5 rounded-full flex items-center justify-center space-x-3 hover:bg-zinc-900 transition-colors duration-200 shadow-lg cursor-pointer"
           style={{ fontFamily: 'FK Grotesk, sans-serif' }}
         >
-          <span className="text-base font-medium">Continue with Email</span>
+          <span className="text-sm font-medium">Continue with Email</span>
         </button>
 
         {/* Terms and Privacy */}
-        <div className="text-center mt-8">
-          <p className="text-sm text-white" style={{ fontFamily: 'Sohne, sans-serif' }}>
+        <div className="text-center mt-6">
+          <p className="text-xs text-white" style={{ fontFamily: 'Sohne, sans-serif' }}>
             By signing up, you agree to our{' '}
             <Link href="/terms" className="underline hover:text-gray-200 transition-colors font-medium">
               Terms and Conditions
