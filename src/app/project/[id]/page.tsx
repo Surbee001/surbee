@@ -1068,20 +1068,24 @@ export default function ProjectPage() {
   console.log('🔧 Initializing useChat with API:', '/api/agents/surbee-v3');
   console.log('🔧 Selected model for chat:', selectedModelRef.current);
 
-  // Memoize chat body to prevent re-initialization on every render
+  // Memoize transport and body to prevent re-initialization on every render
+  const chatTransport = useMemo(() => new DefaultChatTransport({
+    api: '/api/agents/surbee-v3',
+  }), []);
+
   const chatBody = useMemo(() => ({
     model: selectedModelRef.current,
   }), []);
 
-  const { messages, sendMessage, status } = useChat<ChatMessage>({
-    transport: new DefaultChatTransport({
-      api: '/api/agents/surbee-v3',
-    }),
+  const chatOptions = useMemo(() => ({
+    transport: chatTransport,
     body: chatBody,
     onError: (error: Error) => {
       console.error('🚨 Chat error:', error);
     },
-  });
+  }), [chatTransport, chatBody]);
+
+  const { messages, sendMessage, status } = useChat<ChatMessage>(chatOptions);
 
   // Extract sandbox bundle from tool results
   const prevBundleRef = useRef<string | null>(null);
