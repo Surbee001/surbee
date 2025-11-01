@@ -8,9 +8,17 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    console.log('📦 Received body keys:', Object.keys(body));
+    console.log('📦 Body.model:', body.model);
+    console.log('📦 Body.messages:', body.messages ? `${body.messages.length} messages` : 'no messages');
 
     // Support both formats: useChat messages array OR legacy input+context format
     let messages: ChatMessage[];
+    const selectedModel = body.model || 'gpt-5'; // Default to gpt-5
+
+    // CRITICAL DEBUG: Log exactly what model we're using
+    console.log('🎯 SELECTED MODEL:', selectedModel);
+    console.log('🎯 IS CLAUDE-HAIKU?', selectedModel === 'claude-haiku');
 
     if (body.messages) {
       // New format: direct messages array from useChat
@@ -38,6 +46,7 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('📥 Received', messages?.length || 0, 'messages');
+    console.log('🤖 Using model:', selectedModel);
 
     // Debug: Log if any messages have image parts
     messages.forEach((msg, idx) => {
@@ -48,7 +57,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Use the streaming workflow - it returns a streamText result
-    const result = streamWorkflowV3({ messages });
+    const result = streamWorkflowV3({ messages, model: selectedModel });
 
     // Return the UI message stream response for useChat
     return result.toUIMessageStreamResponse();

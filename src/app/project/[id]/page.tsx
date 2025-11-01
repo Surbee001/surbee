@@ -1019,11 +1019,59 @@ export default function ProjectPage() {
   const prevReasoningRef = useRef<string>('{}');
   const [sandboxContent, setSandboxContent] = useState<Record<string, string> | null>(null);
 
-  // useChat hook for message handling
+  // Get selected model from sessionStorage (read synchronously before useChat)
+  const getSelectedModel = () => {
+    if (typeof window === 'undefined') return 'gpt-5';
+    try {
+      const storedModel = sessionStorage.getItem('surbee_selected_model');
+      console.log('📖 READING FROM SESSION STORAGE:');
+      console.log('   - storedModel:', storedModel);
+      console.log('   - typeof storedModel:', typeof storedModel);
+      console.log('   - storedModel === "claude-haiku"?', storedModel === 'claude-haiku');
+
+      if (storedModel) {
+        console.log('🤖 Loaded model from sessionStorage:', storedModel);
+        return storedModel;
+      }
+    } catch (e) {
+      console.error('Failed to read model from sessionStorage:', e);
+    }
+    console.log('⚠️ No model in sessionStorage, defaulting to gpt-5');
+    return 'gpt-5';
+  };
+
+  const selectedModelRef = useRef(getSelectedModel());
+  const [selectedModel, setSelectedModel] = useState<'gpt-5' | 'claude-haiku'>(
+    selectedModelRef.current as 'gpt-5' | 'claude-haiku'
+  );
+
+  // Update sessionStorage when model changes
+  const handleModelChange = useCallback((model: 'gpt-5' | 'claude-haiku') => {
+    console.log('🔄 CHANGING MODEL TO:', model);
+    setSelectedModel(model);
+    selectedModelRef.current = model;
+    try {
+      sessionStorage.setItem('surbee_selected_model', model);
+      console.log('✅ SAVED NEW MODEL TO SESSION STORAGE:', model);
+    } catch (e) {
+      console.error('Failed to save model to sessionStorage:', e);
+    }
+  }, []);
+
+  // useChat hook for message handling - using Vercel AI SDK
+  console.log('🔧 Initializing useChat with API:', '/api/agents/surbee-v3');
+  console.log('🔧 Selected model for chat:', selectedModelRef.current);
+
   const { messages, sendMessage, status } = useChat<ChatMessage>({
     transport: new DefaultChatTransport({
       api: '/api/agents/surbee-v3',
     }),
+    body: {
+      model: selectedModelRef.current,
+    },
+    onError: (error: Error) => {
+      console.error('🚨 Chat error:', error);
+    },
   });
 
   // Extract sandbox bundle from tool results
@@ -1102,6 +1150,17 @@ export default function ProjectPage() {
 
     const newReasoningByMessage: Record<string, ThinkingStep[]> = {};
     const lastMessage = messages[messages.length - 1];
+
+    // DEBUG: Log all part types in messages
+    messages.forEach((msg, msgIdx) => {
+      if (msg.role === 'assistant' && msg.parts) {
+        const partTypes = msg.parts.map(p => p.type);
+        if (partTypes.some(t => t.includes('think') || t.includes('reason'))) {
+          console.log(`🧠 Message ${msgIdx} part types:`, partTypes);
+          console.log(`🧠 Full parts:`, msg.parts);
+        }
+      }
+    });
 
     // If the last message is from assistant and we're streaming, start timer
     if (lastMessage?.role === 'assistant' && status !== 'ready') {
@@ -1375,6 +1434,12 @@ export default function ProjectPage() {
         });
     }
 
+    // Use the current selected model from state
+    const currentModel = selectedModelRef.current;
+    console.log('📤 SENDING MESSAGE WITH MODEL:', currentModel);
+    console.log('📤 selectedModel state:', selectedModel);
+    console.log('📤 selectedModelRef.current:', selectedModelRef.current);
+
     // Send message with images if provided following ImagePart format
     if (images && images.length > 0) {
       const parts: Array<{ type: 'text'; text: string } | { type: 'image'; image: string }> = [
@@ -1389,9 +1454,9 @@ export default function ProjectPage() {
         });
       });
 
-      sendMessage({ parts } as any);
+      sendMessage({ parts } as any, { body: { model: currentModel } });
     } else {
-      sendMessage({ text: message });
+      sendMessage({ text: message }, { body: { model: currentModel } });
     }
   };
 
@@ -2070,6 +2135,9 @@ export default function ProjectPage() {
                 selectedElement={null}
                 disableRotatingPlaceholders={true}
                 onClearSelection={() => {}}
+                showModelSelector={true}
+                selectedModel={selectedModel}
+                onModelChange={handleModelChange}
                 isBusy={status === 'submitted' || status === 'streaming'}
                 onStop={() => {}}
               />

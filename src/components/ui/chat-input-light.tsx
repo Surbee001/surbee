@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { ArrowUp, Plus, X, Settings2, Crosshair, Eye, Lightbulb, Square } from "lucide-react";
 import ChatSettingsMenu from "@/components/ui/chat-settings-menu";
 import { ImageViewerModal } from "@/components/ui/image-viewer-modal";
+import ModelSelector, { AIModel } from "@/components/ui/model-selector";
 
 interface ChatInputLightProps {
   onSendMessage: (message: string, images?: string[]) => void;
@@ -24,6 +25,9 @@ interface ChatInputLightProps {
   isBusy?: boolean;
   onStop?: () => void;
   borderRadius?: string; // optional, custom border radius (default: 32px)
+  showModelSelector?: boolean; // optional, shows model selector dropdown
+  selectedModel?: AIModel; // optional, currently selected AI model
+  onModelChange?: (model: AIModel) => void; // optional, callback when model changes
 }
 
 export default function ChatInputLight({
@@ -45,6 +49,9 @@ export default function ChatInputLight({
   isBusy = false,
   onStop,
   borderRadius = '32px',
+  showModelSelector = false,
+  selectedModel = 'gpt-5',
+  onModelChange,
 }: ChatInputLightProps) {
   const [chatText, setChatText] = useState("");
   // Initialize theme by checking DOM immediately
@@ -484,6 +491,14 @@ export default function ChatInputLight({
                   accept="image/*"
                 />
               </button>
+              {showModelSelector && onModelChange && (
+                <ModelSelector
+                  selectedModel={selectedModel}
+                  onModelChange={onModelChange}
+                  theme={detectedTheme}
+                  disabled={isInputDisabled}
+                />
+              )}
               {onToggleEditMode && (
                 <button
                   className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer border ${

@@ -236,18 +236,17 @@ export default function PrivacySettingsPage() {
           {/* Settings Navigation */}
           <div className="lg:col-span-1">
             <div className="space-y-4">
-              <h1 className="text-[28px] font-bold" style={{ color: 'var(--surbee-fg-primary)' }}>
+              <h1 className="projects-title">
                 Settings
               </h1>
-              
+
               <div className="space-y-1">
                 {[
-                  { icon: User, label: 'Profile', active: false, href: '/dashboard/settings/profile' },
-                  { icon: Settings, label: 'Appearance', active: false, href: '/dashboard/settings' },
-                  { icon: Bell, label: 'Notifications', active: false, href: '/dashboard/settings/notifications' },
+                  { icon: Settings, label: 'General', active: false, href: '/dashboard/settings/general' },
+                  { icon: HelpCircle, label: 'Account', active: false, href: '/dashboard/settings/account' },
                   { icon: Shield, label: 'Privacy & Security', active: true, href: '/dashboard/settings/privacy' },
                   { icon: CreditCard, label: 'Billing & Plans', active: false, href: '/dashboard/settings/billing' },
-                  { icon: HelpCircle, label: 'Help', active: false, href: '/dashboard/settings/account' },
+                  { icon: Settings, label: 'Connectors', active: false, href: '/dashboard/settings/connectors' },
                 ].map((item) => {
                   const Icon = item.icon;
                   return (

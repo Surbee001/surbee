@@ -30,6 +30,7 @@ import {
   stepCountIs,
 } from 'ai';
 import { openai } from '@ai-sdk/openai';
+import { createAnthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 import { Sandbox } from '@e2b/code-interpreter';
 import {
@@ -145,9 +146,33 @@ interface WorkflowResult {
 // Configuration
 // ============================================================================
 
-const MODEL_CONFIG = {
-  // Single agent handles everything
-  agent: openai('gpt-5'), // GPT-5 is now available!
+// Debug: Log API key presence at module load
+console.log('🔑 ENV CHECK - ANTHROPIC_API_KEY exists?', !!process.env.ANTHROPIC_API_KEY);
+console.log('🔑 ENV CHECK - ANTHROPIC_API_KEY length:', process.env.ANTHROPIC_API_KEY?.length || 0);
+console.log('🔑 ENV CHECK - ANTHROPIC_API_KEY starts with:', process.env.ANTHROPIC_API_KEY?.substring(0, 10));
+
+// Create Anthropic provider with explicit API key
+const anthropic = createAnthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || '',
+});
+
+const getModelConfig = (modelName: string = 'gpt-5') => {
+  console.log('🔧 getModelConfig called with:', modelName);
+  console.log('🔧 Type of modelName:', typeof modelName);
+  console.log('🔧 modelName === "claude-haiku"?', modelName === 'claude-haiku');
+  console.log('🔧 modelName.trim() === "claude-haiku"?', modelName.trim() === 'claude-haiku');
+  console.log('🔧 ANTHROPIC_API_KEY exists?', !!process.env.ANTHROPIC_API_KEY);
+
+  // Trim any whitespace and normalize the model name
+  const normalizedModel = modelName.trim().toLowerCase();
+  console.log('🔧 Normalized model:', normalizedModel);
+
+  if (normalizedModel === 'claude-haiku' || normalizedModel.includes('haiku')) {
+    console.log('✅ Returning ANTHROPIC model (Claude Haiku 4.5)');
+    return anthropic('claude-haiku-4-5-20251001');
+  }
+  console.log('✅ Returning OPENAI model (GPT-5)');
+  return openai('gpt-5');
 };
 
 // Single agent always shows reasoning
@@ -259,7 +284,7 @@ async function checkGuardrails(text: string): Promise<{
 }> {
   try {
     const result = await generateText({
-      model: MODEL_CONFIG.agent,
+      model: openai('gpt-5'),
       system: `Analyze the following text for safety concerns.
       Check for:
       1. Personal Identifiable Information (PII) like SSN, credit cards
@@ -1209,8 +1234,12 @@ export type ChatMessage = UIMessage<never, UIDataTypes, ChatTools>;
 // New Streaming Workflow (useChat pattern)
 // ============================================================================
 
-export function streamWorkflowV3({ messages }: { messages: ChatMessage[] }) {
+export function streamWorkflowV3({ messages, model = 'gpt-5' }: { messages: ChatMessage[], model?: string }) {
   console.log('🚀 Starting Surbee Workflow V3 (useChat Mode)...');
+  console.log('🤖 Received model parameter:', model);
+  console.log('🔍 Model type:', typeof model);
+  console.log('🔍 Model === "claude-haiku"?', model === 'claude-haiku');
+  console.log('🔍 Model === "gpt-5"?', model === 'gpt-5');
 
   // Debug: Check if messages contain images
   const totalImages = messages.reduce((count, msg) => {
@@ -1219,8 +1248,27 @@ export function streamWorkflowV3({ messages }: { messages: ChatMessage[] }) {
   }, 0);
   console.log(`📷 Total images in messages: ${totalImages}`);
 
+  // Debug: Log actual image parts
+  messages.forEach((msg, idx) => {
+    if (msg.parts) {
+      const imgParts = msg.parts.filter((p: any) => p.type === 'image');
+      if (imgParts.length > 0) {
+        console.log(`📷 Message ${idx} has ${imgParts.length} image(s):`, imgParts.map((p: any) => ({
+          type: p.type,
+          hasImage: !!p.image,
+          imageType: typeof p.image,
+          imageLength: typeof p.image === 'string' ? p.image.substring(0, 50) : 'not a string'
+        })));
+      }
+    }
+  });
+
   // Generate unique project name
   const projectName = `survey-${Date.now()}`;
+
+  // Get the appropriate model based on selection
+  const selectedModel = getModelConfig(model);
+  console.log('🎯 Final selected model:', selectedModel);
 
   // System prompt with all the detailed instructions
   const systemPrompt = `You are Surbee Lyra, an AI editor and creator specializing in building and refining surveys, questionnaires, and forms on the Surbee platform. Your identity is central—you're fun to chat with, radiating encouragement and clarity, but can easily switch to a highly professional tone when the situation calls for it.
@@ -1271,25 +1319,106 @@ When tools are used or code is edited, validate the results and let the user kno
 - Use numbered lists for steps, but don't overdo the structure—just make things clear.
 - Headings (##) should help organize replies, never weigh them down.
 - Use **bold** to highlight, but not everywhere—pick your moments.
-- Favor natural language with the occasional celebratory emoji or sound bite as it suits—just like a human designer/developer chatting.
+- Favor natural language—just like a human designer/developer chatting. Do not use emojis.
+
+## Your Available Tools
+
+You have powerful tools at your disposal. ALWAYS use the right tool for the job:
+
+**File Operations:**
+- \`surbe_view\`: Read file contents with line numbers. ALWAYS use this before editing to see current state.
+- \`surbe_write\`: Create NEW files from scratch. Use ONLY for brand new files, never for edits.
+- \`surbe_line_replace\`: Your PRIMARY editing tool - makes surgical line-by-line replacements in existing files.
+  - CRITICAL: Use this for ALL edits to existing files - NEVER rewrite entire files with surbe_write!
+  - Replaces specific line ranges by line numbers (from line X to line Y with new content).
+  - ALWAYS read the file with surbe_view first to see line numbers.
+  - Example: Replace lines 15-20 to change a component's props.
+- \`surbe_delete\`: Delete files you no longer need.
+- \`surbe_rename\`: Rename files.
+- \`surbe_copy\`: Copy files.
+
+**Search & Discovery:**
+- \`surbe_search_files\`: Search file contents using grep patterns. Find code before editing.
+  - Example: Search for "Survey" in all .tsx files to find components.
+- \`websearch_web_search\`: Search the web for information, documentation, or examples.
+
+**Dependencies & Assets:**
+- \`surbe_add_dependency\`: Install npm packages. CRITICAL - use this BEFORE using any external library!
+  - Examples: framer-motion, react-hook-form, zod, lucide-react, @radix-ui/*
+  - ALWAYS install dependencies immediately when you plan to use them.
+- \`surbe_remove_dependency\`: Remove npm packages.
+- \`surbe_download_to_repo\`: Download external files/assets to the project.
+
+**Project Management:**
+- \`surb_init_sandbox\`: Initialize a new project sandbox. Call ONCE at the start of new projects.
+- \`surbe_build_preview\`: Build and preview the project. REQUIRED after making file changes.
+  - The preview does NOT auto-update - you MUST call this after edits!
+
+**Debugging:**
+- \`surbe_read_console_logs\`: Read browser console logs to debug errors.
+- \`surbe_read_network_requests\`: View network requests for debugging API calls.
+
+**Advanced:**
+- \`imagegen_generate_image\`: Generate images with AI.
+- \`surbe_fetch_website\`: Fetch and read website content.
 
 ## Critical Execution Rules
+
+**EFFICIENT EDITING - READ THIS CAREFULLY:**
+
+When editing existing code:
+1. **ALWAYS read the file first** with \`surbe_view\` to see current content and line numbers
+2. **ALWAYS use \`surbe_line_replace\`** to make targeted changes - NEVER rewrite entire files with surbe_write
+3. Search for code locations using \`surbe_search_files\` if you don't know where something is
+4. Make multiple small \`surbe_line_replace\` calls instead of rewriting the entire file
+
+Example workflow for editing:
+\`\`\`
+User: "Add framer-motion animations to the survey"
+1. Search: surbe_search_files(pattern: "Survey", glob: "*.tsx")
+2. Read: surbe_view(file_path: "src/Survey.tsx")  → See it's 100 lines
+3. Install: surbe_add_dependency(package_name: "framer-motion")
+4. Edit imports: surbe_line_replace(file_path: "src/Survey.tsx", start_line: 1, end_line: 5, new_content: "import { motion } from 'framer-motion'\\n...")
+5. Edit component: surbe_line_replace(file_path: "src/Survey.tsx", start_line: 20, end_line: 30, new_content: "<motion.div animate={{...}}>...")
+6. Build: surbe_build_preview(project_name: "survey-123")
+\`\`\`
+
+WRONG way:
+\`\`\`
+1. Read file with surbe_view (100 lines)
+2. Use surbe_write to rewrite ALL 100 lines just to change 2 imports ❌ WASTEFUL!
+\`\`\`
+
+RIGHT way:
+\`\`\`
+1. Read file with surbe_view (100 lines)
+2. Use surbe_line_replace to replace ONLY lines 1-5 for imports ✓ EFFICIENT!
+3. Use surbe_line_replace to replace ONLY lines 20-30 for component ✓ EFFICIENT!
+\`\`\`
+
+**DEPENDENCY AWARENESS:**
+- Before using ANY external library (framer-motion, react-spring, zod, etc.), install it with \`surbe_add_dependency\`
+- Common packages to install when needed:
+  - Animations: framer-motion, react-spring
+  - Forms: react-hook-form, zod
+  - UI: @radix-ui/*, shadcn components
+  - Icons: lucide-react, react-icons
 
 **Always Implement, Don't Just Describe**
 - When a job requires code, use the tools to execute—don't just announce plans.
 - Every code change: include a why/what explanation (in a friendly way) and tool calls.
 - Tackle the full implementation per multi-step workflow; never pause halfway.
-- After sandbox setup (surb_init_sandbox), roll quickly into file work (surbe_write, etc.).
 
 **Multi-Step Workflow:**
-1. Get things started with \`surb_init_sandbox\` if making something new.
-2. Create or edit files:
-    - Use \`surbe_line_replace\` for snappy edits to existing files.
-    - Switch to \`surbe_write\` when starting from scratch.
-3. Rebuild the live preview with \`surbe_build_preview\` so users can see your beautiful work right away.
-4. Add extra packages with \`surbe_add_dependency\` as needed.
-5. Spin up graphics with \`imagegen_generate_image\` if visuals are in the cards.
-6. Once it's all done, cheerfully summarize your work.
+1. Initialize sandbox: \`surb_init_sandbox\` (if new project)
+2. Install dependencies: \`surbe_add_dependency\` (BEFORE using libraries!)
+3. Read files to edit: \`surbe_view\` (see line numbers)
+4. Edit efficiently:
+   - New files: \`surbe_write\`
+   - Existing files: \`surbe_line_replace\` (NEVER use surbe_write for edits!)
+5. Build preview: \`surbe_build_preview\` (REQUIRED to see changes)
+6. Debug if needed: \`surbe_read_console_logs\`
+7. Verify and iterate
 
 **Continue Tool Use:**
 - Keep moving from one step to the next, always informing the user as you go.
@@ -1297,31 +1426,49 @@ When tools are used or code is edited, validate the results and let the user kno
 
 **Key Example**
 User: "Create a satisfaction survey with a star rating."
-1. Let the user know you'll craft the survey (maybe toss in a 🎉 or ⭐️ for fun).
+1. Let the user know you'll craft the survey.
 2. Initialize the sandbox.
 3. Add the survey component file.
 4. Style it up.
 5. Build the preview.
-6. Celebrate: "Survey with star rating ready to go!"
+6. Summarize: "Survey with star rating ready to go!"
 
 Never just describe—take action and see things through to the finish with a positive, human-centric style.
 
 Project name for this session: ${projectName} (always use this project name when calling tools).`;
 
-  return streamText({
-    model: MODEL_CONFIG.agent,
+  // Check if using Claude model for extended thinking
+  const isClaudeModel = model === 'claude-haiku' || model.includes('haiku') || model.includes('claude');
+
+  const streamConfig: any = {
+    model: selectedModel,
     experimental_transform: smoothStream(),
     stopWhen: stepCountIs(10), // Allow up to 10 sequential tool calls
-    providerOptions: {
-      openai: {
-        reasoningEffort: 'low',
-        reasoningSummary: 'auto',
-      },
-    },
     system: systemPrompt,
     messages: convertToModelMessages(messages),
     tools,
-  });
+  };
+
+  // Enable extended thinking for Claude models
+  if (isClaudeModel) {
+    console.log('🧠 Enabling extended thinking for Claude model');
+    streamConfig.providerOptions = {
+      anthropic: {
+        thinking: {
+          type: 'enabled',
+          budgetTokens: 10000,
+        },
+      },
+    };
+  }
+
+  console.log('📋 Stream config:', JSON.stringify({
+    modelId: selectedModel.modelId,
+    hasProviderOptions: !!streamConfig.providerOptions,
+    thinking: streamConfig.providerOptions?.anthropic?.thinking
+  }));
+
+  return streamText(streamConfig);
 }
 
 // ============================================================================
@@ -1361,7 +1508,7 @@ export async function runWorkflowV3(
   // =============================================================================
 
   const agentStream = streamText({
-    model: MODEL_CONFIG.agent,
+    model: openai('gpt-5'),
     experimental_transform: smoothStream(),
     stopWhen: (result) => {
       // Stop when we have text response AND all necessary tools have been called
@@ -1378,12 +1525,6 @@ export async function runWorkflowV3(
       // Stop if we have a text response
       const lastStepContent = lastStep?.text;
       return !!(lastStepContent && lastStepContent.trim().length > 0);
-    },
-    providerOptions: {
-      openai: {
-        reasoningEffort: 'low', // Enable extended thinking
-        reasoningSummary: 'auto', // Show reasoning summary
-      },
     },
     system: `You are Surbee, an AI editor that creates and modifies surveys, questionnaires, forms, etc. You assist users by chatting with them and making changes to their code in real-time.
 
