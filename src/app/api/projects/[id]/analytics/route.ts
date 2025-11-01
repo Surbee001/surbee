@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ProjectsService } from '@/lib/services/projects';
 import { AnalyticsService } from '@/lib/services/analytics';
-import { supabase } from '@/lib/supabase';
+import { getDb } from '@/lib/mongodb';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -42,22 +42,35 @@ export async function GET(request: NextRequest, context: RouteContext) {
     // Extract questions from survey schema
     const questions = extractQuestionsFromSchema(project.survey_schema);
 
-    // Fetch responses from Supabase
-    const { data: responses, error: responseError } = await supabase
-      .from('survey_responses')
-      .select('*')
-      .eq('survey_id', id);
+    // Fetch responses from MongoDB
+    const db = await getDb();
+    const responses = await db.collection('survey_responses')
+      .find({ survey_id: id })
+      .toArray();
 
-    if (responseError) {
-      console.error('Error fetching responses:', responseError);
-      // Continue without responses
-      responses = [];
-    }
+    const mappedResponses = responses.map(r => ({
+      id: r._id.toString(),
+      created_at: r.created_at,
+      survey_id: r.survey_id,
+      user_id: r.user_id,
+      session_id: r.session_id,
+      responses: r.responses,
+      mouse_data: r.mouse_data,
+      keystroke_data: r.keystroke_data,
+      timing_data: r.timing_data,
+      device_data: r.device_data,
+      fraud_score: r.fraud_score,
+      is_flagged: r.is_flagged,
+      flag_reasons: r.flag_reasons,
+      respondent_id: r.respondent_id,
+      completed_at: r.completed_at,
+      ip_address: r.ip_address
+    }));
 
     // Aggregate responses
     const analytics = AnalyticsService.aggregateResponses(
       questions,
-      responses || [],
+      mappedResponses,
       project.title,
       id
     );

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { getDb } from '@/lib/mongodb'
 import { computeSuspicionScore } from '@/features/survey/behavior/scoring'
 
 // In-memory rate limiting store for anonymous users
@@ -62,8 +62,9 @@ export async function POST(req: NextRequest) {
     }
 
     const { score, flags } = computeSuspicionScore(metrics)
+    const db = await getDb()
 
-    const { data: created } = await supabase.from('survey_responses').insert({
+    const responseData = {
       survey_id: surveyId,
       respondent_id: respondentId,
       responses,
@@ -78,17 +79,22 @@ export async function POST(req: NextRequest) {
       user_id: userId || undefined,
       session_id: trackingSessionId,
       ip_address: clientIP,
-    }).select('id').single()
-
-    // update analytics aggregates (simple increment)
-    const { data: existing } = await supabase.from('survey_analytics').select('*').eq('survey_id', surveyId).single()
-    if (existing) {
-      await supabase.from('survey_analytics').update({ total_completions: (existing.total_completions || 0) + 1 }).eq('id', existing.id)
-    } else {
-      await supabase.from('survey_analytics').insert({ survey_id: surveyId, total_completions: 1 })
+      created_at: new Date().toISOString()
     }
 
-    return NextResponse.json({ success: true, id: created?.id, fraudScore: score, flags })
+    const result = await db.collection('survey_responses').insertOne(responseData)
+
+    // Update analytics aggregates
+    await db.collection('survey_analytics').updateOne(
+      { survey_id: surveyId },
+      {
+        $inc: { total_completions: 1 },
+        $set: { updated_at: new Date().toISOString() }
+      },
+      { upsert: true }
+    )
+
+    return NextResponse.json({ success: true, id: result.insertedId.toString(), fraudScore: score, flags })
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e?.message || 'submit_failed' }, { status: 400 })
   }

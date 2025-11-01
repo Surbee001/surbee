@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ProjectsService } from '@/lib/services/projects';
+import { getDb } from '@/lib/mongodb';
 
 // Get a published survey by its public URL
 export async function GET(
