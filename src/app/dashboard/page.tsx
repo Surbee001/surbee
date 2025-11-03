@@ -46,194 +46,6 @@ interface CommunityProject {
   userAvatar?: string;
 }
 
-// Sample community projects data
-const sampleCommunityProjects: CommunityProject[] = [
-  {
-    id: 'community-1',
-    title: 'Customer Satisfaction Survey',
-    status: 'published',
-    updatedAt: '2024-01-15T10:00:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/1.png&w=96&q=75',
-    previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png'
-  },
-  {
-    id: 'community-2',
-    title: 'Employee Engagement Study',
-    status: 'published',
-    updatedAt: '2024-01-14T09:30:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/2.png&w=96&q=75',
-    previewImage: '/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_38ad15d7-b5a3-4398-b147-29c92e90c780.png'
-  },
-  {
-    id: 'community-3',
-    title: 'Product Feedback Collection',
-    status: 'published',
-    updatedAt: '2024-01-13T16:20:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/3.png&w=96&q=75',
-    previewImage: '/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_abf323ce-3d0a-417d-8ce7-b307c8e84258.png'
-  },
-  {
-    id: 'community-4',
-    title: 'Brand Awareness Research',
-    status: 'published',
-    updatedAt: '2024-01-12T08:00:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/4.png&w=96&q=75',
-    previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__423e2f06-d2d7-4c2c-bd7b-9aec2b6c1fbe.png'
-  },
-  {
-    id: 'community-5',
-    title: 'User Experience Evaluation',
-    status: 'published',
-    updatedAt: '2024-01-11T14:30:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/5.png&w=96&q=75',
-    previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png'
-  },
-  {
-    id: 'community-6',
-    title: 'Market Research Analysis',
-    status: 'published',
-    updatedAt: '2024-01-10T12:00:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/6.png&w=96&q=75',
-    previewImage: '/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_38ad15d7-b5a3-4398-b147-29c92e90c780.png'
-  },
-  {
-    id: 'community-7',
-    title: 'Customer Journey Mapping',
-    status: 'published',
-    updatedAt: '2024-01-09T16:30:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/7.png&w=96&q=75',
-    previewImage: '/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_abf323ce-3d0a-417d-8ce7-b307c8e84258.png'
-  },
-  {
-    id: 'community-8',
-    title: 'Website Usability Test',
-    status: 'published',
-    updatedAt: '2024-01-08T11:45:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/8.png&w=96&q=75',
-    previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__423e2f06-d2d7-4c2c-bd7b-9aec2b6c1fbe.png'
-  },
-  {
-    id: 'community-9',
-    title: 'Social Media Sentiment',
-    status: 'published',
-    updatedAt: '2024-01-07T13:20:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/9.png&w=96&q=75',
-    previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png'
-  },
-  {
-    id: 'community-10',
-    title: 'Pricing Strategy Survey',
-    status: 'published',
-    updatedAt: '2024-01-06T10:15:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/10.png&w=96&q=75',
-    previewImage: '/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_38ad15d7-b5a3-4398-b147-29c92e90c780.png'
-  },
-  {
-    id: 'community-11',
-    title: 'Feature Request Analysis',
-    status: 'published',
-    updatedAt: '2024-01-05T15:45:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/1.png&w=96&q=75'
-  },
-  {
-    id: 'community-12',
-    title: 'Onboarding Experience',
-    status: 'published',
-    updatedAt: '2024-01-04T09:30:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/2.png&w=96&q=75'
-  },
-  {
-    id: 'community-13',
-    title: 'Support Ticket Analysis',
-    status: 'published',
-    updatedAt: '2024-01-03T14:20:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/3.png&w=96&q=75'
-  },
-  {
-    id: 'community-14',
-    title: 'Mobile App Feedback',
-    status: 'published',
-    updatedAt: '2024-01-02T11:10:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/4.png&w=96&q=75'
-  },
-  {
-    id: 'community-15',
-    title: 'Content Preference Study',
-    status: 'published',
-    updatedAt: '2024-01-01T16:00:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/5.png&w=96&q=75'
-  },
-  {
-    id: 'community-16',
-    title: 'Accessibility Survey',
-    status: 'published',
-    updatedAt: '2023-12-31T12:30:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/6.png&w=96&q=75'
-  },
-  {
-    id: 'community-17',
-    title: 'Performance Metrics',
-    status: 'published',
-    updatedAt: '2023-12-30T10:45:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/7.png&w=96&q=75'
-  },
-  {
-    id: 'community-18',
-    title: 'Security Awareness Check',
-    status: 'published',
-    updatedAt: '2023-12-29T15:20:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/8.png&w=96&q=75'
-  },
-  {
-    id: 'community-19',
-    title: 'Training Effectiveness',
-    status: 'published',
-    updatedAt: '2023-12-28T13:15:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/9.png&w=96&q=75'
-  },
-  {
-    id: 'community-20',
-    title: 'Innovation Ideas',
-    status: 'published',
-    updatedAt: '2023-12-27T11:30:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/10.png&w=96&q=75'
-  },
-  {
-    id: 'community-21',
-    title: 'Remote Work Survey',
-    status: 'published',
-    updatedAt: '2023-12-26T14:45:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/1.png&w=96&q=75'
-  },
-  {
-    id: 'community-22',
-    title: 'Digital Transformation',
-    status: 'published',
-    updatedAt: '2023-12-25T09:20:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/2.png&w=96&q=75'
-  },
-  {
-    id: 'community-23',
-    title: 'Sustainability Focus',
-    status: 'published',
-    updatedAt: '2023-12-24T16:10:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/3.png&w=96&q=75'
-  },
-  {
-    id: 'community-24',
-    title: 'Team Collaboration',
-    status: 'published',
-    updatedAt: '2023-12-23T12:40:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/4.png&w=96&q=75'
-  },
-  {
-    id: 'community-25',
-    title: 'Quality Assurance',
-    status: 'published',
-    updatedAt: '2023-12-22T15:25:00Z',
-    userAvatar: 'https://endlesstools.io/_next/image?url=/embeds/avatars/5.png&w=96&q=75'
-  }
-];
 
 // Component that handles search params
 function DashboardContent() {
@@ -285,7 +97,7 @@ function DashboardContent() {
   const [isInputDisabled, setIsInputDisabled] = useState(false);
   const [surveyMode, setSurveyMode] = useState<'fast' | 'research'>('fast');
   const [currentChatSessionId, setCurrentChatSessionId] = useState<string | null>(null);
-
+  const [selectedModel, setSelectedModel] = useState<'gpt-5' | 'claude-haiku'>('gpt-5');
 
   const chatAreaRef = useRef<HTMLDivElement>(null);
 
@@ -343,15 +155,24 @@ function DashboardContent() {
       setCurrentChatSessionId(sessionId);
     }
 
-    // Redirect to survey builder with the initial prompt
+    // Redirect to survey builder with the initial prompt and selected model
     const projectId = `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // DEBUG: Log what we're saving
+    console.log('📝 SAVING TO SESSION STORAGE:');
+    console.log('   - selectedModel:', selectedModel);
+    console.log('   - typeof selectedModel:', typeof selectedModel);
+
     try {
       sessionStorage.setItem('surbee_initial_prompt', message.trim());
+      sessionStorage.setItem('surbee_selected_model', selectedModel);
+
+      // DEBUG: Verify what was saved
+      const savedModel = sessionStorage.getItem('surbee_selected_model');
+      console.log('✅ VERIFIED SAVED MODEL:', savedModel);
     } catch {}
     router.push(`/project/${projectId}`);
     return;
-
-    // No longer needed since we're redirecting to project builder
   };
 
   const handleRemix = (projectId: string) => {
@@ -541,7 +362,7 @@ function DashboardContent() {
                     }}
                   >
                     <h1 className="text-white text-center" style={{
-                      color: 'rgb(235, 235, 235)',
+                      color: 'var(--surbee-fg-primary)',
                       fontFamily: 'var(--font-inter), sans-serif',
                       fontSize: '42px',
                       lineHeight: '40px',
@@ -591,7 +412,7 @@ function DashboardContent() {
                         <div
                           className="text-base leading-relaxed w-full"
                           style={{
-                            color: message.isUser ? '#ffffff' : '#ffffff',
+                            color: 'var(--surbee-fg-primary)',
                             fontFamily: 'var(--font-inter), sans-serif',
                             lineHeight: '1.6',
                             wordWrap: 'break-word',
@@ -603,8 +424,9 @@ function DashboardContent() {
                             <div className="flex justify-end w-full">
                               <span
                                 className="text-white inline-block rounded-xl max-w-[85%] px-4 py-3 whitespace-pre-wrap break-words"
-                                style={{ 
-                                  backgroundColor: '#212121', 
+                                style={{
+                                  backgroundColor: 'var(--surbee-card-bg)',
+                                  color: 'var(--surbee-fg-primary)',
                                   overflowWrap: 'anywhere',
                                   fontSize: '16px',
                                   lineHeight: '1.5'
@@ -678,54 +500,13 @@ function DashboardContent() {
                   placeholder={"What survey do you want to create today?"}
                   className="chat-input-grey"
                   shouldGlow={chatboxGlow}
+                  showModelSelector={true}
+                  selectedModel={selectedModel}
+                  onModelChange={setSelectedModel}
                 />
               </div>
       </div>
 
-      {/* Community Examples Section - Outside constrained container */}
-      <div className="relative w-full px-[10px] mt-80 pb-20">
-        <h2 
-          className="text-center mb-10"
-          style={{
-            fontFamily: 'var(--font-inter), sans-serif',
-            fontSize: '24px',
-            lineHeight: '28px',
-            fontWeight: 500,
-            letterSpacing: '-0.02em',
-            color: 'rgb(235, 235, 235)'
-          }}
-        >
-          Browse live community examples
-        </h2>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 md:gap-8 mb-6">
-          {sampleCommunityProjects.slice(0, 10).map((project) => (
-            <CommunityProjectCard
-              key={project.id}
-              id={project.id}
-              title={project.title}
-              status={project.status}
-              updatedAt={project.updatedAt}
-              userAvatar={project.userAvatar}
-              previewImage={project.previewImage}
-              onRemix={handleRemix}
-            />
-          ))}
-        </div>
-        
-        <div className="text-center">
-          <button 
-            className="px-4 py-2 bg-white text-black text-sm rounded-md font-medium hover:bg-gray-100 transition-colors cursor-pointer"
-            onClick={() => {
-              // Navigate to community page or show more cards
-              console.log('See more community examples');
-            }}
-          >
-            See more
-          </button>
-        </div>
-
-      </div>
 
 
       {/* Image Modal */}

@@ -6,6 +6,9 @@ export interface Project {
   description: string | null;
   user_id: string;
   status: 'draft' | 'published' | 'archived';
+  survey_schema?: any; // Latest survey schema
+  published_url?: string; // Shareable public URL
+  published_at?: string; // Timestamp when published
 }
 
 export interface ChatMessage {
@@ -23,10 +26,11 @@ export interface SurveyQuestion {
   created_at: string;
   project_id: string;
   question_text: string;
-  question_type: 'multiple_choice' | 'text_input' | 'rating' | 'yes_no';
+  question_type: 'multiple_choice' | 'text_input' | 'rating' | 'yes_no' | 'likert' | 'nps' | 'matrix' | 'ranking' | 'date' | 'time' | 'email' | 'phone' | 'slider' | 'checkbox' | 'dropdown' | 'other';
   order_index: number;
   options?: string[];
   required: boolean;
+  metadata?: Record<string, any>; // Flexible metadata for question-type-specific config
 }
 
 export interface SurveyResponse {
@@ -34,6 +38,7 @@ export interface SurveyResponse {
   created_at: string;
   survey_id: string;
   user_id?: string;
+  session_id?: string; // For anonymous user tracking
   responses: Record<string, any>;
   mouse_data?: any;
   keystroke_data?: any;
@@ -44,6 +49,7 @@ export interface SurveyResponse {
   flag_reasons?: string[];
   respondent_id?: string;
   completed_at: string;
+  ip_address?: string; // For rate limiting
 }
 
 export interface AIFeedback {

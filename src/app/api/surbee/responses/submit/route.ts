@@ -1,13 +1,69 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase-server'
 import { computeSuspicionScore } from '@/features/survey/behavior/scoring'
+
+// In-memory rate limiting store for anonymous users
+const anonSubmissionLog = new Map<string, number[]>(); // IP -> timestamps of submissions
+const RATE_LIMIT_WINDOW = 60000; // 1 minute in milliseconds
+const RATE_LIMIT_MAX_SUBMISSIONS = 5; // Max submissions per minute per IP
+
+function getClientIP(request: NextRequest): string {
+  const forwarded = request.headers.get('x-forwarded-for');
+  const realIP = request.headers.get('x-real-ip');
+  return forwarded?.split(',')[0].trim() || realIP || 'unknown';
+}
+
+function checkRateLimit(ipAddress: string): { allowed: boolean; remainingRequests: number } {
+  const now = Date.now();
+  const submissions = anonSubmissionLog.get(ipAddress) || [];
+
+  // Remove timestamps outside the window
+  const validSubmissions = submissions.filter(timestamp => now - timestamp < RATE_LIMIT_WINDOW);
+
+  if (validSubmissions.length >= RATE_LIMIT_MAX_SUBMISSIONS) {
+    return {
+      allowed: false,
+      remainingRequests: 0
+    };
+  }
+
+  // Add current submission timestamp
+  validSubmissions.push(now);
+  anonSubmissionLog.set(ipAddress, validSubmissions);
+
+  return {
+    allowed: true,
+    remainingRequests: RATE_LIMIT_MAX_SUBMISSIONS - validSubmissions.length
+  };
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { surveyId, respondentId, responses, metrics } = await req.json()
+    const { surveyId, respondentId, responses, metrics, userId, sessionId } = await req.json()
+    const clientIP = getClientIP(req);
+
+    // Validate that we have a sessionId (for anonymous tracking)
+    // If not provided, we should still track by IP
+    const trackingSessionId = sessionId || `session_${clientIP}`;
+
+    // Check rate limiting for anonymous users (no userId)
+    if (!userId) {
+      const { allowed, remainingRequests } = checkRateLimit(clientIP);
+      if (!allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Rate limit exceeded. Please wait before submitting again.',
+            retryAfter: 60
+          },
+          { status: 429, headers: { 'Retry-After': '60' } }
+        );
+      }
+    }
+
     const { score, flags } = computeSuspicionScore(metrics)
 
-    const { data: created } = await supabase.from('survey_responses').insert({
+    const responseData = {
       survey_id: surveyId,
       respondent_id: respondentId,
       responses,
@@ -19,17 +75,49 @@ export async function POST(req: NextRequest) {
       fraud_score: score,
       is_flagged: score >= 0.5,
       flag_reasons: flags.map((f: any) => f.code),
-    }).select('id').single()
-
-    // update analytics aggregates (simple increment)
-    const { data: existing } = await supabase.from('survey_analytics').select('*').eq('survey_id', surveyId).single()
-    if (existing) {
-      await supabase.from('survey_analytics').update({ total_completions: (existing.total_completions || 0) + 1 }).eq('id', existing.id)
-    } else {
-      await supabase.from('survey_analytics').insert({ survey_id: surveyId, total_completions: 1 })
+      user_id: userId || undefined,
+      session_id: trackingSessionId,
+      ip_address: clientIP,
+      created_at: new Date().toISOString()
     }
 
-    return NextResponse.json({ success: true, id: created?.id, fraudScore: score, flags })
+    // Insert survey response
+    const { data: response, error: insertError } = await supabase
+      .from('survey_responses')
+      .insert([responseData])
+      .select()
+      .single()
+
+    if (insertError) {
+      return NextResponse.json({ success: false, error: insertError.message }, { status: 400 })
+    }
+
+    // Update analytics aggregates
+    const { data: analytics } = await supabase
+      .from('survey_analytics')
+      .select('*')
+      .eq('survey_id', surveyId)
+      .single()
+
+    if (analytics) {
+      await supabase
+        .from('survey_analytics')
+        .update({
+          total_completions: (analytics.total_completions || 0) + 1,
+          updated_at: new Date().toISOString()
+        })
+        .eq('survey_id', surveyId)
+    } else {
+      await supabase
+        .from('survey_analytics')
+        .insert([{
+          survey_id: surveyId,
+          total_completions: 1,
+          updated_at: new Date().toISOString()
+        }])
+    }
+
+    return NextResponse.json({ success: true, id: response?.id, fraudScore: score, flags })
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e?.message || 'submit_failed' }, { status: 400 })
   }

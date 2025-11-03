@@ -74,24 +74,37 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center justify-between gap-2 px-3 py-2 text-sm font-medium border rounded-xl transition-colors hover:bg-gray-800/50 cursor-pointer" 
-                style={{ 
-                  color: '#ffffff', 
+        <button className="flex items-center justify-between gap-2 px-3 py-2 text-sm font-medium border rounded-xl transition-colors cursor-pointer"
+                style={{
+                  color: 'var(--surbee-fg-primary)',
                   backgroundColor: 'transparent',
-                  borderColor: 'var(--surbee-border-accent)',
+                  borderColor: 'var(--surbee-sidebar-border)',
                   fontFamily: 'var(--font-inter), sans-serif',
                   width: `${dynamicWidth}px`
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
                 }}>
           <span>{selectedOption?.label || placeholder}</span>
-          <ChevronDown size={16} className="text-gray-400" />
+          <ChevronDown size={16} style={{ color: 'var(--surbee-fg-secondary)' }} />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="rounded-xl border" style={{ borderColor: 'var(--surbee-border-accent)', backgroundColor: '#141414', width: `${dynamicWidth}px` }}>
+      <DropdownMenuContent align="start" className="rounded-xl border" style={{ borderColor: 'var(--surbee-sidebar-border)', backgroundColor: 'var(--surbee-sidebar-bg)', width: `${dynamicWidth}px` }}>
         {options.map((option) => (
           <DropdownMenuItem
             key={option.value}
             onClick={() => onChange(option.value)}
-            className="rounded-lg text-white hover:bg-gray-800 cursor-pointer"
+            className="rounded-lg cursor-pointer"
+            style={{ color: 'var(--surbee-fg-primary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
             {option.label}
           </DropdownMenuItem>
@@ -401,105 +414,6 @@ const Pagination: React.FC<{
   );
 };
 
-// Sample project data with more entries for pagination
-const sampleProjects: ProjectWithStats[] = [
-  {
-    id: '1',
-    title: 'Customer Satisfaction Survey 2024',
-    description: 'Annual customer satisfaction survey to measure service quality',
-    user_id: 'user1',
-    status: 'published' as const,
-    created_at: '2024-01-15T10:00:00Z',
-    updated_at: '2024-01-20T14:30:00Z',
-    responseCount: 247,
-    type: 'Survey',
-    previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png'
-  },
-  {
-    id: '2',
-    title: 'Employee Engagement Study',
-    description: 'Internal study to measure employee satisfaction and engagement',
-    user_id: 'user1', 
-    status: 'draft' as const,
-    created_at: '2024-02-01T09:15:00Z',
-    updated_at: '2024-02-05T11:45:00Z',
-    responseCount: 89,
-    type: 'Study',
-    previewImage: '/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_38ad15d7-b5a3-4398-b147-29c92e90c780.png'
-  },
-  {
-    id: '3',
-    title: 'Product Feedback Collection',
-    description: 'Gathering user feedback on new product features',
-    user_id: 'user1',
-    status: 'published' as const,
-    created_at: '2024-01-28T16:20:00Z',
-    updated_at: '2024-02-02T09:10:00Z',
-    responseCount: 156,
-    type: 'Feedback',
-    previewImage: '/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_abf323ce-3d0a-417d-8ce7-b307c8e84258.png'
-  },
-  {
-    id: '4',
-    title: 'Brand Awareness Research',
-    description: 'Market research to measure brand recognition and awareness',
-    user_id: 'user1',
-    status: 'published' as const,
-    created_at: '2024-01-10T08:00:00Z',
-    updated_at: '2024-01-25T16:20:00Z',
-    responseCount: 312,
-    type: 'Survey',
-    previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__423e2f06-d2d7-4c2c-bd7b-9aec2b6c1fbe.png'
-  },
-  {
-    id: '5',
-    title: 'User Experience Evaluation',
-    description: 'UX study to improve product usability and user satisfaction',
-    user_id: 'user1',
-    status: 'draft' as const,
-    created_at: '2024-02-10T14:30:00Z',
-    updated_at: '2024-02-12T10:15:00Z',
-    responseCount: 45,
-    type: 'Study',
-    previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__8962677a-4a62-4258-ae2d-0dda6908e0e2.png'
-  },
-  {
-    id: '6',
-    title: 'Market Research Analysis',
-    description: 'Comprehensive market analysis for strategic planning',
-    user_id: 'user1',
-    status: 'published' as const,
-    created_at: '2024-01-05T12:00:00Z',
-    updated_at: '2024-01-30T09:45:00Z',
-    responseCount: 198,
-    type: 'Survey',
-    previewImage: '/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_38ad15d7-b5a3-4398-b147-29c92e90c780.png'
-  },
-  {
-    id: '7',
-    title: 'Customer Journey Mapping',
-    description: 'Mapping customer touchpoints and experience journey',
-    user_id: 'user1',
-    status: 'archived' as const,
-    created_at: '2023-12-15T16:30:00Z',
-    updated_at: '2024-01-05T14:20:00Z',
-    responseCount: 87,
-    type: 'Study',
-    previewImage: '/Surbee Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_abf323ce-3d0a-417d-8ce7-b307c8e84258.png'
-  },
-  {
-    id: '8',
-    title: 'Website Usability Test',
-    description: 'Testing website usability and navigation patterns',
-    user_id: 'user1',
-    status: 'draft' as const,
-    created_at: '2024-02-08T11:45:00Z',
-    updated_at: '2024-02-10T08:30:00Z',
-    responseCount: 23,
-    type: 'Feedback',
-    previewImage: '/Surbee Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__423e2f06-d2d7-4c2c-bd7b-9aec2b6c1fbe.png'
-  }
-];
 
 export default function ProjectsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -521,22 +435,29 @@ export default function ProjectsPage() {
     { value: 'responses', label: 'Responses' }
   ];
 
-  // Only show loading on first visit, not on navigation
+  // Fetch real projects from MongoDB
   useEffect(() => {
-    if (user) {
-      const hasLoaded = sessionStorage.getItem('dashboard_loaded');
-      if (hasLoaded) {
-        setProjects(sampleProjects);
+    const fetchProjects = async () => {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/projects?userId=${user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setProjects(data.projects || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch projects:', error);
+      } finally {
         setLoading(false);
-      } else {
-        setTimeout(() => {
-          setProjects(sampleProjects);
-          setLoading(false);
-          sessionStorage.setItem('dashboard_loaded', 'true');
-        }, 1000);
       }
+    };
+
+    if (user && !authLoading) {
+      fetchProjects();
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   // Load pinned projects from localStorage
   useEffect(() => {
@@ -660,7 +581,7 @@ export default function ProjectsPage() {
                 </TooltipProvider>
               </div>
             </div>
-            <button className="px-6 py-2.5 bg-white text-black flex items-center gap-2 text-sm font-medium rounded-xl border" style={{ borderColor: 'var(--surbee-border-accent)' }}>
+            <button className="px-6 py-2.5 flex items-center gap-2 text-sm font-medium rounded-xl border" style={{ backgroundColor: '#000000', color: '#ffffff', borderColor: '#000000' }}>
               <Plus className="w-4 h-4" />
               New Project
             </button>
@@ -685,7 +606,7 @@ export default function ProjectsPage() {
                   placeholder="Filter by project name"
                   disabled
                   style={{
-                    color: '#ffffff',
+                    color: 'var(--surbee-fg-primary)',
                     fontFamily: 'var(--font-inter), sans-serif'
                   }}
                 />
@@ -693,7 +614,7 @@ export default function ProjectsPage() {
             
             <div>
               <div className="flex items-center gap-x-3">
-                <p className="text-subtitle3" style={{ color: '#ffffff', fontWeight: 300 }}>Sort by</p>
+                <p className="text-subtitle3" style={{ color: 'var(--surbee-fg-primary)', fontWeight: 300 }}>Sort by</p>
                 <div className="opacity-50">
                   <FilterDropdown
                     options={sortOptions}
@@ -760,10 +681,20 @@ export default function ProjectsPage() {
             </div>
             <button
               onClick={handleCreateSurvey}
-              className="px-6 py-2.5 bg-white text-black flex items-center gap-2 text-sm font-medium transition-all hover:bg-gray-100 rounded-xl border cursor-pointer"
-              style={{ 
-                borderColor: 'var(--surbee-border-accent)',
+              className="px-6 py-2.5 flex items-center gap-2 text-sm font-medium transition-all rounded-xl border cursor-pointer"
+              style={{
+                backgroundColor: '#000000',
+                color: '#ffffff',
+                borderColor: '#000000',
                 fontFamily: 'var(--font-inter), sans-serif'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#1a1a1a';
+                e.currentTarget.style.borderColor = '#1a1a1a';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#000000';
+                e.currentTarget.style.borderColor = '#000000';
               }}
             >
               <Plus className="w-4 h-4" />
@@ -792,7 +723,7 @@ export default function ProjectsPage() {
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   style={{
-                    color: '#ffffff',
+                    color: 'var(--surbee-fg-primary)',
                     fontFamily: 'var(--font-inter), sans-serif'
                   }}
                 />
@@ -801,7 +732,7 @@ export default function ProjectsPage() {
             {/* Sort Dropdown */}
             <div>
               <div className="flex items-center gap-x-3">
-                <p className="text-subtitle3" style={{ color: '#ffffff', fontWeight: 300 }}>Sort by</p>
+                <p className="text-subtitle3" style={{ color: 'var(--surbee-fg-primary)', fontWeight: 300 }}>Sort by</p>
                 <FilterDropdown
                   options={sortOptions}
                   value={sortBy}

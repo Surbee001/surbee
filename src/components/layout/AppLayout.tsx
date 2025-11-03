@@ -24,7 +24,7 @@ export default function AppLayout({
         }}
       >
         {!hideSidebar && <DashboardSidebar />}
-        <div 
+        <div
           className={`dashboard-content flex-1 relative h-screen flex flex-col ${hideSidebar ? '' : 'pl-[200px]'} ${fullBleed ? '' : 'p-4'}`}
           style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}
         >
@@ -35,7 +35,7 @@ export default function AppLayout({
           ) : (
             <div className="dashboard-main-container rounded-xl p-6 h-full overflow-y-auto relative" style={{
               backgroundColor: 'var(--surbee-bg-primary)',
-              border: '1px solid var(--surbee-border-accent)',
+              border: '1px solid var(--surbee-border-primary)',
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}>

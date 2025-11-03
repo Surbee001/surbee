@@ -58,8 +58,12 @@ export const CommunityTemplateCard: React.FC<CommunityTemplateCardProps> = ({
         
         {/* Remix Button */}
         <div
-          className="w-[80px] h-[32px] bg-white text-black opacity-0 group-hover:opacity-100 group-hover:border-[#f8f8f8] group-hover:pointer-events-auto duration-300 ease-in-out text-xs rounded-lg flex items-center justify-center font-medium cursor-pointer pointer-events-auto active:scale-95 transition"
-          style={{ border: '1px solid var(--surbee-border-accent)' }}
+          className="w-[80px] h-[32px] opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto duration-300 ease-in-out text-xs rounded-lg flex items-center justify-center font-medium cursor-pointer pointer-events-auto active:scale-95 transition"
+          style={{
+            backgroundColor: 'var(--surbee-fg-primary)',
+            color: 'var(--surbee-bg-primary)',
+            border: '1px solid var(--surbee-border-accent)'
+          }}
           onClick={(e) => {
             e.stopPropagation();
             onRemixTemplate(template.id);

@@ -85,7 +85,15 @@
       "Bash(test:*)",
       "Read(//Applications/**)",
       "Read(//dev/**)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(git filter-branch:*)",
+      "Bash(yes:*)",
+      "Bash(npx ai-elements@latest add:*)",
+      "WebFetch(domain:mcp.supabase.com)",
+      "Bash(timeout 5 npm run dev:*)",
+      "Bash(kill:*)",
+      "Bash(/tmp/toolcall_11b78e0.tsx)",
+      "Bash(/tmp/thinking_11b78e0.tsx)"
     ],
     "deny": [],
     "ask": [],

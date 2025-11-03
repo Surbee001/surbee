@@ -1,7 +1,16 @@
 import type { BehavioralMetrics, SuspiciousFlag } from '../types'
 import { detectAdvancedFraudPatterns } from './enhanced-scoring'
+import { detectAdvancedFraud } from './advanced-detection'
 
-export function computeSuspicionScore(m: BehavioralMetrics): { score: number; flags: SuspiciousFlag[] } {
+export interface ComputeSuspicionScoreOptions {
+  responses?: Record<string, any>
+  useAdvancedDetection?: boolean
+}
+
+export function computeSuspicionScore(
+  m: BehavioralMetrics,
+  options?: ComputeSuspicionScoreOptions
+): { score: number; flags: SuspiciousFlag[] } {
   const flags: SuspiciousFlag[] = []
   let score = 0
 
@@ -51,10 +60,17 @@ export function computeSuspicionScore(m: BehavioralMetrics): { score: number; fl
     score += f.weight
   }
 
-  // Enhanced AI-powered fraud detection patterns
+  // Enhanced AI-powered fraud detection patterns (original system)
   const enhancedDetection = detectAdvancedFraudPatterns(m)
   score += enhancedDetection.additionalScore
   flags.push(...enhancedDetection.newFlags)
+
+  // NEW: Advanced detection system with 50+ methods
+  if (options?.useAdvancedDetection !== false) {
+    const advancedDetection = detectAdvancedFraud(m, options?.responses)
+    score += advancedDetection.totalScore
+    flags.push(...advancedDetection.flags)
+  }
 
   return { score: clamp(score, 0, 1), flags }
 }

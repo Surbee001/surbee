@@ -81,8 +81,14 @@ export const CommunitySurveyCard: React.FC<CommunitySurveyCardProps> = ({
         </div>
         <button
           type="button"
-          className="pointer-events-auto flex h-8 w-[80px] items-center justify-center rounded-lg border bg-white text-xs font-medium text-black opacity-0 transition-all duration-300 ease-in-out group-hover:opacity-100 group-hover:border-[#f8f8f8]"
-          style={{ borderColor: 'var(--surbee-border-accent)' }}
+          className="pointer-events-auto flex h-8 w-[80px] items-center justify-center rounded-lg border opacity-0 transition-all duration-300 ease-in-out group-hover:opacity-100"
+          style={{
+            backgroundColor: 'var(--surbee-fg-primary)',
+            color: 'var(--surbee-bg-primary)',
+            borderColor: 'var(--surbee-border-accent)',
+            fontWeight: 500,
+            fontSize: '0.75rem'
+          }}
           onClick={(event) => {
             event.stopPropagation();
             onTakeSurvey(survey.id);

@@ -1,23 +1,56 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Github } from 'lucide-react';
 import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-  const handleLogin = () => {
-    router.push('/dashboard');
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        setError(signInError.message);
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleGithubLogin = () => {
-    router.push('/dashboard');
-  };
-
-  const handleGoogleLogin = () => {
-    router.push('/dashboard');
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard`,
+        },
+      });
+    } catch (error) {
+      console.error('Google login error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -26,49 +59,48 @@ export default function LoginPage() {
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: "url('https://ik.imagekit.io/on0moldgr/Surbee%20Art/u7411232448_a_landscape_colorful_burnt_orange_bright_pink_reds__4d561ac8-4332-456e-872f-1620cdef4d80.png?updatedAt=1761758702696')",
+          backgroundImage: "url('https://ik.imagekit.io/on0moldgr/Surbee%20Art/u7411232448_a_drone_top_view_looking_straight_down_colorful_bur_85552d14-94fc-42ae-8523-f8bafc65a21e.png?updatedAt=1762029220439')",
         }}
       >
         {/* Dark Overlay */}
         <div className="absolute inset-0 bg-black/40" />
       </div>
 
-      {/* Login Card */}
-      <div className="relative z-10 w-full max-w-md mx-4">
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-8 border border-white/20">
-          {/* Logo */}
-          <div className="flex items-center justify-center mb-8">
-            <img
-              src="https://raw.githubusercontent.com/Surbee001/webimg/d31a230c841bc324c709964f3d9ab01daec67f8d/Surbee%20Logo%20Final.svg"
-              alt="Surbee"
-              className="h-16"
-            />
-          </div>
+      {/* Login Content - No Container Background */}
+      <div className="relative z-10 w-full max-w-xs mx-4 flex flex-col items-center">
+        {/* Back Button (visible only when showing email form) */}
+        {showEmailForm && (
+          <button
+            onClick={() => {
+              setShowEmailForm(false);
+              setEmail('');
+              setPassword('');
+              setError('');
+            }}
+            className="self-start mb-4 flex items-center gap-2 text-white hover:text-gray-200 transition-colors cursor-pointer"
+            style={{ fontFamily: 'FK Grotesk, sans-serif' }}
+          >
+            <ArrowLeft size={20} />
+            <span className="text-sm font-medium">Back</span>
+          </button>
+        )}
 
-          {/* Welcome Text */}
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'PP Editorial, serif' }}>
-              Welcome back
-            </h1>
-            <p className="text-sm text-gray-600" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
-              Sign in to continue to your dashboard
-            </p>
-          </div>
+        {/* Logo */}
+        <div className="mb-4">
+          <img
+            src="https://raw.githubusercontent.com/Surbee001/webimg/d31a230c841bc324c709964f3d9ab01daec67f8d/Surbee%20Logo%20Final.svg"
+            alt="Surbee"
+            className="h-24 brightness-0 invert"
+          />
+        </div>
 
-          {/* OAuth Buttons */}
-          <div className="space-y-3 mb-6">
-            <button
-              onClick={handleGithubLogin}
-              className="w-full bg-black text-white py-3 px-4 rounded-lg flex items-center justify-center space-x-3 hover:bg-gray-800 transition-all duration-200 transform hover:scale-[1.02]"
-              style={{ fontFamily: 'FK Grotesk, sans-serif' }}
-            >
-              <Github size={18} />
-              <span className="text-sm font-medium">Continue with GitHub</span>
-            </button>
-
+        {!showEmailForm ? (
+          <>
+            {/* Google Button */}
             <button
               onClick={handleGoogleLogin}
-              className="w-full bg-white border border-gray-300 text-gray-900 py-3 px-4 rounded-lg flex items-center justify-center space-x-3 hover:bg-gray-50 transition-all duration-200 transform hover:scale-[1.02]"
+              disabled={loading}
+              className="w-full bg-white text-gray-900 py-3 px-5 rounded-full flex items-center justify-center space-x-3 hover:bg-gray-100 transition-colors duration-200 mb-3 shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ fontFamily: 'FK Grotesk, sans-serif' }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24">
@@ -91,57 +123,101 @@ export default function LoginPage() {
               </svg>
               <span className="text-sm font-medium">Continue with Google</span>
             </button>
-          </div>
 
-          {/* Divider */}
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500" style={{ fontFamily: 'Sohne, sans-serif' }}>
-                or continue with email
-              </span>
-            </div>
-          </div>
-
-          {/* Email Login */}
-          <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4 mb-6">
-            <div>
-              <input
-                type="email"
-                placeholder="Email address"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent text-gray-900"
-                style={{ fontFamily: 'FK Grotesk, sans-serif' }}
-              />
-            </div>
-            <div>
-              <input
-                type="password"
-                placeholder="Password"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent text-gray-900"
-                style={{ fontFamily: 'FK Grotesk, sans-serif' }}
-              />
-            </div>
+            {/* Email Button */}
             <button
-              type="submit"
-              className="w-full bg-black text-white py-3 px-4 rounded-lg text-sm font-medium hover:bg-gray-800 transition-all duration-200 transform hover:scale-[1.02]"
+              onClick={() => setShowEmailForm(true)}
+              className="w-full bg-black text-white py-3 px-5 rounded-full flex items-center justify-center space-x-3 hover:bg-zinc-900 transition-colors duration-200 shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ fontFamily: 'FK Grotesk, sans-serif' }}
+              disabled={loading}
             >
-              Sign In
+              <span className="text-sm font-medium">Continue with Email</span>
             </button>
-          </form>
 
-          {/* Sign Up Link */}
-          <div className="text-center">
-            <p className="text-sm text-gray-600" style={{ fontFamily: 'Sohne, sans-serif' }}>
-              Don't have an account?{' '}
-              <Link href="/signup" className="text-black hover:underline font-medium">
-                Create account
-              </Link>
-            </p>
-          </div>
-        </div>
+            {/* Terms and Privacy */}
+            <div className="text-center mt-6">
+              <p className="text-xs text-white" style={{ fontFamily: 'Sohne, sans-serif' }}>
+                By signing up, you agree to our{' '}
+                <Link href="/terms" className="underline hover:text-gray-200 transition-colors font-medium">
+                  Terms and Conditions
+                </Link>
+                {' '}and{' '}
+                <Link href="/privacy" className="underline hover:text-gray-200 transition-colors font-medium">
+                  Privacy Policy
+                </Link>
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Email Login Form */}
+            <form onSubmit={handleEmailSubmit} className="w-full space-y-4">
+              {error && (
+                <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-2 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+
+              {/* Email Input */}
+              <div>
+                <label className="block text-white text-sm font-medium mb-2" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  className="w-full bg-white/10 border border-white/20 text-white placeholder-gray-400 py-3 px-4 rounded-lg focus:outline-none focus:border-white/50 transition-colors"
+                  style={{ fontFamily: 'FK Grotesk, sans-serif' }}
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Password Input */}
+              <div>
+                <label className="block text-white text-sm font-medium mb-2" style={{ fontFamily: 'FK Grotesk, sans-serif' }}>
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full bg-white/10 border border-white/20 text-white placeholder-gray-400 py-3 px-4 rounded-lg focus:outline-none focus:border-white/50 transition-colors"
+                  style={{ fontFamily: 'FK Grotesk, sans-serif' }}
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Login Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-white text-gray-900 py-3 px-5 rounded-full font-medium hover:bg-gray-100 transition-colors duration-200 shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ fontFamily: 'FK Grotesk, sans-serif' }}
+              >
+                {loading ? 'Signing in...' : 'Sign In'}
+              </button>
+            </form>
+
+            {/* Terms and Privacy */}
+            <div className="text-center mt-6">
+              <p className="text-xs text-white" style={{ fontFamily: 'Sohne, sans-serif' }}>
+                By signing in, you agree to our{' '}
+                <Link href="/terms" className="underline hover:text-gray-200 transition-colors font-medium">
+                  Terms and Conditions
+                </Link>
+                {' '}and{' '}
+                <Link href="/privacy" className="underline hover:text-gray-200 transition-colors font-medium">
+                  Privacy Policy
+                </Link>
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, startTransition, useDeferredValue } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronLeft, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy, Hammer, Code, Terminal, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronLeft, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy, Hammer, Code, Terminal, AlertTriangle, Settings as SettingsIcon, Sun, Moon, Laptop, CheckCircle2 } from "lucide-react";
 import UserNameBadge from "@/components/UserNameBadge";
 import UserMenu from "@/components/ui/user-menu";
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -16,10 +16,15 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealtime } from '@/contexts/RealtimeContext';
+import { useTheme } from '@/hooks/useTheme';
 import { ThinkingDisplay } from '../../../../components/ThinkingUi/components/thinking-display';
 import { ToolCall } from '../../../../components/ThinkingUi/components/tool-call';
 import { AILoader } from '@/components/ai-loader';
 import { cn } from "@/lib/utils";
+import { Response } from '@/components/ai-elements/response';
+import { ToolCallTree } from '@/components/ToolCallTree';
+import { VersionHistory } from '@/components/VersionHistory';
+import { Switch } from "@/components/ui/switch";
 import {
   SandboxProvider,
   SandboxLayout,
@@ -172,14 +177,42 @@ const buildChatSummary = (history: WorkflowContextChatMessage[], limit = 4): str
   return lines.length > 0 ? lines.join("\n") : null;
 };
 
+// Helper to create a stable bundle key for forcing Sandpack remounts
+function createBundleKey(files: Record<string, any>, entry: string): string {
+  if (!files || Object.keys(files).length === 0) return "empty";
+
+  // Create a hash from file paths and content lengths to detect changes
+  const fileSignature = Object.entries(files)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([path, file]) => `${path}:${file.code?.length || 0}`)
+    .join('|');
+
+  // Use a simple hash to keep key shorter
+  let hash = 0;
+  for (let i = 0; i < fileSignature.length; i++) {
+    const char = fileSignature.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+
+  return `${entry}-${Math.abs(hash)}`;
+}
+
 // Simple preview-only component for main area (no code editor)
 function ProjectPreviewOnly({
   providerProps,
 }: {
   providerProps: SandboxProviderProps;
 }) {
+  // Create a stable key to force remount when files change
+  const bundleKey = useMemo(() => {
+    return createBundleKey(providerProps.files || {}, providerProps.activeFile || '');
+  }, [providerProps.files, providerProps.activeFile]);
+
+  console.log('[ProjectPreviewOnly] Bundle key:', bundleKey);
+
   return (
-    <SandboxProvider {...providerProps}>
+    <SandboxProvider key={bundleKey} {...providerProps}>
       <div className="h-full w-full bg-[#0a0a0a]">
         <SandpackPreview
           className="h-full w-full"
@@ -198,17 +231,36 @@ function ProjectSandboxView({
   providerProps,
   onFixError,
   bundle,
+  viewMode = 'code',
 }: {
   showConsole: boolean;
   providerProps: SandboxProviderProps;
   onFixError: (errorMessage: string) => void;
   bundle: SandboxBundle | null;
+  viewMode?: 'code' | 'console';
 }) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
+  const downloadMenuRef = useRef<HTMLDivElement>(null);
 
-  const handleDownload = useCallback(async () => {
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!downloadMenuOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(e.target as Node)) {
+        setDownloadMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [downloadMenuOpen]);
+
+  const handleDownloadAll = useCallback(async () => {
     if (!bundle) return;
     setIsDownloading(true);
+    setDownloadMenuOpen(false);
     try {
       const JSZip = (await import("jszip")).default;
       const { saveAs } = await import("file-saver");
@@ -225,6 +277,28 @@ function ProjectSandboxView({
     }
   }, [bundle]);
 
+  const handleDownloadCurrentFile = useCallback(async () => {
+    if (!bundle) return;
+    const activeFile = Object.entries(bundle.files).find(([path]) =>
+      path === providerProps.files?.[path]?.active || path === bundle.entry
+    );
+    if (!activeFile) return;
+
+    setIsDownloading(true);
+    setDownloadMenuOpen(false);
+    try {
+      const { saveAs } = await import("file-saver");
+      const [filePath, contents] = activeFile;
+      const fileName = filePath.split('/').pop() || 'file.txt';
+      const blob = new Blob([contents ?? ""], { type: "text/plain;charset=utf-8" });
+      saveAs(blob, fileName);
+    } catch (error) {
+      console.error("[Sandbox] Failed to download file", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [bundle, providerProps.files]);
+
   const dependencySummary = useMemo(() => {
     if (!bundle) {
       return "Bundle output will appear here as soon as SurbeeBuilder delivers a project.";
@@ -240,47 +314,105 @@ function ProjectSandboxView({
     return summaryParts.join(" | ");
   }, [bundle]);
 
+  // Create a stable key based on bundle content to force remount on changes
+  const bundleKey = useMemo(() => {
+    if (!bundle) return "placeholder-project";
+    return createBundleKey(providerProps.files || {}, bundle.entry);
+  }, [bundle, providerProps.files]);
+
   return (
-    <SandboxProvider key={bundle ? `${bundle.entry}-${Object.keys(bundle.files).length}` : "placeholder-project"} {...providerProps}>
+    <SandboxProvider key={bundleKey} {...providerProps}>
       <SandboxLayout className="flex flex-col h-full !bg-[#0a0a0a] !border-none !rounded-none">
         {/* Top bar with info and download */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
           <span className="text-xs text-zinc-400 leading-relaxed">{dependencySummary}</span>
-          <button
-            type="button"
-            onClick={handleDownload}
-            disabled={!bundle || isDownloading}
-            className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {isDownloading ? "Preparing..." : "Download ZIP"}
-          </button>
+
+          {viewMode === 'code' ? (
+            // Download dropdown for code view
+            <div className="relative" ref={downloadMenuRef}>
+              <button
+                type="button"
+                onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
+                disabled={!bundle || isDownloading}
+                className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {isDownloading ? "Preparing..." : "Download"}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+
+              {downloadMenuOpen && (
+                <div className="absolute right-0 top-full mt-1 w-48 rounded-md border border-zinc-700 shadow-lg z-10" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
+                  <button
+                    onClick={handleDownloadCurrentFile}
+                    className="w-full px-3 py-2 text-left text-xs text-zinc-300 hover:bg-white/10 transition-colors"
+                  >
+                    Download Current File
+                  </button>
+                  <button
+                    onClick={handleDownloadAll}
+                    className="w-full px-3 py-2 text-left text-xs text-zinc-300 hover:bg-white/10 transition-colors border-t border-zinc-700"
+                  >
+                    Download All Files (ZIP)
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Simple download button for console view
+            <button
+              type="button"
+              onClick={handleDownloadAll}
+              disabled={!bundle || isDownloading}
+              className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {isDownloading ? "Preparing..." : "Download ZIP"}
+            </button>
+          )}
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* File Explorer */}
-          <SandpackFileExplorer className="w-56 shrink-0 border-r border-zinc-800 text-xs text-zinc-200" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }} />
+        {viewMode === 'code' ? (
+          // Code view: File tree on left, code editor on right (no preview)
+          <div className="flex-1 flex overflow-hidden">
+            {/* File Explorer */}
+            <SandpackFileExplorer className="w-64 shrink-0 border-r border-zinc-800 text-sm text-zinc-200" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }} />
 
-          {/* Code Editor */}
-          <SandpackCodeEditor
-            className="flex-1 min-w-0"
-            showLineNumbers
-            showInlineErrors
-            wrapContent
-            style={{ fontSize: 14, backgroundColor: '#0a0a0a' }}
-          />
-
-          {/* Preview */}
-          <div className="flex-1 border-l border-zinc-800 bg-[#0a0a0a]">
-            <SandpackPreview
-              className="h-full w-full"
-              showRefreshButton
-              showNavigator={false}
-              showOpenInCodeSandbox={false}
-              style={{ backgroundColor: "#0a0a0a" }}
+            {/* Code Editor - Full width */}
+            <SandpackCodeEditor
+              className="flex-1 min-w-0"
+              showLineNumbers
+              showInlineErrors
+              wrapContent
+              style={{ fontSize: 14, backgroundColor: '#0a0a0a' }}
             />
           </div>
-        </div>
+        ) : (
+          // Console view: File tree, code editor, and preview
+          <div className="flex-1 flex overflow-hidden">
+            {/* File Explorer */}
+            <SandpackFileExplorer className="w-56 shrink-0 border-r border-zinc-800 text-xs text-zinc-200" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }} />
+
+            {/* Code Editor */}
+            <SandpackCodeEditor
+              className="flex-1 min-w-0"
+              showLineNumbers
+              showInlineErrors
+              wrapContent
+              style={{ fontSize: 14, backgroundColor: '#0a0a0a' }}
+            />
+
+            {/* Preview */}
+            <div className="flex-1 border-l border-zinc-800 bg-[#0a0a0a]">
+              <SandpackPreview
+                className="h-full w-full"
+                showRefreshButton
+                showNavigator={false}
+                showOpenInCodeSandbox={false}
+                style={{ backgroundColor: "#0a0a0a" }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Console Panel at Bottom */}
         {showConsole && (
@@ -318,6 +450,7 @@ function deriveSandboxConfig(bundle: SandboxBundle | null): {
   const dependencies = buildSandboxDependencies(bundle);
   let entryExists = false;
 
+  // Process all files - they should already be normalized from the useEffect
   for (const [filePath, contents] of Object.entries(bundle.files)) {
     const normalizedPath = normalizeSandboxPath(filePath);
     const code = typeof contents === "string" ? contents : "";
@@ -352,16 +485,32 @@ function deriveSandboxConfig(bundle: SandboxBundle | null): {
 
   const importSpecifier = toImportSpecifier(normalizedEntry);
 
-  // Debug: Log the import specifier
+  // Debug: Log the import specifier and verify file exists
   console.log('[deriveSandboxConfig] Entry:', normalizedEntry, 'Import:', importSpecifier);
+  console.log('[deriveSandboxConfig] Entry exists:', entryExists);
+  console.log('[deriveSandboxConfig] Available files:', Object.keys(files));
 
-  // Only create index.tsx if it doesn't exist
-  if (!files["/index.tsx"]) {
-    files["/index.tsx"] = {
-      code: `import React from "react";
+  // Collect all CSS imports
+  const cssImports: string[] = ["./tailwind.css"];
+
+  // Find all CSS files and import them
+  Object.keys(files).forEach(filePath => {
+    if (filePath.endsWith('.css') && filePath !== '/tailwind.css') {
+      // Import CSS files with relative paths
+      const importPath = filePath.startsWith('/') ? `.${filePath}` : `./${filePath}`;
+      console.log('[deriveSandboxConfig] Found CSS file:', filePath, '-> import:', importPath);
+      cssImports.push(importPath);
+    }
+  });
+
+  console.log('[deriveSandboxConfig] Total CSS imports:', cssImports);
+
+  // Always recreate index.tsx to ensure import path matches current entry
+  files["/index.tsx"] = {
+    code: `import React from "react";
 import { createRoot } from "react-dom/client";
 import SurveyExperience from "${importSpecifier}";
-import "./tailwind.css";
+${cssImports.map(css => `import "${css}";`).join('\n')}
 
 const container = document.getElementById("root");
 
@@ -374,8 +523,7 @@ if (container) {
   );
 }
 `,
-    };
-  }
+  };
 
   // Add tailwind.css file if it doesn't exist
   if (!files["/tailwind.css"]) {
@@ -458,7 +606,7 @@ function createDefaultSandboxConfig(): {
 } {
   const dependencies = { ...BASE_SANDBOX_DEPENDENCIES };
   const files: SandboxProviderProps["files"] = {
-    "/Survey.tsx": {
+    "/App.tsx": {
       code: `import { Calendar, Smile } from "lucide-react";
 
 interface SurveyQuestion {
@@ -488,7 +636,7 @@ const QUESTIONS: SurveyQuestion[] = [
   },
 ];
 
-export default function Survey() {
+export default function App() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-12">
@@ -624,7 +772,7 @@ if (container) {
 
   return {
     files,
-    activeFile: "/Survey.tsx",
+    activeFile: "/App.tsx",
     dependencies,
   };
 }
@@ -765,6 +913,14 @@ interface SandboxBundle {
   devDependencies?: string[];
 }
 
+interface BundleVersion {
+  id: string;
+  timestamp: number;
+  bundle: SandboxBundle;
+  description: string;
+  messageId?: string; // ID of the message that created this version
+}
+
 
 
 interface HistoryEntry {
@@ -785,35 +941,54 @@ interface ProjectPageProps {
 }
 
 export default function ProjectPage() {
+
   // In client components, use useParams() to read dynamic params
   const { id } = useParams() as { id?: string };
   const projectId: string | undefined = id;
   const searchParams = useSearchParams();
-  // Disabled for demo
-  const user = { id: 'demo-user' };
-  const authLoading = false;
-  // Disabled for demo
-  const subscribeToProject = () => {};
+  const { user, loading: authLoading } = useAuth();
+  const { subscribeToProject } = useRealtime();
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Prevent hydration errors by only checking theme on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const isDarkMode = isMounted && theme === 'dark';
+
+  const handleNavigation = (path: string) => {
+    router.push(path);
+  };
+
+  const handleProfileAction = (action: string) => {
+    setIsUserMenuOpen(false);
+    switch (action) {
+      case 'settings':
+        handleNavigation('/dashboard/settings');
+        break;
+      case 'logout':
+        // Handle logout
+        handleNavigation('/');
+        break;
+      default:
+        break;
+    }
+  };
 
   // Check if this is a sandbox preview request
   const isSandboxPreview = searchParams?.get('sandbox') === '1';
 
   // Enable mock mode by default (no database)
-  const mockMode = true;
+  const mockMode = false;
 
-  // Project state - mock project for demo
-  const [project, setProject] = useState<Project | null>({
-    id: 'demo-project',
-    title: 'Demo Project',
-    description: 'Survey built with Grok 4 Fast Reasoning',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    user_id: 'demo-user',
-    status: 'draft'
-  });
+  // Project state
+  const [project, setProject] = useState<Project | null>(null);
   const [projectLoading, setProjectLoading] = useState(false);
   const [autoGeneratedTitle, setAutoGeneratedTitle] = useState<string | null>(null);
+  const [isTitleGenerating, setIsTitleGenerating] = useState(false);
 
   const [isPlanUsageOpen, setIsPlanUsageOpen] = useState(true);
   const [isChatsOpen, setIsChatsOpen] = useState(false);
@@ -827,22 +1002,81 @@ export default function ProjectPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<{ [key: string]: string }>({});
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   // Reasoning and sandbox state
-  const [reasoningByMessage, setReasoningByMessage] = useState<Record<string, ThinkingStep[]>>({});
-  const [reasoningStartTimes, setReasoningStartTimes] = useState<Record<string, number>>({});
   const [sandboxContent, setSandboxContent] = useState<Record<string, string> | null>(null);
 
-  // useChat hook for message handling
-  const { messages, sendMessage, status } = useChat<ChatMessage>({
-    transport: new DefaultChatTransport({
-      api: '/api/agents/surbee-v3',
-    }),
+  // Initialize selected model ONCE from sessionStorage
+  const [selectedModel, setSelectedModel] = useState<'gpt-5' | 'claude-haiku'>(() => {
+    if (typeof window === 'undefined') return 'gpt-5';
+    try {
+      const storedModel = sessionStorage.getItem('surbee_selected_model');
+      if (storedModel === 'gpt-5' || storedModel === 'claude-haiku') {
+        return storedModel;
+      }
+    } catch (e) {
+      console.error('Failed to read model from sessionStorage:', e);
+    }
+    return 'gpt-5';
   });
+
+  const selectedModelRef = useRef(selectedModel);
+
+  // Update sessionStorage when model changes
+  const handleModelChange = useCallback((model: 'gpt-5' | 'claude-haiku') => {
+    console.log('🔄 CHANGING MODEL TO:', model);
+    setSelectedModel(model);
+    selectedModelRef.current = model;
+    try {
+      sessionStorage.setItem('surbee_selected_model', model);
+      console.log('✅ SAVED NEW MODEL TO SESSION STORAGE:', model);
+    } catch (e) {
+      console.error('Failed to save model to sessionStorage:', e);
+    }
+  }, []);
+
+  // useChat hook for message handling - using Vercel AI SDK
+  const chatTransport = useMemo(() => new DefaultChatTransport({ api: '/api/agents/surbee-v3' }), []);
+
+  // Memoize onError to prevent useChat re-initialization
+  const onError = useCallback((error: Error) => {
+    console.error('🚨 Chat error:', error);
+  }, []);
+
+  const { messages: rawMessages, sendMessage: originalSendMessage, status, stop, reload } = useChat<ChatMessage>({
+    transport: chatTransport,
+    // DO NOT pass body here - we'll pass it in sendMessage instead to allow dynamic model switching
+    onError,
+    // CRITICAL: Throttle UI updates to prevent "Maximum update depth exceeded"
+    experimental_throttle: 50,
+  });
+
+  // Use raw messages directly - deferring didn't help
+  const messages = rawMessages;
+
+  // Use sendMessage directly - don't wrap it
+  const sendMessage = originalSendMessage;
+
+  // No debouncing needed - we render directly from messages
+
+  // Extract sandbox bundle from tool results
+  const prevBundleRef = useRef<string | null>(null);
+  const messagesLengthRef = useRef(0);
 
   // Extract sandbox bundle from tool results
   useEffect(() => {
     if (!messages || messages.length === 0) return;
+
+    // Skip if messages length hasn't changed AND status hasn't changed to ready
+    const isNewMessage = messages.length !== messagesLengthRef.current;
+    const justFinishedStreaming = status === 'ready';
+
+    if (!isNewMessage && !justFinishedStreaming) return;
+
+    messagesLengthRef.current = messages.length;
+
+    console.log('[Bundle Extraction] Checking for source_files, messages:', messages.length, 'status:', status);
 
     // Look through all assistant messages for any tool that returns source_files
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -854,52 +1088,93 @@ export default function ProjectPage() {
         if (part.type.startsWith('tool-') && part.state === 'output-available') {
           const output = part.output as any;
           if (output?.source_files && Object.keys(output.source_files).length > 0) {
-            // Create a proper SandboxBundle
+            console.log('[Bundle Extraction] Found source_files in tool output!');
+
+            // Normalize all file paths to have leading slashes
+            const normalizedFiles: Record<string, string> = {};
+            Object.entries(output.source_files).forEach(([path, content]) => {
+              const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+              normalizedFiles[normalizedPath] = content as string;
+            });
+
+            // Auto-detect entry file if not specified
+            const detectEntryFile = (files: Record<string, string>): string => {
+              // First check if AI provided an entry point
+              if (output.entry_point || output.entry_file || output.entry) {
+                const provided = output.entry_point || output.entry_file || output.entry;
+                return provided.startsWith('/') ? provided : `/${provided}`;
+              }
+
+              // Look for common entry file patterns
+              const fileKeys = Object.keys(files);
+
+              // Priority 1: Look for App.tsx, App.ts, index.tsx, index.ts
+              const commonEntries = ['/App.tsx', '/src/App.tsx', '/Index.tsx', '/src/Index.tsx', '/index.tsx', '/src/index.tsx'];
+              for (const entry of commonEntries) {
+                if (fileKeys.includes(entry)) return entry;
+              }
+
+              // Priority 2: Look for any .tsx file in root or src
+              const tsxFile = fileKeys.find(key =>
+                (key.endsWith('.tsx') || key.endsWith('.ts')) &&
+                (key.startsWith('/src/') || key.split('/').length === 2)
+              );
+              if (tsxFile) return tsxFile;
+
+              // Priority 3: First .tsx or .ts file found
+              const firstReactFile = fileKeys.find(key => key.endsWith('.tsx') || key.endsWith('.ts'));
+              if (firstReactFile) return firstReactFile;
+
+              // Fallback: first file
+              return fileKeys[0] || '/App.tsx';
+            };
+
+            const normalizedEntry = detectEntryFile(normalizedFiles);
+
+            // Create a proper SandboxBundle with normalized paths
             const bundle: SandboxBundle = {
-              files: output.source_files,
-              entry: output.entry_point || output.entry || 'src/Survey.tsx',
+              files: normalizedFiles,
+              entry: normalizedEntry,
               dependencies: output.dependencies || [],
               devDependencies: output.devDependencies || [],
             };
-            setSandboxBundle(bundle);
+
+            // Only update if bundle content has changed
+            const bundleStr = JSON.stringify(bundle);
+            if (bundleStr !== prevBundleRef.current) {
+              prevBundleRef.current = bundleStr;
+
+              console.log('[Bundle Extraction] New bundle detected! Updating sandbox...');
+
+              // Batch all state updates together to prevent cascading re-renders
+              const versionId = `v${Date.now()}`;
+              startTransition(() => {
+                setSandboxBundle(bundle);
+                setBundleVersions(prev => {
+                  const newVersion: BundleVersion = {
+                    id: versionId,
+                    timestamp: Date.now(),
+                    bundle: bundle,
+                    description: `Version ${prev.length + 1}`,
+                    messageId: msg.id,
+                  };
+                  return [...prev, newVersion];
+                });
+                setCurrentVersionId(versionId);
+              });
+            } else {
+              console.log('[Bundle Extraction] Bundle unchanged, skipping update');
+            }
             return; // Use the most recent source_files found
           }
         }
       }
     }
-  }, [messages]);
 
-  // Convert reasoning parts to ThinkingSteps and track durations
-  useEffect(() => {
-    if (!messages || messages.length === 0) return;
+    console.log('[Bundle Extraction] No source_files found in messages');
+  }, [messages, status]); // Also depend on status to re-check when streaming finishes
 
-    const newReasoningByMessage: Record<string, ThinkingStep[]> = {};
-
-    messages.forEach((msg) => {
-      if (msg.role !== 'assistant') return;
-
-      const reasoningParts = msg.parts.filter(p => p.type === 'reasoning');
-      if (reasoningParts.length === 0) return;
-
-      // Track start time if this is the first reasoning part for this message
-      setReasoningStartTimes(prev => {
-        if (!prev[msg.id]) {
-          return { ...prev, [msg.id]: Date.now() };
-        }
-        return prev;
-      });
-
-      const steps: ThinkingStep[] = reasoningParts.map((part, idx) => ({
-        id: `${msg.id}-reasoning-${idx}`,
-        content: part.text || '',
-        status: 'complete' as const,
-      }));
-
-      newReasoningByMessage[msg.id] = steps;
-    });
-
-    setReasoningByMessage(newReasoningByMessage);
-  }, [messages]);
+  // TIMING REMOVED TEMPORARILY TO DEBUG INFINITE LOOP
 
   // Thinking chain state
   const [sidebarView, setSidebarView] = useState<SidebarView>('chat');
@@ -920,16 +1195,10 @@ export default function ProjectPage() {
   const [sandboxBundle, setSandboxBundle] = useState<SandboxBundle | null>(null);
   const [sandboxError, setSandboxError] = useState<string | null>(null);
   const [rendererKey, setRendererKey] = useState(0);
+  const [bundleVersions, setBundleVersions] = useState<BundleVersion[]>([]);
+  const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const sandboxConfig = useMemo(() => {
-    const config = deriveSandboxConfig(sandboxBundle);
-    console.log('[Sandbox Config]', {
-      bundle: sandboxBundle,
-      files: Object.keys(config.files),
-      activeFile: config.activeFile,
-      dependencies: config.dependencies,
-      fileContents: config.files
-    });
-    return config;
+    return deriveSandboxConfig(sandboxBundle);
   }, [sandboxBundle]);
 
   const sandboxProviderProps = useMemo<SandboxProviderProps>(() => ({
@@ -940,12 +1209,17 @@ export default function ProjectPage() {
       entry: "/index.tsx",
       main: "/index.tsx",
       dependencies: sandboxConfig.dependencies,
+      environment: "create-react-app",
     },
     options: {
       activeFile: sandboxConfig.activeFile,
       autorun: true,
       recompileMode: "immediate",
       recompileDelay: 300,
+      externalResources: [
+        "https://cdn.tailwindcss.com?plugins=forms,typography",
+        "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+      ],
     },
   }), [sandboxConfig]);
   const sandboxAvailable = Boolean(sandboxBundle);
@@ -959,24 +1233,37 @@ export default function ProjectPage() {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const shareMenuRef = useRef<HTMLDivElement>(null);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [publishToCommunity, setPublishToCommunity] = useState(true);
+  const [publishToMarketplace, setPublishToMarketplace] = useState(false);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
 
-  // Initialize mock project on mount
+  // Load project from database (don't auto-create)
   useEffect(() => {
-    if (mockMode && !project) {
-      const now = new Date().toISOString();
-      setProject({
-        id: projectId || 'mock-project',
-        created_at: now,
-        updated_at: now,
-        title: `Demo Project ${projectId || ''}`.trim(),
-        description: null,
-        user_id: 'mock-user',
-        status: 'draft',
-      } as Project);
-      setProjectLoading(false);
+    if (!mockMode && projectId && user?.id && !project && !projectLoading) {
+      setProjectLoading(true);
+
+      // Try to fetch the project
+      fetch(`/api/projects/${projectId}?userId=${user.id}`)
+        .then(res => res.json())
+        .then((data) => {
+          if (data.project) {
+            // Project exists, use it
+            setProject(data.project);
+          }
+          // If project doesn't exist, it will be created on first publish
+        })
+        .catch(err => console.error('Failed to load project:', err))
+        .finally(() => setProjectLoading(false));
     }
-  }, [mockMode, projectId]);
+  }, [mockMode, projectId, user?.id, project, projectLoading]);
+
+  // Initialize published URL from project
+  useEffect(() => {
+    if (project?.published_url && !publishedUrl) {
+      setPublishedUrl(project.published_url);
+    }
+  }, [project, publishedUrl]);
 
   // Subscribe to real-time messages for this project
   useEffect(() => {
@@ -1060,12 +1347,91 @@ export default function ProjectPage() {
 
 
 
-  const handleSubmit = async (message: string, images?: string[]) => {
+  const handleRestoreVersion = useCallback((versionId: string) => {
+    const version = bundleVersions.find(v => v.id === versionId);
+    if (!version) {
+      console.error('[Version History] Version not found:', versionId);
+      return;
+    }
+
+    console.log('[Version History] Restoring version:', versionId);
+    setSandboxBundle(version.bundle);
+    setCurrentVersionId(versionId);
+    setSidebarView('chat'); // Switch back to chat view after restore
+  }, [bundleVersions]);
+
+  const handleSubmit = useCallback(async (message: string, images?: string[]) => {
     if (!message.trim() || status !== 'ready') return;
 
     setHasStartedChat(true);
-    sendMessage({ text: message });
-  };
+
+    // Generate title from first message using AI if not already set
+    if (!autoGeneratedTitle && message.trim()) {
+      setIsTitleGenerating(true);
+
+      // Run title generation in background without blocking message send
+      fetch('/api/generate-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: message }),
+      })
+        .then(async (response) => {
+          if (response.ok && response.body) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let streamedTitle = '';
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              const chunk = decoder.decode(value);
+              streamedTitle += chunk;
+            }
+
+            if (streamedTitle.trim()) {
+              setAutoGeneratedTitle(streamedTitle.trim());
+            }
+          }
+        })
+        .catch((error) => {
+          console.error('Title generation failed:', error);
+          // Fallback to simple title generation
+          const words = message.trim().split(/\s+/);
+          const titleWords = words.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+          setAutoGeneratedTitle(titleWords.join(' '));
+        })
+        .finally(() => {
+          setIsTitleGenerating(false);
+        });
+    }
+
+    // Use the current selected model from state
+    const currentModel = selectedModelRef.current;
+    console.log('📤 SENDING MESSAGE WITH MODEL:', currentModel);
+
+    // Create a stable options object - memoized to prevent re-renders
+    const sendOptions = { body: { model: currentModel } };
+
+    // Send message with images if provided following ImagePart format
+    if (images && images.length > 0) {
+      const parts: Array<{ type: 'text'; text: string } | { type: 'image'; image: string }> = [
+        { type: 'text', text: message }
+      ];
+
+      // Add image parts following the ImagePart interface
+      images.forEach(img => {
+        parts.push({
+          type: 'image',
+          image: img, // URL or base64 data
+        });
+      });
+
+      sendMessage({ parts } as any, sendOptions);
+    } else {
+      sendMessage({ text: message }, sendOptions);
+    }
+  }, [status, autoGeneratedTitle]); // sendMessage and selectedModel intentionally excluded - using refs/direct access
 
   const handleSandboxFixRequest = useCallback((errorMessage: string) => {
     const prompt = `The sandbox preview reported an error:\n\n${errorMessage}\n\nPlease diagnose the issue and provide an updated solution.`;
@@ -1077,6 +1443,91 @@ export default function ProjectPage() {
   const handleSandboxIgnore = useCallback(() => {
     setSandboxError(null);
   }, []);
+
+  const handlePublish = useCallback(async () => {
+    if (!projectId || !user?.id) return;
+
+    // Check if there's code in the sandbox
+    if (!sandboxAvailable) {
+      setPublishSuccess('Please generate code before publishing');
+      setTimeout(() => setPublishSuccess(null), 3000);
+      return;
+    }
+
+    setIsPublishing(true);
+    setPublishSuccess(null);
+
+    try {
+      // Check if project exists in database
+      if (!project) {
+        // First time publishing - create AND publish the project
+        const createResponse = await fetch('/api/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: projectId,
+            title: `Project ${projectId.substring(0, 8)}`,
+            description: 'Survey created with Surbee',
+            user_id: user.id
+          })
+        });
+
+        const createData = await createResponse.json();
+
+        if (!createData.project) {
+          throw new Error(createData.error || 'Failed to create project');
+        }
+
+        // Set the created project
+        setProject(createData.project);
+      }
+
+      // Now publish the project (works for both new and existing)
+      const response = await fetch(`/api/projects/${projectId}/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          surveySchema: null, // Can add survey schema if needed
+          publishToMarketplace
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.publishedUrl) {
+        setPublishedUrl(data.publishedUrl);
+        setPublishSuccess(project?.status === 'published' ? 'Survey updated successfully!' : 'Survey published successfully!');
+
+        // Update project status
+        setProject(prev => prev ? { ...prev, status: 'published', published_url: data.publishedUrl } : null);
+
+        setTimeout(() => setPublishSuccess(null), 3000);
+      } else {
+        throw new Error(data.error || 'Failed to publish');
+      }
+    } catch (error) {
+      console.error('Failed to publish:', error);
+      setPublishSuccess('Failed to publish. Please try again.');
+      setTimeout(() => setPublishSuccess(null), 3000);
+    } finally {
+      setIsPublishing(false);
+    }
+  }, [projectId, user?.id, publishToMarketplace, project, sandboxAvailable]);
+
+  const copyPublishedLink = useCallback(async () => {
+    if (!publishedUrl) return;
+
+    const fullUrl = `${window.location.origin}/s/${publishedUrl}`;
+
+    try {
+      await navigator.clipboard.writeText(fullUrl);
+      setPublishSuccess('Link copied to clipboard!');
+      setTimeout(() => setPublishSuccess(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  }, [publishedUrl]);
 
   const isImageFile = (file: File) => file.type.startsWith("image/");
 
@@ -1293,7 +1744,7 @@ export default function ProjectPage() {
     // Use mock bundle if none exists
     const previewBundle = sandboxBundle || {
       files: {
-        "src/Survey.tsx": `export default function GeneratedSurvey() {
+        "src/App.tsx": `export default function App() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-8">
       <div className="rounded-2xl border border-white/10 bg-white/5 px-8 py-12 text-center max-w-md">
@@ -1309,7 +1760,7 @@ export default function ProjectPage() {
   );
 }`,
       },
-      entry: 'src/Survey.tsx',
+      entry: 'src/App.tsx',
       dependencies: ['react', 'react-dom', 'lucide-react'],
     };
 
@@ -1367,31 +1818,192 @@ export default function ProjectPage() {
         isChatHidden ? 'w-0 opacity-0 pointer-events-none' : (isSidebarCollapsed ? 'w-16' : 'w-140')
       }`} style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
         {/* Profile Section at Top (match dashboard UserMenu) */}
-        <div className="profile-section relative">
-          <button
-            onClick={() => setIsCgihadiDropdownOpen(!isCgihadiDropdownOpen)}
-            className="flex items-center justify-between w-full px-3 py-2 hover:bg-white/5 transition-colors rounded-md"
-          >
-            <span className="text-sm font-medium text-gray-200 truncate">
-              {autoGeneratedTitle || 'Untitled Survey'}
+        <div className="profile-section relative h-14 flex items-center px-3">
+          <div className="sidebar-item w-full" onClick={() => setIsUserMenuOpen((v) => !v)} style={{ cursor: 'pointer' }}>
+            <span className="sidebar-item-label">
+              <span className="flex items-center gap-1">
+                {isTitleGenerating ? (
+                  <span className="h-5 w-32 rounded bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_100%] animate-shimmer" />
+                ) : (
+                  <span style={{ fontWeight: 600, color: 'var(--surbee-fg-primary)' }}>
+                    {autoGeneratedTitle || 'Untitled Survey'}
+                  </span>
+                )}
+                {isUserMenuOpen ? <ChevronUp className="h-3 w-3" style={{ opacity: 0.6, color: 'var(--surbee-fg-primary)' }} /> : <ChevronDown className="h-3 w-3" style={{ opacity: 0.6, color: 'var(--surbee-fg-primary)' }} />}
+              </span>
             </span>
-            <motion.div
-              animate={{ rotate: isCgihadiDropdownOpen ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <ChevronDown className="w-4 h-4 text-gray-400" />
-            </motion.div>
-          </button>
+          </div>
+
+          {/* Overlay to close on outside click */}
+          {isUserMenuOpen && (
+            <div className="user-menu-overlay" onClick={() => setIsUserMenuOpen(false)} />
+          )}
+
           <AnimatePresence>
-            {isCgihadiDropdownOpen && (
+            {isUserMenuOpen && (
               <motion.div
-                className="absolute z-50 mt-2"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '60px',
+                  zIndex: 1200,
+                  border: 'none',
+                  background: 'hsl(0, 0%, 16%)',
+                  color: 'hsl(0, 0%, 100%)',
+                  borderRadius: '0.75rem',
+                  minWidth: '8rem',
+                  width: '17rem',
+                  padding: '0.5rem',
+                  boxShadow: 'none',
+                  backdropFilter: 'blur(32px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(32px) saturate(180%)',
+                  WebkitFontSmoothing: 'antialiased',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.25rem'
+                }}
+                role="menu"
               >
-                <UserMenu className="mt-2" onClose={() => setIsCgihadiDropdownOpen(false)} />
+                {/* User info header */}
+                <div className="user-menu-header-section">
+                  <div className="user-menu-username">Demo</div>
+                  <div className="user-menu-email">demo@example.com</div>
+                </div>
+
+                {/* Set up profile button */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard/settings'); }}
+                  className="user-menu-setup-profile"
+                >
+                  Set up profile
+                </button>
+
+                {/* Settings */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard/settings'); }}
+                  className="user-menu-item"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="user-menu-icon-circle">
+                      <SettingsIcon className="h-4 w-4" />
+                    </div>
+                    <span>Settings</span>
+                  </div>
+                </button>
+
+                {/* Theme selector */}
+                <div className="user-menu-theme-section">
+                  <div className="user-menu-theme-label">Theme</div>
+                  <div className="user-menu-theme-toggle">
+                    <button
+                      className={`user-menu-theme-btn ${theme === 'light' ? 'active' : ''}`}
+                      onClick={() => setTheme('light')}
+                      aria-label="Light theme"
+                    >
+                      <Sun className="h-4 w-4" />
+                    </button>
+                    <button
+                      className={`user-menu-theme-btn ${theme === 'dark' ? 'active' : ''}`}
+                      onClick={() => setTheme('dark')}
+                      aria-label="Dark theme"
+                    >
+                      <Moon className="h-4 w-4" />
+                    </button>
+                    <button
+                      className={`user-menu-theme-btn ${theme === 'system' ? 'active' : ''}`}
+                      onClick={() => setTheme('system')}
+                      aria-label="System theme"
+                    >
+                      <Laptop className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Pricing */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/pricing'); }}
+                  className="user-menu-item"
+                >
+                  <span>Pricing</span>
+                </button>
+
+                {/* Changelog */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/changelog'); }}
+                  className="user-menu-item"
+                >
+                  <span>Changelog</span>
+                </button>
+
+                {/* Blog */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/blog'); }}
+                  className="user-menu-item"
+                >
+                  <span>Blog</span>
+                </button>
+
+                {/* Give Feedback */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); }}
+                  className="user-menu-item"
+                >
+                  <span>Give Feedback</span>
+                </button>
+
+                {/* Support */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); window.open('/support', '_blank'); }}
+                  className="user-menu-item"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span>Support</span>
+                    <ExternalLink className="h-3.5 w-3.5 opacity-40" />
+                  </div>
+                </button>
+
+                {/* Log out */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); handleProfileAction('logout'); }}
+                  className="user-menu-item"
+                >
+                  <span>Log out</span>
+                </button>
+
+                {/* Footer */}
+                <div className="user-menu-footer">
+                  <button
+                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/privacy'); }}
+                    className="user-menu-footer-link"
+                  >
+                    Privacy
+                  </button>
+                  <button
+                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/terms'); }}
+                    className="user-menu-footer-link"
+                  >
+                    Terms
+                  </button>
+                  <button
+                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/copyright'); }}
+                    className="user-menu-footer-link"
+                  >
+                    Copyright
+                  </button>
+                  <button
+                    onClick={() => { setIsUserMenuOpen(false); window.open('https://x.com/surbee', '_blank'); }}
+                    className="user-menu-footer-link"
+                    aria-label="X (Twitter)"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1400,64 +2012,64 @@ export default function ProjectPage() {
         {/* Chat Area in Sidebar */}
           <div className="flex-1 flex flex-col min-h-0">
             {sidebarView === 'history' ? (
-              /* History View */
-              <div className="flex-1 overflow-y-auto">
-                <div className="p-4 pr-4">
-                  <div className="mb-4" style={{ paddingLeft: '8px' }}>
-                    <h3 className="text-lg font-semibold text-white mb-2" style={{
-                      fontFamily: 'Sohne, sans-serif',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    lineHeight: '1.375rem'
-                  }}>History</h3>
-                </div>
-                <div className="space-y-2">
-                  {historyEntries.map((entry) => (
-                    <div key={entry.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-zinc-800/50 transition-colors cursor-pointer group">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm text-white font-medium truncate" style={{ fontFamily: 'Sohne, sans-serif' }}>
-                              {entry.prompt}
-                            </p>
-                            <span className="text-xs text-gray-500 bg-zinc-800 px-2 py-1 rounded whitespace-nowrap">
-                              v{entry.version}
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-400 mt-1">{formatHistoryDate(entry.timestamp)}</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleHistoryFlag(entry.id);
-                        }}
-                        className={`p-1 rounded transition-colors ${
-                          entry.isFlagged 
-                            ? 'text-yellow-400 hover:text-yellow-300' 
-                            : 'text-gray-500 hover:text-gray-300 opacity-0 group-hover:opacity-100'
-                        }`}
-                        title={entry.isFlagged ? 'Remove flag' : 'Flag this version'}
-                      >
-                        <Flag className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    ))}
-                  </div>
-                </div>
+              /* Version History View */
+              <div className="flex-1 overflow-hidden">
+                <VersionHistory
+                  versions={bundleVersions}
+                  currentVersionId={currentVersionId}
+                  onRestore={handleRestoreVersion}
+                />
               </div>
             ) : (
               /* Chat Messages View */
-              <div className="flex-1 overflow-y-auto pl-12 pr-6 py-6" ref={chatAreaRef}>
+              <div className="flex-1 overflow-y-auto px-4 py-6" ref={chatAreaRef}>
                 <div className="space-y-4">
                   {messages?.map((msg, idx) => (
                     <div key={msg.id} className="space-y-2">
                       {msg.role === 'user' ? (
                         <div className="flex justify-end">
-                          <div className="max-w-[80%]">
-                            <div className="rounded-lg p-3 bg-primary text-primary-foreground">
-                              <p className="text-sm whitespace-pre-wrap">
+                          <div className="max-w-[80%] space-y-2">
+                            {/* Show images above the bubble */}
+                            {(() => {
+                              const imageParts = msg.parts?.filter(p => p.type === 'image') || [];
+                              if (imageParts.length > 0) {
+                                const imageSize = imageParts.length === 1 ? 'small' : imageParts.length === 2 ? 'xsmall' : 'tiny';
+                                const sizeClasses = {
+                                  small: 'h-24 w-24',
+                                  xsmall: 'h-20 w-20',
+                                  tiny: 'h-16 w-16'
+                                };
+
+                                return (
+                                  <div className="flex flex-wrap gap-2 justify-end">
+                                    {imageParts.map((part, imgIdx) => {
+                                      const imageUrl = typeof part.image === 'string'
+                                        ? part.image
+                                        : part.image instanceof URL
+                                          ? part.image.toString()
+                                          : URL.createObjectURL(new Blob([part.image as any]));
+
+                                      return (
+                                        <div
+                                          key={imgIdx}
+                                          className={`${sizeClasses[imageSize]} rounded-md overflow-hidden flex-shrink-0`}
+                                        >
+                                          <img
+                                            src={imageUrl}
+                                            alt={`Attachment ${imgIdx + 1}`}
+                                            className="w-full h-full object-cover"
+                                          />
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
+
+                            <div className="rounded-2xl px-6 py-3 text-primary-foreground" style={{ backgroundColor: 'rgb(38, 38, 38)' }}>
+                              <p className="whitespace-pre-wrap" style={{ fontSize: '16px' }}>
                                 {msg.parts.find(p => p.type === 'text')?.text || ''}
                               </p>
                             </div>
@@ -1465,45 +2077,106 @@ export default function ProjectPage() {
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {/* Show thinking display if this message has reasoning */}
-                          {reasoningByMessage[msg.id] && reasoningByMessage[msg.id].length > 0 && (
-                            <div className="pl-0">
-                              <ThinkingDisplay
-                                steps={reasoningByMessage[msg.id]}
-                                duration={reasoningStartTimes[msg.id]
-                                  ? Math.floor((Date.now() - reasoningStartTimes[msg.id]) / 1000)
-                                  : 0}
-                                isThinking={false}
-                                isLatest={idx === messages.length - 1}
-                              />
-                            </div>
-                          )}
+                          {/* Show thinking display first - show immediately when assistant is responding */}
+                          {(() => {
+                            if (msg.role !== 'assistant') return null;
 
-                          {/* Show tool calls */}
-                          {msg.parts.filter(p => p.type.startsWith('tool-')).map((part, partIdx) => {
-                            const toolName = part.type.replace('tool-', '');
-                            const isActive = part.state === 'input-streaming' || part.state === 'input-available';
+                            const reasoningParts = msg.parts.filter(p => p.type === 'reasoning');
+                            const hasReasoning = reasoningParts.length > 0;
+                            const isLastMessage = idx === messages.length - 1;
+                            const isThinking = isLastMessage && status !== 'ready';
+
+                            if (!hasReasoning && !isThinking) return null;
+
+                            // Convert reasoning parts to steps inline
+                            const steps = reasoningParts.map((part, partIdx) => ({
+                              id: `${msg.id}-reasoning-${partIdx}`,
+                              content: part.text || '',
+                              status: (isLastMessage && isThinking && partIdx === reasoningParts.length - 1) ? 'thinking' : 'complete'
+                            }));
+
+                            // No timing for now - just show 0
+                            const duration = 0;
 
                             return (
-                              <ToolCall
-                                key={partIdx}
-                                icon={<Hammer className="h-4 w-4" />}
-                                label={toolName}
-                                isActive={isActive}
-                              />
+                              <div className="pl-0">
+                                <ThinkingDisplay
+                                  steps={steps}
+                                  duration={duration}
+                                  isThinking={isThinking}
+                                />
+                              </div>
                             );
+                          })()}
+
+                          {/* Show all parts in chronological order (tool calls and text interleaved) */}
+                          {msg.parts.map((part, partIdx) => {
+                            // Render tool calls with tree structure
+                            if (part.type.startsWith('tool-')) {
+                              const toolName = part.type.replace('tool-', '');
+                              const isActive = part.state === 'input-streaming' || part.state === 'input-available';
+                              const output = part.state === 'output-available' ? part.output : null;
+
+                              return (
+                                <ToolCallTree
+                                  key={`tool-${partIdx}`}
+                                  toolName={toolName}
+                                  output={output}
+                                  isActive={isActive}
+                                />
+                              );
+                            }
+
+                            // Render text content with markdown
+                            if (part.type === 'text') {
+                              return (
+                                <div key={`text-${partIdx}`} className="max-w-none ai-response-markdown">
+                                  <Response>{part.text}</Response>
+                                </div>
+                              );
+                            }
+
+                            // Skip other part types (reasoning, image, etc.)
+                            return null;
                           })}
 
-                          {/* Show text content */}
-                          {msg.parts.filter(p => p.type === 'text').map((part, partIdx) => (
-                            <div key={partIdx} className="flex justify-start">
-                              <div className="max-w-[80%]">
-                                <div className="rounded-lg p-3 bg-muted shadow-sm">
-                                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{part.text}</p>
-                                </div>
-                              </div>
+                          {/* Action buttons - only show when message is complete */}
+                          {idx === messages.length - 1 && status === 'ready' && msg.parts.some(p => p.type === 'text') && (
+                            <div className="flex items-center gap-1 pt-1">
+                              <button
+                                onClick={() => reload()}
+                                className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+                                title="Regenerate"
+                                disabled={!(status === 'ready' || status === 'error')}
+                              >
+                                <RotateCcw className="w-4 h-4 text-muted-foreground" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const textContent = msg.parts.find(p => p.type === 'text')?.text || '';
+                                  navigator.clipboard.writeText(textContent);
+                                }}
+                                className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+                                title="Copy"
+                              >
+                                <Copy className="w-4 h-4 text-muted-foreground" />
+                              </button>
+                              <button
+                                className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+                                title="Thumbs up"
+                              >
+                                <ThumbsUp className="w-4 h-4 text-muted-foreground" />
+                              </button>
+                              <button
+                                className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+                                title="Thumbs down"
+                              >
+                                <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                                </svg>
+                              </button>
                             </div>
-                          ))}
+                          )}
                         </div>
                       )}
                     </div>
@@ -1514,7 +2187,7 @@ export default function ProjectPage() {
           </div>
 
         {/* Chat Input */}
-        <div className="pl-8 pr-4 pb-3">
+        <div className="pl-4 pr-2 pb-3">
           <div className="relative ml-0 mr-0">
             {/* Chat input container to anchor controls to the box itself */}
             <div className="relative">
@@ -1529,8 +2202,11 @@ export default function ProjectPage() {
                 selectedElement={null}
                 disableRotatingPlaceholders={true}
                 onClearSelection={() => {}}
+                showModelSelector={true}
+                selectedModel={selectedModel}
+                onModelChange={handleModelChange}
                 isBusy={status === 'submitted' || status === 'streaming'}
-                onStop={() => {}}
+                onStop={stop}
               />
             </div>
         </div>
@@ -1592,109 +2268,156 @@ export default function ProjectPage() {
             >
               <Code className="w-4 h-4" />
             </button>
-            <button
-              className={`rounded-md transition-colors cursor-pointer ${
-                sidebarView === 'console'
-                  ? 'text-white bg-white/10'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
-              } ${!sandboxAvailable ? 'opacity-40 cursor-not-allowed' : ''}`}
-              onClick={() => sandboxAvailable && setSidebarView((current) => current === 'console' ? 'chat' : 'console')}
-              aria-pressed={sidebarView === 'console'}
-              title="Toggle console view"
-              style={{
-                fontFamily: 'Sohne, sans-serif',
-                padding: '8px 12px'
-              }}
-              disabled={!sandboxAvailable}
-            >
-              <Terminal className="w-4 h-4" />
-            </button>
           </div>
 
           {/* Center Section - Device Controls */}
           <div className="hidden md:flex flex-1 items-center justify-center">
-            <div className="relative flex h-8 min-w-[340px] max-w-[560px] items-center justify-between gap-2 rounded-md border border-zinc-800 bg-[#1a1a1a] px-2 text-sm page-dropdown">
-              {/* Device View Buttons */}
-              <div className="flex items-center gap-1">
-                <button 
+            <div className="relative flex h-8 min-w-[340px] max-w-[560px] items-center justify-between gap-2 rounded-full border px-1 text-sm page-dropdown" style={{
+              borderColor: isDarkMode ? 'var(--surbee-border-accent)' : 'rgba(0, 0, 0, 0.1)',
+              backgroundColor: 'var(--surbee-sidebar-bg)'
+            }}>
+              {/* Device View Buttons - Hidden on mobile */}
+              <div className="hidden md:flex items-center gap-0.5">
+                <button
                   onClick={() => setCurrentDevice('desktop')}
-                  className={`p-1 rounded transition-colors ${
-                    currentDevice === 'desktop' 
-                      ? 'bg-zinc-700/50 text-white' 
-                      : 'text-gray-400 hover:text-white hover:bg-zinc-700/30'
-                  }`}
+                  className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
+                  style={{
+                    backgroundColor: currentDevice === 'desktop'
+                      ? (isDarkMode ? 'rgba(113,113,122,0.5)' : 'rgba(0,0,0,0.1)')
+                      : 'transparent',
+                    color: currentDevice === 'desktop'
+                      ? 'var(--surbee-fg-primary)'
+                      : 'var(--surbee-fg-secondary)'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (currentDevice !== 'desktop') {
+                      const isDark = document.documentElement.classList.contains('dark');
+                      e.currentTarget.style.backgroundColor = isDark ? 'rgba(113,113,122,0.3)' : 'rgba(0,0,0,0.05)';
+                      e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (currentDevice !== 'desktop') {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                    }
+                  }}
                 >
                   <Monitor className="w-3.5 h-3.5" />
                 </button>
-                <button 
+                <button
                   onClick={() => setCurrentDevice('tablet')}
-                  className={`p-1 rounded transition-colors ${
-                    currentDevice === 'tablet' 
-                      ? 'bg-zinc-700/50 text-white' 
-                      : 'text-gray-400 hover:text-white hover:bg-zinc-700/30'
-                  }`}
+                  className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
+                  style={{
+                    backgroundColor: currentDevice === 'tablet'
+                      ? (isDarkMode ? 'rgba(113,113,122,0.5)' : 'rgba(0,0,0,0.1)')
+                      : 'transparent',
+                    color: currentDevice === 'tablet'
+                      ? 'var(--surbee-fg-primary)'
+                      : 'var(--surbee-fg-secondary)'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (currentDevice !== 'tablet') {
+                      const isDark = document.documentElement.classList.contains('dark');
+                      e.currentTarget.style.backgroundColor = isDark ? 'rgba(113,113,122,0.3)' : 'rgba(0,0,0,0.05)';
+                      e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (currentDevice !== 'tablet') {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                    }
+                  }}
                 >
                   <Tablet className="w-3.5 h-3.5" />
                 </button>
-                <button 
+                <button
                   onClick={() => setCurrentDevice('phone')}
-                  className={`p-1 rounded transition-colors ${
-                    currentDevice === 'phone' 
-                      ? 'bg-zinc-700/50 text-white' 
-                      : 'text-gray-400 hover:text-white hover:bg-zinc-700/30'
-                  }`}
+                  className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
+                  style={{
+                    backgroundColor: currentDevice === 'phone'
+                      ? (isDarkMode ? 'rgba(113,113,122,0.5)' : 'rgba(0,0,0,0.1)')
+                      : 'transparent',
+                    color: currentDevice === 'phone'
+                      ? 'var(--surbee-fg-primary)'
+                      : 'var(--surbee-fg-secondary)'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (currentDevice !== 'phone') {
+                      const isDark = document.documentElement.classList.contains('dark');
+                      e.currentTarget.style.backgroundColor = isDark ? 'rgba(113,113,122,0.3)' : 'rgba(0,0,0,0.05)';
+                      e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (currentDevice !== 'phone') {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                    }
+                  }}
                 >
                   <Smartphone className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              {/* Center: Route dropdown showing '/', '/contact', etc. */}
-              <div className="flex-1 flex items-center gap-2 px-1">
-                <div className="relative">
-                  <button
-                    onClick={togglePageDropdown}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-gray-200 hover:bg-zinc-700/30"
-                    title="Select page"
-                  >
-                    <span className="text-sm" style={{ fontFamily: 'Sohne, sans-serif' }}>{selectedRoute}</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
-                  </button>
-                  {isPageDropdownOpen && (
-                    <div className="absolute z-50 mt-1 w-48 bg-[#0f0f0f] border border-zinc-800 rounded-md shadow-xl">
-                      <div className="py-1 max-h-64 overflow-auto">
-                        {pages.map(p => (
-                          <button
-                            key={p.path}
-                            onClick={() => { setSelectedRoute(p.path); setIsPageDropdownOpen(false); setRendererKey(k => k+1); }}
-                            className={`w-full text-left px-3 py-1.5 text-sm hover:bg-white/5 ${selectedRoute === p.path ? 'text-white' : 'text-gray-300'}`}
-                          >
-                            {p.path}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              {/* Center: Route input */}
+              <div className="flex-1 flex items-center min-w-0 px-1">
+                <input
+                  type="text"
+                  value={selectedRoute}
+                  onChange={(e) => setSelectedRoute(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setRendererKey(k => k+1);
+                    }
+                  }}
+                  className="w-full bg-transparent border-none outline-none text-sm"
+                  placeholder="/"
+                  style={{
+                    color: 'var(--surbee-fg-primary)',
+                    fontFamily: 'Sohne, sans-serif'
+                  }}
+                />
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-1">
-                <button 
-                  onClick={() => {
-                    const previewUrl = `https://Surbee.dev/preview/${projectId}`;
-                    window.open(previewUrl, '_blank', 'width=1200,height=800');
-                  }}
-                  className="p-1 rounded text-gray-400 hover:text-white hover:bg-zinc-700/30 transition-colors"
+              <div className="flex items-center gap-0.5">
+                <a
+                  href={`https://Surbee.dev/preview/${projectId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
                   title="Open preview in new tab"
+                  style={{ color: 'var(--surbee-fg-secondary)' }}
+                  onMouseEnter={(e) => {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    e.currentTarget.style.backgroundColor = isDark ? 'rgba(113,113,122,0.3)' : 'rgba(0,0,0,0.05)';
+                    e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                  }}
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </button>
-                <button 
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                <button
                   onClick={() => setRendererKey((k) => k + 1)}
-                  className="p-1 rounded text-gray-400 hover:text-white hover:bg-zinc-700/30 transition-colors"
+                  className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
                   title="Refresh page"
+                  style={{ color: 'var(--surbee-fg-secondary)' }}
+                  onMouseEnter={(e) => {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    e.currentTarget.style.backgroundColor = isDark ? 'rgba(113,113,122,0.3)' : 'rgba(0,0,0,0.05)';
+                    e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                  }}
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
+                  <RotateCcw className="w-3 h-3" />
                 </button>
               </div>
             </div>
@@ -1702,117 +2425,269 @@ export default function ProjectPage() {
 
           {/* Right Section - Upgrade & Publish Buttons */}
           <div className="relative flex items-center gap-2">
-            {/* Share */}
-            <div className="relative">
-              <button
-                onClick={() => setIsShareOpen((v) => !v)}
-                className="p-1.5 rounded-md text-gray-300 hover:bg-white/10"
-                title="Share"
-              >
-                <Share2 className="w-4 h-4" />
-              </button>
-              {isShareOpen && (
-                <div ref={shareMenuRef} className="absolute top-full right-0 mt-2 w-[320px] bg-black border border-zinc-800 rounded-xl shadow-2xl z-50 p-3">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-400">Share</span>
-                      <button
-                        onClick={() => { try { navigator.clipboard.writeText(window.location.href); } catch {} }}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-white/5 hover:bg-white/10 text-gray-200"
-                      >
-                        <Copy className="w-3.5 h-3.5" /> Copy link
-                      </button>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs text-gray-400">Invite by email</label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="email"
-                          value={inviteEmail}
-                          onChange={(e) => setInviteEmail(e.target.value)}
-                          placeholder="name@company.com"
-                          className="flex-1 h-8 rounded-md bg-zinc-900 border border-zinc-800 px-2 text-sm text-white outline-none focus:border-zinc-700"
-                        />
-                        <button
-                          onClick={() => { try { /* TODO: backend invite */ alert(`Invited ${inviteEmail}`); } catch {} setInviteEmail(''); }}
-                          className="h-8 px-2 rounded-md bg-white text-black text-sm font-medium hover:opacity-90"
-                        >
-                          Invite
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between py-1">
-                      <span className="text-sm text-gray-300">Publish to community</span>
-                      <button
-                        onClick={() => setPublishToCommunity(v => !v)}
-                        className={`w-10 h-6 rounded-full relative transition-colors ${publishToCommunity ? 'bg-blue-600' : 'bg-zinc-700'}`}
-                        aria-pressed={publishToCommunity}
-                        title="Toggle publish to community"
-                      >
-                        <span className={`absolute top-0.5 ${publishToCommunity ? 'left-5' : 'left-0.5'} w-5 h-5 bg-white rounded-full transition-all`} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
             <button
-              className={`relative px-3 py-1.5 font-medium text-sm transition-all duration-150 cursor-pointer rounded-[0.38rem] ${
-                activeTopButton === 'upgrade' ? 'bg-white/10 text-white' : 'text-gray-300 hover:bg-white/10'
-              }`}
+              className="relative px-3 py-1.5 font-medium text-sm transition-all duration-150 cursor-pointer rounded-[0.38rem]"
               style={{
                 fontFamily: 'FK Grotesk, sans-serif',
                 fontSize: '14px',
                 fontWeight: 500,
-                lineHeight: '1.375rem'
+                lineHeight: '1.375rem',
+                backgroundColor: activeTopButton === 'upgrade'
+                  ? (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
+                  : 'transparent',
+                color: isDarkMode ? '#d1d5db' : '#000000'
+              }}
+              onMouseEnter={(e) => {
+                const isDark = document.documentElement.classList.contains('dark');
+                e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+              }}
+              onMouseLeave={(e) => {
+                if (activeTopButton !== 'upgrade') {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                } else {
+                  const isDark = document.documentElement.classList.contains('dark');
+                  e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+                }
               }}
               onClick={() => router.push('/dashboard/upgrade-plan')}
             >
               Upgrade
             </button>
+
             <button
               onClick={() => {
                 setIsPublishOpen((v) => !v);
                 setActiveTopButton(activeTopButton === 'publish' ? null : 'publish');
               }}
-              className={`relative px-3 py-1.5 font-medium text-sm transition-all duration-150 cursor-pointer rounded-[0.38rem] ${
-                activeTopButton === 'publish' ? 'bg-white text-black' : 'bg-white text-black hover:opacity-90'
-              }`}
+              disabled={!sandboxAvailable}
+              className="relative px-3 py-1.5 font-medium text-sm transition-all duration-150 rounded-[0.38rem]"
               style={{
                 fontFamily: 'FK Grotesk, sans-serif',
                 fontSize: '14px',
                 fontWeight: 500,
-                lineHeight: '1.375rem'
+                lineHeight: '1.375rem',
+                backgroundColor: !sandboxAvailable
+                  ? (isDarkMode ? '#3a3a3a' : '#e5e7eb')
+                  : (isDarkMode ? '#ffffff' : '#000000'),
+                color: !sandboxAvailable
+                  ? (isDarkMode ? '#6b7280' : '#9ca3af')
+                  : (isDarkMode ? '#000000' : '#ffffff'),
+                cursor: !sandboxAvailable ? 'not-allowed' : 'pointer',
+                opacity: !sandboxAvailable ? 0.5 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (sandboxAvailable) {
+                  e.currentTarget.style.opacity = '0.9';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (sandboxAvailable) {
+                  e.currentTarget.style.opacity = '1';
+                }
               }}
             >
-              Publish
+              {project?.status === 'published' || publishedUrl ? 'Update' : 'Publish'}
             </button>
             {isPublishOpen && (
               <div
                 ref={publishMenuRef}
-                className="absolute top-full right-0 mt-2 w-[360px] bg-black border border-zinc-800 rounded-xl shadow-2xl z-50"
+                className="absolute top-full right-0 mt-2 w-[400px] rounded-xl shadow-2xl z-50"
+                style={{
+                  backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
+                  border: `1px solid ${isDarkMode ? '#2a2a2a' : '#e5e7eb'}`
+                }}
               >
-                <div className="p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-400">Preview</span>
-                    <a
-                      href={`https://Surbee.dev/preview/${projectId}`}
-                      target="_blank"
-                      className="inline-flex items-center gap-2 px-2 py-1 rounded-md text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                <div className="p-5 space-y-4">
+                  {/* Success Message */}
+                  {publishSuccess && (
+                    <div
+                      className="px-3 py-2 rounded-lg text-sm font-medium text-center"
+                      style={{
+                        backgroundColor: isDarkMode ? '#065f46' : '#d1fae5',
+                        color: isDarkMode ? '#a7f3d0' : '#065f46'
+                      }}
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span className="truncate">Surbee.dev/preview/{projectId}</span>
+                      {publishSuccess}
+                    </div>
+                  )}
+
+                  {/* Published URL Section - Show after publishing */}
+                  {(publishedUrl || project?.published_url) && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span
+                          className="text-sm font-semibold"
+                          style={{ color: isDarkMode ? '#e5e7eb' : '#1f2937' }}
+                        >
+                          Quick Share
+                        </span>
+                        <div
+                          className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium"
+                          style={{
+                            backgroundColor: isDarkMode ? '#065f46' : '#d1fae5',
+                            color: isDarkMode ? '#a7f3d0' : '#065f46'
+                          }}
+                        >
+                          <CheckCircle2 className="w-3 h-3" />
+                          Published
+                        </div>
+                      </div>
+
+                      {/* External Link */}
+                      <div
+                        className="p-3 rounded-lg space-y-2"
+                        style={{
+                          backgroundColor: isDarkMode ? '#0f172a' : '#f8fafc',
+                          border: `1px solid ${isDarkMode ? '#1e293b' : '#e2e8f0'}`
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span
+                            className="text-xs font-medium"
+                            style={{ color: isDarkMode ? '#94a3b8' : '#64748b' }}
+                          >
+                            Survey Link
+                          </span>
+                          <ExternalLink
+                            className="w-3.5 h-3.5"
+                            style={{ color: isDarkMode ? '#94a3b8' : '#64748b' }}
+                          />
+                        </div>
+                        <code
+                          className="block text-xs break-all"
+                          style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}
+                        >
+                          {window.location.origin}/s/{publishedUrl || project?.published_url}
+                        </code>
+                        <button
+                          onClick={copyPublishedLink}
+                          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                          style={{
+                            backgroundColor: isDarkMode ? '#1e293b' : '#e2e8f0',
+                            color: isDarkMode ? '#e5e7eb' : '#1f2937'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#cbd5e1';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = isDarkMode ? '#1e293b' : '#e2e8f0';
+                          }}
+                        >
+                          <Copy className="w-4 h-4" />
+                          Copy Link
+                        </button>
+                      </div>
+
+                      <div
+                        className="border-t"
+                        style={{ borderColor: isDarkMode ? '#2a2a2a' : '#e5e7eb' }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Preview Section */}
+                  <div>
+                    <span
+                      className="text-sm font-semibold block mb-2"
+                      style={{ color: isDarkMode ? '#e5e7eb' : '#1f2937' }}
+                    >
+                      Preview
+                    </span>
+                    <a
+                      href={`/project/${projectId}/preview`}
+                      target="_blank"
+                      className="flex items-center justify-between p-3 rounded-lg transition-colors"
+                      style={{
+                        backgroundColor: isDarkMode ? '#0f172a' : '#f8fafc',
+                        border: `1px solid ${isDarkMode ? '#1e293b' : '#e2e8f0'}`
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = isDarkMode ? '#1e293b' : '#f1f5f9';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = isDarkMode ? '#0f172a' : '#f8fafc';
+                      }}
+                    >
+                      <span
+                        className="text-sm"
+                        style={{ color: isDarkMode ? '#94a3b8' : '#64748b' }}
+                      >
+                        Test your survey
+                      </span>
+                      <ExternalLink
+                        className="w-4 h-4"
+                        style={{ color: isDarkMode ? '#94a3b8' : '#64748b' }}
+                      />
                     </a>
                   </div>
-                  <div className="border-t border-zinc-800" />
-                  <div className="space-y-2">
-                    <button className="w-full h-9 rounded-md bg-zinc-900 text-gray-200 text-sm font-medium hover:bg-zinc-800 transition-colors border border-zinc-800">
-                      Connect Domain
-                    </button>
-                    <button className="w-full h-9 rounded-md bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors border border-white/10">
-                      Publish to Surbee.dev
-                    </button>
+
+                  <div
+                    className="border-t"
+                    style={{ borderColor: isDarkMode ? '#2a2a2a' : '#e5e7eb' }}
+                  />
+
+                  {/* Publish to Marketplace Toggle */}
+                  <div className="flex items-center justify-between py-1">
+                    <div className="flex flex-col gap-1">
+                      <span
+                        className="text-sm font-medium"
+                        style={{ color: isDarkMode ? '#e5e7eb' : '#1f2937' }}
+                      >
+                        Publish to Marketplace
+                      </span>
+                      <span
+                        className="text-xs"
+                        style={{ color: isDarkMode ? '#94a3b8' : '#64748b' }}
+                      >
+                        Share your survey with the community
+                      </span>
+                    </div>
+                    <Switch
+                      checked={publishToMarketplace}
+                      onCheckedChange={setPublishToMarketplace}
+                      className="data-[state=checked]:bg-blue-600"
+                    />
                   </div>
+
+                  <div
+                    className="border-t"
+                    style={{ borderColor: isDarkMode ? '#2a2a2a' : '#e5e7eb' }}
+                  />
+
+                  {/* Publish/Update Button */}
+                  <button
+                    onClick={handlePublish}
+                    disabled={isPublishing || !sandboxAvailable}
+                    className="w-full py-2.5 px-4 rounded-lg text-sm font-semibold transition-all"
+                    style={{
+                      backgroundColor: (!sandboxAvailable || isPublishing)
+                        ? (isDarkMode ? '#3a3a3a' : '#e5e7eb')
+                        : (isDarkMode ? '#ffffff' : '#000000'),
+                      color: (!sandboxAvailable || isPublishing)
+                        ? (isDarkMode ? '#6b7280' : '#9ca3af')
+                        : (isDarkMode ? '#000000' : '#ffffff'),
+                      opacity: (isPublishing || !sandboxAvailable) ? 0.6 : 1,
+                      cursor: (isPublishing || !sandboxAvailable) ? 'not-allowed' : 'pointer'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isPublishing && sandboxAvailable) {
+                        e.currentTarget.style.opacity = '0.9';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isPublishing && sandboxAvailable) {
+                        e.currentTarget.style.opacity = '1';
+                      }
+                    }}
+                  >
+                    {isPublishing
+                      ? 'Publishing...'
+                      : !sandboxAvailable
+                      ? 'Generate code first'
+                      : (project?.status === 'published' || publishedUrl)
+                      ? 'Update Survey'
+                      : 'Publish Survey'}
+                  </button>
                 </div>
               </div>
             )}
@@ -1822,20 +2697,32 @@ export default function ProjectPage() {
         {/* Main Content Area */}
         <div className="flex-1 flex relative">
           {/* Restored rounded preview frame with border, like before */}
-          <div className="flex-1 flex flex-col relative bg-[#0a0a0a] rounded-[0.625rem] border border-zinc-800 mt-0 mr-3 mb-3 ml-2 overflow-hidden">
+          <div
+            className="flex-1 flex flex-col relative rounded-[0.625rem] border mt-0 mr-3 mb-3 ml-2 overflow-hidden"
+            style={{
+              backgroundColor: isDarkMode ? '#242424' : '#F8F8F8',
+              borderColor: isDarkMode ? 'var(--surbee-border-accent)' : 'rgba(0, 0, 0, 0.1)'
+            }}
+          >
             {/* Show Sandbox View when code or console mode is active */}
             {(sidebarView === 'code' || sidebarView === 'console') && sandboxAvailable ? (
               <ProjectSandboxView
                 showConsole={sidebarView === 'console'}
+                viewMode={sidebarView === 'code' ? 'code' : 'console'}
                 providerProps={sandboxProviderProps}
                 onFixError={handleSandboxFixRequest}
                 bundle={sandboxBundle}
               />
             ) : (
-              <div className="flex-1 overflow-hidden flex items-center justify-center bg-[#0a0a0a]">
+              <div
+                className="flex-1 overflow-hidden flex items-center justify-center"
+                style={{
+                  backgroundColor: isDarkMode ? '#242424' : '#F8F8F8'
+                }}
+              >
                 {/* Show loading animation while AI is working */}
                 {(status === 'submitted' || status === 'streaming') && !sandboxAvailable ? (
-                  <AILoader text="Building" size={200} />
+                  <AILoader text="Building" size={120} />
                 ) : sandboxAvailable ? (
                   /* Show React preview when sandbox bundle is available */
                   <div className="h-full w-full">
@@ -1843,7 +2730,7 @@ export default function ProjectPage() {
                   </div>
                 ) : (
                   /* Waiting for content */
-                  <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                  <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--surbee-fg-secondary)' }}>
                     <p>Start a conversation to see the preview</p>
                   </div>
                 )}

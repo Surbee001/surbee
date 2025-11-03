@@ -2,9 +2,7 @@
 import { cn } from "@/lib/utils"
 
 import { ShiningText } from "./shining-text"
-import { useEffect, useState, useRef } from "react"
 import type React from "react"
-import { ChevronDown } from "lucide-react"
 
 interface ThinkingStep {
   id: string
@@ -19,90 +17,27 @@ interface ThinkingDisplayProps {
   className?: string
 }
 
-export function ThinkingDisplay({ steps, isThinking = false, className }: ThinkingDisplayProps) {
-  const [isOpen, setIsOpen] = useState(true)
-  const [elapsedTime, setElapsedTime] = useState(0)
-  const startTimeRef = useRef<number | null>(null)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+export function ThinkingDisplay({ steps, duration = 0, isThinking = false, className }: ThinkingDisplayProps) {
+  // Always show if we have steps OR if thinking is active
+  const shouldShow = isThinking || steps.length > 0;
 
-  // Force open when thinking starts, close when thinking stops
-  useEffect(() => {
-    if (isThinking) {
-      setIsOpen(true)
-    } else if (!isThinking && steps.length > 0) {
-      // Close dropdown when thinking stops (but keep component visible)
-      setIsOpen(false)
-    }
-  }, [isThinking, steps.length])
-
-  useEffect(() => {
-    if (isThinking && !startTimeRef.current) {
-      // Start tracking time when thinking begins
-      startTimeRef.current = Date.now()
-      setIsOpen(true) // Ensure display is open when thinking starts
-      intervalRef.current = setInterval(() => {
-        if (startTimeRef.current) {
-          setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000))
-        }
-      }, 100)
-    } else if (!isThinking && startTimeRef.current) {
-      // Stop tracking when thinking ends
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
-      }
-      const finalTime = Math.floor((Date.now() - startTimeRef.current) / 1000)
-      setElapsedTime(finalTime)
-      // Keep it open after completion so user can see what was thought
-      // setIsOpen(false)
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-      }
-    }
-  }, [isThinking])
-  
-  // Reset timer when component unmounts or isThinking becomes false after being true
-  useEffect(() => {
-    if (!isThinking && startTimeRef.current) {
-      // Reset for next thinking session
-      return () => {
-        startTimeRef.current = null
-        setElapsedTime(0)
-      }
-    }
-  }, [isThinking])
-
-  // Always show if we have steps OR if thinking is active OR if we have elapsed time
-  const shouldShow = isThinking || steps.length > 0 || elapsedTime > 0;
-  
-  console.log('[ThinkingDisplay] Rendering - isThinking:', isThinking, 'steps.length:', steps.length, 'elapsedTime:', elapsedTime, 'shouldShow:', shouldShow);
-  
   if (!shouldShow) {
     return null;
   }
 
+  // Always expanded - no state needed
+  const isOpen = true;
+
   return (
     <div className={cn("relative my-1 min-h-6", className)}>
       <div className="relative flex origin-top-left flex-col gap-2 overflow-x-clip">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer group"
-        >
-          <ChevronDown 
-            className={cn(
-              "w-4 h-4 transition-transform duration-200",
-              isOpen ? "rotate-0" : "-rotate-90"
-            )}
-          />
+        <div className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground">
           {isThinking ? (
-            <ShiningText text="Thinking..." className="text-sm cursor-pointer" />
+            <ShiningText text="Thinking..." className="text-sm" />
           ) : (
-            <span className="cursor-pointer">{`Thought for ${elapsedTime}s`}</span>
+            <span>{`Thought for ${duration}s`}</span>
           )}
-        </button>
+        </div>
 
         <div
           className={cn(
