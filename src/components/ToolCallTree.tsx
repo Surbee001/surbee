@@ -1,8 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
-
 // Quirky verbs for tool call actions
 const QUIRKY_VERBS = [
   "Doodling",
@@ -79,28 +76,17 @@ interface ToolCallTreeProps {
 }
 
 export function ToolCallTree({ toolName, output, isActive }: ToolCallTreeProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  // Generate verb once when component mounts to keep it consistent for this instance
-  const [quirkyVerb] = useState(() => getQuirkyVerb());
+  // Generate verb deterministically based on toolName to keep it consistent
+  const quirkyVerb = QUIRKY_VERBS[toolName.length % QUIRKY_VERBS.length];
   const editCount = countEdits(output);
   const editedFiles = getEditedFiles(output);
 
   return (
     <div className="flex flex-col text-muted-foreground">
       <div
-        className="flex h-6 cursor-pointer items-center whitespace-nowrap text-base font-medium md:text-sm hover:text-foreground transition-colors"
-        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex h-6 items-center whitespace-nowrap text-base font-medium md:text-sm"
         style={{ fontSize: '14px' }}
       >
-        {/* Expand/Collapse Icon */}
-        <div className="mb-px mr-1 flex shrink-0 items-center">
-          {isExpanded ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
-        </div>
-
         {/* Edit Icon */}
         <div className="mb-px mr-1.5 flex shrink-0 items-center">
           <svg
@@ -127,8 +113,8 @@ export function ToolCallTree({ toolName, output, isActive }: ToolCallTreeProps) 
         )}
       </div>
 
-      {/* Expanded content showing edited files */}
-      {isExpanded && !isActive && editedFiles.length > 0 && (
+      {/* Show edited files when not active and files exist */}
+      {!isActive && editedFiles.length > 0 && (
         <div className="mt-2 ml-6 space-y-1">
           {editedFiles.map((file, idx) => (
             <div key={idx} className="flex items-center text-sm">

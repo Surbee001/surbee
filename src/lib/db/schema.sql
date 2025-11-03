@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Projects table
 CREATE TABLE IF NOT EXISTS projects (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id TEXT PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   description TEXT,
@@ -24,7 +24,7 @@ CREATE INDEX IF NOT EXISTS idx_projects_created_at ON projects(created_at DESC);
 -- Survey responses table
 CREATE TABLE IF NOT EXISTS survey_responses (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  survey_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  survey_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   respondent_id TEXT,
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   session_id TEXT,

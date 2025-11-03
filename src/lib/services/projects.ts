@@ -2,15 +2,26 @@ import type { Project, ChatMessage } from '@/types/database';
 import { supabase } from '@/lib/supabase-server';
 
 export class ProjectsService {
+  // Generate a custom project ID
+  private static generateProjectId(): string {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 15);
+    return `project_${timestamp}_${random}`;
+  }
+
   static async createProject(data: {
+    id?: string;
     title: string;
     description?: string;
     user_id: string;
   }): Promise<{ data: Project | null; error: Error | null }> {
     try {
+      const projectId = data.id || this.generateProjectId();
+
       const { data: project, error } = await supabase
         .from('projects')
         .insert({
+          id: projectId,
           title: data.title,
           description: data.description || null,
           user_id: data.user_id,

@@ -1,0 +1,3239 @@
+{
+  "timestamp": "2025-11-03T10:24:18.333Z",
+  "summary": {
+    "totalTests": 127,
+    "accuracy": 0.7480314960629921,
+    "precision": 1,
+    "recall": 0.6078431372549019,
+    "f1Score": 0.7560975609756097,
+    "specificity": 1,
+    "avgProcessingTimeMs": 0.6692913385826772,
+    "categoryResults": {
+      "legitimate": {
+        "total": 25,
+        "correct": 25,
+        "accuracy": 1,
+        "avgScore": 0.2056282296650717
+      },
+      "ai_generated": {
+        "total": 30,
+        "correct": 22,
+        "accuracy": 0.7333333333333333,
+        "avgScore": 0.5672727272727273
+      },
+      "bot": {
+        "total": 25,
+        "correct": 22,
+        "accuracy": 0.88,
+        "avgScore": 0.7188755021304108
+      },
+      "plagiarism": {
+        "total": 13,
+        "correct": 13,
+        "accuracy": 1,
+        "avgScore": 0.6296853146853146
+      },
+      "low_effort": {
+        "total": 19,
+        "correct": 8,
+        "accuracy": 0.42105263157894735,
+        "avgScore": 0.16118421052631574
+      },
+      "fraud_ring": {
+        "total": 8,
+        "correct": 0,
+        "accuracy": 0,
+        "avgScore": 0.1925
+      },
+      "mixed": {
+        "total": 7,
+        "correct": 5,
+        "accuracy": 0.7142857142857143,
+        "avgScore": 0.7571428571428572
+      }
+    }
+  },
+  "confusionMatrix": {
+    "truePositives": 62,
+    "trueNegatives": 25,
+    "falsePositives": 0,
+    "falseNegatives": 40
+  },
+  "detailedResults": [
+    {
+      "testId": "legit_001",
+      "category": "legitimate",
+      "description": "Thoughtful, authentic human response with natural typing patterns",
+      "expected": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.5207057416267943,
+        "riskLevel": "medium",
+        "confidence": 0.09666666666666668,
+        "processingTimeMs": 42
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.37070574162679426,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as MEDIUM risk with 52.1% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 2 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "legit_002",
+      "category": "legitimate",
+      "description": "Fast but legitimate responder (expert user familiar with surveys)",
+      "expected": {
+        "fraudScore": 0.25,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.057499999999999996,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_003",
+      "category": "legitimate",
+      "description": "Mobile user with touch interactions",
+      "expected": {
+        "fraudScore": 0.2,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.007500000000000007,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ai_001",
+      "category": "ai_generated",
+      "description": "Classic ChatGPT response with characteristic phrases",
+      "expected": {
+        "fraudScore": 0.85,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 1,
+        "riskLevel": "critical",
+        "confidence": 0.22999999999999998,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.15000000000000002,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 100.0% fraud probability (confidence: 23%). Our Bayesian ensemble model analyzed 2 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_002",
+      "category": "ai_generated",
+      "description": "Claude-style response with balanced analysis",
+      "expected": {
+        "fraudScore": 0.8,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.1863636363636363,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_003",
+      "category": "ai_generated",
+      "description": "AI response edited to remove obvious markers",
+      "expected": {
+        "fraudScore": 0.7,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.0863636363636362,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_001",
+      "category": "bot",
+      "description": "Selenium WebDriver bot with obvious automation signatures",
+      "expected": {
+        "fraudScore": 0.95,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.8229644720988815,
+        "riskLevel": "critical",
+        "confidence": 0.19999999999999998,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.1270355279011185,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 82.3% fraud probability (confidence: 20%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_002",
+      "category": "bot",
+      "description": "Puppeteer bot trying to hide automation",
+      "expected": {
+        "fraudScore": 0.9,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.7075,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "bot_003",
+      "category": "bot",
+      "description": "Script with form auto-fill",
+      "expected": {
+        "fraudScore": 0.88,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.7241797514903595,
+        "riskLevel": "high",
+        "confidence": 0.16000000000000003,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.1558202485096405,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 72.4% fraud probability (confidence: 16%). Our Bayesian ensemble model analyzed 2 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "plag_001",
+      "category": "plagiarism",
+      "description": "Directly copied from Wikipedia",
+      "expected": {
+        "fraudScore": 0.75,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.13636363636363624,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "plag_002",
+      "category": "plagiarism",
+      "description": "Duplicate answer across multiple questions",
+      "expected": {
+        "fraudScore": 0.7,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6657954545454546,
+        "riskLevel": "high",
+        "confidence": 0.13,
+        "processingTimeMs": 2
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.03420454545454532,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 66.6% fraud probability (confidence: 13%). Our Bayesian ensemble model analyzed 2 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "low_001",
+      "category": "low_effort",
+      "description": "Straight-lining rating scales (all same rating)",
+      "expected": {
+        "fraudScore": 0.65,
+        "riskLevel": "medium",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.5,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_002",
+      "category": "low_effort",
+      "description": "Gibberish / nonsense text",
+      "expected": {
+        "fraudScore": 0.8,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.6075,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_003",
+      "category": "low_effort",
+      "description": "Single word answers to open-ended questions",
+      "expected": {
+        "fraudScore": 0.55,
+        "riskLevel": "medium",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.4,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ring_001",
+      "category": "fraud_ring",
+      "description": "Group submission #1 - shared device/IP",
+      "expected": {
+        "fraudScore": 0.85,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.6575,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 2 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ring_002",
+      "category": "fraud_ring",
+      "description": "Group submission #2 - same device, 2 mins later",
+      "expected": {
+        "fraudScore": 0.85,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.6575,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 2 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "mixed_001",
+      "category": "mixed",
+      "description": "AI + Bot: ChatGPT output submitted by automation",
+      "expected": {
+        "fraudScore": 0.95,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 1,
+        "riskLevel": "critical",
+        "confidence": 0.36999999999999994,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.050000000000000044,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 100.0% fraud probability (confidence: 37%). Our Bayesian ensemble model analyzed 3 detection systems and found 2 significant fraud indicators."
+    },
+    {
+      "testId": "mixed_002",
+      "category": "mixed",
+      "description": "Low-effort + VPN: Rushed survey from suspicious location",
+      "expected": {
+        "fraudScore": 0.7,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.5499999999999999,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_001",
+      "category": "legitimate",
+      "description": "Legitimate response #1 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.23279269467257108,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.04029269467257107,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_002",
+      "category": "legitimate",
+      "description": "Legitimate response #2 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.13739125524016343,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.05510874475983657,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_003",
+      "category": "legitimate",
+      "description": "Legitimate response #3 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.16028008674497868,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.032219913255021326,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_004",
+      "category": "legitimate",
+      "description": "Legitimate response #4 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.1922482069151698,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.0002517930848301986,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_005",
+      "category": "legitimate",
+      "description": "Legitimate response #5 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.09373654615346823,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.09876345384653178,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_006",
+      "category": "legitimate",
+      "description": "Legitimate response #6 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.0664870761605016,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.12601292383949841,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 2 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_007",
+      "category": "legitimate",
+      "description": "Legitimate response #7 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.1508100431532739,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.041689956846726106,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_008",
+      "category": "legitimate",
+      "description": "Legitimate response #8 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.09092251633733213,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.10157748366266788,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_009",
+      "category": "legitimate",
+      "description": "Legitimate response #9 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.19970361787436558,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.0072036178743655754,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_010",
+      "category": "legitimate",
+      "description": "Legitimate response #10 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.11039793449770059,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.08210206550229941,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 2 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_011",
+      "category": "legitimate",
+      "description": "Legitimate response #11 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.2333836707314731,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.04088367073147309,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_012",
+      "category": "legitimate",
+      "description": "Legitimate response #12 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.24239293039595394,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.04989293039595394,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_013",
+      "category": "legitimate",
+      "description": "Legitimate response #13 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.06019811818559902,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.132301881814401,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_014",
+      "category": "legitimate",
+      "description": "Legitimate response #14 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.19921130268919568,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.006711302689195675,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_015",
+      "category": "legitimate",
+      "description": "Legitimate response #15 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.0883895839268007,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.1041104160731993,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_016",
+      "category": "legitimate",
+      "description": "Legitimate response #16 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.13969957611316203,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.05280042388683798,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 2 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_017",
+      "category": "legitimate",
+      "description": "Legitimate response #17 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.05271895322157434,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.13978104677842568,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_018",
+      "category": "legitimate",
+      "description": "Legitimate response #18 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.057083211388362545,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.13541678861163747,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_019",
+      "category": "legitimate",
+      "description": "Legitimate response #19 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.11914360669543385,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.07335639330456616,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 2 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_020",
+      "category": "legitimate",
+      "description": "Legitimate response #20 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.26640107778671335,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.07390107778671334,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_021",
+      "category": "legitimate",
+      "description": "Legitimate response #21 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.2637771940176094,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.0712771940176094,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 2 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "legit_022",
+      "category": "legitimate",
+      "description": "Legitimate response #22 - natural human patterns",
+      "expected": {
+        "fraudScore": 0.18217245007263044,
+        "riskLevel": "low",
+        "shouldFlag": false
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.010327549927369561,
+        "truePositive": false,
+        "trueNegative": true,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ai_001",
+      "category": "ai_generated",
+      "description": "AI-generated response #1 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.920330188837761,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.7703301888377609,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ai_002",
+      "category": "ai_generated",
+      "description": "AI-generated response #2 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.7774380805700275,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.16380171693366374,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_003",
+      "category": "ai_generated",
+      "description": "AI-generated response #3 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.8237150868374556,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.2100787232010919,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_004",
+      "category": "ai_generated",
+      "description": "AI-generated response #4 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.8424471550429189,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.6924471550429189,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ai_005",
+      "category": "ai_generated",
+      "description": "AI-generated response #5 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.8082069341809983,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 1,
+        "riskLevel": "critical",
+        "confidence": 0.2,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.19179306581900168,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 100.0% fraud probability (confidence: 20%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_006",
+      "category": "ai_generated",
+      "description": "AI-generated response #6 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.8297745635303727,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.21613819989400895,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_007",
+      "category": "ai_generated",
+      "description": "AI-generated response #7 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.9002982234622323,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.7502982234622323,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ai_008",
+      "category": "ai_generated",
+      "description": "AI-generated response #8 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.8017958428517886,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.18815947921542486,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_009",
+      "category": "ai_generated",
+      "description": "AI-generated response #9 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.8359067867055273,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.22227042306916356,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_010",
+      "category": "ai_generated",
+      "description": "AI-generated response #10 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.8591084671443241,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 1,
+        "riskLevel": "critical",
+        "confidence": 0.2,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.1408915328556759,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 100.0% fraud probability (confidence: 20%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_011",
+      "category": "ai_generated",
+      "description": "AI-generated response #11 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.7876413219510141,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 1,
+        "riskLevel": "critical",
+        "confidence": 0.2,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.2123586780489859,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 100.0% fraud probability (confidence: 20%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_012",
+      "category": "ai_generated",
+      "description": "AI-generated response #12 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.7528271991968722,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.13919083556050849,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_013",
+      "category": "ai_generated",
+      "description": "AI-generated response #13 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.8507355740195635,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.7007355740195634,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ai_014",
+      "category": "ai_generated",
+      "description": "AI-generated response #14 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.888756303984701,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 1,
+        "riskLevel": "critical",
+        "confidence": 0.2,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.11124369601529904,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 100.0% fraud probability (confidence: 20%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_015",
+      "category": "ai_generated",
+      "description": "AI-generated response #15 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.8487638354741648,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.23512747183780103,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_016",
+      "category": "ai_generated",
+      "description": "AI-generated response #16 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.912525629174479,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.29888926553811523,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_017",
+      "category": "ai_generated",
+      "description": "AI-generated response #17 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.7655020031278582,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.6155020031278582,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ai_018",
+      "category": "ai_generated",
+      "description": "AI-generated response #18 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.8096524945050078,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.196016130868644,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_019",
+      "category": "ai_generated",
+      "description": "AI-generated response #19 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.8965173886588673,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.7465173886588673,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ai_020",
+      "category": "ai_generated",
+      "description": "AI-generated response #20 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.8576891055136912,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.2440527418773274,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_021",
+      "category": "ai_generated",
+      "description": "AI-generated response #21 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.803312142273262,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.653312142273262,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ai_022",
+      "category": "ai_generated",
+      "description": "AI-generated response #22 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.8876802780950129,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.2740439144586492,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_023",
+      "category": "ai_generated",
+      "description": "AI-generated response #23 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.8846077097638044,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.7346077097638044,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ai_024",
+      "category": "ai_generated",
+      "description": "AI-generated response #24 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.8900900040955093,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 1,
+        "riskLevel": "critical",
+        "confidence": 0.2,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.10990999590449069,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 100.0% fraud probability (confidence: 20%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_025",
+      "category": "ai_generated",
+      "description": "AI-generated response #25 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.8168899578067794,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.20325359417041566,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_026",
+      "category": "ai_generated",
+      "description": "AI-generated response #26 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.7622760815367655,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.14863971790040176,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "ai_027",
+      "category": "ai_generated",
+      "description": "AI-generated response #27 with characteristic LLM patterns",
+      "expected": {
+        "fraudScore": 0.9220647605710838,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.30842839693472,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_001",
+      "category": "bot",
+      "description": "Bot #1 - puppeteer automation",
+      "expected": {
+        "fraudScore": 0.9396505575925402,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.763078815446979,
+        "riskLevel": "critical",
+        "confidence": 0.19000000000000003,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.17657174214556126,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 76.3% fraud probability (confidence: 19%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_002",
+      "category": "bot",
+      "description": "Bot #2 - headless automation",
+      "expected": {
+        "fraudScore": 0.8682573301652156,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.8229644720988815,
+        "riskLevel": "critical",
+        "confidence": 0.19999999999999998,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.045292858066334096,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 82.3% fraud probability (confidence: 20%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_003",
+      "category": "bot",
+      "description": "Bot #3 - headless automation",
+      "expected": {
+        "fraudScore": 0.9230691552577809,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.8229644720988815,
+        "riskLevel": "critical",
+        "confidence": 0.19999999999999998,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.10010468315889942,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 82.3% fraud probability (confidence: 20%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_004",
+      "category": "bot",
+      "description": "Bot #4 - selenium automation",
+      "expected": {
+        "fraudScore": 0.8580030245015223,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.8229644720988815,
+        "riskLevel": "critical",
+        "confidence": 0.19999999999999998,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.035038552402640866,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 82.3% fraud probability (confidence: 20%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_005",
+      "category": "bot",
+      "description": "Bot #5 - autofill automation",
+      "expected": {
+        "fraudScore": 0.9440774111404607,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.763078815446979,
+        "riskLevel": "critical",
+        "confidence": 0.19000000000000003,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.18099859569348176,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 76.3% fraud probability (confidence: 19%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_006",
+      "category": "bot",
+      "description": "Bot #6 - puppeteer automation",
+      "expected": {
+        "fraudScore": 0.8969377670747235,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.763078815446979,
+        "riskLevel": "critical",
+        "confidence": 0.19000000000000003,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.13385895162774453,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 76.3% fraud probability (confidence: 19%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_007",
+      "category": "bot",
+      "description": "Bot #7 - headless automation",
+      "expected": {
+        "fraudScore": 0.8781110167689349,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.7564840425531915,
+        "riskLevel": "critical",
+        "confidence": 0.12000000000000002,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.12162697421574342,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 75.6% fraud probability (confidence: 12%). Our Bayesian ensemble model analyzed 2 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_008",
+      "category": "bot",
+      "description": "Bot #8 - headless automation",
+      "expected": {
+        "fraudScore": 0.8536384421883667,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.8229644720988815,
+        "riskLevel": "critical",
+        "confidence": 0.19999999999999998,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.030673970089485247,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 82.3% fraud probability (confidence: 20%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_009",
+      "category": "bot",
+      "description": "Bot #9 - selenium automation",
+      "expected": {
+        "fraudScore": 0.8784938094186145,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.8229644720988815,
+        "riskLevel": "critical",
+        "confidence": 0.19999999999999998,
+        "processingTimeMs": 2
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.055529337319733085,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 82.3% fraud probability (confidence: 20%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_010",
+      "category": "bot",
+      "description": "Bot #10 - headless automation",
+      "expected": {
+        "fraudScore": 0.9208672753869905,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.8229644720988815,
+        "riskLevel": "critical",
+        "confidence": 0.19999999999999998,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.09790280328810907,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 82.3% fraud probability (confidence: 20%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_011",
+      "category": "bot",
+      "description": "Bot #11 - selenium automation",
+      "expected": {
+        "fraudScore": 0.8789542887694551,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.8229644720988815,
+        "riskLevel": "critical",
+        "confidence": 0.19999999999999998,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.05598981667057368,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 82.3% fraud probability (confidence: 20%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_012",
+      "category": "bot",
+      "description": "Bot #12 - autofill automation",
+      "expected": {
+        "fraudScore": 0.866019054802382,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.763078815446979,
+        "riskLevel": "critical",
+        "confidence": 0.19000000000000003,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.10294023935540297,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 76.3% fraud probability (confidence: 19%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_013",
+      "category": "bot",
+      "description": "Bot #13 - selenium automation",
+      "expected": {
+        "fraudScore": 0.8503103058445959,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.8229644720988815,
+        "riskLevel": "critical",
+        "confidence": 0.19999999999999998,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.02734583374571442,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 82.3% fraud probability (confidence: 20%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_014",
+      "category": "bot",
+      "description": "Bot #14 - puppeteer automation",
+      "expected": {
+        "fraudScore": 0.8590744226376046,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.763078815446979,
+        "riskLevel": "critical",
+        "confidence": 0.19000000000000003,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.09599560719062561,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 76.3% fraud probability (confidence: 19%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_015",
+      "category": "bot",
+      "description": "Bot #15 - selenium automation",
+      "expected": {
+        "fraudScore": 0.9284515399158408,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.8229644720988815,
+        "riskLevel": "critical",
+        "confidence": 0.19999999999999998,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.10548706781695938,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 82.3% fraud probability (confidence: 20%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_016",
+      "category": "bot",
+      "description": "Bot #16 - autofill automation",
+      "expected": {
+        "fraudScore": 0.9242335280973748,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.763078815446979,
+        "riskLevel": "critical",
+        "confidence": 0.19000000000000003,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.16115471265039583,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 76.3% fraud probability (confidence: 19%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_017",
+      "category": "bot",
+      "description": "Bot #17 - puppeteer automation",
+      "expected": {
+        "fraudScore": 0.919399258138219,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.763078815446979,
+        "riskLevel": "critical",
+        "confidence": 0.19000000000000003,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.15632044269124,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 76.3% fraud probability (confidence: 19%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_018",
+      "category": "bot",
+      "description": "Bot #18 - puppeteer automation",
+      "expected": {
+        "fraudScore": 0.8799525324166098,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.6874525324166098,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "bot_019",
+      "category": "bot",
+      "description": "Bot #19 - headless automation",
+      "expected": {
+        "fraudScore": 0.9087189992062121,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.7564840425531915,
+        "riskLevel": "critical",
+        "confidence": 0.12000000000000002,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.15223495665302067,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 75.6% fraud probability (confidence: 12%). Our Bayesian ensemble model analyzed 2 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_020",
+      "category": "bot",
+      "description": "Bot #20 - headless automation",
+      "expected": {
+        "fraudScore": 0.9120543726171491,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.8229644720988815,
+        "riskLevel": "critical",
+        "confidence": 0.19999999999999998,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.0890899005182676,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 82.3% fraud probability (confidence: 20%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_021",
+      "category": "bot",
+      "description": "Bot #21 - autofill automation",
+      "expected": {
+        "fraudScore": 0.9312306563151196,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.763078815446979,
+        "riskLevel": "critical",
+        "confidence": 0.19000000000000003,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.1681518408681406,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 76.3% fraud probability (confidence: 19%). Our Bayesian ensemble model analyzed 3 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "bot_022",
+      "category": "bot",
+      "description": "Bot #22 - puppeteer automation",
+      "expected": {
+        "fraudScore": 0.8709410963816481,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.6784410963816481,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "plag_001",
+      "category": "plagiarism",
+      "description": "Plagiarism #1 - duplicate_answers",
+      "expected": {
+        "fraudScore": 0.8225955618159788,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6657954545454546,
+        "riskLevel": "high",
+        "confidence": 0.13,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.15680010727052418,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 66.6% fraud probability (confidence: 13%). Our Bayesian ensemble model analyzed 2 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "plag_002",
+      "category": "plagiarism",
+      "description": "Plagiarism #2 - duplicate_answers",
+      "expected": {
+        "fraudScore": 0.715652673959994,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6657954545454546,
+        "riskLevel": "high",
+        "confidence": 0.13,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.049857219414539355,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 66.6% fraud probability (confidence: 13%). Our Bayesian ensemble model analyzed 2 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "plag_003",
+      "category": "plagiarism",
+      "description": "Plagiarism #3 - previous_submission",
+      "expected": {
+        "fraudScore": 0.8163673508548528,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.20273098721848903,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "plag_004",
+      "category": "plagiarism",
+      "description": "Plagiarism #4 - previous_submission",
+      "expected": {
+        "fraudScore": 0.8437180285185605,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.23008166488219672,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "plag_005",
+      "category": "plagiarism",
+      "description": "Plagiarism #5 - duplicate_answers",
+      "expected": {
+        "fraudScore": 0.668967672350118,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6657954545454546,
+        "riskLevel": "high",
+        "confidence": 0.13,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.0031722178046633687,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 66.6% fraud probability (confidence: 13%). Our Bayesian ensemble model analyzed 2 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "plag_006",
+      "category": "plagiarism",
+      "description": "Plagiarism #6 - web_copy",
+      "expected": {
+        "fraudScore": 0.7444653196474974,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.13082895601113365,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "plag_007",
+      "category": "plagiarism",
+      "description": "Plagiarism #7 - previous_submission",
+      "expected": {
+        "fraudScore": 0.6783410600444768,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.06470469640811305,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "plag_008",
+      "category": "plagiarism",
+      "description": "Plagiarism #8 - web_copy",
+      "expected": {
+        "fraudScore": 0.812200050191234,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.19856368655487022,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "plag_009",
+      "category": "plagiarism",
+      "description": "Plagiarism #9 - web_copy",
+      "expected": {
+        "fraudScore": 0.7527606149164058,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.13912425128004202,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "plag_010",
+      "category": "plagiarism",
+      "description": "Plagiarism #10 - previous_submission",
+      "expected": {
+        "fraudScore": 0.7837275252500291,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.17009116161366533,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "plag_011",
+      "category": "plagiarism",
+      "description": "Plagiarism #11 - web_copy",
+      "expected": {
+        "fraudScore": 0.731494799133543,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.6136363636363638,
+        "riskLevel": "high",
+        "confidence": 0.1,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.11785843549717923,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as HIGH risk with 61.4% fraud probability (confidence: 10%). Our Bayesian ensemble model analyzed 1 detection systems and found 1 significant fraud indicators."
+    },
+    {
+      "testId": "low_001",
+      "category": "low_effort",
+      "description": "Low-effort #1 - minimal",
+      "expected": {
+        "fraudScore": 0.6898994056379252,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.5398994056379252,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_002",
+      "category": "low_effort",
+      "description": "Low-effort #2 - minimal",
+      "expected": {
+        "fraudScore": 0.7973052468778405,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.6473052468778405,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_003",
+      "category": "low_effort",
+      "description": "Low-effort #3 - rushed",
+      "expected": {
+        "fraudScore": 0.6666735406692169,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.5166735406692169,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_004",
+      "category": "low_effort",
+      "description": "Low-effort #4 - straight_lining",
+      "expected": {
+        "fraudScore": 0.8231131378835471,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.6731131378835471,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_005",
+      "category": "low_effort",
+      "description": "Low-effort #5 - gibberish",
+      "expected": {
+        "fraudScore": 0.7267267942628678,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.5342267942628678,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_006",
+      "category": "low_effort",
+      "description": "Low-effort #6 - rushed",
+      "expected": {
+        "fraudScore": 0.6305400270360679,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.4805400270360679,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_007",
+      "category": "low_effort",
+      "description": "Low-effort #7 - single_word",
+      "expected": {
+        "fraudScore": 0.6462574808509999,
+        "riskLevel": "medium",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.49625748085099985,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_008",
+      "category": "low_effort",
+      "description": "Low-effort #8 - single_word",
+      "expected": {
+        "fraudScore": 0.7493664189332776,
+        "riskLevel": "medium",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.5993664189332776,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_009",
+      "category": "low_effort",
+      "description": "Low-effort #9 - single_word",
+      "expected": {
+        "fraudScore": 0.5610876177995124,
+        "riskLevel": "medium",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.4110876177995124,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_010",
+      "category": "low_effort",
+      "description": "Low-effort #10 - single_word",
+      "expected": {
+        "fraudScore": 0.6999870982195433,
+        "riskLevel": "medium",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.5499870982195433,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_011",
+      "category": "low_effort",
+      "description": "Low-effort #11 - rushed",
+      "expected": {
+        "fraudScore": 0.7627124938137968,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.6127124938137968,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_012",
+      "category": "low_effort",
+      "description": "Low-effort #12 - gibberish",
+      "expected": {
+        "fraudScore": 0.7099289712334212,
+        "riskLevel": "medium",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.5174289712334212,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_013",
+      "category": "low_effort",
+      "description": "Low-effort #13 - gibberish",
+      "expected": {
+        "fraudScore": 0.8332291319473597,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.6407291319473597,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_014",
+      "category": "low_effort",
+      "description": "Low-effort #14 - rushed",
+      "expected": {
+        "fraudScore": 0.5702657885503868,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.42026578855038677,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_015",
+      "category": "low_effort",
+      "description": "Low-effort #15 - rushed",
+      "expected": {
+        "fraudScore": 0.7286569709097421,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.5786569709097421,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "low_016",
+      "category": "low_effort",
+      "description": "Low-effort #16 - gibberish",
+      "expected": {
+        "fraudScore": 0.7945968044991787,
+        "riskLevel": "medium",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.6020968044991787,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ring_001",
+      "category": "fraud_ring",
+      "description": "Fraud ring #1 - group GROUP_A",
+      "expected": {
+        "fraudScore": 0.8503710217508342,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.6578710217508342,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ring_002",
+      "category": "fraud_ring",
+      "description": "Fraud ring #2 - group GROUP_A",
+      "expected": {
+        "fraudScore": 0.9446791026894972,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.7521791026894972,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 2 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ring_003",
+      "category": "fraud_ring",
+      "description": "Fraud ring #3 - group GROUP_A",
+      "expected": {
+        "fraudScore": 0.8988753258329325,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.7063753258329325,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ring_004",
+      "category": "fraud_ring",
+      "description": "Fraud ring #4 - group GROUP_B",
+      "expected": {
+        "fraudScore": 0.9312966185457981,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.7387966185457981,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ring_005",
+      "category": "fraud_ring",
+      "description": "Fraud ring #5 - group GROUP_B",
+      "expected": {
+        "fraudScore": 0.8459437827610601,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.6534437827610601,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "ring_006",
+      "category": "fraud_ring",
+      "description": "Fraud ring #6 - group GROUP_B",
+      "expected": {
+        "fraudScore": 0.9249770690882997,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.1925,
+        "riskLevel": "low",
+        "confidence": 0.030000000000000006,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.7324770690882997,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 19.3% fraud probability (confidence: 3%). Our Bayesian ensemble model analyzed 1 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "mixed_001",
+      "category": "mixed",
+      "description": "Mixed fraud #1 - ai_bot",
+      "expected": {
+        "fraudScore": 0.9262093333525627,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 1,
+        "riskLevel": "critical",
+        "confidence": 0.36999999999999994,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.07379066664743728,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 100.0% fraud probability (confidence: 37%). Our Bayesian ensemble model analyzed 3 detection systems and found 2 significant fraud indicators."
+    },
+    {
+      "testId": "mixed_002",
+      "category": "mixed",
+      "description": "Mixed fraud #2 - ai_bot",
+      "expected": {
+        "fraudScore": 0.9209992108657389,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 1,
+        "riskLevel": "critical",
+        "confidence": 0.36999999999999994,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.07900078913426112,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 100.0% fraud probability (confidence: 37%). Our Bayesian ensemble model analyzed 3 detection systems and found 2 significant fraud indicators."
+    },
+    {
+      "testId": "mixed_003",
+      "category": "mixed",
+      "description": "Mixed fraud #3 - ai_bot",
+      "expected": {
+        "fraudScore": 0.9044654895645635,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 1,
+        "riskLevel": "critical",
+        "confidence": 0.36999999999999994,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.09553451043543648,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 100.0% fraud probability (confidence: 37%). Our Bayesian ensemble model analyzed 3 detection systems and found 2 significant fraud indicators."
+    },
+    {
+      "testId": "mixed_004",
+      "category": "mixed",
+      "description": "Mixed fraud #4 - ai_loweffort",
+      "expected": {
+        "fraudScore": 0.6560379772239685,
+        "riskLevel": "high",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 0.15,
+        "riskLevel": "low",
+        "confidence": 0,
+        "processingTimeMs": 1
+      },
+      "evaluation": {
+        "correct": false,
+        "scoreError": 0.5060379772239685,
+        "truePositive": false,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": true
+      },
+      "reasoning": "This response has been classified as LOW risk with 15.0% fraud probability (confidence: 0%). Our Bayesian ensemble model analyzed 0 detection systems and found 0 significant fraud indicators."
+    },
+    {
+      "testId": "mixed_005",
+      "category": "mixed",
+      "description": "Mixed fraud #5 - ai_bot",
+      "expected": {
+        "fraudScore": 0.8896503982974536,
+        "riskLevel": "critical",
+        "shouldFlag": true
+      },
+      "actual": {
+        "fraudScore": 1,
+        "riskLevel": "critical",
+        "confidence": 0.36999999999999994,
+        "processingTimeMs": 0
+      },
+      "evaluation": {
+        "correct": true,
+        "scoreError": 0.11034960170254637,
+        "truePositive": true,
+        "trueNegative": false,
+        "falsePositive": false,
+        "falseNegative": false
+      },
+      "reasoning": "This response has been classified as CRITICAL risk with 100.0% fraud probability (confidence: 37%). Our Bayesian ensemble model analyzed 3 detection systems and found 2 significant fraud indicators."
+    }
+  ]
+}

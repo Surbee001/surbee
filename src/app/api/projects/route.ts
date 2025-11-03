@@ -27,13 +27,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, description, user_id } = body;
+    const { id, title, description, user_id } = body;
 
     if (!title || !user_id) {
       return NextResponse.json({ error: 'Title and user_id are required' }, { status: 400 });
     }
 
     const { data: project, error } = await ProjectsService.createProject({
+      id,
       title,
       description,
       user_id

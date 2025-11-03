@@ -3,11 +3,11 @@ import { ProjectsService } from '@/lib/services/projects';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId, surveySchema } = await request.json();
-    const projectId = params.id;
+    const { id: projectId } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });

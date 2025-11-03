@@ -4,7 +4,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- AI feedback table
 create table if not exists public.ai_feedback (
   id uuid primary key default gen_random_uuid(),
-  project_id uuid references public.projects(id) on delete cascade,
+  project_id text references public.projects(id) on delete cascade,
   user_id uuid,
   message_id text not null,
   kind text not null check (kind in ('copy','thumbs_up','thumbs_down','retry')),
@@ -14,7 +14,7 @@ create table if not exists public.ai_feedback (
 -- Checkpoints table
 create table if not exists public.checkpoints (
   id uuid primary key default gen_random_uuid(),
-  project_id uuid references public.projects(id) on delete cascade,
+  project_id text references public.projects(id) on delete cascade,
   user_id uuid,
   snapshot jsonb not null,
   created_at timestamp with time zone default now()
@@ -22,7 +22,7 @@ create table if not exists public.checkpoints (
 
 -- Projects table (enhanced version)
 CREATE TABLE IF NOT EXISTS projects (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id TEXT PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   description TEXT,
@@ -43,7 +43,7 @@ CREATE INDEX IF NOT EXISTS idx_projects_created_at ON projects(created_at DESC);
 -- Survey responses table
 CREATE TABLE IF NOT EXISTS survey_responses (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  survey_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  survey_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   respondent_id TEXT,
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   session_id TEXT,
@@ -70,7 +70,7 @@ CREATE INDEX IF NOT EXISTS idx_survey_responses_created_at ON survey_responses(c
 -- Survey analytics table (for aggregated data)
 CREATE TABLE IF NOT EXISTS survey_analytics (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  survey_id UUID NOT NULL UNIQUE REFERENCES projects(id) ON DELETE CASCADE,
+  survey_id TEXT NOT NULL UNIQUE REFERENCES projects(id) ON DELETE CASCADE,
   total_responses INT DEFAULT 0,
   total_completions INT DEFAULT 0,
   completion_rate FLOAT DEFAULT 0,
@@ -86,7 +86,7 @@ CREATE INDEX IF NOT EXISTS idx_survey_analytics_survey_id ON survey_analytics(su
 CREATE TABLE IF NOT EXISTS chat_messages (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  project_id UUID REFERENCES projects(id) ON DELETE SET NULL,
+  project_id TEXT REFERENCES projects(id) ON DELETE SET NULL,
   role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
   content TEXT NOT NULL,
   metadata JSONB DEFAULT '{}',
@@ -102,7 +102,7 @@ CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created
 CREATE TABLE IF NOT EXISTS survey_questions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-  project_id UUID NOT NULL,
+  project_id TEXT NOT NULL,
   question_text TEXT NOT NULL,
   question_type TEXT NOT NULL CHECK (question_type IN ('multiple_choice', 'text_input', 'rating', 'yes_no')),
   order_index INTEGER NOT NULL DEFAULT 0,
@@ -119,7 +119,7 @@ CREATE INDEX IF NOT EXISTS idx_survey_questions_order_index ON survey_questions(
 -- RAG: Knowledge chunks per project
 create table if not exists public.rag_chunks (
   id uuid primary key default gen_random_uuid(),
-  project_id uuid references public.projects(id) on delete cascade,
+  project_id text references public.projects(id) on delete cascade,
   user_id uuid references auth.users(id) on delete cascade,
   source text, -- e.g., 'html', 'doc', 'note'
   path text,   -- optional logical path or section
