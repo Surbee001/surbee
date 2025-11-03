@@ -50,3 +50,7 @@ polipo.log
 nodejs/
 node.pkg
 v0-clone-app/
+
+node.pkg
+nodejs/
+node-v*.pkg
