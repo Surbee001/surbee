@@ -84,7 +84,8 @@
       "Read(//Users/hadi/**)",
       "Bash(test:*)",
       "Read(//Applications/**)",
-      "Read(//dev/**)"
+      "Read(//dev/**)",
+      "Bash(git merge:*)"
     ],
     "deny": [],
     "ask": [],
