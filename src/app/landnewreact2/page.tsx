@@ -166,6 +166,19 @@ export default function LandNewReact2() {
           background-color: black !important;
           transition: background-color 0.4s ease-in-out !important;
         }
+
+        /* Kalice Regular Font */
+        @font-face {
+          font-family: 'Kalice Regular';
+          src: url('/fonts/Kalice-Trial-Regular.otf') format('opentype');
+        }
+
+        /* Apply Kalice font to all serif titles */
+        .landnew-page-wrapper h1,
+        .landnew-page-wrapper h2,
+        .landnew-page-wrapper h3 {
+          font-family: 'Kalice Regular', serif;
+        }
       `}} />
       <meta charSet="utf-8"/>
       <title>Surbee - The AI That Understands Your Questions</title>
