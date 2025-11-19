@@ -826,7 +826,7 @@ export default function LandNewReact2() {
                       placeholder="Enter your email"
                       required
                     />
-                    <a href="#" className="btn--book w-variant-2abd1b04-beaa-6c46-80ee-d2134041cf3a is--black w-inline-block">
+                    <a href="#" className="btn--book w-variant-2abd1b04-beaa-6c46-80ee-d2134041cf3a is--white w-inline-block">
                       <div className="hover--bg w-variant-2abd1b04-beaa-6c46-80ee-d2134041cf3a is--black"></div>
                       <div className="relative">Join waitlist</div>
                     </a>
