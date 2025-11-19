@@ -805,7 +805,7 @@ export default function LandNewReact2() {
                 flex: 1;
                 padding: 12px 16px;
                 border: 2px solid #000;
-                border-radius: 100px;
+                border-radius: 8px;
                 font-size: 14px;
                 font-family: inherit;
                 background-color: #fff;
