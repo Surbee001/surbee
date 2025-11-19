@@ -764,7 +764,7 @@ export default function LandNewReact2() {
                     <style dangerouslySetInnerHTML={{__html: `
                       @font-face {
                         font-family: 'Kalice Regular';
-                        src: url('/fonts/kalice-regular.ttf') format('truetype');
+                        src: url('/fonts/Kalice-Trial-Regular.otf') format('opentype');
                       }
                       .kalice-heading {
                         font-family: 'Kalice Regular', sans-serif;
