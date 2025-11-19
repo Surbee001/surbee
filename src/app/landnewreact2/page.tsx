@@ -813,24 +813,10 @@ export default function LandNewReact2() {
                 outline: none;
                 border-color: var(--_colors---orange, #FF6B35);
               }
-              .waitlist-btn {
-                padding: 12px 32px;
-                background-color: #000;
-                color: #fff;
-                border: none;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.3s ease;
-              }
-              .waitlist-btn:hover {
-                background-color: var(--_colors---orange, #FF6B35);
-              }
             `}} />
             <div className="kalice-heading-wrapper">
               <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <h2 className="h2 kalice-heading" style={{ marginBottom: '32px' }}>Be the first to unlock intelligence</h2>
+                <h2 className="h2 kalice-heading" style={{ marginBottom: '32px' }}>From surveys to exams, quizzes to research—unlock every answer</h2>
                 <div className="waitlist-form">
                   <div className="waitlist-input-wrapper">
                     <input
@@ -839,11 +825,11 @@ export default function LandNewReact2() {
                       placeholder="Enter your email"
                       required
                     />
-                    <button className="waitlist-btn">Join</button>
+                    <a href="#" className="btn--book w-variant-2abd1b04-beaa-6c46-80ee-d2134041cf3a is--black w-inline-block">
+                      <div className="hover--bg w-variant-2abd1b04-beaa-6c46-80ee-d2134041cf3a is--black"></div>
+                      <div className="relative">Join waitlist</div>
+                    </a>
                   </div>
-                  <p style={{ fontSize: '12px', color: '#808080', textAlign: 'center', margin: 0 }}>
-                    No spam, just data intelligence updates
-                  </p>
                 </div>
               </div>
             </div>
