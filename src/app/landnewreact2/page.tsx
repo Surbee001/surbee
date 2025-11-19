@@ -1097,8 +1097,8 @@ export default function LandNewReact2() {
 
           <footer data-wf--global---footer--variant="base" className="section is--footer">
             <div className="footer-content">
-              <div animation="fade-stagger" className="footer--row">
-                <div animation="fade-item">
+              <div animation="fade-stagger" className="footer--row" style={{ paddingLeft: '0' }}>
+                <div animation="fade-item" style={{ marginRight: '40px' }}>
                   <a href="/" aria-current="page" className="footer--logo-link w-inline-block w--current">
                     <img src="/logo.svg" alt="Surbee" className="looter--logo-img" style={{ height: '50px', width: 'auto' }} />
                   </a>
