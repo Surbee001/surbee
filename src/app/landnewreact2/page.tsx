@@ -507,6 +507,12 @@ export default function LandNewReact2() {
 
       <main className="main-wrapper">
         <section className="section is--hero">
+          <style dangerouslySetInnerHTML={{__html: `
+            .heading--96 {
+              overflow: visible !important;
+              line-height: 1.2 !important;
+            }
+          `}} />
           <div className="container--872 is--16margin-bottom">
             <h1 animation="loading-split" className="heading--96">Intelligent data collection, generated in seconds.</h1>
           </div>
