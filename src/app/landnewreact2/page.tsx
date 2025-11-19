@@ -787,10 +787,64 @@ export default function LandNewReact2() {
                 max-width: 800px;
               }
             `}} />
+            <style dangerouslySetInnerHTML={{__html: `
+              .waitlist-form {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 24px;
+                max-width: 500px;
+                width: 100%;
+              }
+              .waitlist-input-wrapper {
+                display: flex;
+                gap: 12px;
+                width: 100%;
+              }
+              .waitlist-input {
+                flex: 1;
+                padding: 12px 16px;
+                border: 2px solid #000;
+                border-radius: 8px;
+                font-size: 14px;
+                font-family: inherit;
+              }
+              .waitlist-input:focus {
+                outline: none;
+                border-color: var(--_colors---orange, #FF6B35);
+              }
+              .waitlist-btn {
+                padding: 12px 32px;
+                background-color: #000;
+                color: #fff;
+                border: none;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+              }
+              .waitlist-btn:hover {
+                background-color: var(--_colors---orange, #FF6B35);
+              }
+            `}} />
             <div className="kalice-heading-wrapper">
-              <div>
-                <h2 className="h2 kalice-heading">Extract</h2>
-                <h2 className="h2 kalice-heading">hidden intelligence from any content</h2>
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <h2 className="h2 kalice-heading" style={{ marginBottom: '32px' }}>Be the first to unlock intelligence</h2>
+                <div className="waitlist-form">
+                  <div className="waitlist-input-wrapper">
+                    <input
+                      type="email"
+                      className="waitlist-input"
+                      placeholder="Enter your email"
+                      required
+                    />
+                    <button className="waitlist-btn">Join</button>
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#808080', textAlign: 'center', margin: 0 }}>
+                    No spam, just data intelligence updates
+                  </p>
+                </div>
               </div>
             </div>
           </section>
