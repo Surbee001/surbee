@@ -805,9 +805,10 @@ export default function LandNewReact2() {
                 flex: 1;
                 padding: 12px 16px;
                 border: 2px solid #000;
-                border-radius: 8px;
+                border-radius: 100px;
                 font-size: 14px;
                 font-family: inherit;
+                background-color: #fff;
               }
               .waitlist-input:focus {
                 outline: none;
@@ -816,7 +817,7 @@ export default function LandNewReact2() {
             `}} />
             <div className="kalice-heading-wrapper">
               <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <h2 className="h2 kalice-heading" style={{ marginBottom: '32px' }}>From surveys to exams, quizzes to research—unlock every answer</h2>
+                <h2 className="h2 kalice-heading" style={{ marginBottom: '32px' }}>Unlock answers to every question</h2>
                 <div className="waitlist-form">
                   <div className="waitlist-input-wrapper">
                     <input
