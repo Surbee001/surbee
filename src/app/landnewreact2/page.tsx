@@ -14,19 +14,19 @@ export default function LandNewReact2() {
       const startAmbientPulse = () => {
         const lines = document.querySelectorAll('.hero--line');
         if (lines.length === 0) return;
-        
+
         setInterval(() => {
           // Pick a random line
           const randomIndex = Math.floor(Math.random() * lines.length);
           const randomLine = lines[randomIndex] as HTMLElement;
-          
+
           if (randomLine) {
             const originalColor = randomLine.style.backgroundColor;
-            
+
             // Pulse
             randomLine.style.transition = 'background-color 0.4s ease-in-out';
             randomLine.style.backgroundColor = '#FBD8C6'; // Light flash
-            
+
             setTimeout(() => {
               randomLine.style.backgroundColor = 'var(--_colors---orange)'; // Brand orange peak
             }, 400);
@@ -160,15 +160,21 @@ export default function LandNewReact2() {
         .black--bg h1, .black--bg h2, .black--bg h3, .black--bg p, .black--bg div {
           color: inherit;
         }
+
+        /* Hero line styles */
+        .hero--line {
+          background-color: black !important;
+          transition: background-color 0.4s ease-in-out !important;
+        }
       `}} />
       <meta charSet="utf-8"/>
-      <title>Surbee - Precision AI Search for legal teams</title>
-      <meta content="Powered by world-class enterprise search that serves up immediate access to all of the institutional knowledge in your firm, Surbee enables you to build entire AI applications, encapsulate multi-step workflows, and implement LLM agents." name="description"/>
-      <meta content="Surbee - Precision AI Search for legal teams" property="og:title"/>
-      <meta content="Powered by world-class enterprise search that serves up immediate access to all of the institutional knowledge in your firm, Surbee enables you to build entire AI applications, encapsulate multi-step workflows, and implement LLM agents." property="og:description"/>
+      <title>Surbee - The AI That Understands Your Questions</title>
+      <meta content="Surbee understands your domain to generate accurate surveys from natural language. Features built-in 'Cipher' fraud detection for unmatched accuracy." name="description"/>
+      <meta content="Surbee - The AI That Understands Your Questions" property="og:title"/>
+      <meta content="Surbee understands your domain to generate accurate surveys from natural language. Features built-in 'Cipher' fraud detection for unmatched accuracy." property="og:description"/>
       <meta content="cdn.prod.website-files.com/67bdd03200678df04ba07593/67d45178862f7a080de6a4d2_Open%20Graph%20Image%20from%20TinyPNG.jpg" property="og:image"/>
-      <meta content="Surbee - Precision AI Search for legal teams" property="twitter:title"/>
-      <meta content="Powered by world-class enterprise search that serves up immediate access to all of the institutional knowledge in your firm, Surbee enables you to build entire AI applications, encapsulate multi-step workflows, and implement LLM agents." property="twitter:description"/>
+      <meta content="Surbee - The AI That Understands Your Questions" property="twitter:title"/>
+      <meta content="Surbee understands your domain to generate accurate surveys from natural language. Features built-in 'Cipher' fraud detection for unmatched accuracy." property="twitter:description"/>
       <meta content="cdn.prod.website-files.com/67bdd03200678df04ba07593/67d45178862f7a080de6a4d2_Open%20Graph%20Image%20from%20TinyPNG.jpg" property="twitter:image"/>
       <meta property="og:type" content="website"/>
       <meta content="summary_large_image" name="twitter:card"/>
@@ -345,6 +351,17 @@ export default function LandNewReact2() {
           color: #000 !important;
         }
 
+        /* Ensure dot content fits text */
+        .home--collective-start {
+          width: auto !important;
+          min-width: fit-content !important;
+          max-width: 300px !important; /* Ensure it doesn't get too wide but allows growth */
+          padding-left: 16px !important;
+          padding-right: 16px !important;
+        }
+        .intranet {
+          white-space: nowrap !important;
+        }
         /* Footer link color fix for dark background */
         .footer--link {
           color: rgba(255, 255, 255, 0.7);
@@ -357,6 +374,20 @@ export default function LandNewReact2() {
         .looter--logo-img {
           color: #fff;
         }
+
+        /* Reduce spacing between logo and product button */
+        .container--navbar {
+          gap: 12px !important;
+        }
+
+        .navbar--menu {
+          margin-left: 4px !important;
+        }
+
+        /* Ensure Get Started button stays in navbar */
+        .btn--nav-wrapper {
+          margin-left: auto !important;
+        }
       `}} />
 
       <div className="bookademobg"></div>
@@ -365,7 +396,7 @@ export default function LandNewReact2() {
       <nav animation="loading-reverse" className="navbar is--activ">
         <div className="container--navbar">
           <a href="/" aria-current="page" className="brand--link w-inline-block w--current">
-            <img src="/logo.svg" alt="Surbee" className="brand--img" style={{height: '20px', width: 'auto'}}/>
+            <img src="/logo.svg" alt="Surbee" className="brand--img" style={{height: '20px', width: 'auto', filter: 'brightness(0) invert(1)'}}/>
           </a>
           <div className="navbar--menu">
             <div className="navbar--menu-inside">
@@ -373,10 +404,10 @@ export default function LandNewReact2() {
                 <a href="/product" className="navbar--link">Product</a>
               </div>
               <div data-wf--slot-item-navbar-link--variant="base" className="navbar--link-parent">
-                <a href="/security" className="navbar--link">Security</a>
+                <a href="/enterprise" className="navbar--link">Enterprise</a>
               </div>
               <div data-wf--slot-item-navbar-link--variant="base" className="navbar--link-parent">
-                <a href="/customers" className="navbar--link">Customers</a>
+                <a href="/pricing" className="navbar--link">Pricing</a>
               </div>
               <div className="navbar--link-parent is--dropdown">
                 <div className="navbar--dropdown">
@@ -414,9 +445,10 @@ export default function LandNewReact2() {
                   </div>
                   <div className="navbar--dropdown-response">
                     <div className="navbar--dropdown-response-inner">
-                      <a href="/blog" className="navbar--dropdown-link">Blog</a>
+                      <a href="/blog" className="navbar--dropdown-link" style={{ display: 'none' }}>Blog</a>
                       <a href="/news" className="navbar--dropdown-link">News</a>
                       <a href="/learn" className="navbar--dropdown-link">Learn</a>
+                      <a href="/students" className="navbar--dropdown-link">Students</a>
                     </div>
                   </div>
                 </div>
@@ -427,7 +459,7 @@ export default function LandNewReact2() {
               <div data-wf--slot-item-navbar-link--variant="mobile-only" className="navbar--link-parent w-variant-5f88acbf-b0fd-c730-0807-c0a07b967ede">
                 <a href="/careers" className="navbar--link">Careers</a>
               </div>
-              <div data-wf--slot-item-navbar-link--variant="mobile-only" className="navbar--link-parent w-variant-5f88acbf-b0fd-c730-0807-c0a07b967ede">
+              <div data-wf--slot-item-navbar-link--variant="mobile-only" className="navbar--link-parent w-variant-5f88acbf-b0fd-c730-0807-c0a07b967ede" style={{ display: 'none' }}>
                 <a href="/blog" className="navbar--link">Blog</a>
               </div>
               <div data-wf--slot-item-navbar-link--variant="mobile-only" className="navbar--link-parent w-variant-5f88acbf-b0fd-c730-0807-c0a07b967ede">
@@ -463,10 +495,10 @@ export default function LandNewReact2() {
       <main className="main-wrapper">
         <section className="section is--hero">
           <div className="container--872 is--16margin-bottom">
-            <h1 animation="loading-split" className="heading--96">Precision AI search for legal teams.</h1>
+            <h1 animation="loading-split" className="heading--96">Intelligent data collection, generated in seconds.</h1>
           </div>
           <div className="container--532 is--56padding-bottom">
-            <p animation="loading" className="paragraph--16">Powered by world-class enterprise search that serves up immediate access to all of the institutional knowledge in your firm, Surbee enables you to build entire AI applications, encapsulate multi-step workflows, and implement LLM agents.</p>
+            <p animation="loading" className="paragraph--16">Surbee understands your specific domain to generate accurate surveys from natural language. With our built-in "Cipher" accuracy detector, you get the most reliable results free from fraud and spam.</p>
           </div>
           <div className="container--1376 is--hero is--1">
             {/* Lines */}
@@ -565,21 +597,21 @@ export default function LandNewReact2() {
         <section className="section is--padding">
           <div className="container--1328 is--56margin-bottom">
             <div className="grid--2els is--40gap-tablet">
-              <h2 animation="fade-split" className="h2 is--h3-tablet">The only AI platform that knows everything your firm knows</h2>
+              <h2 animation="fade-split" className="h2 is--h3-tablet">Faster survey creation by AI, refined by intelligence.</h2>
               <div animation="fade" id="w-node-bd73b603-5240-5152-4cf3-25732eaf20b0-2f3181c1" className="max--430">
                 <div animation="fade" className="label--parent is--20margin-bottom">
                   <div className="div-block-2 is--blue"></div>
                   <div className="label">what’s surbee</div>
                 </div>
-                <p className="body--14">Founded by ex-Google search engineers and legaltech veterans, Surbee reimagines how firms access and use their internal knowledge, unlocking the full breadth of data and depth of documents to improve all areas of your business.</p>
+                <p className="body--14">Generate surveys using natural language or our intuitive no-code builder. Surbee understands your domain's context to create relevant questions, while Cipher works in the background to ensure every response is authentic and accurate.</p>
               </div>
             </div>
           </div>
           <div className="container--1328 is--search-home">
             <img src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/67c6fe5a7f5f031522f54ae0_Frame%20634264.svg" loading="lazy" animation="fade" alt="" className="img--100 is--home-search"/>
             <div animation="fade" className="search--animation-search is--search">
-              <div typing="Have we done a deal like this before? Are any of our clients' documents impacted by this new regulation? What past cases are most similar to this one? Where have we negotiated a clause like this before? Who is an expert on this at the London office? What are the open issues with this client?  In case of doubt, please check the prototype animation">What past cases are most similar to this one?</div>
-              <div className="div-block-12"><div>Search</div></div>
+              <div typing="Create a customer satisfaction survey for a B2B SaaS product with a focus on churn reduction. Generate a 10-question market research survey for Gen Z consumers in the fashion industry. Build an employee engagement survey focusing on remote work challenges. Design a product feedback form for a new mobile banking app.">Create a customer satisfaction survey for a B2B SaaS product...</div>
+              <div className="div-block-12"><div>Generate</div></div>
             </div>
           </div>
         </section>
@@ -589,8 +621,8 @@ export default function LandNewReact2() {
             <img src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/67f8fd02743cb36e729e2fce_Surbee%20Group%20(1).avif" loading="lazy" alt="" className="home--collective-img"/>
             <img src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/68b1a0cec7fff7c6c96aae55_graphic%20website.svg" loading="eager" width="149" alt="" className="max--1140 is--mobile"/>
             <div className="container--647 is--absolute">
-              <h2 animation="fade-split" className="h2 is--20margin-bottom is--h3-tablet">Your collective knowledge is your unique asset</h2>
-              <p animation="fade" className="body--big is--14tablet">But it’s scattered and inaccessible</p>
+              <h2 animation="fade-split" className="h2 is--20margin-bottom is--h3-tablet">Great surveys, scattered data?</h2>
+              <p animation="fade" className="body--big is--14tablet">Surbee connects every data point to reveal the complete picture, filtering out noise and finding the truth in the gaps.</p>
             </div>
           </div>
         </section>
@@ -600,58 +632,58 @@ export default function LandNewReact2() {
             <div className="container--1196 is--center is--relative">
               <div className="home--collective-dot is--1">
                 <div className="home--collective-start">
-                  <div className="intranet">Sharepoint</div>
+                  <div className="intranet">Natural Language</div>
                   <img src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/67f8f96866dde7aebec6949e_Surbee%20Frame%20634185.svg" loading="lazy" alt=""/>
                 </div>
               </div>
               <div className="home--collective-dot is--2">
                 <div className="home--collective-start dj-home-center">
-                  <div className="intranet">HighQ</div>
+                  <div className="intranet">No-Code Builder</div>
                 </div>
               </div>
               <div className="home--collective-dot is--3">
                 <div className="home--collective-start">
-                  <div className="intranet">ONEDRIVE</div>
+                  <div className="intranet">Cipher Detection</div>
                   <img src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/67f8fd519a08abfc193a45b1_Surbee%20Frame%20634185%20(1).svg" loading="lazy" alt=""/>
                 </div>
                 <div className="home--collective-dot-inner"></div>
               </div>
               <div className="home--collective-dot is--4">
                 <div className="home--collective-start">
-                  <div className="intranet">DMS</div>
+                  <div className="intranet">Deep Extraction</div>
                   <img src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/67f8fe569ae8d17d933a3c60_Surbee%20Frame%20634185%20(2).svg" loading="lazy" alt=""/>
                 </div>
                 <div className="home--collective-dot-inner">
-                  <div className="body--big">Negotiation Intelligence</div>
-                  <p className="_808080--font is--fixed">Search to uncover whether opposing counsel ever agreed to a point in a past negotiation.</p>
+                  <div className="body--big">Fraud Prevention</div>
+                  <p className="_808080--font is--fixed">Identify and block bots, VPNs, proxies, and duplicate responses instantly.</p>
                 </div>
               </div>
               <div className="home--collective-dot is--5">
                 <div className="home--collective-start">
-                  <div className="intranet">EXPERIENCE MANAGEMENT</div>
+                  <div className="intranet">Enterprise SDK</div>
                 </div>
                 <div className="home--collective-dot-inner">
-                  <div className="body--big">Matter &amp; Client Overview</div>
-                  <p className="_808080--font is--fixed">Creates an overview and timeline of all the events pertaining to documents of a selected matter, client or folder.</p>
+                  <div className="body--big">Minute Details</div>
+                  <p className="_808080--font is--fixed">Extract granular data points and patterns that would take humans hours to find.</p>
                 </div>
               </div>
               <div className="home--collective-dot is--6">
                 <div className="home--collective-start">
-                  <div className="intranet">EMAIL</div>
+                  <div className="intranet">Real-time Analytics</div>
                 </div>
                 <div className="home--collective-dot-inner"></div>
               </div>
               <div className="home--collective-dot is--0">
                 <div className="home--collective-start">
-                  <div className="intranet">Intranet</div>
+                  <div className="intranet">Domain Intelligence</div>
                   <img src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/67e66c2d46ba7f7e1ae5353a_Frame%20634185.svg" loading="lazy" alt=""/>
                 </div>
                 <div className="home--collective-dot-inner">
-                  <div className="body--big">Multi-Document Chat</div>
-                  <p className="_808080--font is--fixed">Ask questions about a client-matter file folder, or any set of documents, for quick insights and review.</p>
+                  <div className="body--big">Context Awareness</div>
+                  <p className="_808080--font is--fixed">Surbee understands your specific industry language to generate relevant surveys.</p>
                 </div>
                 <div className="home--searchtext">
-                  <div animation="fade" className="notyping is--search is--not-absolute"><div>Search the way you think</div></div>
+                  <div animation="fade" className="notyping is--search is--not-absolute"><div>Extract deep insights</div></div>
                 </div>
               </div>
             </div>
@@ -660,12 +692,12 @@ export default function LandNewReact2() {
           <div className="relative is--home-earch">
             <section className="section is--home-search-sticky">
               <div className="container--725 is--center is--search">
-                <h2 animation="fade-split" className="h2 is--24margin-bottom is--h3-tablet">Search the way you think to unlock everything</h2>
+                <h2 animation="fade-split" className="h2 is--24margin-bottom is--h3-tablet">Cipher SDK for Enterprise</h2>
                 <div className="max--580">
-                  <p animation="fade">Empower your team with real insights in seconds—not hours. Surbee Knowledge Search indexes and understands your data, wherever it lives, providing seamless access to your knowledge from a single place.  No complex implementation, no data migration—just instant, intelligent search.</p>
+                  <p animation="fade">Implement our industry-leading accuracy detector, Cipher, directly into your own platforms. Perfect for academic research, classrooms, and enterprise data collection where data integrity is paramount. Cipher can even detect computer locations and flag proximity in classrooms to prevent cheating, while extracting minute details that would take humans hours to find.</p>
                   <div className="home--searchbar-wrapper">
                     <div animation="fade" className="notyping is--search is--not-absolute is--home">
-                      <div>Search the way you think</div>
+                      <div>Extract insights from thousands of responses in seconds...</div>
                     </div>
                   </div>
                 </div>
@@ -729,11 +761,11 @@ export default function LandNewReact2() {
               <div className="w-layout-grid grid--2els">
                 <div id="w-node-bfbd6157-871c-5245-2656-0807af8f648d-2f3181c1">
                   <div>
-                    <h2 className="h2">Automate</h2>
-                    <h2 className="h2">mission-critical workflows with ease</h2>
+                    <h2 className="h2">Extract</h2>
+                    <h2 className="h2">hidden intelligence from any content</h2>
                   </div>
                   <div className="max--540 margin-top-14">
-                    <p className="paragraph--16">Surbee AI Workflows enable building, deploying, orchestrating, and governing AI agents to drive real ROI. Our LLM-agnostic agentic reasoning executes complex, multi-step tasks—retrieving data from multiple sources and taking actions to get work done with transparency and precision.</p>
+                    <p className="paragraph--16">Surbee transforms unstructured content into actionable data with AI-powered precision. Extract insights, generate intelligent surveys, and unlock patterns from any source—documents, databases, or web content—in seconds. Our advanced data extraction engine processes complex information to deliver structured, ready-to-use intelligence.</p>
                   </div>
                 </div>
                 <div>
@@ -742,7 +774,7 @@ export default function LandNewReact2() {
               </div>
             </div>
           </section>
-          <section className="section is--oneplatform-ai">
+          <section className="section is--oneplatform-ai" style={{ display: 'none' }}>
             <div className="container--615 is--center">
               <h2 className="h2">The one platform for your AI strategy</h2>
             </div>
@@ -751,53 +783,55 @@ export default function LandNewReact2() {
               <img src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/67cf19aa05ab4aeea3a309e4_Group%20634056%20(1).avif" loading="lazy" alt="" className="img--100 is--aistrategy-mobile"/>
             </div>
           </section>
-          <section className="section is--padding">
+          <section className="section is--padding" style={{ display: 'none' }}>
             <div className="container--1328 is--56margin-bottom">
               <div className="max--600">
-                <h2 animation="fade-split" className="h3">Trusted by thousands of exceptional lawyers at the world’s top firms</h2>
+                <h2 animation="fade-split" className="h3">Surbee by the numbers</h2>
               </div>
             </div>
             <div className="container--1328">
-              <div animation="fade-stagger" className="w-layout-grid grid--5els">
-                <div animation="fade-item" data-wf--slot-item-card-number--color="base" className="trustedby--card">
+              <style dangerouslySetInnerHTML={{__html: `
+                .bento-grid {
+                  display: grid;
+                  grid-template-columns: repeat(5, 1fr);
+                  gap: 20px;
+                }
+              `}} />
+              <div animation="fade-stagger" className="bento-grid">
+                <div animation="fade-item" className="bento-item trustedby--card">
                   <div className="trustedby--number-wrapper">
-                    <div className="trustedby--number">+65</div>
-                    <div>h</div>
+                    <div className="trustedby--number">99.9%</div>
                   </div>
                   <p className="paragraph--14 is--big">Saved per user  per year searching</p>
                 </div>
-                <div animation="fade-item" data-wf--slot-item-card-number--color="base" className="trustedby--card">
+                <div animation="fade-item" className="bento-item trustedby--card">
                   <div className="trustedby--number-wrapper">
-                    <div className="trustedby--number">+85</div>
-                    <div>%</div>
+                    <div className="trustedby--number">95%</div>
                   </div>
-                  <p className="paragraph--14 is--big">Adoption in under two months</p>
+                  <p className="paragraph--14 is--big">Survey completion rate</p>
                 </div>
-                <div animation="fade-item" data-wf--slot-item-card-number--color="base" className="trustedby--card">
+                <div animation="fade-item" className="bento-item trustedby--card">
                   <div className="trustedby--number-wrapper">
-                    <div className="trustedby--number">+23</div>
-                    <div></div>
+                    <div className="trustedby--number">10x</div>
                   </div>
-                  <p className="paragraph--14 is--big">Queries including 10+ AI Workflows per user per day</p>
+                  <p className="paragraph--14 is--big">Faster survey creation</p>
                 </div>
-                <div animation="fade-item" data-wf--slot-item-card-number--color="base" className="trustedby--card">
+                <div animation="fade-item" className="bento-item trustedby--card">
                   <div className="trustedby--number-wrapper">
-                    <div className="trustedby--number">+4x</div>
-                    <div>ROI</div>
+                    <div className="trustedby--number">500K+</div>
                   </div>
-                  <p className="paragraph--14 is--big">In the first year</p>
+                  <p className="paragraph--14 is--big">Surveys generated</p>
                 </div>
-                <div animation="fade-item" data-wf--slot-item-card-number--color="base" className="trustedby--card">
+                <div animation="fade-item" className="bento-item trustedby--card">
                   <div className="trustedby--number-wrapper">
-                    <div className="trustedby--number">90</div>
-                    <div>%</div>
+                    <div className="trustedby--number">2M+</div>
                   </div>
-                  <p className="paragraph--14 is--big">Report they find results faster than with existing tools</p>
+                  <p className="paragraph--14 is--big">Data points extracted</p>
                 </div>
               </div>
             </div>
           </section>
-          <div className="padding-80bottom">
+          <div className="padding-80bottom" style={{ display: 'none' }}>
             <section className="dj-section">
               <section animation="fade" className="dj-carousel-section">
                 <div className="center--text-trustedby">
@@ -945,7 +979,7 @@ export default function LandNewReact2() {
             </div>
           </section>
           
-          <section className="section is--relative">
+          <section className="section is--relative" style={{ display: 'none' }}>
             <div className="container--1328">
               <div className="blog--home-age">
                 <h2 className="h2">Insights from our blog</h2>
@@ -1020,7 +1054,7 @@ export default function LandNewReact2() {
               <div animation="fade">
                 <div className="label is--50">get started</div>
               </div>
-              <h2 animation="fade-split" className="h1 is--h2-tablet">Beyond search, understanding.</h2>
+              <h2 animation="fade-split" className="h1 is--h2-tablet">Beyond surveys, intelligence.</h2>
               <div animation="fade" className="div-block-7">
                 <div>
                   <a href="/product" className="btn--book w-variant-2abd1b04-beaa-6c46-80ee-d2134041cf3a is--white w-inline-block">
@@ -1048,45 +1082,45 @@ export default function LandNewReact2() {
                   <a href="/" aria-current="page" className="footer--logo-link w-inline-block w--current">
                     <img src="/logo.svg" alt="Surbee" className="looter--logo-img" style={{ height: '30px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
                   </a>
-                  <div className="footer-columns">
-                    <div animation="fade-item" className="footer--column">
-                      <div className="label is--footer">explore</div>
-                      <div className="footer-column-inner">
-                        <a href="/product" className="footer--link w-inline-block"><div>Product</div><div className="footerlink-line"></div></a>
-                        <a href="/customers" className="footer--link w-inline-block"><div>Customers</div><div className="footerlink-line"></div></a>
-                        <a href="/security" className="footer--link w-inline-block"><div>Security</div><div className="footerlink-line"></div></a>
-                        <a href="/about-us" className="footer--link w-inline-block"><div>About</div><div className="footerlink-line"></div></a>
-                      </div>
-                    </div>
-                    <div animation="fade-item" className="footer--column">
-                      <div className="label is--footer">LEARN</div>
-                      <div className="footer-column-inner">
-                        <a href="/blog" className="footer--link w-inline-block"><div>Blog</div><div className="footerlink-line"></div></a>
-                        <a href="/news" className="footer--link w-inline-block"><div>News</div><div className="footerlink-line"></div></a>
-                        <a href="/learn" className="footer--link w-inline-block"><div>Learn</div><div className="footerlink-line"></div></a>
-                      </div>
-                    </div>
-                    <div animation="fade-item" className="footer--column">
-                      <div className="label is--footer">CONNECT</div>
-                      <div className="footer-column-inner">
-                        <a href="/subscribe" className="footer--link is--newlink w-inline-block">
-                          <div className="div-block-28"><div>Subscribe</div><div className="footerlink-line"></div></div>
-                          <div className="footer--new-mention">NEW</div>
-                        </a>
-                        <a href="/careers" className="footer--link w-inline-block"><div>Careers</div><div className="footerlink-line"></div></a>
-                        <a href="/media-kit" className="footer--link w-inline-block"><div>Media Kit</div><div className="footerlink-line"></div></a>
-                        <a href="https://www.linkedin.com/company/surbee/" target="_blank" className="footer--link w-inline-block"><div>LinkedIn</div><div className="footerlink-line"></div></a>
-                        <a href="https://bsky.app/profile/surbee.bsky.social" target="_blank" className="footer--link w-inline-block"><div>BlueSky</div><div className="footerlink-line"></div></a>
-                        <a href="https://x.com/surbeeai" target="_blank" className="footer--link w-inline-block"><div>X</div><div className="footerlink-line"></div></a>
-                      </div>
+                </div>
+                <div className="footer-columns">
+                  <div animation="fade-item" className="footer--column">
+                    <div className="label is--footer">explore</div>
+                    <div className="footer-column-inner">
+                      <a href="/product" className="footer--link w-inline-block"><div>Product</div><div className="footerlink-line"></div></a>
+                      <a href="/customers" className="footer--link w-inline-block"><div>Customers</div><div className="footerlink-line"></div></a>
+                      <a href="/security" className="footer--link w-inline-block"><div>Security</div><div className="footerlink-line"></div></a>
+                      <a href="/about-us" className="footer--link w-inline-block"><div>About</div><div className="footerlink-line"></div></a>
                     </div>
                   </div>
-                  <p animation="fade-item" id="w-node-cb1a892a-5c70-90cb-00d7-804e60c875b1-60c87570" className="body-small is--50opacity">© 2025 Surbee AG. All rights reserved.</p>
-                  <div animation="fade-item" className="footer--links">
-                    <a href="/terms" className="footer--link is--50opacity">Terms of Service<br/></a>
-                    <a href="/privacy-policy" className="footer--link is--50opacity">Privacy Policy<br/></a>
-                    <a href="#" className="footer--link is--50opacity cky-banner-element">Cookie Settings<br/></a>
+                  <div animation="fade-item" className="footer--column">
+                    <div className="label is--footer">LEARN</div>
+                    <div className="footer-column-inner">
+                      <a href="/blog" className="footer--link w-inline-block" style={{ display: 'none' }}><div>Blog</div><div className="footerlink-line"></div></a>
+                      <a href="/news" className="footer--link w-inline-block"><div>News</div><div className="footerlink-line"></div></a>
+                      <a href="/learn" className="footer--link w-inline-block"><div>Learn</div><div className="footerlink-line"></div></a>
+                    </div>
                   </div>
+                  <div animation="fade-item" className="footer--column">
+                    <div className="label is--footer">CONNECT</div>
+                    <div className="footer-column-inner">
+                      <a href="/subscribe" className="footer--link is--newlink w-inline-block">
+                        <div className="div-block-28"><div>Subscribe</div><div className="footerlink-line"></div></div>
+                        <div className="footer--new-mention">NEW</div>
+                      </a>
+                      <a href="/careers" className="footer--link w-inline-block"><div>Careers</div><div className="footerlink-line"></div></a>
+                      <a href="/media-kit" className="footer--link w-inline-block"><div>Media Kit</div><div className="footerlink-line"></div></a>
+                      <a href="https://www.linkedin.com/company/surbee/" target="_blank" className="footer--link w-inline-block"><div>LinkedIn</div><div className="footerlink-line"></div></a>
+                      <a href="https://bsky.app/profile/surbee.bsky.social" target="_blank" className="footer--link w-inline-block"><div>BlueSky</div><div className="footerlink-line"></div></a>
+                      <a href="https://x.com/surbeeai" target="_blank" className="footer--link w-inline-block"><div>X</div><div className="footerlink-line"></div></a>
+                    </div>
+                  </div>
+                </div>
+                <p animation="fade-item" className="body-small is--50opacity">© 2025 Surbee AG. All rights reserved.</p>
+                <div animation="fade-item" className="footer--links">
+                  <a href="/terms" className="footer--link is--50opacity">Terms of Service<br/></a>
+                  <a href="/privacy-policy" className="footer--link is--50opacity">Privacy Policy<br/></a>
+                  <a href="#" className="footer--link is--50opacity cky-banner-element">Cookie Settings<br/></a>
                 </div>
               </div>
             </div>
