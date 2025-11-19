@@ -926,7 +926,7 @@ export default function LandNewReact2() {
         <div className="black--bg is--opacity">
           <section className="section is--sticky-home">
             <div className="container--778 is--sticky">
-              <h2 animation="fade-split" className="h1 is--h2-tablet">What people say about Surbee</h2>
+              <h2 animation="fade-split" className="h1 is--h2-tablet">What people say<br/>about Surbee</h2>
             </div>
             <div className="container--416">
               <div className="w-dyn-list">
