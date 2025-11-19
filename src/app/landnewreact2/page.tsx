@@ -768,6 +768,7 @@ export default function LandNewReact2() {
                       }
                       .kalice-heading {
                         font-family: 'Kalice Regular', sans-serif;
+                        text-align: center;
                       }
                     `}} />
                     <h2 className="h2 kalice-heading">Extract</h2>
