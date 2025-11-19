@@ -757,27 +757,27 @@ export default function LandNewReact2() {
 
         <div className="background">
           <section className="section is--home-automate">
-            <div className="container--1328">
-              <div className="w-layout-grid grid--2els">
-                <div id="w-node-bfbd6157-871c-5245-2656-0807af8f648d-2f3181c1">
-                  <div>
-                    <style dangerouslySetInnerHTML={{__html: `
-                      @font-face {
-                        font-family: 'Kalice Regular';
-                        src: url('/fonts/Kalice-Trial-Regular.otf') format('opentype');
-                      }
-                      .kalice-heading {
-                        font-family: 'Kalice Regular', sans-serif;
-                        text-align: center;
-                      }
-                    `}} />
-                    <h2 className="h2 kalice-heading">Extract</h2>
-                    <h2 className="h2 kalice-heading">hidden intelligence from any content</h2>
-                  </div>
-                </div>
-                <div>
-                  <img src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/67eec3337fd21c8d8dea1718_Frame%20634215%20AVIF.avif" loading="lazy" alt=""/>
-                </div>
+            <style dangerouslySetInnerHTML={{__html: `
+              @font-face {
+                font-family: 'Kalice Regular';
+                src: url('/fonts/Kalice-Trial-Regular.otf') format('opentype');
+              }
+              .kalice-heading-wrapper {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 400px;
+              }
+              .kalice-heading {
+                font-family: 'Kalice Regular', sans-serif;
+                text-align: center;
+                max-width: 800px;
+              }
+            `}} />
+            <div className="kalice-heading-wrapper">
+              <div>
+                <h2 className="h2 kalice-heading">Extract</h2>
+                <h2 className="h2 kalice-heading">hidden intelligence from any content</h2>
               </div>
             </div>
           </section>
