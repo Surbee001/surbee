@@ -1100,7 +1100,7 @@ export default function LandNewReact2() {
               <div animation="fade-stagger" className="footer--row">
                 <div animation="fade-item">
                   <a href="/" aria-current="page" className="footer--logo-link w-inline-block w--current">
-                    <img src="/logo.svg" alt="Surbee" className="looter--logo-img" style={{ height: '30px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
+                    <img src="/logo.svg" alt="Surbee" className="looter--logo-img" style={{ height: '50px', width: 'auto' }} />
                   </a>
                 </div>
                 <div className="footer-columns">
