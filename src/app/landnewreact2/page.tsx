@@ -646,32 +646,6 @@ export default function LandNewReact2() {
         </section>
 
         <div className="relative is--home-scrollanimation">
-          <svg className="home-animation-lines" style={{ position: 'absolute', top: '0', left: '0', width: '100%', height: '100%', pointerEvents: 'none' }}>
-            <style dangerouslySetInnerHTML={{__html: `
-              .dotted-line {
-                stroke: #000;
-                stroke-width: 2;
-                stroke-dasharray: 5, 5;
-                fill: none;
-              }
-              @keyframes draw-down {
-                to {
-                  stroke-dashoffset: 0;
-                }
-              }
-              .animated-line {
-                animation: draw-down 2s ease-in-out infinite;
-              }
-            `}} />
-            {/* Vertical dotted line from dots downward */}
-            <line x1="50%" y1="100" x2="50%" y2="300" className="dotted-line animated-line" />
-            {/* Lines spreading to 5 feature cards */}
-            <line x1="50%" y1="300" x2="20%" y2="450" className="dotted-line animated-line" />
-            <line x1="50%" y1="300" x2="35%" y2="450" className="dotted-line animated-line" />
-            <line x1="50%" y1="300" x2="50%" y2="450" className="dotted-line animated-line" />
-            <line x1="50%" y1="300" x2="65%" y2="450" className="dotted-line animated-line" />
-            <line x1="50%" y1="300" x2="80%" y2="450" className="dotted-line animated-line" />
-          </svg>
           <div className="div-block-27">
             <div className="container--1196 is--center is--relative">
               <div className="home--collective-dot is--1">
