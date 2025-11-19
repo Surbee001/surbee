@@ -761,11 +761,17 @@ export default function LandNewReact2() {
               <div className="w-layout-grid grid--2els">
                 <div id="w-node-bfbd6157-871c-5245-2656-0807af8f648d-2f3181c1">
                   <div>
-                    <h2 className="h2">Extract</h2>
-                    <h2 className="h2">hidden intelligence from any content</h2>
-                  </div>
-                  <div className="max--540 margin-top-14">
-                    <p className="paragraph--16">Surbee transforms unstructured content into actionable data with AI-powered precision. Extract insights, generate intelligent surveys, and unlock patterns from any source—documents, databases, or web content—in seconds. Our advanced data extraction engine processes complex information to deliver structured, ready-to-use intelligence.</p>
+                    <style dangerouslySetInnerHTML={{__html: `
+                      @font-face {
+                        font-family: 'Kalice Regular';
+                        src: url('/fonts/kalice-regular.ttf') format('truetype');
+                      }
+                      .kalice-heading {
+                        font-family: 'Kalice Regular', sans-serif;
+                      }
+                    `}} />
+                    <h2 className="h2 kalice-heading">Extract</h2>
+                    <h2 className="h2 kalice-heading">hidden intelligence from any content</h2>
                   </div>
                 </div>
                 <div>
