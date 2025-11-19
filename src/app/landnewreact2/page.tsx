@@ -771,10 +771,6 @@ export default function LandNewReact2() {
         <div className="background">
           <section className="section is--home-automate">
             <style dangerouslySetInnerHTML={{__html: `
-              @font-face {
-                font-family: 'Kalice Regular';
-                src: url('/fonts/Kalice-Trial-Regular.otf') format('opentype');
-              }
               .kalice-heading-wrapper {
                 display: flex;
                 justify-content: center;
@@ -782,7 +778,6 @@ export default function LandNewReact2() {
                 min-height: 400px;
               }
               .kalice-heading {
-                font-family: 'Kalice Regular', sans-serif;
                 text-align: center;
                 max-width: 800px;
               }
@@ -1070,20 +1065,11 @@ export default function LandNewReact2() {
           </section>
 
           <section data-wf--global---cta--color="black-version" className="section is--160padding w-variant-2abd1b04-beaa-6c46-80ee-d2134041cf3a">
-            <style dangerouslySetInnerHTML={{__html: `
-              @font-face {
-                font-family: 'Kalice Regular';
-                src: url('/fonts/Kalice-Trial-Regular.otf') format('opentype');
-              }
-              .kalice-cta {
-                font-family: 'Kalice Regular', sans-serif;
-              }
-            `}} />
             <div className="container--778 is--knowledge-search">
               <div animation="fade">
                 <div className="label is--50">get started</div>
               </div>
-              <h2 animation="fade-split" className="h1 is--h2-tablet kalice-cta">Beyond surveys, intelligence.</h2>
+              <h2 animation="fade-split" className="h1 is--h2-tablet">Beyond surveys, intelligence.</h2>
               <div animation="fade" className="div-block-7">
                 <div>
                   <a href="/product" className="btn--book w-variant-2abd1b04-beaa-6c46-80ee-d2134041cf3a is--white w-inline-block">
