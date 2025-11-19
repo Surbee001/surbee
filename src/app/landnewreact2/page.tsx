@@ -510,7 +510,6 @@ export default function LandNewReact2() {
           <style dangerouslySetInnerHTML={{__html: `
             .heading--96 {
               overflow: visible !important;
-              line-height: 1.2 !important;
             }
           `}} />
           <div className="container--872 is--16margin-bottom">
