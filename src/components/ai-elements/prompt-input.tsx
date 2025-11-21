@@ -215,6 +215,39 @@ export const PromptInputTextarea = ({
     }
   }
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    // Prevent default paste behavior
+    e.preventDefault()
+
+    // Get plain text from clipboard (strips all formatting)
+    const plainText = e.clipboardData.getData('text/plain')
+
+    // Get current cursor position
+    const target = e.currentTarget
+    const start = target.selectionStart
+    const end = target.selectionEnd
+    const currentValue = target.value
+
+    // Insert plain text at cursor position
+    const newValue = currentValue.substring(0, start) + plainText + currentValue.substring(end)
+
+    // Update the textarea value
+    target.value = newValue
+
+    // Set cursor position after the inserted text
+    const newCursorPosition = start + plainText.length
+    target.setSelectionRange(newCursorPosition, newCursorPosition)
+
+    // Trigger onChange event manually
+    if (onChange) {
+      const syntheticEvent = {
+        target,
+        currentTarget: target,
+      } as React.ChangeEvent<HTMLTextAreaElement>
+      onChange(syntheticEvent)
+    }
+  }
+
   return (
     <Textarea
       className={cn(
@@ -228,6 +261,7 @@ export const PromptInputTextarea = ({
         onChange?.(e)
       }}
       onKeyDown={handleKeyDown}
+      onPaste={handlePaste}
       placeholder={placeholder}
       {...props}
     />

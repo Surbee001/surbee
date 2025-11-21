@@ -184,6 +184,184 @@ export const surbeWrite = tool({
   },
 });
 
+// Quick Edit Tool: Edit files using "// ... existing code ..." markers
+export const surbeQuickEdit = tool({
+  description: `Use this tool to quickly edit existing files using the "// ... existing code ..." pattern. This is faster than surbe_line_replace for small changes because you don't need to specify line numbers.
+
+### How it works:
+- Write ONLY the parts you want to change
+- Use "// ... existing code ..." to skip unchanged sections
+- Add <CHANGE> comments to explain what you're editing
+- The system merges your changes with the original file
+
+### Example:
+\`\`\`tsx
+function MyComponent() {
+  // ... existing code ...
+
+  // <CHANGE> Updating button color from red to blue
+  return (
+    <div>
+      <button className="bg-blue-500">Click me</button>
+    </div>
+  );
+
+  // ... existing code ...
+}
+\`\`\`
+
+### When to use:
+- Small, focused edits to existing files
+- Changing a few lines without rewriting entire file
+- Adding imports, updating props, or modifying components
+
+### When NOT to use:
+- Creating new files (use surbe_write)
+- Large refactors (use surbe_line_replace for precision)
+- When you need exact line control`,
+  inputSchema: z.object({
+    file_path: z.string().describe("File path relative to project root (e.g., 'src/Survey.tsx')"),
+    content: z.string().describe("Partial file content with '// ... existing code ...' markers indicating unchanged sections"),
+  }),
+  execute: async ({ file_path, content }) => {
+    console.log(`⚡ Quick edit: ${file_path}`);
+
+    if (!latestProjectName) {
+      console.error('❌ No project initialized. Call surb_init_sandbox first.');
+      return {
+        status: 'error',
+        message: 'No project initialized. Call surb_init_sandbox first.',
+      };
+    }
+
+    const files = projectFiles.get(latestProjectName);
+    const sandbox = sandboxInstances.get(latestProjectName);
+
+    if (!files || !sandbox) {
+      console.error(`❌ Project not found: ${latestProjectName}`);
+      return {
+        status: 'error',
+        message: `Project not found: ${latestProjectName}`,
+      };
+    }
+
+    try {
+      // Get current file content
+      const originalContent = files.files.get(file_path);
+      if (!originalContent) {
+        return {
+          status: 'error',
+          message: `File not found: ${file_path}. Use surbe_write to create it first, or surbe_view to check the file exists.`,
+        };
+      }
+
+      // Merge the content by replacing "// ... existing code ..." markers
+      const MARKER = '// ... existing code ...';
+      const mergedContent = mergeQuickEdit(originalContent, content, MARKER);
+
+      if (!mergedContent) {
+        return {
+          status: 'error',
+          message: `Failed to merge content. Make sure your content uses "${MARKER}" markers correctly.`,
+        };
+      }
+
+      // Store in memory
+      files.files.set(file_path, mergedContent);
+
+      // Write to E2B sandbox
+      await sandbox.files.write(`/home/user/${file_path}`, mergedContent);
+      console.log(`✅ Quick edit applied: ${file_path}`);
+
+      // Get all current files
+      const allFiles = getAllSourceFiles();
+
+      return {
+        status: 'success',
+        message: `Quick edit applied to ${file_path}`,
+        file_path,
+        changes_applied: true,
+        source_files: allFiles,
+      };
+    } catch (error) {
+      console.error(`❌ Failed to apply quick edit: ${error}`);
+      return {
+        status: 'error',
+        message: `Failed to apply quick edit: ${error}`,
+      };
+    }
+  },
+});
+
+// Helper function to merge quick edit content with existing code
+function mergeQuickEdit(original: string, partial: string, marker: string): string | null {
+  try {
+    // If no markers, return the partial content as-is (user wants to replace everything)
+    if (!partial.includes(marker)) {
+      return partial;
+    }
+
+    // Split both original and partial by lines
+    const originalLines = original.split('\n');
+    const partialLines = partial.split('\n');
+
+    const result: string[] = [];
+    let originalIndex = 0;
+    let partialIndex = 0;
+
+    while (partialIndex < partialLines.length) {
+      const line = partialLines[partialIndex];
+
+      // Check if this line is a marker
+      if (line.trim() === marker.trim()) {
+        // Find the next non-marker section in partial content
+        let nextPartialIndex = partialIndex + 1;
+        while (nextPartialIndex < partialLines.length && partialLines[nextPartialIndex].trim() === marker.trim()) {
+          nextPartialIndex++;
+        }
+
+        // If we're at the end, copy remaining original lines
+        if (nextPartialIndex >= partialLines.length) {
+          result.push(...originalLines.slice(originalIndex));
+          break;
+        }
+
+        // Find where the next partial section appears in the original
+        const nextPartialSection = partialLines[nextPartialIndex];
+        const foundIndex = originalLines.findIndex((origLine, idx) =>
+          idx >= originalIndex && origLine.trim() === nextPartialSection.trim()
+        );
+
+        if (foundIndex === -1) {
+          // If we can't find the next section, copy remaining original and continue with partial
+          result.push(...originalLines.slice(originalIndex));
+          originalIndex = originalLines.length;
+        } else {
+          // Copy original lines up to the found index
+          result.push(...originalLines.slice(originalIndex, foundIndex));
+          originalIndex = foundIndex;
+        }
+
+        partialIndex = nextPartialIndex;
+      } else {
+        // Regular line from partial content - add it
+        result.push(line);
+        partialIndex++;
+
+        // Try to sync originalIndex by skipping matching lines
+        if (originalIndex < originalLines.length && originalLines[originalIndex].trim() === line.trim()) {
+          originalIndex++;
+        }
+      }
+    }
+
+    return result.join('\n');
+  } catch (error) {
+    console.error('Error merging quick edit:', error);
+    return null;
+  }
+}
+
 // New tool: Build and preview React app in E2B
 export const surbeBuildPreview = tool({
   description: 'Build the React survey and generate a preview. Call this AFTER writing all component files. Returns the HTML preview and any build errors.',
@@ -211,6 +389,13 @@ export const surbeBuildPreview = tool({
     }
 
     try {
+      // Initialize console log storage for this project
+      sandboxConsoleLogs.set(latestProjectName, {
+        stdout: [],
+        stderr: [],
+        errors: []
+      });
+
       // Create package.json if not exists
       if (!files.files.has('package.json')) {
         const packageJson = {
@@ -232,6 +417,15 @@ export const surbeBuildPreview = tool({
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Survey Preview</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Capture console errors in the preview
+    window.addEventListener('error', (event) => {
+      console.error('[Runtime Error]:', event.message, 'at', event.filename, ':', event.lineno);
+    });
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('[Unhandled Promise Rejection]:', event.reason);
+    });
+  </script>
 </head>
 <body>
   <div id="root"></div>
@@ -242,20 +436,64 @@ export const surbeBuildPreview = tool({
 </html>`;
 
       await sandbox.files.write('/home/user/preview.html', htmlTemplate);
-      console.log('✅ Preview HTML generated');
+
+      // Try to validate the JavaScript by running a syntax check
+      const entryCode = files.files.get(entry_file) || '';
+
+      try {
+        // Run a simple syntax validation using Node.js in the sandbox
+        const validationCode = `
+try {
+  // Check if code has basic syntax errors
+  new Function(${JSON.stringify(entryCode)});
+  console.log("✅ Syntax validation passed");
+} catch (error) {
+  console.error("❌ Syntax error:", error.message);
+  throw error;
+}
+`;
+
+        const execution = await sandbox.runCode(validationCode);
+
+        // Capture logs from validation
+        const logs = sandboxConsoleLogs.get(latestProjectName)!;
+        if (execution.logs?.stdout) {
+          execution.logs.stdout.forEach(log => logs.stdout.push(log));
+        }
+        if (execution.logs?.stderr) {
+          execution.logs.stderr.forEach(log => logs.stderr.push(log));
+        }
+        if (execution.error) {
+          logs.errors.push(execution.error.name + ': ' + execution.error.value);
+        }
+
+        console.log('✅ Preview HTML generated and validated');
+      } catch (validationError) {
+        // Validation failed - still continue but log it
+        console.warn('⚠️ Syntax validation failed:', validationError);
+        const logs = sandboxConsoleLogs.get(latestProjectName)!;
+        logs.errors.push(String(validationError));
+      }
 
       // Get all source files
       const allFiles = getAllSourceFiles();
 
       return {
         status: 'success',
-        message: 'Preview built successfully',
+        message: 'Preview built successfully!',
         preview_html: htmlTemplate,
         source_files: allFiles,
         entry_point: entry_file,
       };
     } catch (error) {
       console.error(`❌ Build failed: ${error}`);
+
+      // Store build error in logs
+      const logs = sandboxConsoleLogs.get(latestProjectName);
+      if (logs) {
+        logs.errors.push(`Build Error: ${String(error)}`);
+      }
+
       return {
         status: 'error',
         message: `Build failed: ${error}`,
@@ -453,18 +691,64 @@ export const surbeView = tool({
   },
 });
 
+// Store for E2B sandbox console logs (stdout/stderr from build execution)
+export const sandboxConsoleLogs = new Map<string, { stdout: string[]; stderr: string[]; errors: string[] }>();
+
 export const surbeReadConsoleLogs = tool({
-  description: "Use this tool to read the contents of the latest console logs at the moment the user sent the request.\nYou can optionally provide a search query to filter the logs. If empty you will get all latest logs.\nYou may not be able to see the logs that didn't happen recently.\nThe logs will not update while you are building and writing code. So do not expect to be able to verify if you fixed an issue by reading logs again. They will be the same as when you started writing code.\nDO NOT USE THIS MORE THAN ONCE since you will get the same logs each time.",
+  description: "Read E2B sandbox console logs to check for errors and warnings. Call this after building if you want to verify the code is running correctly. If errors are found, you can fix them and rebuild. Don't loop more than 2 times checking logs.",
   inputSchema: z.object({
-    search: z.string().describe("error"),
+    search: z.string().optional().describe("Optional search term to filter logs (e.g., 'error', 'warning')"),
   }),
   execute: async ({ search }) => {
-    // Placeholder - would integrate with actual console log monitoring
+    if (!latestProjectName) {
+      return {
+        status: 'error',
+        message: 'No project initialized. Call surb_init_sandbox first.',
+        logs: []
+      };
+    }
+
+    const logs = sandboxConsoleLogs.get(latestProjectName);
+
+    if (!logs) {
+      return {
+        status: 'warning',
+        message: 'No console logs available yet. Build the project first with surbe_build_preview.',
+        logs: []
+      };
+    }
+
+    // Check for errors in stderr
+    const hasErrors = logs.stderr.length > 0 || logs.errors.length > 0;
+
+    // Filter logs if search term provided
+    const filterLogs = (logArray: string[]) => search
+      ? logArray.filter(log => log.toLowerCase().includes(search.toLowerCase()))
+      : logArray;
+
+    const filteredStderr = filterLogs(logs.stderr);
+    const filteredErrors = filterLogs(logs.errors);
+    const filteredStdout = filterLogs(logs.stdout);
+
+    if (!hasErrors) {
+      return {
+        status: 'success',
+        message: '✅ No errors detected in sandbox console!',
+        stdout: filteredStdout,
+        stderr: [],
+        errors: [],
+        error_count: 0
+      };
+    }
+
     return {
-      status: 'success',
-      message: `Retrieved console logs with search: ${search}`,
-      logs: [],
-      filtered_by: search
+      status: 'error',
+      message: `❌ Found ${filteredStderr.length + filteredErrors.length} error(s) in sandbox console.`,
+      stdout: filteredStdout,
+      stderr: filteredStderr,
+      errors: filteredErrors,
+      error_count: filteredStderr.length + filteredErrors.length,
+      suggestion: 'Fix the errors above and rebuild. If errors persist after 2 attempts, let the user know.'
     };
   },
 });
