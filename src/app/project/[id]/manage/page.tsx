@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TypeformButton, TypeformButtonContainer } from '@/components/ui/typeform-button';
 import { AuthGuard } from '@/components/auth/AuthGuard';
@@ -11,6 +10,12 @@ import { UnifiedInsightsTab } from '@/components/project-manage/UnifiedInsightsT
 import { ShareTab } from '@/components/project-manage/ShareTab';
 import AppLayout from '@/components/layout/AppLayout';
 import { useTheme } from '@/hooks/useTheme';
+import { ProjectBreadcrumb } from '@/components/ui/project-breadcrumb';
+import { ComponentRegistryProvider } from '@/contexts/ComponentRegistry';
+import { AnalysisDotsManager } from '@/components/analysis-dots/AnalysisDotsManager';
+import { extractPageContext } from '@/lib/services/component-detection';
+import { useComponentRegistry } from '@/contexts/ComponentRegistry';
+import { useAuth } from '@/contexts/AuthContext';
 import './styles.css';
 import './share-styles.css';
 
@@ -24,6 +29,7 @@ interface SandboxBundle {
 
 // Ask Surbee Component
 function AskSurbeeComponent({ activeTab, projectId }: { activeTab: TabType; projectId: string }) {
+  const { user } = useAuth();
   const [inputValue, setInputValue] = React.useState('');
   const [isFocused, setIsFocused] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -36,6 +42,82 @@ function AskSurbeeComponent({ activeTab, projectId }: { activeTab: TabType; proj
   const expandedWidth = showChat ? '500px' : '355px';
   const chatHeight = showChat ? '400px' : '48px';
 
+  const streamAIResponse = async (question: string) => {
+    if (!user) return '';
+    try {
+      const response = await fetch(`/api/projects/${projectId}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          messages: [
+            ...messages.map(m => ({ role: m.type === 'user' ? 'user' : 'assistant', content: m.content })),
+            { role: 'user', content: question },
+          ],
+          pageContext: '', // Will be populated by the API
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch AI response');
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullResponse = '';
+
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      // Create AI message placeholder
+      const aiMessageId = Date.now().toString();
+      setMessages(prev => [...prev, {
+        id: aiMessageId,
+        type: 'ai',
+        content: '',
+        timestamp: new Date(),
+      }]);
+
+      // Handle Vercel AI SDK data stream format
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim() || line.startsWith(':')) continue;
+
+          if (line.startsWith('0:')) {
+            // Text chunk from Vercel AI SDK
+            try {
+              const text = JSON.parse(line.slice(2));
+              fullResponse += text;
+              // Update the AI message with streaming content
+              setMessages(prev => prev.map(m =>
+                m.id === aiMessageId ? { ...m, content: fullResponse } : m
+              ));
+            } catch (e) {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
+
+      return fullResponse;
+    } catch (error) {
+      console.error('Error streaming AI response:', error);
+      throw error;
+    }
+  };
+
+  // Keep mock responses as fallback
   const generateMockResponse = (question: string, tab: TabType) => {
     const responses = {
       insights: {
@@ -95,7 +177,7 @@ Your survey completion funnel shows strong performance:
 
 ### Sentiment Analysis
 - **Positive**: 67% (671 responses)
-- **Neutral**: 23% (230 responses)  
+- **Neutral**: 23% (230 responses)
 - **Negative**: 10% (100 responses)
 
 ### Geographic Distribution
@@ -216,14 +298,20 @@ Based on your question about **"${question}"**, here are the key insights:
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const question = inputValue;
     setInputValue('');
     setIsLoading(true);
     setShowChat(true);
 
-    // Simulate API delay
-    setTimeout(() => {
-      const mockResponse = generateMockResponse(inputValue, activeTab);
-      
+    // Use real AI streaming response
+    try {
+      await streamAIResponse(question);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      // Fallback to mock response on error
+      const mockResponse = generateMockResponse(question, activeTab);
+
       const aiMessage = {
         id: (Date.now() + 1).toString(),
         type: 'ai' as const,
@@ -233,7 +321,7 @@ Based on your question about **"${question}"**, here are the key insights:
 
       setMessages(prev => [...prev, aiMessage]);
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -646,14 +734,7 @@ export default function ProjectManagePage() {
   const projectId = params.id as string;
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState<TabType>('preview');
-  const [underlineStyle, setUnderlineStyle] = useState({ left: 0, width: 0 });
   const [isMounted, setIsMounted] = useState(false);
-  const [showBreadcrumb, setShowBreadcrumb] = useState(false);
-  const tabRefs = {
-    preview: React.useRef<HTMLButtonElement>(null),
-    insights: React.useRef<HTMLButtonElement>(null),
-    share: React.useRef<HTMLButtonElement>(null),
-  };
 
   React.useEffect(() => {
     setIsMounted(true);
@@ -661,280 +742,215 @@ export default function ProjectManagePage() {
 
   const isDarkMode = isMounted && theme === 'dark';
 
-  const handleTitleClick = () => {
-    setShowBreadcrumb(!showBreadcrumb);
-  };
-
-  // Sandbox bundle state for preview - use default content
-  const [sandboxBundle, setSandboxBundle] = useState<SandboxBundle | null>({
-    files: {
-      "src/Survey.tsx": `export default function GeneratedSurvey() {
-  return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 p-8">
-      <div className="max-w-2xl mx-auto">
-        <header className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm uppercase tracking-wider text-white/70 mb-6">
-            Customer Discovery
-          </div>
-          <h1 className="text-4xl font-semibold mb-4">
-            Tell us about your experience
-          </h1>
-          <p className="text-lg text-white/70">
-            Your feedback helps us improve our platform
-          </p>
-        </header>
-
-        <section className="space-y-8">
-          <article className="rounded-2xl border border-white/10 bg-white/5 p-8">
-            <h2 className="text-xl font-medium text-white/90 mb-6">
-              How satisfied are you with our platform?
-            </h2>
-            <div className="flex items-center gap-2">
-              {[1, 2, 3, 4, 5].map((rating) => (
-                <button
-                  key={rating}
-                  className="h-12 w-12 rounded-full border border-white/10 bg-white/10 text-white/80 transition hover:bg-white/20 hover:border-white/20"
-                >
-                  {rating}
-                </button>
-              ))}
-            </div>
-          </article>
-
-          <article className="rounded-2xl border border-white/10 bg-white/5 p-8">
-            <h2 className="text-xl font-medium text-white/90 mb-6">
-              What features do you use most?
-            </h2>
-            <div className="flex flex-wrap gap-3">
-              {['Analytics', 'Survey Builder', 'Team Management', 'Integrations'].map((feature) => (
-                <label
-                  key={feature}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-white/80 transition hover:bg-white/10 cursor-pointer"
-                >
-                  <input type="checkbox" className="accent-white/80" />
-                  {feature}
-                </label>
-              ))}
-            </div>
-          </article>
-
-          <article className="rounded-2xl border border-white/10 bg-white/5 p-8">
-            <h2 className="text-xl font-medium text-white/90 mb-6">
-              Any additional feedback?
-            </h2>
-            <div className="relative">
-              <textarea
-                className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white/90 placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 resize-none"
-                rows={4}
-                placeholder="Share your thoughts..."
-              />
-            </div>
-          </article>
-        </section>
-
-        <footer className="text-center mt-12">
-          <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-8 py-3 text-black font-semibold transition hover:bg-gray-100">
-            Submit Response
-          </button>
-        </footer>
-      </div>
-    </main>
-  );
-}`,
-    },
-    entry: 'src/Survey.tsx',
-    dependencies: ['react', 'react-dom', 'lucide-react'],
-  });
+  // Fetch project data to get sandbox bundle
+  const [sandboxBundle, setSandboxBundle] = useState<SandboxBundle | null>(null);
+  const [isLoadingProject, setIsLoadingProject] = useState(true);
 
   React.useEffect(() => {
-    const updateUnderline = () => {
-      const activeRef = tabRefs[activeTab].current;
-      if (activeRef) {
-        const { offsetLeft, offsetWidth } = activeRef;
-        setUnderlineStyle({ left: offsetLeft, width: offsetWidth });
+    const fetchProjectData = async () => {
+      try {
+        const response = await fetch(`/api/projects/${projectId}`);
+        if (response.ok) {
+          const projectData = await response.json();
+          if (projectData.sandbox_bundle) {
+            setSandboxBundle(projectData.sandbox_bundle);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching project data:', error);
+      } finally {
+        setIsLoadingProject(false);
       }
     };
 
-    updateUnderline();
-    window.addEventListener('resize', updateUnderline);
-    return () => window.removeEventListener('resize', updateUnderline);
-  }, [activeTab]);
-
-  const handleBack = () => {
-    router.push('/dashboard/projects');
-  };
+    fetchProjectData();
+  }, [projectId]);
 
   return (
     <AuthGuard>
       <AppLayout>
-        <div className="flex flex-col h-screen" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>
-          {/* Simple Title Navigation */}
-          <div style={{
-            padding: '40px 32px 20px 32px',
-            borderBottom: isDarkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)',
-          }}>
-            <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-              {/* Back Button and Tabs */}
-              <div style={{ position: 'relative' }}>
-                <div style={{ display: 'flex', gap: '48px', alignItems: 'baseline' }}>
+        <ComponentRegistryProvider>
+          <div className="flex flex-col h-screen" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>
+            {/* Header with Segmented Control Navigation */}
+            <div style={{
+              padding: '20px 32px',
+              borderBottom: isDarkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)',
+            }}>
+              <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                {/* Left side - Back Button and Segmented Control */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   {/* Back Button */}
                   <button
-                    onClick={handleBack}
+                    onClick={() => router.push('/dashboard/projects')}
                     style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
-                      cursor: 'pointer',
-                      padding: 0,
-                      paddingBottom: '8px',
-                      transition: 'color 0.15s ease',
                       display: 'flex',
                       alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '32px',
+                      height: '32px',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--surbee-fg-secondary)',
+                      transition: 'color 200ms ease',
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                    }}
                   >
-                    <ArrowLeft className="h-6 w-6" />
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
                   </button>
 
-                  {/* Project Title / Breadcrumb */}
+                  {/* Segmented Control */}
                   <div
-                    onClick={handleTitleClick}
                     style={{
-                      display: 'flex',
-                      alignItems: 'baseline',
-                      gap: showBreadcrumb ? '16px' : '48px',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
+                      position: 'relative',
+                      display: 'inline-flex',
+                      backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+                      borderRadius: '8px',
+                      padding: '3px',
+                      height: '38px',
                     }}
                   >
-                    {showBreadcrumb && (
-                      <>
-                        <span style={{
-                          fontFamily: 'var(--font-inter), sans-serif',
-                          fontWeight: '400',
-                          fontSize: '42px',
-                          lineHeight: '40px',
-                          letterSpacing: '-0.05em',
-                          color: isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
-                          paddingBottom: '8px',
-                          transition: 'all 0.3s ease',
-                        }}>
-                          Project
-                        </span>
-                        <span style={{
-                          fontFamily: 'var(--font-inter), sans-serif',
-                          fontSize: '42px',
-                          lineHeight: '40px',
-                          color: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
-                          paddingBottom: '8px',
-                        }}>
-                          &gt;
-                        </span>
-                      </>
-                    )}
+                    {/* Sliding indicator */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '3px',
+                        left: activeTab === 'preview' ? '3px' : activeTab === 'insights' ? '83px' : '166px',
+                        width: '77px',
+                        height: 'calc(100% - 6px)',
+                        backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                        borderRadius: '6px',
+                        transition: 'left 300ms cubic-bezier(0.19, 1, 0.22, 1)',
+                      }}
+                    />
+
+                    <button
+                      onClick={() => setActiveTab('preview')}
+                      style={{
+                        position: 'relative',
+                        padding: '0 16px',
+                        height: '32px',
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        color: activeTab === 'preview'
+                          ? 'var(--surbee-fg-primary)'
+                          : 'var(--surbee-fg-secondary)',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        borderRadius: '6px',
+                        transition: 'color 200ms ease',
+                        whiteSpace: 'nowrap',
+                        minWidth: '77px',
+                      }}
+                    >
+                      Preview
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab('insights')}
+                      style={{
+                        position: 'relative',
+                        padding: '0 16px',
+                        height: '32px',
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        color: activeTab === 'insights'
+                          ? 'var(--surbee-fg-primary)'
+                          : 'var(--surbee-fg-secondary)',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        borderRadius: '6px',
+                        transition: 'color 200ms ease',
+                        whiteSpace: 'nowrap',
+                        minWidth: '77px',
+                      }}
+                    >
+                      Insights
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab('share')}
+                      style={{
+                        position: 'relative',
+                        padding: '0 16px',
+                        height: '32px',
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        color: activeTab === 'share'
+                          ? 'var(--surbee-fg-primary)'
+                          : 'var(--surbee-fg-secondary)',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        borderRadius: '6px',
+                        transition: 'color 200ms ease',
+                        whiteSpace: 'nowrap',
+                        minWidth: '77px',
+                      }}
+                    >
+                      Share
+                    </button>
                   </div>
-
-                  <button
-                    ref={tabRefs.preview}
-                    onClick={() => setActiveTab('preview')}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      fontFamily: 'var(--font-inter), sans-serif',
-                      fontWeight: activeTab === 'preview' ? '500' : '400',
-                      fontSize: '42px',
-                      lineHeight: '40px',
-                      letterSpacing: '-0.05em',
-                      color: activeTab === 'preview' ? 'var(--surbee-fg-primary)' : (isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'),
-                      cursor: 'pointer',
-                      padding: 0,
-                      paddingBottom: '8px',
-                      transition: 'color 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => activeTab !== 'preview' && (e.currentTarget.style.color = isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)')}
-                    onMouseLeave={(e) => activeTab !== 'preview' && (e.currentTarget.style.color = isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)')}
-                  >
-                    Preview
-                  </button>
-
-                  <button
-                    ref={tabRefs.insights}
-                    onClick={() => setActiveTab('insights')}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      fontFamily: 'var(--font-inter), sans-serif',
-                      fontWeight: activeTab === 'insights' ? '500' : '400',
-                      fontSize: '42px',
-                      lineHeight: '40px',
-                      letterSpacing: '-0.05em',
-                      color: activeTab === 'insights' ? 'var(--surbee-fg-primary)' : (isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'),
-                      cursor: 'pointer',
-                      padding: 0,
-                      paddingBottom: '8px',
-                      transition: 'color 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => activeTab !== 'insights' && (e.currentTarget.style.color = isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)')}
-                    onMouseLeave={(e) => activeTab !== 'insights' && (e.currentTarget.style.color = isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)')}
-                  >
-                    Insights
-                  </button>
-
-                  <button
-                    ref={tabRefs.share}
-                    onClick={() => setActiveTab('share')}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      fontFamily: 'var(--font-inter), sans-serif',
-                      fontWeight: activeTab === 'share' ? '500' : '400',
-                      fontSize: '42px',
-                      lineHeight: '40px',
-                      letterSpacing: '-0.05em',
-                      color: activeTab === 'share' ? 'var(--surbee-fg-primary)' : (isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'),
-                      cursor: 'pointer',
-                      padding: 0,
-                      paddingBottom: '8px',
-                      transition: 'color 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => activeTab !== 'share' && (e.currentTarget.style.color = isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)')}
-                    onMouseLeave={(e) => activeTab !== 'share' && (e.currentTarget.style.color = isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)')}
-                  >
-                    Share
-                  </button>
                 </div>
 
-                {/* Sliding underline */}
-                <div
+                {/* Right side - Edit Project Button */}
+                <button
+                  onClick={() => router.push(`/project/${projectId}`)}
                   style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: underlineStyle.left,
-                    width: underlineStyle.width,
-                    height: '2px',
-                    backgroundColor: 'var(--surbee-fg-primary)',
-                    transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '0 16px',
+                    height: '38px',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    backgroundColor: isDarkMode ? '#ffffff' : '#000000',
+                    color: isDarkMode ? '#000000' : '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
                   }}
-                />
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                  Edit Project
+                </button>
               </div>
             </div>
+
+            {/* Tab Content - Full Width with Analysis Dots */}
+            {activeTab === 'insights' ? (
+              <AnalysisDotsManager projectId={projectId}>
+                <div className="flex-1 overflow-auto min-h-0" style={{ paddingTop: '32px' }}>
+                  <UnifiedInsightsTab projectId={projectId} />
+                </div>
+              </AnalysisDotsManager>
+            ) : (
+              <div className="flex-1 overflow-auto min-h-0" style={{ paddingTop: '32px' }}>
+                {activeTab === 'preview' && <PreviewTab projectId={projectId} sandboxBundle={sandboxBundle} />}
+                {activeTab === 'share' && <ShareTab projectId={projectId} />}
+              </div>
+            )}
+
+            {/* Ask Surbee Component - Sticky at Bottom - Hidden for Preview Tab */}
+            {activeTab !== 'preview' && (
+              <div className="ask-surbee-container">
+                <AskSurbeeComponent activeTab={activeTab} projectId={projectId} />
+              </div>
+            )}
           </div>
-
-        {/* Tab Content - Full Width */}
-        <div className="flex-1 overflow-auto min-h-0" style={{ paddingTop: '32px' }}>
-          {activeTab === 'preview' && <PreviewTab projectId={projectId} sandboxBundle={sandboxBundle} />}
-          {activeTab === 'insights' && <UnifiedInsightsTab projectId={projectId} />}
-          {activeTab === 'share' && <ShareTab projectId={projectId} />}
-        </div>
-
-          {/* Ask Surbee Component - Sticky at Bottom - Hidden for Preview Tab */}
-          {activeTab !== 'preview' && (
-            <div className="ask-surbee-container">
-              <AskSurbeeComponent activeTab={activeTab} projectId={projectId} />
-            </div>
-          )}
-        </div>
+        </ComponentRegistryProvider>
       </AppLayout>
     </AuthGuard>
   );

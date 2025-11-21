@@ -1,0 +1,32 @@
+{
+  "name": "survey-scraper",
+  "version": "1.0.0",
+  "description": "Comprehensive survey data scraper for Surbee training",
+  "scripts": {
+    "test": "tsx test-connection.ts",
+    "monitor": "tsx monitor-progress.ts",
+    "scrape": "tsx scraper.ts",
+    "scrape:all": "tsx scraper.ts all",
+    "scrape:platforms": "tsx scraper.ts category typeform surveymonkey jotform",
+    "scrape:healthcare": "tsx scraper.ts category healthcare",
+    "scrape:hr": "tsx scraper.ts category hr_360_review",
+    "scrape:finance": "tsx scraper.ts category finance",
+    "scrape:engineering": "tsx scraper.ts category engineering",
+    "scrape:academic": "tsx scraper.ts category academic",
+    "scrape:best-practices": "tsx scraper.ts category best_practices",
+    "quick-start": "tsx quick-start.ts",
+    "process": "tsx data-processor.ts process",
+    "process:mistral": "tsx data-processor.ts mistral",
+    "process:all": "tsx data-processor.ts all",
+    "build-master": "tsx master-dataset-builder.ts",
+    "clean-data": "tsx clean-training-data.ts",
+    "filter-data": "tsx filter-training-data.ts",
+    "pipeline": "npm run quick-start && npm run process:all",
+    "full-pipeline": "npm run scrape:all && npm run build-master"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.0"
+  }
+}

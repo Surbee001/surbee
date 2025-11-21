@@ -1,0 +1,221 @@
+{
+  "metadata": {
+    "source_url": "https://www.surveymonkey.com/mp/survey-writing-tips/",
+    "category": "best_practices",
+    "scraped_at": "2025-11-05T17:13:28.597Z",
+    "scraper_version": "1.0.0"
+  },
+  "success": true,
+  "data": {
+    "markdown": "# Weʼre sorry!\n\n## We can't find the page you're looking for.\n\nPlease check the URL you entered to make sure it's spelled correctly. Still not sure how to get to the page you want? Maybe we can help you find your way:\n\n[Home](https://www.surveymonkey.com/)\n\n### Want to create your own survey?\n\n[Sign Up FREE](https://www.surveymonkey.com/sign-up/?ut_source=404_page)\n\n[Home](https://www.surveymonkey.com/) \\| [Sitemap](https://www.surveymonkey.com/mp/sitemap/) \\| [Help Center](https://help.surveymonkey.com/) \\| [Templates](https://www.surveymonkey.com/templates/) \\| [Learn More](https://www.surveymonkey.com/mp/take-a-tour/)",
+    "branding": {
+      "colorScheme": "light",
+      "fonts": [
+        {
+          "family": "National 2",
+          "role": "body"
+        },
+        {
+          "family": "Helvetica Neue",
+          "role": "body"
+        },
+        {
+          "family": "Hiragino Sans",
+          "role": "body"
+        },
+        {
+          "family": "Hiragino Kaku Gothic Pro",
+          "role": "body"
+        },
+        {
+          "family": "Yu Gothic",
+          "role": "body"
+        }
+      ],
+      "colors": {
+        "primary": "#333E48",
+        "accent": "#F9BE00",
+        "background": "#FFFFFF",
+        "textPrimary": "#007FAA",
+        "link": "#007FAA"
+      },
+      "typography": {
+        "fontFamilies": {
+          "primary": "National 2",
+          "heading": "National 2"
+        },
+        "fontStacks": {
+          "heading": [
+            "National 2",
+            "Helvetica Neue",
+            "helvetica",
+            "arial",
+            "Hiragino Sans",
+            "Hiragino Kaku Gothic Pro",
+            "游ゴシック",
+            "游ゴシック体",
+            "yugothic",
+            "Yu Gothic",
+            "ＭＳ ゴシック",
+            "MS Gothic",
+            "sans-serif"
+          ],
+          "body": [
+            "National 2",
+            "Helvetica Neue",
+            "helvetica",
+            "arial",
+            "Hiragino Sans",
+            "Hiragino Kaku Gothic Pro",
+            "游ゴシック",
+            "游ゴシック体",
+            "yugothic",
+            "Yu Gothic",
+            "ＭＳ ゴシック",
+            "MS Gothic",
+            "sans-serif"
+          ],
+          "paragraph": [
+            "National 2",
+            "Helvetica Neue",
+            "helvetica",
+            "arial",
+            "Hiragino Sans",
+            "Hiragino Kaku Gothic Pro",
+            "游ゴシック",
+            "游ゴシック体",
+            "yugothic",
+            "Yu Gothic",
+            "ＭＳ ゴシック",
+            "MS Gothic",
+            "sans-serif"
+          ]
+        },
+        "fontSizes": {
+          "h1": "34px",
+          "h2": "26px",
+          "body": "15px"
+        }
+      },
+      "spacing": {
+        "baseUnit": 8,
+        "borderRadius": "0px"
+      },
+      "components": {
+        "input": {
+          "borderColor": "#CCCCCC",
+          "borderRadius": "0px"
+        },
+        "buttonPrimary": {
+          "background": "#F9BE00",
+          "textColor": "#333E48",
+          "borderColor": "#F9BE00",
+          "borderRadius": "4px",
+          "shadow": "none"
+        }
+      },
+      "images": {
+        "logo": "https://prod.smassets.net/assets/static/images/surveymonkey/favicon.svg",
+        "favicon": "https://prod.smassets.net/assets/static/images/surveymonkey/favicon.svg",
+        "ogImage": null
+      },
+      "__framework_hints": [],
+      "__llm_button_reasoning": {
+        "primary": {
+          "index": 0,
+          "text": "Sign Up FREE",
+          "reasoning": "The button 'Sign Up FREE' has a vibrant background color (#F9BE00) which is indicative of a primary call-to-action. It also features action-oriented text, making it the main CTA."
+        },
+        "secondary": {
+          "index": -1,
+          "text": "N/A",
+          "reasoning": "There are no other buttons present to classify as secondary, as the only button available shares the same color group as the primary button."
+        },
+        "confidence": 0.95
+      },
+      "personality": {
+        "tone": "professional",
+        "energy": "medium",
+        "targetAudience": "business professionals and organizations seeking survey solutions."
+      },
+      "designSystem": {
+        "framework": "custom",
+        "componentLibrary": null
+      },
+      "confidence": {
+        "buttons": 0.95,
+        "colors": 0.9,
+        "overall": 0.925
+      }
+    },
+    "metadata": {
+      "viewport": "width=device-width, initial-scale=1",
+      "title": "Page not found | SurveyMonkey",
+      "theme-color": "#00bf6f",
+      "favicon": "https://prod.smassets.net/assets/static/images/surveymonkey/favicon.svg",
+      "robots": "noindex,nofollow",
+      "scrapeId": "2cbfafdb-4b87-49af-a209-4ef739db311e",
+      "sourceURL": "https://www.surveymonkey.com/mp/survey-writing-tips/",
+      "url": "https://www.surveymonkey.com/mp/survey-writing-tips/",
+      "statusCode": 404,
+      "error": "Not Found",
+      "contentType": "text/html; charset=utf-8",
+      "proxyUsed": "basic",
+      "indexId": "6b59155e-4a31-4b3b-ad69-4924731927e3",
+      "creditsUsed": 5
+    },
+    "json": {
+      "questions": [],
+      "survey_basics": {
+        "title": "404 Error - Page Not Found",
+        "purpose": "To inform users that the requested page cannot be found.",
+        "use_case": "Error handling for users navigating the website.",
+        "description": "This page appears when a user tries to access a URL that does not exist on the website.",
+        "survey_provider": "SurveyMonkey",
+        "target_audience": "Website visitors",
+        "target_industry": "Online Survey Software",
+        "template_category": "Error Pages",
+        "estimated_completion_time": "N/A"
+      },
+      "survey_structure": {
+        "sections": [],
+        "has_piping": false,
+        "has_scoring": false,
+        "has_sections": false,
+        "has_branching": false,
+        "total_questions": 0,
+        "has_randomization": false
+      },
+      "ux_best_practices": [],
+      "ui_design_patterns": {
+        "typography": "Standard web fonts",
+        "color_scheme": "Brand colors",
+        "layout_style": "Single column layout",
+        "visual_style": "Minimalistic",
+        "button_styles": "Standard buttons",
+        "progress_type": "N/A",
+        "notable_features": [
+          "Links to home and other resources"
+        ],
+        "animation_effects": [],
+        "question_per_page": "N/A",
+        "is_mobile_optimized": true,
+        "has_progress_indicator": false
+      },
+      "scoring_and_analytics": {
+        "has_scoring": false,
+        "scoring_method": "N/A",
+        "result_categories": [],
+        "interpretation_guidance": "N/A"
+      },
+      "accessibility_features": [],
+      "domain_specific_elements": {
+        "industry_terminology": [],
+        "validated_scales_used": [],
+        "compliance_considerations": [],
+        "specialized_question_types": []
+      },
+      "skip_logic_and_branching": []
+    }
+  }
+}

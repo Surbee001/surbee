@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
     console.log('📦 Received body keys:', Object.keys(body));
     console.log('📦 Body.model:', body.model);
     console.log('📦 Body.messages:', body.messages ? `${body.messages.length} messages` : 'no messages');
+    console.log('📦 Body.images:', body.images ? `${body.images.length} images` : 'no images');
 
     // Support both formats: useChat messages array OR legacy input+context format
     let messages: ChatMessage[];
@@ -22,7 +23,58 @@ export async function POST(req: NextRequest) {
 
     if (body.messages) {
       // New format: direct messages array from useChat
-      messages = body.messages;
+      messages = body.messages.map((msg: any) => {
+        // Handle string content (text messages)
+        if (typeof msg.content === 'string') {
+          return {
+            role: msg.role,
+            parts: [{ type: 'text', text: msg.content }]
+          };
+        }
+
+        // Handle array content (multi-part messages)
+        if (Array.isArray(msg.content)) {
+          const parts = msg.content.map((part: any) => {
+            if (part.type === 'text') return part;
+            if (part.type === 'image') return part;
+            return part;
+          });
+          return {
+            role: msg.role,
+            parts
+          };
+        }
+
+        // Handle parts array (already in our format)
+        if (msg.parts) {
+          return msg;
+        }
+
+        // Fallback: create text part from content
+        return {
+          role: msg.role,
+          parts: [{ type: 'text', text: String(msg.content || '') }]
+        };
+      });
+
+      // If images are provided in body, add them to the last user message
+      if (body.images && Array.isArray(body.images) && body.images.length > 0) {
+        console.log('📷 Found', body.images.length, 'images in body, adding to last user message');
+
+        // Find last user message
+        for (let i = messages.length - 1; i >= 0; i--) {
+          if (messages[i].role === 'user') {
+            // Add image parts
+            body.images.forEach((img: string) => {
+              messages[i].parts.push({
+                type: 'image',
+                image: img
+              });
+            });
+            break;
+          }
+        }
+      }
     } else if (body.input) {
       // Legacy format: { input, images, context } from project page
       // Convert to messages format
@@ -45,16 +97,17 @@ export async function POST(req: NextRequest) {
       throw new Error('Invalid request format: expected messages or input');
     }
 
-    console.log('📥 Received', messages?.length || 0, 'messages');
+    console.log('📥 Final messages count:', messages?.length || 0);
     console.log('🤖 Using model:', selectedModel);
 
-    // Debug: Log if any messages have image parts
-    messages.forEach((msg, idx) => {
-      const imageParts = msg.parts?.filter((p: any) => p.type === 'image') || [];
-      if (imageParts.length > 0) {
-        console.log(`📷 Message ${idx} has ${imageParts.length} image(s)`);
-      }
-    });
+    // Count images in messages
+    const imageCount = messages.reduce((count, msg) => {
+      const imgs = msg.parts?.filter((p: any) => p.type === 'image').length || 0;
+      return count + imgs;
+    }, 0);
+    if (imageCount > 0) {
+      console.log(`📷 Total images in all messages: ${imageCount}`);
+    }
 
     // Use the streaming workflow - it returns a streamText result
     const result = streamWorkflowV3({ messages, model: selectedModel });

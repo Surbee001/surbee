@@ -1,0 +1,333 @@
+.main-wrapper {
+  opacity: 0;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.animation-split-fade,
+.line-split-fade {
+  overflow: hidden;
+}
+
+.w-richtext figure.w-richtext-align-fullwidth {
+  max-width: none !important;
+}
+
+.w-richtext figure.w-richtext-align-fullwidth div {
+  width: 100% !important;
+}
+
+.w-richtext figure.w-richtext-align-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.faq--question.open .faq--icon {
+  transform: rotate(45deg);
+}
+
+.faq--response {
+  height: 0px;
+}
+
+.swiper-pagination-bullet {
+  height: 8rem;
+  width: 8rem;
+  background-color: #ffffff50;
+  transition: all 0.3s ease;
+  border-radius: 300rem;
+  cursor: pointer;
+}
+
+.swiper-pagination-bullet-active {
+  background-color: #ffffff;
+}
+
+.noscroll {
+  overflow: hidden;
+}
+
+.bookademo--popup {
+  pointer-events: auto;
+}
+
+.navbar.noscroll {
+  top: auto;
+  bottom: 0;
+}
+
+/* If it's inside an element that has scrolling, target it */
+.bookademo--popup::-webkit-scrollbar {
+  display: none; /* Hides scrollbar for Webkit browsers */
+}
+
+.bookademo--popup {
+  -ms-overflow-style: none; /* Hides scrollbar for Internet Explorer and Edge */
+  scrollbar-width: none; /* Hides scrollbar for Firefox */
+}
+
+.line-animation-split {
+  padding-bottom: 0.1em;
+}
+
+.overflow-hidden:nth-child(n + 1) {
+  margin-top: -0.1em;
+}
+
+.is--eventnone {
+  pointer-events: none;
+}
+
+.lottie-home-2 {
+  opacity: 0; /* Initially hidden */
+  transition: opacity 0.5s ease-in-out;
+}
+
+.popup--close-trigger {
+  pointer-events: none;
+}
+
+.popup--close-trigger.is--eventnone {
+  pointer-events: auto;
+}
+/* --------------- hubspot form --------------- */
+
+.hbspt-form {
+  background-color: #f2f0ed;
+  padding: 24rem 24rem 16rem 24rem;
+  border-radius: 8rem;
+  color: #242422;
+}
+.hbspt-form form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  row-gap: 12rem;
+}
+
+.hbspt-form .hs-form-field {
+  text-align: left;
+  width: 100% !important;
+}
+
+fieldset {
+  max-width: none !important;
+  width: 100%;
+}
+
+.hs-form-field {
+  width: 100%;
+}
+
+.hs-form-field label {
+  color: #242422;
+  font-size: 11rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 90%; /* 9.9px */
+  margin-bottom: 9rem;
+}
+
+.hs-input {
+  height: 48rem;
+  width: 100% !important;
+  max-width: none;
+  background-color: #e4ded8;
+  border: none;
+  border-radius: 4rem;
+  padding-left: 16rem;
+  padding-top: 8rem;
+  padding-bottom: 8rem;
+}
+
+.hs-fieldtype-textarea.hs-input {
+  resize: vertical;
+  height: 90rem;
+}
+
+.inputs-list {
+  padding-left: 0px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rem;
+  margin: 0;
+}
+
+.hs-form-radio::marker {
+  content: "";
+}
+
+.hs-form-radio-display {
+  display: flex;
+  align-items: center;
+  gap: 8rem;
+}
+
+.hs-form-radio-display .hs-input {
+  width: 16rem !important;
+  height: 16rem !important;
+  border-color: #242422;
+  border-style: solid;
+  border-width: 1px;
+  background-color: transparent;
+  flex-shrink: 0;
+  flex-grow: 0;
+  flex-basis: 16rem;
+}
+
+.hs-form-radio-display .hs-input:checked {
+  background-color: #242422; /* Change background color when selected */
+}
+
+.hs-form-radio-display .hs-input:checked::before {
+  content: "";
+}
+
+.hs-form-radio {
+  cursor: pointer;
+}
+
+.legal-consent-container {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 403rem;
+}
+
+.legal-consent-container p {
+  color: #242422;
+  text-align: center;
+  font-size: 11rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 120%; /* 13.2px */
+}
+
+.hs-button {
+  display: flex;
+  height: 46rem;
+  padding: 12rem 20rem 12rem 20rem;
+  justify-content: center;
+  align-items: center;
+  border-radius: 4px;
+  background: #000;
+  color: #ffffff;
+  font-family: Suisse intl mono, Arial, sans-serif;
+  font-size: 12rem;
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  border: none;
+  margin: auto;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.hs-button:hover {
+  background: white;
+  color: black;
+}
+
+.hs-fieldtype-radio {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row;
+  gap: 12rem;
+  margin-top: 12rem;
+  margin-bottom: 12rem;
+  align-items: center;
+  position: relative;
+}
+
+.hbspt-form legend {
+  display: none !important;
+}
+
+.hbspt-form li::marker {
+  content: "";
+}
+
+.input {
+  margin: 0 !important;
+}
+
+@media screen and (max-width: 992px) {
+  .hs-form-field label {
+    font-size: 11rem;
+    margin-bottom: 8rem;
+  }
+
+  .hbspt-form fieldset {
+    display: flex;
+    flex-direction: column;
+    row-gap: 10rem;
+  }
+
+  .hs-fieldtype-radio {
+    flex-direction: column;
+    gap: 12rem;
+  }
+
+  .hs-button {
+    font-size: 10rem;
+  }
+}
+
+@media screen and (min-width: 992px) {
+  .form-columns-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8rem;
+  }
+}
+
+input[type="radio"] {
+  -webkit-appearance: none; /* Removes default iOS styling */
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.inputs-list {
+  list-style: none; /* Removes bullets */
+  padding: 0; /* Removes extra padding */
+  margin: 0; /* Removes extra margin */
+}
+
+.hs-error-msgs {
+  margin-top: 8rem;
+}
+
+.footerlink-line {
+  transform: translateX(-100%);
+  transition: none;
+}
+
+.video-placeholder-youtube {
+  font-size: 16rem !important;
+}
+
+.loading--screen {
+  display: flex;
+}
+
+@media screen and (min-width: 992px) {
+  .hs-fieldtype-radio .hs-error-msgs {
+    position: absolute;
+    top: 21rem;
+    left: 123rem;
+  }
+}
+
+#c__country_region-ecd25531-9447-46a9-a227-53bce183279f {
+  appearance: none; /* Remove default arrow */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("https://cdn.prod.website-files.com/67bdd03200678df04ba07593/680fa443a4af16a3652d5ec7_DeepJudge%20Vector%2099.svg");
+  background-repeat: no-repeat;
+  background-position: calc(100% - 20rem) center; /* 2rem from the right */
+  background-size: 10rem auto; /* Width 10rem */
+  padding-right: 12rem; /* Add enough padding to make space for the big arrow */
+}

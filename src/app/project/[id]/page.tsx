@@ -8,6 +8,7 @@ import UserMenu from "@/components/ui/user-menu";
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { File, Folder, Tree } from "@/components/ui/file-tree";
 import ChatInputLight from "@/components/ui/chat-input-light";
+import { AIModel } from "@/components/ui/model-selector";
 import dynamic from 'next/dynamic'
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
@@ -1008,12 +1009,12 @@ export default function ProjectPage() {
   const [sandboxContent, setSandboxContent] = useState<Record<string, string> | null>(null);
 
   // Initialize selected model ONCE from sessionStorage
-  const [selectedModel, setSelectedModel] = useState<'gpt-5' | 'claude-haiku'>(() => {
+  const [selectedModel, setSelectedModel] = useState<AIModel>(() => {
     if (typeof window === 'undefined') return 'gpt-5';
     try {
       const storedModel = sessionStorage.getItem('surbee_selected_model');
-      if (storedModel === 'gpt-5' || storedModel === 'claude-haiku') {
-        return storedModel;
+      if (storedModel === 'gpt-5' || storedModel === 'claude-haiku' || storedModel === 'mistral') {
+        return storedModel as AIModel;
       }
     } catch (e) {
       console.error('Failed to read model from sessionStorage:', e);
@@ -1024,7 +1025,7 @@ export default function ProjectPage() {
   const selectedModelRef = useRef(selectedModel);
 
   // Update sessionStorage when model changes
-  const handleModelChange = useCallback((model: 'gpt-5' | 'claude-haiku') => {
+  const handleModelChange = useCallback((model: AIModel) => {
     console.log('🔄 CHANGING MODEL TO:', model);
     setSelectedModel(model);
     selectedModelRef.current = model;
@@ -1233,7 +1234,8 @@ export default function ProjectPage() {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const shareMenuRef = useRef<HTMLDivElement>(null);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [publishToMarketplace, setPublishToMarketplace] = useState(false);
+  // Always publish to marketplace (community)
+  const publishToMarketplace = true;
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
@@ -1245,15 +1247,31 @@ export default function ProjectPage() {
 
       // Try to fetch the project
       fetch(`/api/projects/${projectId}?userId=${user.id}`)
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) {
+            // Project doesn't exist yet (404) or other error
+            // Set a placeholder to prevent repeated fetches
+            if (res.status === 404) {
+              console.log('Project not found, will be created on first publish');
+              setProject({ id: projectId } as any); // Placeholder to stop refetching
+              return null;
+            }
+            throw new Error(`HTTP ${res.status}`);
+          }
+          return res.json();
+        })
         .then((data) => {
-          if (data.project) {
+          if (data?.project) {
             // Project exists, use it
             setProject(data.project);
           }
           // If project doesn't exist, it will be created on first publish
         })
-        .catch(err => console.error('Failed to load project:', err))
+        .catch(err => {
+          console.error('Failed to load project:', err);
+          // Set placeholder to prevent infinite retries
+          setProject({ id: projectId } as any);
+        })
         .finally(() => setProjectLoading(false));
     }
   }, [mockMode, projectId, user?.id, project, projectLoading]);
@@ -1410,25 +1428,20 @@ export default function ProjectPage() {
     const currentModel = selectedModelRef.current;
     console.log('📤 SENDING MESSAGE WITH MODEL:', currentModel);
 
-    // Create a stable options object - memoized to prevent re-renders
-    const sendOptions = { body: { model: currentModel } };
-
-    // Send message with images if provided following ImagePart format
+    // Send message with images via body options (not content array)
     if (images && images.length > 0) {
-      const parts: Array<{ type: 'text'; text: string } | { type: 'image'; image: string }> = [
-        { type: 'text', text: message }
-      ];
+      console.log('📷 Sending message with', images.length, 'images');
 
-      // Add image parts following the ImagePart interface
-      images.forEach(img => {
-        parts.push({
-          type: 'image',
-          image: img, // URL or base64 data
-        });
-      });
+      const sendOptions = {
+        body: {
+          model: currentModel,
+          images: images // Send images in body, not in message content
+        }
+      };
 
-      sendMessage({ parts } as any, sendOptions);
+      sendMessage({ text: message }, sendOptions);
     } else {
+      const sendOptions = { body: { model: currentModel } };
       sendMessage({ text: message }, sendOptions);
     }
   }, [status, autoGeneratedTitle]); // sendMessage and selectedModel intentionally excluded - using refs/direct access
@@ -1458,31 +1471,7 @@ export default function ProjectPage() {
     setPublishSuccess(null);
 
     try {
-      // Check if project exists in database
-      if (!project) {
-        // First time publishing - create AND publish the project
-        const createResponse = await fetch('/api/projects', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: projectId,
-            title: `Project ${projectId.substring(0, 8)}`,
-            description: 'Survey created with Surbee',
-            user_id: user.id
-          })
-        });
-
-        const createData = await createResponse.json();
-
-        if (!createData.project) {
-          throw new Error(createData.error || 'Failed to create project');
-        }
-
-        // Set the created project
-        setProject(createData.project);
-      }
-
-      // Now publish the project (works for both new and existing)
+      // Publish the project (creates it if it doesn't exist)
       const response = await fetch(`/api/projects/${projectId}/publish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1499,8 +1488,13 @@ export default function ProjectPage() {
         setPublishedUrl(data.publishedUrl);
         setPublishSuccess(project?.status === 'published' ? 'Survey updated successfully!' : 'Survey published successfully!');
 
-        // Update project status
-        setProject(prev => prev ? { ...prev, status: 'published', published_url: data.publishedUrl } : null);
+        // Update project status and store the full project
+        setProject(data.project || {
+          id: projectId,
+          status: 'published',
+          published_url: data.publishedUrl,
+          user_id: user.id
+        } as any);
 
         setTimeout(() => setPublishSuccess(null), 3000);
       } else {
@@ -1874,6 +1868,19 @@ export default function ProjectPage() {
                   <div className="user-menu-email">demo@example.com</div>
                 </div>
 
+                {/* Back to Dashboard */}
+                <button
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard'); }}
+                  className="user-menu-item"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="user-menu-icon-circle">
+                      <Home className="h-4 w-4" />
+                    </div>
+                    <span>Back to Dashboard</span>
+                  </div>
+                </button>
+
                 {/* Set up profile button */}
                 <button
                   onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard/settings'); }}
@@ -1882,7 +1889,7 @@ export default function ProjectPage() {
                   Set up profile
                 </button>
 
-                {/* Settings */}
+                {/* Project Settings */}
                 <button
                   onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard/settings'); }}
                   className="user-menu-item"
@@ -1891,7 +1898,7 @@ export default function ProjectPage() {
                     <div className="user-menu-icon-circle">
                       <SettingsIcon className="h-4 w-4" />
                     </div>
-                    <span>Settings</span>
+                    <span>Project Settings</span>
                   </div>
                 </button>
 
@@ -2619,34 +2626,6 @@ export default function ProjectPage() {
                         style={{ color: isDarkMode ? '#94a3b8' : '#64748b' }}
                       />
                     </a>
-                  </div>
-
-                  <div
-                    className="border-t"
-                    style={{ borderColor: isDarkMode ? '#2a2a2a' : '#e5e7eb' }}
-                  />
-
-                  {/* Publish to Marketplace Toggle */}
-                  <div className="flex items-center justify-between py-1">
-                    <div className="flex flex-col gap-1">
-                      <span
-                        className="text-sm font-medium"
-                        style={{ color: isDarkMode ? '#e5e7eb' : '#1f2937' }}
-                      >
-                        Publish to Marketplace
-                      </span>
-                      <span
-                        className="text-xs"
-                        style={{ color: isDarkMode ? '#94a3b8' : '#64748b' }}
-                      >
-                        Share your survey with the community
-                      </span>
-                    </div>
-                    <Switch
-                      checked={publishToMarketplace}
-                      onCheckedChange={setPublishToMarketplace}
-                      className="data-[state=checked]:bg-blue-600"
-                    />
                   </div>
 
                   <div

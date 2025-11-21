@@ -1,13 +1,15 @@
 /**
- * Comprehensive Fraud Assessment API
+ * Comprehensive Fraud Assessment API - Cipher System
  *
  * Integrates all fraud detection systems:
- * - Behavioral analysis (Phase 1 & 2)
+ * - Advanced behavioral analysis with 15+ automation checks
  * - AI text detection (Phase 3)
  * - Semantic analysis (Phase 3)
  * - Plagiarism detection (Phase 3)
  * - IP reputation (Phase 1)
  * - Device fingerprinting (Phase 1)
+ * - Bayesian inference engine for probability calculation
+ * - Baseline deviation analysis
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -19,6 +21,10 @@ import {
   detectAutomationFromFingerprint,
   validateFingerprintConsistency,
 } from '@/lib/services/device-fingerprint'
+import { analyzeBehavior } from '@/lib/services/behavioral-analysis'
+import { buildEvidenceSignals, calculateBayesianFraudProbability, determineRiskLevel } from '@/lib/services/bayesian-inference'
+import { buildBaseline, compareToBaseline } from '@/lib/services/baseline-analysis'
+import { supabaseAdmin } from '@/lib/supabase-server'
 import type { BehavioralMetrics } from '@/features/survey/types'
 
 export interface ComprehensiveFraudAssessment {
@@ -190,9 +196,33 @@ export async function POST(request: NextRequest) {
         )
       : null
 
+    // ADVANCED BEHAVIORAL ANALYSIS (15+ automation checks)
+    const advancedBehavioralAnalysis = behavioralMetrics
+      ? analyzeBehavior({
+          mouseMovements: behavioralMetrics.mouseMovements,
+          keystrokes: behavioralMetrics.keystrokeEvents,
+          scrollEvents: behavioralMetrics.scrollEvents,
+          responseTime: behavioralMetrics.responseTime,
+          focusEvents: behavioralMetrics.focusEvents,
+          clickEvents: behavioralMetrics.clickEvents,
+        })
+      : null
+
+    // BASELINE DEVIATION ANALYSIS
+    const surveyId = body.surveyId || body.projectId
+    let baselineAnalysis = null
+    if (surveyId && behavioralMetrics) {
+      try {
+        const baseline = await buildBaseline(supabaseAdmin, surveyId, { minSampleSize: 10 })
+        baselineAnalysis = compareToBaseline(behavioralMetrics, responses, baseline)
+      } catch (error) {
+        console.error('Baseline analysis error:', error)
+      }
+    }
+
     // Calculate category scores
     const scores = {
-      behavioral: calculateBehavioralScore(behavioralMetrics),
+      behavioral: advancedBehavioralAnalysis?.overallScore || 0,
       aiContent: aiAnalysis?.aiProbability || 0,
       plagiarism: plagiarismResult?.plagiarismScore || (quickPlagiarism.duplicateCount > 0 ? 0.5 : 0),
       contradictions: contradictionAnalysis ? (1 - contradictionAnalysis.consistencyScore) : 0,
@@ -200,21 +230,76 @@ export async function POST(request: NextRequest) {
       deviceFingerprint: deviceAutomation?.confidence || fingerprintConsistency?.riskScore || 0,
     }
 
-    // Calculate overall risk score (weighted average)
-    const overallRiskScore = (
-      scores.behavioral * 0.25 +
-      scores.aiContent * 0.20 +
-      scores.plagiarism * 0.15 +
-      scores.contradictions * 0.10 +
-      scores.ipReputation * 0.15 +
-      scores.deviceFingerprint * 0.15
-    )
+    // BUILD EVIDENCE SIGNALS FOR BAYESIAN INFERENCE
+    const evidenceSignals = buildEvidenceSignals({
+      aiGenerated: aiAnalysis
+        ? {
+            detected: aiAnalysis.isAIGenerated,
+            probability: aiAnalysis.aiProbability,
+            indicators: aiAnalysis.evidence.aiIndicators,
+          }
+        : undefined,
+      plagiarism: plagiarismResult
+        ? {
+            detected: plagiarismResult.isPlagiarized,
+            sources: plagiarismResult.matches.length,
+          }
+        : undefined,
+      contradictions: contradictionAnalysis
+        ? {
+            found: contradictionAnalysis.hasContradictions,
+            count: contradictionAnalysis.contradictions.length,
+          }
+        : undefined,
+      automation: deviceAutomation
+        ? {
+            detected: deviceAutomation.isAutomation,
+            confidence: deviceAutomation.confidence,
+            reasons: deviceAutomation.reasons,
+          }
+        : undefined,
+      ipRisk: ipReputation
+        ? {
+            isVPN: ipReputation.isVPN || false,
+            isDataCenter: ipReputation.isDataCenter || false,
+            isTor: ipReputation.isTor,
+          }
+        : undefined,
+      deviceRisk: fingerprintConsistency
+        ? {
+            isAutomation: deviceAutomation?.isAutomation || false,
+            issues: fingerprintConsistency.issues,
+          }
+        : undefined,
+      behavioral: advancedBehavioralAnalysis
+        ? {
+            roboticMouseMovements: advancedBehavioralAnalysis.detections.roboticMouseMovements,
+            mouseTeleporting: advancedBehavioralAnalysis.detections.mouseTeleporting,
+            uniformKeystrokeTiming: advancedBehavioralAnalysis.detections.uniformKeystrokeTiming,
+            noTypingCorrections: advancedBehavioralAnalysis.detections.noTypingCorrections,
+            impossibleTypingSpeed: advancedBehavioralAnalysis.detections.impossibleTypingSpeed,
+            instantFormFilling: advancedBehavioralAnalysis.detections.instantFormFilling,
+            noHoverBehavior: advancedBehavioralAnalysis.detections.noHoverBehavior,
+          }
+        : undefined,
+      quality: qualityTimeMismatch
+        ? {
+            timeMismatch: qualityTimeMismatch.hasMismatch,
+            excessivePaste: (behavioralMetrics?.pasteEvents || 0) > 3,
+            excessiveTabSwitch:
+              (behavioralMetrics?.focusEvents?.filter((e: any) => e.type === 'blur').length || 0) > 5,
+          }
+        : undefined,
+    })
 
-    // Determine risk level
-    let riskLevel: 'low' | 'medium' | 'high' | 'critical' = 'low'
-    if (overallRiskScore >= 0.8) riskLevel = 'critical'
-    else if (overallRiskScore >= 0.6) riskLevel = 'high'
-    else if (overallRiskScore >= 0.4) riskLevel = 'medium'
+    // CALCULATE FRAUD PROBABILITY USING BAYESIAN INFERENCE
+    const bayesianResult = calculateBayesianFraudProbability(evidenceSignals, 0.15)
+
+    // Determine risk level using Bayesian probability and confidence
+    const riskLevel = determineRiskLevel(bayesianResult.fraudProbability, bayesianResult.confidence)
+
+    // Use Bayesian fraud probability as overall risk score
+    const overallRiskScore = bayesianResult.fraudProbability
 
     // Collect evidence
     const evidence = {
@@ -252,6 +337,24 @@ export async function POST(request: NextRequest) {
       evidence.highRisk.push(...deviceAutomation.reasons)
     }
 
+    // ADVANCED BEHAVIORAL INDICATORS
+    if (advancedBehavioralAnalysis) {
+      evidence.highRisk.push(...advancedBehavioralAnalysis.flags)
+    }
+
+    // BASELINE DEVIATION INDICATORS
+    if (baselineAnalysis?.isAnomalous) {
+      baselineAnalysis.deviations.forEach((dev) => {
+        if (dev.severity === 'high') {
+          evidence.highRisk.push(dev.description)
+        } else if (dev.severity === 'medium') {
+          evidence.mediumRisk.push(dev.description)
+        } else {
+          evidence.lowRisk.push(dev.description)
+        }
+      })
+    }
+
     // Timezone mismatch
     if (timezoneCheck && !timezoneCheck.isConsistent) {
       evidence.mediumRisk.push(timezoneCheck.reason || 'Timezone mismatch')
@@ -283,11 +386,7 @@ export async function POST(request: NextRequest) {
       overallRiskScore,
       riskLevel,
       isLikelyFraud: overallRiskScore >= 0.6,
-      confidence: calculateConfidence([
-        aiAnalysis?.confidence,
-        contradictionAnalysis?.confidence,
-        plagiarismResult?.confidence,
-      ]),
+      confidence: bayesianResult.confidence, // Use Bayesian confidence
 
       scores,
 

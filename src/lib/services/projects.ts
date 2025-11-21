@@ -1,5 +1,5 @@
 import type { Project, ChatMessage } from '@/types/database';
-import { supabase } from '@/lib/supabase-server';
+import { supabase, supabaseAdmin } from '@/lib/supabase-server';
 
 export class ProjectsService {
   // Generate a custom project ID
@@ -18,7 +18,8 @@ export class ProjectsService {
     try {
       const projectId = data.id || this.generateProjectId();
 
-      const { data: project, error } = await supabase
+      // Use admin client to bypass RLS for server-side operations
+      const { data: project, error } = await supabaseAdmin
         .from('projects')
         .insert({
           id: projectId,
@@ -39,7 +40,8 @@ export class ProjectsService {
 
   static async getUserProjects(userId: string): Promise<{ data: Project[] | null; error: Error | null }> {
     try {
-      const { data: projects, error } = await supabase
+      // Use admin client to bypass RLS for server-side operations
+      const { data: projects, error } = await supabaseAdmin
         .from('projects')
         .select('*')
         .eq('user_id', userId)
@@ -54,7 +56,8 @@ export class ProjectsService {
 
   static async getProject(projectId: string, userId: string): Promise<{ data: Project | null; error: Error | null }> {
     try {
-      const { data: project, error } = await supabase
+      // Use admin client to bypass RLS for server-side operations
+      const { data: project, error } = await supabaseAdmin
         .from('projects')
         .select('*')
         .eq('id', projectId)
@@ -80,7 +83,8 @@ export class ProjectsService {
     updates: Partial<Pick<Project, 'title' | 'description' | 'status'>>
   ): Promise<{ data: Project | null; error: Error | null }> {
     try {
-      const { data: project, error } = await supabase
+      // Use admin client to bypass RLS for server-side operations
+      const { data: project, error } = await supabaseAdmin
         .from('projects')
         .update({
           ...updates,
@@ -106,7 +110,8 @@ export class ProjectsService {
 
   static async deleteProject(projectId: string, userId: string): Promise<{ error: Error | null }> {
     try {
-      const { error } = await supabase
+      // Use admin client to bypass RLS for server-side operations
+      const { error } = await supabaseAdmin
         .from('projects')
         .delete()
         .eq('id', projectId)
@@ -141,7 +146,8 @@ export class ProjectsService {
 
   static async getProjectMessages(projectId: string, userId: string): Promise<{ data: ChatMessage[] | null; error: Error | null }> {
     try {
-      const { data: messages, error } = await supabase
+      // Use admin client to bypass RLS for server-side operations
+      const { data: messages, error } = await supabaseAdmin
         .from('chat_messages')
         .select('*')
         .eq('project_id', projectId)
@@ -163,7 +169,8 @@ export class ProjectsService {
     metadata?: any;
   }): Promise<{ data: ChatMessage | null; error: Error | null }> {
     try {
-      const { data: message, error } = await supabase
+      // Use admin client to bypass RLS for server-side operations
+      const { data: message, error } = await supabaseAdmin
         .from('chat_messages')
         .insert({
           project_id: data.project_id,
@@ -188,7 +195,8 @@ export class ProjectsService {
     timestamp: string;
   }> | null; error: Error | null }> {
     try {
-      const { data: messages, error: messagesError } = await supabase
+      // Use admin client to bypass RLS for server-side operations
+      const { data: messages, error: messagesError } = await supabaseAdmin
         .from('chat_messages')
         .select('id, project_id, created_at')
         .eq('user_id', userId)
@@ -200,7 +208,7 @@ export class ProjectsService {
 
       const projectIds = [...new Set((messages || []).map(m => m.project_id))];
 
-      const { data: projects, error: projectsError } = await supabase
+      const { data: projects, error: projectsError } = await supabaseAdmin
         .from('projects')
         .select('id, title')
         .in('id', projectIds);
@@ -233,10 +241,46 @@ export class ProjectsService {
     surveySchema?: any
   ): Promise<{ data: Project | null; error: Error | null }> {
     try {
+      // Use admin client to bypass RLS policies for server-side operations
+      // First, check if the project exists
+      const { data: existingProject, error: checkError } = await supabaseAdmin
+        .from('projects')
+        .select('*')
+        .eq('id', projectId)
+        .eq('user_id', userId)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        // Error other than "no rows returned"
+        return { data: null, error: checkError as any };
+      }
+
       const random = Math.random().toString(36).substring(2, 8);
       const publishedUrl = `${projectId.substring(0, 8)}_${random}`;
 
-      const { data: project, error } = await supabase
+      if (!existingProject) {
+        // Project doesn't exist, create it first
+        const { data: newProject, error: createError } = await supabaseAdmin
+          .from('projects')
+          .insert({
+            id: projectId,
+            user_id: userId,
+            title: `Project ${projectId.substring(0, 8)}`,
+            description: 'Survey created with Surbee',
+            status: 'published',
+            published_url: publishedUrl,
+            published_at: new Date().toISOString(),
+            survey_schema: surveySchema,
+          })
+          .select()
+          .single();
+
+        if (createError) return { data: null, error: createError as any };
+        return { data: newProject as Project, error: null };
+      }
+
+      // Project exists, update it
+      const { data: project, error } = await supabaseAdmin
         .from('projects')
         .update({
           status: 'published',
@@ -285,7 +329,8 @@ export class ProjectsService {
     surveySchema: any
   ): Promise<{ data: Project | null; error: Error | null }> {
     try {
-      const { data: project, error } = await supabase
+      // Use admin client to bypass RLS for server-side operations
+      const { data: project, error } = await supabaseAdmin
         .from('projects')
         .update({
           survey_schema: surveySchema,

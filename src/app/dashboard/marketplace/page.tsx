@@ -1,9 +1,9 @@
 "use client";
 
-import NotionMarketplace from "@/components/marketplace/NotionMarketplace";
+import Marketplace from "@/components/marketplace/Marketplace";
 
 export default function DashboardMarketplacePage() {
-  return <NotionMarketplace />;
+  return <Marketplace />;
 }
 
 

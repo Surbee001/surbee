@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
 import {
   Download,
   ChevronDown,
@@ -211,6 +212,7 @@ const sentimentTrendData = [
 type ChartType = 'responseTrend' | 'deviceDistribution' | 'completionTime' | 'responseByDay' | 'responseByHour' | 'questionCompletion' | 'sentimentTrend';
 
 export const UnifiedInsightsTab: React.FC<UnifiedInsightsTabProps> = ({ projectId }) => {
+  const { user } = useUser();
   const [selectedResponse, setSelectedResponse] = useState<string | null>(null);
   const [expandedQuestion, setExpandedQuestion] = useState<string | null>(null);
   const [selectedFunnelStep, setSelectedFunnelStep] = useState<number | null>(null);
@@ -226,6 +228,83 @@ export const UnifiedInsightsTab: React.FC<UnifiedInsightsTabProps> = ({ projectI
     questionCompletion: false,
     sentimentTrend: false,
   });
+
+  // Real data state
+  const [responses, setResponses] = useState<Response[]>([]);
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch questions and responses
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch questions
+        const questionsRes = await fetch(`/api/projects/${projectId}/questions?userId=${user.id}`);
+        const questionsData = await questionsRes.json();
+
+        if (!questionsRes.ok) {
+          throw new Error(questionsData.error || 'Failed to fetch questions');
+        }
+
+        // Fetch responses
+        const responsesRes = await fetch(`/api/projects/${projectId}/responses?userId=${user.id}&limit=100`);
+        const responsesData = await responsesRes.json();
+
+        if (!responsesRes.ok) {
+          throw new Error(responsesData.error || 'Failed to fetch responses');
+        }
+
+        setQuestions(questionsData.questions);
+
+        // Transform survey_responses to Response format
+        const transformedResponses: Response[] = responsesData.responses.map((r: any) => {
+          const questionResponses: QuestionResponse[] = Object.entries(r.responses || {}).map(([qId, answer]: [string, any]) => {
+            const question = questionsData.questions.find((q: any) => q.question_id === qId);
+            const timingData = r.timing_data || [];
+            const qIndex = questionsData.questions.findIndex((q: any) => q.question_id === qId);
+
+            return {
+              questionId: qId,
+              questionText: question?.question_text || qId,
+              answer: typeof answer === 'string' ? answer : JSON.stringify(answer),
+              accuracyScore: r.fraud_score ? Math.round((1 - r.fraud_score) * 100) : 100,
+              timeTaken: timingData[qIndex] || 0,
+              issues: r.is_flagged ? [{
+                type: 'spam' as const,
+                description: r.flag_reasons?.join(', ') || 'Flagged by Cipher',
+                severity: 'high' as const,
+              }] : undefined,
+            };
+          });
+
+          return {
+            id: r.id,
+            submittedAt: new Date(r.created_at),
+            completionTime: r.timing_data?.reduce((a: number, b: number) => a + b, 0) / 1000 || 0,
+            deviceType: r.device_data?.platform === 'mobile' ? 'mobile' : r.device_data?.platform === 'tablet' ? 'tablet' : 'desktop',
+            status: r.completed_at ? 'completed' : 'partial' as const,
+            responses: questionResponses,
+            qualityScore: r.fraud_score ? Math.round((1 - r.fraud_score) * 100) : 100,
+          };
+        });
+
+        setResponses(transformedResponses);
+      } catch (err: any) {
+        console.error('Error fetching data:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [projectId, user?.id]);
 
   const getDeviceIcon = (device: string) => {
     switch (device) {
@@ -803,13 +882,40 @@ export const UnifiedInsightsTab: React.FC<UnifiedInsightsTabProps> = ({ projectI
 
   // Calculate statistics
   const totalViews = 250;
-  const totalResponses = mockResponses.length;
-  const completedResponses = mockResponses.filter(r => r.status === 'completed').length;
-  const responseRate = Math.round((totalResponses / totalViews) * 100);
-  const completionRate = Math.round((completedResponses / totalResponses) * 100);
-  const avgCompletionTime = (mockResponses.reduce((acc, r) => acc + r.completionTime, 0) / totalResponses).toFixed(1);
-  const overallQualityScore = Math.round(mockResponses.reduce((acc, r) => acc + (r.qualityScore || 0), 0) / totalResponses);
-  const flaggedResponses = mockResponses.filter(r => (r.qualityScore || 100) < 75).length;
+  const totalResponses = responses.length;
+  const completedResponses = responses.filter(r => r.status === 'completed').length;
+  const responseRate = totalResponses > 0 ? Math.round((totalResponses / totalViews) * 100) : 0;
+  const completionRate = totalResponses > 0 ? Math.round((completedResponses / totalResponses) * 100) : 0;
+  const avgCompletionTime = totalResponses > 0 ? (responses.reduce((acc, r) => acc + r.completionTime, 0) / totalResponses).toFixed(1) : '0';
+  const overallQualityScore = totalResponses > 0 ? Math.round(responses.reduce((acc, r) => acc + (r.qualityScore || 0), 0) / totalResponses) : 0;
+  const flaggedResponses = responses.filter(r => (r.qualityScore || 100) < 75).length;
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div style={{ padding: '32px', textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>
+        Loading insights...
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div style={{ padding: '32px', textAlign: 'center', color: 'rgba(255, 100, 100, 0.8)' }}>
+        Error loading insights: {error}
+      </div>
+    );
+  }
+
+  // Show empty state
+  if (responses.length === 0) {
+    return (
+      <div style={{ padding: '32px', textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>
+        No responses yet. Share your survey to start collecting data!
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -1015,160 +1121,7 @@ export const UnifiedInsightsTab: React.FC<UnifiedInsightsTabProps> = ({ projectI
         </div>
       </div>
 
-
-      {/* Completion Funnel */}
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.03)',
-        borderRadius: '12px',
-        padding: '24px',
-        marginBottom: '32px',
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '24px',
-        }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'white', margin: 0 }}>
-            Completion Flow
-          </h3>
-          <button style={{
-            padding: '8px 16px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: 'none',
-            borderRadius: '8px',
-            color: 'rgba(255, 255, 255, 0.7)',
-            fontSize: '13px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}>
-            <Download className="h-4 w-4" />
-            Export
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {mockFunnelData.map((step, index) => {
-            const retentionRate = Math.round((step.completed / 250) * 100);
-            const dropoffRate = Math.round((step.abandoned / step.started) * 100);
-            const isSelected = selectedFunnelStep === index;
-
-            return (
-              <div key={index}>
-                <div
-                  onClick={() => setSelectedFunnelStep(isSelected ? null : index)}
-                  style={{
-                    padding: '16px',
-                    background: isSelected ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.02)',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '40px 1fr 80px 24px',
-                    alignItems: 'center',
-                    gap: '16px',
-                  }}>
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: 'white',
-                    }}>
-                      {step.questionNumber}
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ fontSize: '14px', fontWeight: '500', color: 'white' }}>
-                        {step.questionText}
-                      </div>
-                      <div style={{
-                        height: '6px',
-                        background: 'rgba(255, 255, 255, 0.08)',
-                        borderRadius: '3px',
-                        overflow: 'hidden',
-                      }}>
-                        <div style={{
-                          width: `${retentionRate}%`,
-                          height: '100%',
-                          background: 'white',
-                          borderRadius: '3px',
-                          transition: 'width 0.3s ease',
-                        }} />
-                      </div>
-                    </div>
-
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '18px', fontWeight: '600', color: 'white' }}>
-                        {retentionRate}%
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.5)' }}>
-                        Retention
-                      </div>
-                    </div>
-
-                    {dropoffRate < 10 ? (
-                      <CheckCircle2 className="h-5 w-5" style={{ color: 'white' }} />
-                    ) : (
-                      <AlertCircle className="h-5 w-5" style={{ color: 'rgba(255, 255, 255, 0.5)' }} />
-                    )}
-                  </div>
-                </div>
-
-                {isSelected && (
-                  <div style={{
-                    marginTop: '8px',
-                    padding: '16px',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    borderRadius: '8px',
-                  }}>
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                      gap: '16px',
-                    }}>
-                      <div>
-                        <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '4px' }}>Started</div>
-                        <div style={{ fontSize: '20px', fontWeight: '600', color: 'white' }}>{step.started}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '4px' }}>Completed</div>
-                        <div style={{ fontSize: '20px', fontWeight: '600', color: 'white' }}>{step.completed}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '4px' }}>Abandoned</div>
-                        <div style={{ fontSize: '20px', fontWeight: '600', color: 'rgba(255, 255, 255, 0.7)' }}>{step.abandoned}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '4px' }}>Avg. Time</div>
-                        <div style={{ fontSize: '20px', fontWeight: '600', color: 'white' }}>{step.avgTimeSeconds}s</div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {index < mockFunnelData.length - 1 && (
-                  <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}>
-                    <ChevronRight className="h-4 w-4 transform rotate-90" style={{ color: 'rgba(255, 255, 255, 0.3)' }} />
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* RESPONSES TABLE - Main Focus */}
+      {/* RESPONSES & COMPLETION FLOW */}
       <div style={{
         background: 'rgba(255, 255, 255, 0.03)',
         borderRadius: '12px',
@@ -1201,8 +1154,139 @@ export const UnifiedInsightsTab: React.FC<UnifiedInsightsTabProps> = ({ projectI
           </button>
         </div>
 
+        {/* Completion Flow - Integrated */}
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{
+            padding: '12px 16px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            borderRadius: '8px',
+            marginBottom: '12px',
+          }}>
+            <h4 style={{ fontSize: '14px', fontWeight: '600', color: 'rgba(255, 255, 255, 0.8)', margin: 0 }}>
+              Completion Flow by Question
+            </h4>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {mockFunnelData.map((step, index) => {
+              const retentionRate = Math.round((step.completed / 250) * 100);
+              const dropoffRate = Math.round((step.abandoned / step.started) * 100);
+              const isSelected = selectedFunnelStep === index;
+
+              return (
+                <div key={index}>
+                  <div
+                    onClick={() => setSelectedFunnelStep(isSelected ? null : index)}
+                    style={{
+                      padding: '16px',
+                      background: isSelected ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.02)',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '40px 1fr 80px 24px',
+                      alignItems: 'center',
+                      gap: '16px',
+                    }}>
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: 'white',
+                      }}>
+                        {step.questionNumber}
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: '500', color: 'white' }}>
+                          {step.questionText}
+                        </div>
+                        <div style={{
+                          height: '6px',
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          borderRadius: '3px',
+                          overflow: 'hidden',
+                        }}>
+                          <div style={{
+                            width: `${retentionRate}%`,
+                            height: '100%',
+                            background: 'white',
+                            borderRadius: '3px',
+                            transition: 'width 0.3s ease',
+                          }} />
+                        </div>
+                      </div>
+
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '18px', fontWeight: '600', color: 'white' }}>
+                          {retentionRate}%
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.5)' }}>
+                          Retention
+                        </div>
+                      </div>
+
+                      {dropoffRate < 10 ? (
+                        <CheckCircle2 className="h-5 w-5" style={{ color: 'white' }} />
+                      ) : (
+                        <AlertCircle className="h-5 w-5" style={{ color: 'rgba(255, 255, 255, 0.5)' }} />
+                      )}
+                    </div>
+                  </div>
+
+                  {isSelected && (
+                    <div style={{
+                      marginTop: '8px',
+                      padding: '16px',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      borderRadius: '8px',
+                    }}>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                        gap: '16px',
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '4px' }}>Started</div>
+                          <div style={{ fontSize: '20px', fontWeight: '600', color: 'white' }}>{step.started}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '4px' }}>Completed</div>
+                          <div style={{ fontSize: '20px', fontWeight: '600', color: 'white' }}>{step.completed}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '4px' }}>Abandoned</div>
+                          <div style={{ fontSize: '20px', fontWeight: '600', color: 'rgba(255, 255, 255, 0.7)' }}>{step.abandoned}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '4px' }}>Avg. Time</div>
+                          <div style={{ fontSize: '20px', fontWeight: '600', color: 'white' }}>{step.avgTimeSeconds}s</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {index < mockFunnelData.length - 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}>
+                      <ChevronRight className="h-4 w-4 transform rotate-90" style={{ color: 'rgba(255, 255, 255, 0.3)' }} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px', overflow: 'hidden' }}>
-          {mockResponses.map((response) => (
+          {responses.map((response) => (
             <div key={response.id}>
               {/* Response Preview Row */}
               <div
@@ -1212,12 +1296,12 @@ export const UnifiedInsightsTab: React.FC<UnifiedInsightsTabProps> = ({ projectI
                 }}
                 style={{
                   padding: '16px',
-                  background: 'rgba(15, 15, 15, 1)',
+                  background: 'rgba(255, 255, 255, 0.01)',
                   cursor: 'pointer',
                   transition: 'background 0.15s ease',
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(15, 15, 15, 1)'}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.01)'}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', flex: 1 }}>
@@ -1293,7 +1377,7 @@ export const UnifiedInsightsTab: React.FC<UnifiedInsightsTabProps> = ({ projectI
               {selectedResponse === response.id && (
                 <div style={{
                   padding: '0 16px 16px 16px',
-                  background: 'rgba(15, 15, 15, 1)',
+                  background: 'rgba(255, 255, 255, 0.01)',
                 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {response.responses.map((qr, idx) => {
@@ -1450,181 +1534,6 @@ export const UnifiedInsightsTab: React.FC<UnifiedInsightsTabProps> = ({ projectI
             </div>
           ))}
         </div>
-      </div>
-
-      {/* ADVANCED ANALYTICS - Collapsible */}
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.03)',
-        borderRadius: '12px',
-        padding: '24px',
-      }}>
-        <button
-          onClick={() => setShowAdvancedAnalytics(!showAdvancedAnalytics)}
-          style={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            padding: 0,
-          }}
-        >
-          <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'white', margin: 0 }}>
-            Advanced Analytics
-          </h3>
-          {showAdvancedAnalytics ? (
-            <ChevronUp className="h-5 w-5" style={{ color: 'rgba(255, 255, 255, 0.6)' }} />
-          ) : (
-            <ChevronDown className="h-5 w-5" style={{ color: 'rgba(255, 255, 255, 0.6)' }} />
-          )}
-        </button>
-
-        {showAdvancedAnalytics && (
-          <div style={{ marginTop: '24px' }}>
-            {/* Accuracy Detector */}
-            <div style={{ marginBottom: '32px' }}>
-              <AccuracyDetector
-                overallAccuracy={overallQualityScore}
-                totalResponses={totalResponses}
-                flaggedResponses={flaggedResponses}
-                questionAccuracy={[
-                  {
-                    questionId: 'q1',
-                    questionText: 'What is your primary goal?',
-                    accuracyScore: 92,
-                    issues: [
-                      {
-                        type: 'too-quick',
-                        description: '5 responses answered in under 2 seconds',
-                        severity: 'medium',
-                        affectedResponses: 5,
-                      },
-                    ],
-                  },
-                  {
-                    questionId: 'q2',
-                    questionText: 'How satisfied are you?',
-                    accuracyScore: 65,
-                    issues: [
-                      {
-                        type: 'spam',
-                        description: '18 responses selected the same option consecutively (pattern detected)',
-                        severity: 'high',
-                        affectedResponses: 18,
-                      },
-                      {
-                        type: 'pattern',
-                        description: '12 responses show A-B-C-D sequential pattern',
-                        severity: 'high',
-                        affectedResponses: 12,
-                      },
-                    ],
-                  },
-                  {
-                    questionId: 'q3',
-                    questionText: 'Tell us about your experience',
-                    accuracyScore: 72,
-                    issues: [
-                      {
-                        type: 'copy-paste',
-                        description: '8 responses appear to be copied from external sources',
-                        severity: 'high',
-                        affectedResponses: 8,
-                      },
-                      {
-                        type: 'spam',
-                        description: '6 responses contain repeated words (e.g., "good good good")',
-                        severity: 'medium',
-                        affectedResponses: 6,
-                      },
-                    ],
-                  },
-                ]}
-              />
-            </div>
-
-            {/* Additional Charts */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-              gap: '16px',
-            }}>
-              {/* Completion Time Distribution */}
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                borderRadius: '12px',
-                padding: '24px',
-              }}>
-                <h4 style={{ fontSize: '14px', fontWeight: '600', color: 'white', margin: '0 0 20px 0' }}>
-                  Completion Time Distribution
-                </h4>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={completionTimeData}>
-                    <XAxis
-                      dataKey="range"
-                      stroke="rgba(255, 255, 255, 0.3)"
-                      style={{ fontSize: '11px', fill: 'rgba(255, 255, 255, 0.5)' }}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      stroke="rgba(255, 255, 255, 0.3)"
-                      style={{ fontSize: '11px', fill: 'rgba(255, 255, 255, 0.5)' }}
-                      tickLine={false}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: 'rgba(26, 26, 26, 0.95)',
-                        border: 'none',
-                        borderRadius: '8px',
-                        color: 'white',
-                        fontSize: '12px'
-                      }}
-                    />
-                    <Bar dataKey="count" fill="rgba(255, 255, 255, 0.7)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Response by Day */}
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                borderRadius: '12px',
-                padding: '24px',
-              }}>
-                <h4 style={{ fontSize: '14px', fontWeight: '600', color: 'white', margin: '0 0 20px 0' }}>
-                  Response by Day of Week
-                </h4>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={dayOfWeekData}>
-                    <XAxis
-                      dataKey="day"
-                      stroke="rgba(255, 255, 255, 0.3)"
-                      style={{ fontSize: '11px', fill: 'rgba(255, 255, 255, 0.5)' }}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      stroke="rgba(255, 255, 255, 0.3)"
-                      style={{ fontSize: '11px', fill: 'rgba(255, 255, 255, 0.5)' }}
-                      tickLine={false}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: 'rgba(26, 26, 26, 0.95)',
-                        border: 'none',
-                        borderRadius: '8px',
-                        color: 'white',
-                        fontSize: '12px'
-                      }}
-                    />
-                    <Bar dataKey="responses" fill="white" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

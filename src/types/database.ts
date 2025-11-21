@@ -7,6 +7,8 @@ export interface Project {
   user_id: string;
   status: 'draft' | 'published' | 'archived';
   survey_schema?: any; // Latest survey schema
+  sandbox_bundle?: any; // Sandbox files and configuration
+  preview_image?: string | null; // Screenshot of the survey/sandbox
   published_url?: string; // Shareable public URL
   published_at?: string; // Timestamp when published
 }
@@ -59,6 +61,18 @@ export interface AIFeedback {
   user_id?: string;
   message_id: string;
   kind: 'copy' | 'thumbs_up' | 'thumbs_down' | 'retry';
+}
+
+export interface AnalysisDot {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  project_id: string;
+  user_id: string;
+  position_x: number; // Percentage from left (0-100)
+  position_y: number; // Percentage from top (0-100)
+  label?: string;
+  component_id?: string; // Optional identifier for the component being analyzed
 }
 
 export interface Checkpoint {

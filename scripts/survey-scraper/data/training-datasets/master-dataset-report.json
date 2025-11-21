@@ -1,0 +1,283 @@
+{
+  "generation_info": {
+    "generated_at": "2025-11-05T17:23:00.979Z",
+    "total_sources_processed": 23,
+    "total_training_examples": 70,
+    "quality_filtered": 0,
+    "average_quality_score": 34.34782608695652
+  },
+  "distribution": {
+    "by_category": {
+      "academic": 8,
+      "best_practices": 4,
+      "finance": 1,
+      "google_forms": 4,
+      "healthcare": 3,
+      "hr_360_review": 7,
+      "jotform": 5,
+      "surveymonkey": 16,
+      "typeform": 22
+    },
+    "by_complexity": {
+      "low": 21,
+      "medium": 0,
+      "high": 2
+    },
+    "by_quality_score": {
+      "0-30": 21,
+      "30-60": 0,
+      "60-80": 2,
+      "80-100": 0
+    }
+  },
+  "top_examples_by_quality": [
+    {
+      "id": "complete_q538y6_1762363380962",
+      "category": "hr_360_review",
+      "quality_score": 80,
+      "complexity": "high",
+      "domains": [
+        "hr_360_review",
+        "various",
+        "specialized"
+      ],
+      "features": [
+        "multi_section",
+        "mobile_optimized",
+        "qtype_text",
+        "qtype_dropdown",
+        "qtype_email",
+        "qtype_checkbox"
+      ]
+    },
+    {
+      "id": "questions_q538y6_1762363380962",
+      "category": "question_design",
+      "quality_score": 80,
+      "complexity": "medium",
+      "domains": [
+        "hr_360_review",
+        "various",
+        "specialized"
+      ],
+      "features": [
+        "multi_section",
+        "mobile_optimized",
+        "qtype_text",
+        "qtype_dropdown",
+        "qtype_email",
+        "qtype_checkbox"
+      ]
+    },
+    {
+      "id": "ui_q538y6_1762363380962",
+      "category": "ui_design",
+      "quality_score": 80,
+      "complexity": "medium",
+      "domains": [
+        "hr_360_review",
+        "various",
+        "specialized"
+      ],
+      "features": [
+        "ui_design",
+        "ux_patterns",
+        "multi_section",
+        "mobile_optimized",
+        "qtype_text",
+        "qtype_dropdown",
+        "qtype_email",
+        "qtype_checkbox"
+      ]
+    },
+    {
+      "id": "domain_q538y6_1762363380962",
+      "category": "domain_specific",
+      "quality_score": 80,
+      "complexity": "high",
+      "domains": [
+        "hr_360_review",
+        "various",
+        "specialized"
+      ],
+      "features": [
+        "domain_expertise",
+        "multi_section",
+        "mobile_optimized",
+        "qtype_text",
+        "qtype_dropdown",
+        "qtype_email",
+        "qtype_checkbox"
+      ]
+    },
+    {
+      "id": "structure_q538y6_1762363380963",
+      "category": "survey_structure",
+      "quality_score": 80,
+      "complexity": "medium",
+      "domains": [
+        "hr_360_review",
+        "various",
+        "specialized"
+      ],
+      "features": [
+        "structure_design",
+        "multi_section",
+        "mobile_optimized",
+        "qtype_text",
+        "qtype_dropdown",
+        "qtype_email",
+        "qtype_checkbox"
+      ]
+    },
+    {
+      "id": "practices_q538y6_1762363380963",
+      "category": "best_practices",
+      "quality_score": 80,
+      "complexity": "medium",
+      "domains": [
+        "hr_360_review",
+        "various",
+        "specialized"
+      ],
+      "features": [
+        "best_practices",
+        "multi_section",
+        "mobile_optimized",
+        "qtype_text",
+        "qtype_dropdown",
+        "qtype_email",
+        "qtype_checkbox"
+      ]
+    },
+    {
+      "id": "complete_-iy6ptq_1762363380973",
+      "category": "typeform",
+      "quality_score": 80,
+      "complexity": "high",
+      "domains": [
+        "typeform",
+        "various",
+        "specialized",
+        "validated_scales"
+      ],
+      "features": [
+        "multi_section",
+        "progress_indicator",
+        "mobile_optimized",
+        "validated_scales",
+        "qtype_multiple_choice",
+        "qtype_open_ended",
+        "qtype_scale"
+      ]
+    },
+    {
+      "id": "questions_-iy6ptq_1762363380973",
+      "category": "question_design",
+      "quality_score": 80,
+      "complexity": "medium",
+      "domains": [
+        "typeform",
+        "various",
+        "specialized",
+        "validated_scales"
+      ],
+      "features": [
+        "multi_section",
+        "progress_indicator",
+        "mobile_optimized",
+        "validated_scales",
+        "qtype_multiple_choice",
+        "qtype_open_ended",
+        "qtype_scale"
+      ]
+    },
+    {
+      "id": "ui_-iy6ptq_1762363380973",
+      "category": "ui_design",
+      "quality_score": 80,
+      "complexity": "medium",
+      "domains": [
+        "typeform",
+        "various",
+        "specialized",
+        "validated_scales"
+      ],
+      "features": [
+        "ui_design",
+        "ux_patterns",
+        "multi_section",
+        "progress_indicator",
+        "mobile_optimized",
+        "validated_scales",
+        "qtype_multiple_choice",
+        "qtype_open_ended",
+        "qtype_scale"
+      ]
+    },
+    {
+      "id": "domain_-iy6ptq_1762363380973",
+      "category": "domain_specific",
+      "quality_score": 80,
+      "complexity": "high",
+      "domains": [
+        "typeform",
+        "various",
+        "specialized",
+        "validated_scales"
+      ],
+      "features": [
+        "domain_expertise",
+        "multi_section",
+        "progress_indicator",
+        "mobile_optimized",
+        "validated_scales",
+        "qtype_multiple_choice",
+        "qtype_open_ended",
+        "qtype_scale"
+      ]
+    }
+  ],
+  "feature_coverage": {
+    "multi_section": 57,
+    "mobile_optimized": 63,
+    "qtype_text": 6,
+    "qtype_dropdown": 6,
+    "qtype_email": 6,
+    "qtype_checkbox": 6,
+    "ui_design": 22,
+    "ux_patterns": 22,
+    "domain_expertise": 17,
+    "structure_design": 16,
+    "best_practices": 11,
+    "progress_indicator": 31,
+    "validated_scales": 9,
+    "qtype_multiple_choice": 6,
+    "qtype_open_ended": 6,
+    "qtype_scale": 6
+  },
+  "domain_coverage": {
+    "hr_360_review": 7,
+    "various": 25,
+    "specialized": 70,
+    "typeform": 22,
+    "validated_scales": 9,
+    "academic": 8,
+    "medical education": 4,
+    "various including gaming, automotive, education, healthcare, etc.": 4,
+    "best_practices": 4,
+    "online survey software": 3,
+    "finance": 1,
+    "google_forms": 4,
+    "technology": 4,
+    "healthcare": 3,
+    "online survey": 1,
+    "jotform": 5,
+    "various industries including education, healthcare, and e-commerce.": 3,
+    "various industries including healthcare, education, business, and more.": 2,
+    "surveymonkey": 16,
+    "web services": 15,
+    "event management": 3,
+    "various industries including marketing, education, and human resources.": 3
+  }
+}

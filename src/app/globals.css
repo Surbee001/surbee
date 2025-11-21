@@ -2236,8 +2236,8 @@ body {
 
 /* Projects Page Styles */
 .projects-title {
-  font-family: var(--font-inter), sans-serif;
-  font-weight: 500;
+  font-family: Kalice-Trial-Regular, sans-serif;
+  font-weight: 400;
   font-size: 42px;
   line-height: 40px;
   letter-spacing: -0.05em;

@@ -1,0 +1,150 @@
+/* Override Surbee theme for this page */
+body {
+  background-color: #ffffff !important;
+  color: #0a0a0a !important;
+}
+
+html {
+	font-size: calc(100vw/1440);
+}
+
+/* body settings */
+body {
+	overflow-x:hidden;
+  overflow: overlay;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media screen and (min-width: 1440px) {
+	html {font-size: 1px;}
+}
+
+@media screen and (min-width: 768px) and (max-width: 991px) {
+	html {font-size: calc(100vw/768);}
+}
+
+@media screen and (min-width: 480px) and (max-width: 767px) {
+	html {font-size: calc(100vw/480);}
+}
+
+@media screen and (max-width: 479px) {
+	html {font-size: calc(100vw/375);}
+}
+
+[class*="heading-"] {
+	margin-top:0px;
+  margin-bottom:0px;
+}
+
+[class*="text-"] {
+	margin-top:0px;
+  margin-bottom:0px;
+}
+
+.w-reset.w-editor-bem-EditorApp_Panel span,
+.w-reset.w-editor-bem-EditorApp_Panel h2,
+.w-reset.w-editor-bem-EditorApp_Panel h3,
+.w-reset.w-editor-bem-EditorApp_Panel h4,
+.w-reset.w-editor-bem-EditorApp_Panel h5,
+.w-reset.w-editor-bem-EditorApp_Panel h6
+{
+	font-size:14px !important;
+}
+
+:root {
+	--typography-font-size-title-large: 14px;
+  --typography-font-size-body-large: 14px;
+  --typography-font-size-body-medium: 24px;
+  --typography-font-size-body-standard: 16px; 
+}
+
+.w-editor .main-wrapper {
+	opacity:1 !important;
+}
+
+
+
+
+[class*="image-wrapper"] {
+	width:100%;
+  position:relative;
+  overflow:hidden;
+}
+
+[class*="overlay-"] {
+	pointer-events:none;
+}
+
+[class*="container-"] {
+	margin-left:auto;
+  margin-right:auto;
+  width:100%
+}
+
+.w-richtext > *:first-child { margin-top: 0; }
+.w-richtext > *:last-child { margin-bottom: 0; }
+
+@media screen and (max-width:991px) {
+	[hidetablet="yes"] {
+		display:none;
+	}
+}
+
+@media screen and (min-width:991px) {
+	  div[data-wf--component-content--variant="big-title"] .richtext h2 {
+  font-size: 64rem !important;
+}
+
+[data-wf--component-columns--variant="2-columns---image-right"] .content {
+  max-width: 590rem;
+}
+
+[data-wf--component-columns--variant="2-columns---image-left"] .content {
+  max-width: 590rem;
+  order:9;
+}
+}
+
+
+.blog--list .blog--item:nth-child(3n + 1) {
+  background-color: #e6e0db;
+}
+
+.blog--list .blog--item:nth-child(3n + 1) .customerstory--img-wrapper {
+  background-color: #c6b9ae;
+}
+
+.blog--list .blog--item:nth-child(3n + 2) {
+  background-color: #d4e7d4;
+}
+
+.blog--list .blog--item:nth-child(3n + 2) .customerstory--img-wrapper {
+  background-color: #3a6b4a;
+}
+
+.blog--list .blog--item:nth-child(3n + 3) {
+  background-color: #ffffff;
+}
+
+.blog--list .blog--item:nth-child(3n + 3) .customerstory--img-wrapper {
+  background-color: #ededed;
+}
+
+
+
+
+.dj-carousel-container {
+  animation: moveSlideshow 52s linear infinite;
+}
+
+@keyframes moveSlideshow {
+  0% { 
+    transform: translateX(0%);  
+  }
+  
+  100% { 
+    transform: translateX(-50%);  
+  }
+}
+
+

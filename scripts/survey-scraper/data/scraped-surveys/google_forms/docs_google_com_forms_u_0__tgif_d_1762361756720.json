@@ -1,0 +1,220 @@
+{
+  "metadata": {
+    "source_url": "https://docs.google.com/forms/u/0/?tgif=d",
+    "category": "google_forms",
+    "scraped_at": "2025-11-05T16:55:56.720Z",
+    "scraper_version": "1.0.0"
+  },
+  "success": true,
+  "data": {
+    "markdown": "# Sign in\n\nto continue to Google Forms\n\nEmail or phone\n\nForgot email?\n\nType the text you hear or see\n\nNot your computer? Use Guest mode to sign in privately. [Learn more about using Guest mode](https://support.google.com/chrome/answer/6130773?hl=en-US)\n\nNext\n\nCreate account\n\n- For my personal use\n- For my child\n- For work or my business\n\nEnglish (United States)\n\n- Afrikaans\n- azərbaycan\n- bosanski\n- català\n- Čeština\n- Cymraeg\n- Dansk\n- Deutsch\n- eesti\n- English (United Kingdom)\n- English (United States)\n- Español (España)\n- Español (Latinoamérica)\n- euskara\n- Filipino\n- Français (Canada)\n- Français (France)\n- Gaeilge\n- galego\n- Hrvatski\n- Indonesia\n- isiZulu\n- íslenska\n- Italiano\n- Kiswahili\n- latviešu\n- lietuvių\n- magyar\n- Melayu\n- Nederlands\n- norsk\n- o‘zbek\n- polski\n- Português (Brasil)\n- Português (Portugal)\n- română\n- shqip\n- Slovenčina\n- slovenščina\n- srpski (latinica)\n- Suomi\n- Svenska\n- Tiếng Việt\n- Türkçe\n- Ελληνικά\n- беларуская\n- български\n- кыргызча\n- қазақ тілі\n- македонски\n- монгол\n- Русский\n- српски (ћирилица)\n- Українська\n- ქართული\n- հայերեն\n- ‫עברית‬‎\n- ‫اردو‬‎\n- ‫العربية‬‎\n- ‫فارسی‬‎\n- አማርኛ\n- नेपाली\n- मराठी\n- हिन्दी\n- অসমীয়া\n- বাংলা\n- ਪੰਜਾਬੀ\n- ગુજરાતી\n- ଓଡ଼ିଆ\n- தமிழ்\n- తెలుగు\n- ಕನ್ನಡ\n- മലയാളം\n- සිංහල\n- ไทย\n- ລາວ\n- မြန်မာ\n- ខ្មែរ\n- 한국어\n- 中文（香港）\n- 日本語\n- 简体中文\n- 繁體中文\n\n- [Help](https://support.google.com/accounts?hl=en-US&p=account_iph)\n- [Privacy](https://accounts.google.com/TOS?loc=US&hl=en-US&privacy=true)\n- [Terms](https://accounts.google.com/TOS?loc=US&hl=en-US)",
+    "branding": {
+      "colorScheme": "light",
+      "fonts": [
+        {
+          "family": "Google Sans",
+          "role": "body"
+        },
+        {
+          "family": "Roboto",
+          "role": "body"
+        },
+        {
+          "family": "Noto Sans Myanmar UI",
+          "role": "body"
+        },
+        {
+          "family": "Noto Sans Khmer",
+          "role": "body"
+        },
+        {
+          "family": "Arial",
+          "role": "body"
+        }
+      ],
+      "colors": {
+        "primary": "#0B57D0",
+        "accent": "#1A73E8",
+        "background": "#FFFFFF",
+        "textPrimary": "#1F1F1F",
+        "link": "#1A73E8"
+      },
+      "typography": {
+        "fontFamilies": {
+          "primary": "Google Sans",
+          "heading": "Google Sans"
+        },
+        "fontStacks": {
+          "heading": [
+            "Google Sans",
+            "Roboto",
+            "Noto Sans Myanmar UI",
+            "Noto Sans Khmer",
+            "Arial",
+            "sans-serif"
+          ],
+          "body": [
+            "Google Sans",
+            "Roboto",
+            "Noto Sans Myanmar UI",
+            "Noto Sans Khmer",
+            "Arial",
+            "sans-serif"
+          ],
+          "paragraph": [
+            "Google Sans",
+            "Roboto",
+            "Noto Sans Myanmar UI",
+            "Noto Sans Khmer",
+            "Arial",
+            "sans-serif"
+          ]
+        },
+        "fontSizes": {
+          "h1": "44px",
+          "h2": "44px",
+          "body": "14px"
+        }
+      },
+      "spacing": {
+        "baseUnit": 4,
+        "borderRadius": "8px"
+      },
+      "components": {
+        "input": {
+          "borderColor": "#CCCCCC",
+          "borderRadius": "8px"
+        },
+        "buttonPrimary": {
+          "background": "#0B57D0",
+          "textColor": "#FFFFFF",
+          "borderRadius": "20px",
+          "shadow": "none"
+        }
+      },
+      "images": {
+        "logo": null,
+        "favicon": null,
+        "ogImage": null
+      },
+      "__framework_hints": [],
+      "__llm_button_reasoning": {
+        "primary": {
+          "index": 0,
+          "text": "Next",
+          "reasoning": "The button has a vibrant blue background (#0B57D0) which is consistent with the brand color and is action-oriented with the text 'Next'. This makes it the primary CTA."
+        },
+        "secondary": {
+          "index": -1,
+          "text": "N/A",
+          "reasoning": "There are no other buttons with a different background color to classify as secondary. All buttons are in the same color group as the primary button."
+        },
+        "confidence": 0.95
+      },
+      "personality": {
+        "tone": "modern",
+        "energy": "medium",
+        "targetAudience": "general users, likely for forms and surveys"
+      },
+      "designSystem": {
+        "framework": "unknown",
+        "componentLibrary": null
+      },
+      "confidence": {
+        "buttons": 0.95,
+        "colors": 0.9,
+        "overall": 0.925
+      }
+    },
+    "metadata": {
+      "referrer": "origin",
+      "description": "Access Google Forms with a personal Google account or Google Workspace account (for business use).",
+      "title": "Google Forms: Sign-in",
+      "language": "en-US",
+      "viewport": "width=device-width, initial-scale=1",
+      "chrome": "nointentdetection",
+      "scrapeId": "d275136d-8b28-45ae-b61d-8f1c8f5f9bda",
+      "sourceURL": "https://docs.google.com/forms/u/0/?tgif=d",
+      "url": "https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fdocs.google.com%2Fforms%2Fu%2F0%2F%3Ftgif%3Dd&dsh=S1328874629%3A1762361737630739&followup=https%3A%2F%2Fdocs.google.com%2Fforms%2Fu%2F0%2F%3Ftgif%3Dd&ifkv=ARESoU2uDTA0ZVPDn0BGSVRtbWcjZiKa8LcY-xn-uPk4Q_TpT68HAnz09QuNApKTSI8s1oQTgc9RXg&ltmpl=forms&osid=1&passive=1209600&service=wise&flowName=GlifWebSignIn&flowEntry=ServiceLogin",
+      "statusCode": 200,
+      "contentType": "text/html; charset=utf-8",
+      "proxyUsed": "basic",
+      "indexId": "51781ce0-dee2-4a43-999f-f705046969f8",
+      "creditsUsed": 5
+    },
+    "json": {
+      "questions": [],
+      "survey_basics": {
+        "title": "Sign in to Google Forms",
+        "purpose": "To continue to Google Forms",
+        "use_case": "User authentication",
+        "description": "Sign in using your email or phone number to access Google Forms.",
+        "survey_provider": "Google",
+        "target_audience": "General public",
+        "target_industry": "Technology",
+        "template_category": "Authentication",
+        "estimated_completion_time": "1 minute"
+      },
+      "survey_structure": {
+        "sections": [
+          {
+            "section_name": "Sign In",
+            "section_order": 1,
+            "question_numbers": [],
+            "section_description": "Enter your email or phone number to sign in."
+          }
+        ],
+        "has_piping": false,
+        "has_scoring": false,
+        "has_sections": true,
+        "has_branching": false,
+        "total_questions": 0,
+        "has_randomization": false
+      },
+      "ux_best_practices": [
+        {
+          "practice": "Clear Instructions",
+          "description": "Provide clear instructions for users to follow during the sign-in process.",
+          "implementation": "Use simple language and guide users through the steps."
+        },
+        {
+          "practice": "Accessibility",
+          "description": "Ensure the sign-in page is accessible to all users, including those with disabilities.",
+          "implementation": "Use proper HTML tags and ARIA roles."
+        }
+      ],
+      "ui_design_patterns": {
+        "typography": "Sans-serif",
+        "color_scheme": "Google's branding colors",
+        "layout_style": "Single-column layout",
+        "visual_style": "Minimalistic",
+        "button_styles": "Rounded corners, primary color for action buttons",
+        "progress_type": "None",
+        "notable_features": [
+          "Guest mode option",
+          "Language selection"
+        ],
+        "animation_effects": [],
+        "question_per_page": "1",
+        "is_mobile_optimized": true,
+        "has_progress_indicator": false
+      },
+      "scoring_and_analytics": {
+        "has_scoring": false,
+        "scoring_method": "",
+        "result_categories": [],
+        "interpretation_guidance": ""
+      },
+      "accessibility_features": [
+        "Screen reader compatibility",
+        "Keyboard navigation support"
+      ],
+      "domain_specific_elements": {
+        "industry_terminology": [],
+        "validated_scales_used": [],
+        "compliance_considerations": [],
+        "specialized_question_types": []
+      }
+    }
+  }
+}

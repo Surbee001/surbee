@@ -55,6 +55,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import type { Project } from '@/types/database';
 import { useAnalyticsStream } from '@/hooks/useAnalyticsStream';
+import { ProjectBreadcrumb } from '@/components/ui/project-breadcrumb';
+import { useTheme } from '@/hooks/useTheme';
 
 interface AnalyticsPageProps {
   params: {
@@ -225,12 +227,20 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
   const projectId = resolvedParams?.id;
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { theme } = useTheme();
+  const [isMounted, setIsMounted] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'partial' | 'abandoned'>('all');
   const [accuracyFilter, setAccuracyFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [showActionDropdown, setShowActionDropdown] = useState(false);
   const [comparePeriod, setComparePeriod] = useState<'last30' | 'vsPrev30'>('last30');
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const isDarkMode = isMounted && theme === 'dark';
 
   // Use the real-time analytics hook
   const {
@@ -520,7 +530,7 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
   };
 
   // Show loading state while authenticating or loading data
-  if (authLoading || loading) {
+  if (authLoading || analyticsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-400"></div>
@@ -534,38 +544,46 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
   return (
     <div className="h-full" style={{ color: 'var(--surbee-fg-primary)' }}>
       <div className="max-w-7xl mx-auto px-6 pt-6 pb-12 h-full">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        {/* Header with Breadcrumb */}
+        <div
+          className="flex items-center justify-between pb-6 mb-6"
+          style={{
+            borderBottom: isDarkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)',
+          }}
+        >
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => window.history.back()}>
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                {safeData.project.title}
-                {!analyticsLoading && (
-                  <span className="ml-3 inline-flex items-center gap-1.5">
-                    {isConnected ? (
-                      <>
-                        <Wifi className="w-3 h-3 text-green-500" />
-                        <span className="text-xs text-green-600">Live</span>
-                      </>
-                    ) : usePolling ? (
-                      <>
-                        <RefreshCw className="w-3 h-3 text-blue-500" />
-                        <span className="text-xs text-blue-600">Polling</span>
-                      </>
-                    ) : (
-                      <>
-                        <WifiOff className="w-3 h-3 text-gray-400" />
-                        <span className="text-xs text-gray-500">Offline</span>
-                      </>
-                    )}
-                  </span>
+            <ProjectBreadcrumb
+              projectId={projectId || ''}
+              currentSection="analytics"
+              onSectionChange={(section) => {
+                if (section === 'preview' || section === 'share') {
+                  router.push(`/project/${projectId}/manage`);
+                } else if (section === 'insights') {
+                  router.push(`/project/${projectId}/manage`);
+                }
+              }}
+              isDarkMode={isDarkMode}
+            />
+            {!analyticsLoading && (
+              <span className="inline-flex items-center gap-1.5 ml-4">
+                {isConnected ? (
+                  <>
+                    <Wifi className="w-3 h-3 text-green-500" />
+                    <span className="text-xs text-green-600">Live</span>
+                  </>
+                ) : usePolling ? (
+                  <>
+                    <RefreshCw className="w-3 h-3 text-blue-500" />
+                    <span className="text-xs text-blue-600">Polling</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="w-3 h-3 text-gray-400" />
+                    <span className="text-xs text-gray-500">Offline</span>
+                  </>
                 )}
-              </p>
-            </div>
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -594,10 +612,39 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
             {/* Primary white button on the right */}
             <Button size="sm" onClick={handleEdit} className="bg-white text-black hover:bg-gray-100">
               <Edit className="w-4 h-4 mr-2" />
-              Continue Editing
+              Edit Project
             </Button>
           </div>
         </div>
+
+        {/* Survey Preview Section - NEW */}
+        {(safeData.project as any).preview_image && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">Survey Preview</CardTitle>
+              <CardDescription>Visual preview of your published survey</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-lg overflow-hidden border bg-gray-50">
+                <img
+                  src={(safeData.project as any).preview_image}
+                  alt="Survey Preview"
+                  className="w-full h-auto max-h-[400px] object-contain"
+                />
+              </div>
+              <div className="flex items-center gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(`/s/${(safeData.project as any).published_url}`, '_blank')}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  View Live Survey
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Accuracy Metrics */}
         {/* AI Insights */}
@@ -611,7 +658,7 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
           </div>
           <ul className="grid sm:grid-cols-2 gap-3 list-disc pl-5">
             <li className="text-sm text-theme-primary">
-              Peak responses on {safeData.timelineData.reduce((a,b)=> (b.responses>a.responses?b:a))?.date} &mdash; consider scheduling sends around this day.
+              Peak responses on {safeData.timelineData.length > 0 ? safeData.timelineData.reduce((a,b)=> (b.responses>a.responses?b:a))?.date : 'N/A'} &mdash; consider scheduling sends around this day.
               <span className="block text-xs text-theme-muted">Why this insight: Sending campaigns near historical peaks increases visibility and response likelihood.</span>
             </li>
             <li className="text-sm text-theme-primary">

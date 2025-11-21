@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export type AIModel = 'gpt-5' | 'claude-haiku';
+export type AIModel = 'gpt-5' | 'claude-haiku' | 'mistral';
 
 interface ModelSelectorProps {
   selectedModel: AIModel;
@@ -19,7 +19,8 @@ interface ModelSelectorProps {
 
 const models = [
   { id: 'gpt-5' as AIModel, name: 'GPT-5', provider: 'OpenAI' },
-  { id: 'claude-haiku' as AIModel, name: 'Haiku 4.5', provider: 'Anthropic' }
+  { id: 'claude-haiku' as AIModel, name: 'Haiku 4.5', provider: 'Anthropic' },
+  { id: 'mistral' as AIModel, name: 'Lema 0.1', provider: 'Surbee' }
 ];
 
 export default function ModelSelector({
@@ -40,7 +41,7 @@ export default function ModelSelector({
             backgroundColor: 'transparent',
             borderColor: 'var(--surbee-sidebar-border)',
             fontFamily: 'var(--font-inter), sans-serif',
-            width: '110px'
+            width: '120px'
           }}
           onMouseEnter={(e) => {
             if (!disabled) {
@@ -56,7 +57,7 @@ export default function ModelSelector({
           <ChevronDown size={14} style={{ color: 'var(--surbee-fg-secondary)' }} />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="rounded-lg border w-[110px]" style={{ borderColor: 'var(--surbee-sidebar-border)', backgroundColor: 'var(--surbee-sidebar-bg)' }}>
+      <DropdownMenuContent align="start" className="rounded-lg border w-[120px]" style={{ borderColor: 'var(--surbee-sidebar-border)', backgroundColor: 'var(--surbee-sidebar-bg)' }}>
         {models.map((model) => (
           <DropdownMenuItem
             key={model.id}

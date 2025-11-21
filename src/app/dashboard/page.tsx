@@ -363,10 +363,10 @@ function DashboardContent() {
                   >
                     <h1 className="text-white text-center" style={{
                       color: 'var(--surbee-fg-primary)',
-                      fontFamily: 'var(--font-inter), sans-serif',
+                      fontFamily: 'Kalice-Trial-Regular, sans-serif',
                       fontSize: '42px',
                       lineHeight: '40px',
-                      fontWeight: 500,
+                      fontWeight: 400,
                       letterSpacing: '-0.05em',
                       marginBottom: '0.5rem'
                     }}>
