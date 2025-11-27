@@ -1,5 +1,7 @@
 "use client"
 import { cn } from "@/lib/utils"
+import { useState } from "react"
+import { ChevronRight } from "lucide-react"
 
 import { ShiningText } from "./shining-text"
 import type React from "react"
@@ -18,6 +20,9 @@ interface ThinkingDisplayProps {
 }
 
 export function ThinkingDisplay({ steps, duration = 0, isThinking = false, className }: ThinkingDisplayProps) {
+  // Start collapsed by default, expand only when user clicks
+  const [isOpen, setIsOpen] = useState(false);
+
   // Always show if we have steps OR if thinking is active
   const shouldShow = isThinking || steps.length > 0;
 
@@ -25,24 +30,32 @@ export function ThinkingDisplay({ steps, duration = 0, isThinking = false, class
     return null;
   }
 
-  // Always expanded - no state needed
-  const isOpen = true;
-
   return (
     <div className={cn("relative my-1 min-h-6", className)}>
-      <div className="relative flex origin-top-left flex-col gap-2 overflow-x-clip">
-        <div className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground">
+      <div className="relative flex origin-top-left flex-col gap-0 overflow-x-clip">
+        {/* Clickable header */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground/80 transition-colors cursor-pointer"
+        >
+          <ChevronRight
+            className={cn(
+              "w-3.5 h-3.5 transition-transform duration-200",
+              isOpen && "rotate-90"
+            )}
+          />
           {isThinking ? (
-            <ShiningText text="Thinking..." className="text-sm" />
+            <ShiningText text="Thinking" className="text-sm" />
           ) : (
-            <span>{`Thought for ${duration}s`}</span>
+            <span className="text-muted-foreground/70">{`Thought for ${duration}s`}</span>
           )}
-        </div>
+        </button>
 
+        {/* Collapsible content */}
         <div
           className={cn(
-            "max-w-[calc(0.8*var(--thread-content-max-width,40rem))] transition-all duration-300 ease-in-out overflow-hidden pl-5",
-            isOpen ? "opacity-100 max-h-[2000px]" : "opacity-0 max-h-0",
+            "max-w-[calc(0.8*var(--thread-content-max-width,40rem))] transition-all duration-200 ease-in-out overflow-hidden pl-5",
+            isOpen ? "opacity-100 max-h-[2000px] mt-2" : "opacity-0 max-h-0 mt-0",
           )}
         >
           <div className="relative z-0">

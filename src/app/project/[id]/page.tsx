@@ -1502,7 +1502,22 @@ export default function ProjectPage() {
     console.log('[Bundle Extraction] No source_files found in messages');
   }, [messages, status]); // Also depend on status to re-check when streaming finishes
 
-  // TIMING REMOVED TEMPORARILY TO DEBUG INFINITE LOOP
+  // Track thinking duration
+  const [thinkingStartTime, setThinkingStartTime] = useState<number | null>(null);
+  const [thinkingDuration, setThinkingDuration] = useState<number>(0);
+
+  // Track when thinking starts/ends
+  useEffect(() => {
+    if (status === 'streaming' || status === 'submitted') {
+      if (!thinkingStartTime) {
+        setThinkingStartTime(Date.now());
+      }
+    } else if (status === 'ready' && thinkingStartTime) {
+      const duration = Math.round((Date.now() - thinkingStartTime) / 1000);
+      setThinkingDuration(duration);
+      setThinkingStartTime(null);
+    }
+  }, [status, thinkingStartTime]);
 
   // Thinking chain state
   const [sidebarView, setSidebarView] = useState<SidebarView>('chat');
@@ -1530,6 +1545,8 @@ export default function ProjectPage() {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const shareMenuRef = useRef<HTMLDivElement>(null);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [feedbackGiven, setFeedbackGiven] = useState<Record<string, 'up' | 'down'>>({});
   // Always publish to marketplace (community)
   const publishToMarketplace = true;
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
@@ -1856,6 +1873,53 @@ export default function ProjectPage() {
     }
   }, [publishedUrl]);
 
+  // Copy message content to clipboard
+  const handleCopyMessage = useCallback(async (messageId: string, content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedMessageId(messageId);
+      setTimeout(() => setCopiedMessageId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  }, []);
+
+  // Handle feedback (thumbs up/down)
+  const handleFeedback = useCallback(async (messageId: string, feedbackType: 'up' | 'down', messageContent: string) => {
+    // Update local state immediately
+    setFeedbackGiven(prev => ({ ...prev, [messageId]: feedbackType }));
+
+    // Send to API
+    try {
+      await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.id,
+          projectId,
+          messageId,
+          feedbackType: feedbackType === 'up' ? 'thumbs_up' : 'thumbs_down',
+          messageContent,
+          context: {
+            model: selectedModel,
+            timestamp: new Date().toISOString(),
+          },
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to save feedback:', error);
+    }
+  }, [user?.id, projectId, selectedModel]);
+
+  // Handle retry - delete last message and regenerate
+  const handleRetry = useCallback(() => {
+    // Reset thinking duration for new attempt
+    setThinkingDuration(0);
+    setThinkingStartTime(null);
+    // Call reload which regenerates the last response
+    reload();
+  }, [reload]);
+
   const isImageFile = (file: File) => file.type.startsWith("image/");
 
   const processFile = (file: File) => {
@@ -1994,16 +2058,23 @@ export default function ProjectPage() {
       if (!target.closest('.page-dropdown')) {
         setIsPageDropdownOpen(false);
       }
+      // Close publish dropdown when clicking outside
+      if (!target.closest('.publish-dropdown') && !target.closest('[data-publish-trigger]')) {
+        setIsPublishOpen(false);
+        if (activeTopButton === 'publish') {
+          setActiveTopButton(null);
+        }
+      }
     };
 
-    if (isCgihadiDropdownOpen || isPageDropdownOpen) {
+    if (isCgihadiDropdownOpen || isPageDropdownOpen || isPublishOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isCgihadiDropdownOpen, isPageDropdownOpen]);
+  }, [isCgihadiDropdownOpen, isPageDropdownOpen, isPublishOpen, activeTopButton]);
 
   const getDeviceStyles = () => {
     switch (currentDevice) {
@@ -2435,14 +2506,11 @@ export default function ProjectPage() {
                               status: (isLastMessage && isThinking && partIdx === reasoningParts.length - 1) ? 'thinking' : 'complete'
                             }));
 
-                            // No timing for now - just show 0
-                            const duration = 0;
-
                             return (
                               <div className="pl-0">
                                 <ThinkingDisplay
                                   steps={steps}
-                                  duration={duration}
+                                  duration={thinkingDuration}
                                   isThinking={isThinking}
                                 />
                               </div>
@@ -2482,36 +2550,54 @@ export default function ProjectPage() {
 
                           {/* Action buttons - only show when message is complete */}
                           {idx === messages.length - 1 && status === 'ready' && msg.parts.some(p => p.type === 'text') && (
-                            <div className="flex items-center gap-1 pt-1">
+                            <div className="flex items-center gap-0.5 pt-2">
+                              {/* Retry */}
                               <button
-                                onClick={() => reload()}
+                                onClick={handleRetry}
                                 className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
-                                title="Regenerate"
+                                title="Regenerate response"
                                 disabled={!(status === 'ready' || status === 'error')}
                               >
                                 <RotateCcw className="w-4 h-4 text-muted-foreground" />
                               </button>
+                              {/* Copy */}
                               <button
                                 onClick={() => {
                                   const textContent = msg.parts.find(p => p.type === 'text')?.text || '';
-                                  navigator.clipboard.writeText(textContent);
+                                  handleCopyMessage(msg.id, textContent);
                                 }}
                                 className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
-                                title="Copy"
+                                title={copiedMessageId === msg.id ? "Copied!" : "Copy to clipboard"}
                               >
-                                <Copy className="w-4 h-4 text-muted-foreground" />
+                                {copiedMessageId === msg.id ? (
+                                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                ) : (
+                                  <Copy className="w-4 h-4 text-muted-foreground" />
+                                )}
                               </button>
+                              {/* Thumbs up */}
                               <button
-                                className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
-                                title="Thumbs up"
+                                onClick={() => {
+                                  const textContent = msg.parts.find(p => p.type === 'text')?.text || '';
+                                  handleFeedback(msg.id, 'up', textContent);
+                                }}
+                                className={`p-1.5 rounded-md hover:bg-white/10 transition-colors ${feedbackGiven[msg.id] === 'up' ? 'bg-white/10' : ''}`}
+                                title="Good response"
+                                disabled={!!feedbackGiven[msg.id]}
                               >
-                                <ThumbsUp className="w-4 h-4 text-muted-foreground" />
+                                <ThumbsUp className={`w-4 h-4 ${feedbackGiven[msg.id] === 'up' ? 'text-green-500' : 'text-muted-foreground'}`} />
                               </button>
+                              {/* Thumbs down */}
                               <button
-                                className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
-                                title="Thumbs down"
+                                onClick={() => {
+                                  const textContent = msg.parts.find(p => p.type === 'text')?.text || '';
+                                  handleFeedback(msg.id, 'down', textContent);
+                                }}
+                                className={`p-1.5 rounded-md hover:bg-white/10 transition-colors ${feedbackGiven[msg.id] === 'down' ? 'bg-white/10' : ''}`}
+                                title="Bad response"
+                                disabled={!!feedbackGiven[msg.id]}
                               >
-                                <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className={`w-4 h-4 ${feedbackGiven[msg.id] === 'down' ? 'text-red-500' : 'text-muted-foreground'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
                                 </svg>
                               </button>
@@ -2795,6 +2881,7 @@ export default function ProjectPage() {
             </button>
 
             <button
+              data-publish-trigger
               onClick={() => {
                 setIsPublishOpen((v) => !v);
                 setActiveTopButton(activeTopButton === 'publish' ? null : 'publish');
@@ -2831,174 +2918,67 @@ export default function ProjectPage() {
             {isPublishOpen && (
               <div
                 ref={publishMenuRef}
-                className="absolute top-full right-0 mt-2 w-[400px] rounded-xl shadow-2xl z-50"
+                className="publish-dropdown absolute top-full right-0 mt-2 w-[280px] rounded-lg shadow-xl z-50 overflow-hidden"
                 style={{
                   backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
-                  border: `1px solid ${isDarkMode ? '#2a2a2a' : '#e5e7eb'}`
+                  border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`
                 }}
               >
-                <div className="p-5 space-y-4">
+                <div className="p-4 space-y-3">
                   {/* Success Message */}
                   {publishSuccess && (
-                    <div
-                      className="px-3 py-2 rounded-lg text-sm font-medium text-center"
-                      style={{
-                        backgroundColor: isDarkMode ? '#065f46' : '#d1fae5',
-                        color: isDarkMode ? '#a7f3d0' : '#065f46'
-                      }}
-                    >
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-md text-sm" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#22c55e' }}>
+                      <CheckCircle2 className="w-4 h-4" />
                       {publishSuccess}
                     </div>
                   )}
 
-                  {/* Published URL Section - Show after publishing */}
+                  {/* Published URL Section */}
                   {(publishedUrl || project?.published_url) && (
-                    <div className="space-y-3">
+                    <>
                       <div className="flex items-center justify-between">
-                        <span
-                          className="text-sm font-semibold"
-                          style={{ color: isDarkMode ? '#e5e7eb' : '#1f2937' }}
-                        >
-                          Quick Share
-                        </span>
-                        <div
-                          className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium"
-                          style={{
-                            backgroundColor: isDarkMode ? '#065f46' : '#d1fae5',
-                            color: isDarkMode ? '#a7f3d0' : '#065f46'
-                          }}
-                        >
-                          <CheckCircle2 className="w-3 h-3" />
-                          Published
-                        </div>
+                        <span className="text-xs font-medium" style={{ color: 'var(--surbee-fg-secondary)' }}>Survey Link</span>
+                        <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#22c55e' }}>Live</span>
                       </div>
-
-                      {/* External Link */}
-                      <div
-                        className="p-3 rounded-lg space-y-2"
-                        style={{
-                          backgroundColor: isDarkMode ? '#0f172a' : '#f8fafc',
-                          border: `1px solid ${isDarkMode ? '#1e293b' : '#e2e8f0'}`
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span
-                            className="text-xs font-medium"
-                            style={{ color: isDarkMode ? '#94a3b8' : '#64748b' }}
-                          >
-                            Survey Link
-                          </span>
-                          <ExternalLink
-                            className="w-3.5 h-3.5"
-                            style={{ color: isDarkMode ? '#94a3b8' : '#64748b' }}
-                          />
-                        </div>
-                        <code
-                          className="block text-xs break-all"
-                          style={{ color: isDarkMode ? '#60a5fa' : '#2563eb' }}
-                        >
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 px-3 py-2 rounded-md text-xs truncate" style={{ backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', color: 'var(--surbee-fg-secondary)' }}>
                           {window.location.origin}/s/{publishedUrl || project?.published_url}
-                        </code>
+                        </div>
                         <button
                           onClick={copyPublishedLink}
-                          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                          style={{
-                            backgroundColor: isDarkMode ? '#1e293b' : '#e2e8f0',
-                            color: isDarkMode ? '#e5e7eb' : '#1f2937'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#cbd5e1';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = isDarkMode ? '#1e293b' : '#e2e8f0';
-                          }}
+                          className="p-2 rounded-md transition-colors hover:bg-white/10"
+                          title="Copy link"
                         >
-                          <Copy className="w-4 h-4" />
-                          Copy Link
+                          <Copy className="w-4 h-4" style={{ color: 'var(--surbee-fg-secondary)' }} />
                         </button>
                       </div>
-
-                      <div
-                        className="border-t"
-                        style={{ borderColor: isDarkMode ? '#2a2a2a' : '#e5e7eb' }}
-                      />
-                    </div>
+                      <div style={{ borderTop: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, margin: '12px 0' }} />
+                    </>
                   )}
 
-                  {/* Preview Section */}
-                  <div>
-                    <span
-                      className="text-sm font-semibold block mb-2"
-                      style={{ color: isDarkMode ? '#e5e7eb' : '#1f2937' }}
-                    >
-                      Preview
-                    </span>
-                    <a
-                      href={`/project/${projectId}/preview`}
-                      target="_blank"
-                      className="flex items-center justify-between p-3 rounded-lg transition-colors"
-                      style={{
-                        backgroundColor: isDarkMode ? '#0f172a' : '#f8fafc',
-                        border: `1px solid ${isDarkMode ? '#1e293b' : '#e2e8f0'}`
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = isDarkMode ? '#1e293b' : '#f1f5f9';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = isDarkMode ? '#0f172a' : '#f8fafc';
-                      }}
-                    >
-                      <span
-                        className="text-sm"
-                        style={{ color: isDarkMode ? '#94a3b8' : '#64748b' }}
-                      >
-                        Test your survey
-                      </span>
-                      <ExternalLink
-                        className="w-4 h-4"
-                        style={{ color: isDarkMode ? '#94a3b8' : '#64748b' }}
-                      />
-                    </a>
-                  </div>
+                  {/* Preview Link */}
+                  <a
+                    href={`/project/${projectId}/preview`}
+                    target="_blank"
+                    className="flex items-center justify-between px-3 py-2 rounded-md transition-colors hover:bg-white/5"
+                  >
+                    <span className="text-sm" style={{ color: 'var(--surbee-fg-primary)' }}>Preview survey</span>
+                    <ExternalLink className="w-4 h-4" style={{ color: 'var(--surbee-fg-secondary)' }} />
+                  </a>
 
-                  <div
-                    className="border-t"
-                    style={{ borderColor: isDarkMode ? '#2a2a2a' : '#e5e7eb' }}
-                  />
-
-                  {/* Publish/Update Button */}
+                  {/* Publish Button */}
                   <button
                     onClick={handlePublish}
                     disabled={isPublishing || !sandboxAvailable}
-                    className="w-full py-2.5 px-4 rounded-lg text-sm font-semibold transition-all"
+                    className="w-full py-2.5 px-4 rounded-md text-sm font-medium transition-all"
                     style={{
-                      backgroundColor: (!sandboxAvailable || isPublishing)
-                        ? (isDarkMode ? '#3a3a3a' : '#e5e7eb')
-                        : (isDarkMode ? '#ffffff' : '#000000'),
-                      color: (!sandboxAvailable || isPublishing)
-                        ? (isDarkMode ? '#6b7280' : '#9ca3af')
-                        : (isDarkMode ? '#000000' : '#ffffff'),
+                      backgroundColor: (!sandboxAvailable || isPublishing) ? (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') : 'white',
+                      color: (!sandboxAvailable || isPublishing) ? 'var(--surbee-fg-secondary)' : '#000',
                       opacity: (isPublishing || !sandboxAvailable) ? 0.6 : 1,
                       cursor: (isPublishing || !sandboxAvailable) ? 'not-allowed' : 'pointer'
                     }}
-                    onMouseEnter={(e) => {
-                      if (!isPublishing && sandboxAvailable) {
-                        e.currentTarget.style.opacity = '0.9';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isPublishing && sandboxAvailable) {
-                        e.currentTarget.style.opacity = '1';
-                      }
-                    }}
                   >
-                    {isPublishing
-                      ? 'Publishing...'
-                      : !sandboxAvailable
-                      ? 'Generate code first'
-                      : (project?.status === 'published' || publishedUrl)
-                      ? 'Update Survey'
-                      : 'Publish Survey'}
+                    {isPublishing ? 'Publishing...' : !sandboxAvailable ? 'Generate code first' : (project?.status === 'published' || publishedUrl) ? 'Update' : 'Publish'}
                   </button>
                 </div>
               </div>
@@ -3037,7 +3017,7 @@ export default function ProjectPage() {
                   <AILoader text="Building" size={120} />
                 ) : sandboxAvailable ? (
                   /* Show React preview when sandbox bundle is available */
-                  <div className="h-full w-full">
+                  <div className={`${getDeviceStyles()} transition-all duration-300 mx-auto`}>
                     <ProjectPreviewOnly providerProps={sandboxProviderProps} />
                   </div>
                 ) : (
