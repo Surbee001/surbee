@@ -180,8 +180,15 @@ export default function ChatInputLight({
     if (isInputDisabled) return;
 
     // Convert files to FileUIPart format for AI SDK
+    console.log('📷 ChatInputLight: files array has', files.length, 'files');
+    console.log('📷 ChatInputLight: filePreviews has', Object.keys(filePreviews).length, 'previews');
+
     const fileUIParts: FileUIPart[] = files
-      .filter(file => filePreviews[file.name]) // Only include files with previews
+      .filter(file => {
+        const hasPreview = !!filePreviews[file.name];
+        console.log(`📷 File "${file.name}" has preview: ${hasPreview}`);
+        return hasPreview;
+      })
       .slice(0, 10)
       .map(file => ({
         type: 'file' as const,
@@ -190,7 +197,16 @@ export default function ChatInputLight({
         url: filePreviews[file.name] // This is the data URL
       }));
 
-    console.log('📷 Sending', fileUIParts.length, 'files as FileUIPart format');
+    console.log('📷 ChatInputLight: Sending', fileUIParts.length, 'files as FileUIPart format');
+    if (fileUIParts.length > 0) {
+      console.log('📷 FileUIParts:', fileUIParts.map(f => ({
+        type: f.type,
+        filename: f.filename,
+        mediaType: f.mediaType,
+        urlPrefix: f.url?.substring(0, 50),
+        urlLength: f.url?.length
+      })));
+    }
 
     onSendMessage(chatText.trim(), fileUIParts.length > 0 ? fileUIParts : undefined);
     setChatText("");

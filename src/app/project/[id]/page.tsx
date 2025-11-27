@@ -1813,6 +1813,13 @@ export default function ProjectPage() {
 
     if (files && files.length > 0) {
       console.log('📷 Sending message with', files.length, 'files (FileUIPart format)');
+      console.log('📷 Files structure:', files.map(f => ({
+        type: f.type,
+        filename: f.filename,
+        mediaType: f.mediaType,
+        urlPrefix: f.url?.substring(0, 50),
+        urlLength: f.url?.length
+      })));
       // Send files using the AI SDK format: { text, files }
       sendMessage({ text: message, files }, sendOptions);
     } else {
