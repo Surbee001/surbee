@@ -2479,7 +2479,7 @@ export default function ProjectPage() {
                               return null;
                             })()}
 
-                            <div className="rounded-2xl px-6 py-3 text-primary-foreground" style={{ backgroundColor: 'rgb(38, 38, 38)' }}>
+                            <div className="rounded-2xl px-6 py-3" style={{ backgroundColor: 'rgb(38, 38, 38)', color: '#ffffff' }}>
                               <p className="whitespace-pre-wrap" style={{ fontSize: '16px' }}>
                                 {msg.parts.find(p => p.type === 'text')?.text || ''}
                               </p>
