@@ -6,8 +6,16 @@ import ChatSettingsMenu from "@/components/ui/chat-settings-menu";
 import { ImageViewerModal } from "@/components/ui/image-viewer-modal";
 import ModelSelector, { AIModel } from "@/components/ui/model-selector";
 
+// FileUIPart format expected by AI SDK
+export interface FileUIPart {
+  type: 'file';
+  filename: string;
+  mediaType: string;
+  url: string; // data URL or regular URL
+}
+
 interface ChatInputLightProps {
-  onSendMessage: (message: string, images?: string[]) => void;
+  onSendMessage: (message: string, files?: FileUIPart[]) => void;
   isInputDisabled?: boolean;
   placeholder?: string;
   className?: string;
@@ -171,7 +179,20 @@ export default function ChatInputLight({
     if (!chatText.trim() && files.length === 0) return;
     if (isInputDisabled) return;
 
-    onSendMessage(chatText.trim(), Object.values(filePreviews).slice(0, 10));
+    // Convert files to FileUIPart format for AI SDK
+    const fileUIParts: FileUIPart[] = files
+      .filter(file => filePreviews[file.name]) // Only include files with previews
+      .slice(0, 10)
+      .map(file => ({
+        type: 'file' as const,
+        filename: file.name,
+        mediaType: file.type,
+        url: filePreviews[file.name] // This is the data URL
+      }));
+
+    console.log('📷 Sending', fileUIParts.length, 'files as FileUIPart format');
+
+    onSendMessage(chatText.trim(), fileUIParts.length > 0 ? fileUIParts : undefined);
     setChatText("");
     setFiles([]);
     setFilePreviews({});

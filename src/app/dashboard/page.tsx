@@ -262,7 +262,15 @@ function DashboardContent() {
     return `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   };
 
-  const handleSendMessage = async (message: string, images?: string[]) => {
+  // FileUIPart type for AI SDK compatibility
+  type FileUIPart = {
+    type: 'file';
+    filename: string;
+    mediaType: string;
+    url: string;
+  };
+
+  const handleSendMessage = async (message: string, files?: FileUIPart[]) => {
     if (!message.trim()) return;
     if (isInputDisabled) return;
     if (!user) return;
@@ -280,16 +288,16 @@ function DashboardContent() {
     // DEBUG: Log what we're saving
     console.log('📝 SAVING TO SESSION STORAGE:');
     console.log('   - selectedModel:', selectedModel);
-    console.log('   - images:', images?.length || 0, 'images');
+    console.log('   - files:', files?.length || 0, 'files');
 
     try {
       sessionStorage.setItem('surbee_initial_prompt', message.trim());
       sessionStorage.setItem('surbee_selected_model', selectedModel);
 
-      // Save images if any were attached
-      if (images && images.length > 0) {
-        sessionStorage.setItem('surbee_initial_images', JSON.stringify(images));
-        console.log('✅ Saved', images.length, 'images to sessionStorage');
+      // Save files if any were attached (in FileUIPart format)
+      if (files && files.length > 0) {
+        sessionStorage.setItem('surbee_initial_files', JSON.stringify(files));
+        console.log('✅ Saved', files.length, 'files to sessionStorage (FileUIPart format)');
       }
 
       // DEBUG: Verify what was saved

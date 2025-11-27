@@ -1246,20 +1246,24 @@ export type ChatTools = InferUITools<typeof tools>;
 export type ChatMessage = UIMessage<never, UIDataTypes, ChatTools>;
 
 /**
- * Convert ChatMessages to model-compatible messages with proper image handling
- * This is necessary because convertToModelMessages doesn't handle our image format
+ * Convert ChatMessages to model-compatible messages with proper image/file handling
+ * This handles both legacy 'image' parts and new AI SDK 'file' parts
  */
 function convertMessagesWithImages(messages: ChatMessage[]): any[] {
-  console.log('🔄 Converting messages with custom image handler...');
+  console.log('🔄 Converting messages with custom image/file handler...');
 
   return messages.map((msg, idx) => {
-    // Check if this message has image parts
+    // Check if this message has image parts (legacy format)
     const imageParts = msg.parts?.filter((p: any) => p.type === 'image') || [];
+    // Check for file parts (new AI SDK format) - filter to only image files
+    const fileParts = msg.parts?.filter((p: any) =>
+      p.type === 'file' && p.mediaType?.startsWith('image/')
+    ) || [];
     const textParts = msg.parts?.filter((p: any) => p.type === 'text') || [];
-    const hasImages = imageParts.length > 0;
+    const hasImages = imageParts.length > 0 || fileParts.length > 0;
 
     if (hasImages) {
-      console.log(`📷 Message ${idx} has ${imageParts.length} images`);
+      console.log(`📷 Message ${idx} has ${imageParts.length} image parts + ${fileParts.length} file parts`);
     }
 
     if (msg.role === 'user' && hasImages) {
@@ -1271,7 +1275,7 @@ function convertMessagesWithImages(messages: ChatMessage[]): any[] {
         content.push({ type: 'text', text: p.text || '' });
       });
 
-      // Add image parts - convert to proper format
+      // Add legacy image parts - convert to proper format
       imageParts.forEach((p: any) => {
         if (p.image) {
           // Check if it's a base64 data URL
@@ -1289,6 +1293,17 @@ function convertMessagesWithImages(messages: ChatMessage[]): any[] {
               image: new URL(p.image)
             });
           }
+        }
+      });
+
+      // Add new AI SDK file parts (FileUIPart format)
+      fileParts.forEach((p: any) => {
+        if (p.url) {
+          console.log(`📷 Adding file part: ${p.filename || 'unnamed'} (${p.mediaType}), url prefix: ${p.url.substring(0, 30)}...`);
+          content.push({
+            type: 'image',
+            image: p.url // This is the data URL
+          });
         }
       });
 
@@ -1357,23 +1372,37 @@ export function streamWorkflowV3({ messages, model = 'gpt-5', projectId, userId 
   console.log('🔍 Model === "claude-haiku"?', model === 'claude-haiku');
   console.log('🔍 Model === "gpt-5"?', model === 'gpt-5');
 
-  // Debug: Check if messages contain images
+  // Debug: Check if messages contain images (both legacy 'image' and new 'file' parts)
   const totalImages = messages.reduce((count, msg) => {
     const imageParts = msg.parts?.filter((p: any) => p.type === 'image') || [];
-    return count + imageParts.length;
+    const fileParts = msg.parts?.filter((p: any) =>
+      p.type === 'file' && p.mediaType?.startsWith('image/')
+    ) || [];
+    return count + imageParts.length + fileParts.length;
   }, 0);
   console.log(`📷 Total images in messages: ${totalImages}`);
 
-  // Debug: Log actual image parts
+  // Debug: Log actual image/file parts
   messages.forEach((msg, idx) => {
     if (msg.parts) {
       const imgParts = msg.parts.filter((p: any) => p.type === 'image');
+      const fileParts = msg.parts.filter((p: any) =>
+        p.type === 'file' && p.mediaType?.startsWith('image/')
+      );
       if (imgParts.length > 0) {
-        console.log(`📷 Message ${idx} has ${imgParts.length} image(s):`, imgParts.map((p: any) => ({
+        console.log(`📷 Message ${idx} has ${imgParts.length} image part(s):`, imgParts.map((p: any) => ({
           type: p.type,
           hasImage: !!p.image,
           imageType: typeof p.image,
           imageLength: typeof p.image === 'string' ? p.image.substring(0, 50) : 'not a string'
+        })));
+      }
+      if (fileParts.length > 0) {
+        console.log(`📷 Message ${idx} has ${fileParts.length} file part(s):`, fileParts.map((p: any) => ({
+          type: p.type,
+          filename: p.filename,
+          mediaType: p.mediaType,
+          urlPrefix: typeof p.url === 'string' ? p.url.substring(0, 50) : 'not a string'
         })));
       }
     }
