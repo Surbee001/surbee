@@ -189,7 +189,7 @@ export default function ChatInputLight({
         console.log(`📷 File "${file.name}" has preview: ${hasPreview}`);
         return hasPreview;
       })
-      .slice(0, 10)
+      .slice(0, 5)
       .map(file => ({
         type: 'file' as const,
         filename: file.name,
@@ -229,7 +229,60 @@ export default function ChatInputLight({
 
   const isImageFile = (file: File) => file.type.startsWith("image/");
 
-  const processFile = (file: File) => {
+  // Compress image to fit within maxSizeBytes (default 4.5MB to stay under 5MB API limit)
+  const compressImage = (dataUrl: string, maxSizeBytes: number = 4.5 * 1024 * 1024): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+
+        // Start with original size, progressively reduce if needed
+        let quality = 0.9;
+        let scale = 1;
+
+        const compress = () => {
+          canvas.width = width * scale;
+          canvas.height = height * scale;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(dataUrl);
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const compressed = canvas.toDataURL('image/jpeg', quality);
+
+          // Check size (base64 is ~33% larger than binary)
+          const sizeEstimate = (compressed.length - 'data:image/jpeg;base64,'.length) * 0.75;
+
+          if (sizeEstimate <= maxSizeBytes) {
+            console.log(`📷 Compressed image to ${(sizeEstimate / 1024 / 1024).toFixed(2)}MB (quality: ${quality}, scale: ${scale})`);
+            resolve(compressed);
+          } else if (quality > 0.3) {
+            // Reduce quality first
+            quality -= 0.1;
+            compress();
+          } else if (scale > 0.3) {
+            // Then reduce dimensions
+            quality = 0.8;
+            scale -= 0.1;
+            compress();
+          } else {
+            // Give up and return what we have
+            console.log(`📷 Could not compress below ${(sizeEstimate / 1024 / 1024).toFixed(2)}MB`);
+            resolve(compressed);
+          }
+        };
+
+        compress();
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  };
+
+  const processFile = async (file: File) => {
     if (!isImageFile(file)) {
       console.log("Only image files are allowed");
       return;
@@ -238,9 +291,24 @@ export default function ChatInputLight({
       console.log("File too large (max 10MB)");
       return;
     }
-    setFiles(prev => (prev.length >= 10 ? prev : [...prev, file].slice(0, 10)));
+
+    // Max 5 images
+    setFiles(prev => (prev.length >= 5 ? prev : [...prev, file].slice(0, 5)));
+
     const reader = new FileReader();
-    reader.onload = (e) => setFilePreviews(prev => ({ ...prev, [file.name]: e.target?.result as string }));
+    reader.onload = async (e) => {
+      const dataUrl = e.target?.result as string;
+      // Compress if larger than 4MB (to stay under 5MB API limit)
+      const sizeEstimate = (dataUrl.length - dataUrl.indexOf(',')) * 0.75;
+      let finalDataUrl = dataUrl;
+
+      if (sizeEstimate > 4 * 1024 * 1024) {
+        console.log(`📷 Image ${file.name} is ${(sizeEstimate / 1024 / 1024).toFixed(2)}MB, compressing...`);
+        finalDataUrl = await compressImage(dataUrl);
+      }
+
+      setFilePreviews(prev => ({ ...prev, [file.name]: finalDataUrl }));
+    };
     reader.readAsDataURL(file);
   };
 
@@ -283,7 +351,7 @@ export default function ChatInputLight({
     e.stopPropagation();
     const files = Array.from(e.dataTransfer.files);
     const imageFiles = files.filter((file) => isImageFile(file));
-    imageFiles.slice(0, 10).forEach(processFile);
+    imageFiles.slice(0, 5).forEach(processFile);
   };
 
   const handlePaste = (e: ClipboardEvent) => {
@@ -298,7 +366,7 @@ export default function ChatInputLight({
     }
     if (images.length) {
       e.preventDefault();
-      images.slice(0, 10).forEach(processFile)
+      images.slice(0, 5).forEach(processFile)
     }
   };
 
@@ -521,7 +589,7 @@ export default function ChatInputLight({
                   multiple
                   onChange={(e) => {
                     if (e.target.files && e.target.files.length > 0) {
-                      Array.from(e.target.files).slice(0, 10).forEach(processFile)
+                      Array.from(e.target.files).slice(0, 5).forEach(processFile)
                     }
                     if (e.target) e.target.value = "";
                   }}
