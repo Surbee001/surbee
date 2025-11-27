@@ -23,4 +23,7 @@ export interface Project {
   _id?: string;
   _updatedAt?: Date;
   _createdAt?: Date;
+  preview_image_url?: string;
+  last_preview_generated_at?: Date;
+  response_count?: number;
 }

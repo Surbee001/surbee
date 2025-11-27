@@ -733,6 +733,7 @@ export default function ProjectManagePage() {
   const router = useRouter();
   const projectId = params.id as string;
   const { theme } = useTheme();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('preview');
   const [isMounted, setIsMounted] = useState(false);
 
@@ -742,18 +743,37 @@ export default function ProjectManagePage() {
 
   const isDarkMode = isMounted && theme === 'dark';
 
-  // Fetch project data to get sandbox bundle
+  // Fetch project data to get sandbox bundle and active session
   const [sandboxBundle, setSandboxBundle] = useState<SandboxBundle | null>(null);
+  const [activeChatSessionId, setActiveChatSessionId] = useState<string | null>(null);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const [isLoadingProject, setIsLoadingProject] = useState(true);
 
   React.useEffect(() => {
     const fetchProjectData = async () => {
       try {
-        const response = await fetch(`/api/projects/${projectId}`);
+        if (!user?.id) {
+          setIsLoadingProject(false);
+          return;
+        }
+
+        // Fetch project data
+        const response = await fetch(`/api/projects/${projectId}?userId=${user.id}`);
         if (response.ok) {
-          const projectData = await response.json();
-          if (projectData.sandbox_bundle) {
-            setSandboxBundle(projectData.sandbox_bundle);
+          const data = await response.json();
+          if (data.project) {
+            // Load sandbox bundle
+            if (data.project.sandbox_bundle) {
+              setSandboxBundle(data.project.sandbox_bundle);
+            }
+            // Load active chat session ID from project
+            if (data.project.active_chat_session_id) {
+              setActiveChatSessionId(data.project.active_chat_session_id);
+            }
+            // Load published URL for share tab
+            if (data.project.published_url) {
+              setPublishedUrl(data.project.published_url);
+            }
           }
         }
       } catch (error) {
@@ -764,7 +784,7 @@ export default function ProjectManagePage() {
     };
 
     fetchProjectData();
-  }, [projectId]);
+  }, [projectId, user?.id]);
 
   return (
     <AuthGuard>
@@ -902,9 +922,15 @@ export default function ProjectManagePage() {
                   </div>
                 </div>
 
-                {/* Right side - Edit Project Button */}
+                {/* Right side - Continue Editing Button */}
                 <button
-                  onClick={() => router.push(`/project/${projectId}`)}
+                  onClick={() => {
+                    // Navigate to chat with session ID if it exists
+                    const url = activeChatSessionId
+                      ? `/project/${projectId}?sessionId=${activeChatSessionId}`
+                      : `/project/${projectId}`;
+                    router.push(url);
+                  }}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -924,7 +950,7 @@ export default function ProjectManagePage() {
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                   </svg>
-                  Edit Project
+                  {activeChatSessionId ? 'Continue Editing' : 'Edit Project'}
                 </button>
               </div>
             </div>
@@ -938,8 +964,8 @@ export default function ProjectManagePage() {
               </AnalysisDotsManager>
             ) : (
               <div className="flex-1 overflow-auto min-h-0" style={{ paddingTop: '32px' }}>
-                {activeTab === 'preview' && <PreviewTab projectId={projectId} sandboxBundle={sandboxBundle} />}
-                {activeTab === 'share' && <ShareTab projectId={projectId} />}
+                {activeTab === 'preview' && <PreviewTab projectId={projectId} sandboxBundle={sandboxBundle} activeChatSessionId={activeChatSessionId} />}
+                {activeTab === 'share' && <ShareTab projectId={projectId} publishedUrl={publishedUrl} />}
               </div>
             )}
 

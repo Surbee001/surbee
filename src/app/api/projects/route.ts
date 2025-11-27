@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-server';
 import { ProjectsService } from '@/lib/services/projects';
 
 export async function GET(request: NextRequest) {
@@ -15,6 +16,31 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Fetch response counts for all projects
+    const projectIds = projects?.map((p: any) => p.id) || [];
+
+    if (projectIds.length > 0) {
+      // Get response counts for each project
+      const { data: responseCounts } = await supabaseAdmin
+        .from('survey_responses')
+        .select('survey_id')
+        .in('survey_id', projectIds);
+
+      // Count responses per project
+      const countMap: Record<string, number> = {};
+      responseCounts?.forEach((r: any) => {
+        countMap[r.survey_id] = (countMap[r.survey_id] || 0) + 1;
+      });
+
+      // Attach response counts to projects
+      const projectsWithCounts = projects?.map((p: any) => ({
+        ...p,
+        responseCount: countMap[p.id] || 0,
+      }));
+
+      return NextResponse.json({ projects: projectsWithCounts });
     }
 
     return NextResponse.json({ projects });

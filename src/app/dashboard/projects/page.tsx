@@ -526,25 +526,77 @@ export default function ProjectsPage() {
     router.push('/dashboard?highlightChat=true');
   };
 
-  const handleDuplicate = (projectId: string) => {
-    console.log('Duplicate project:', projectId);
-    // Implementation for duplicating project
+  const handleRename = async (projectId: string, newTitle: string) => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle, userId: user?.id }),
+      });
+      if (response.ok) {
+        setProjects(prev => prev.map(p =>
+          p.id === projectId ? { ...p, title: newTitle } : p
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to rename project:', error);
+    }
   };
 
-  const handleDelete = (projectId: string) => {
-    console.log('Delete project:', projectId);
-    // Implementation for deleting project
-    setProjects(prev => prev.filter(p => p.id !== projectId));
+  const handleDuplicate = async (projectId: string) => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}/duplicate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user?.id }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setProjects(prev => [data.project, ...prev]);
+      }
+    } catch (error) {
+      console.error('Failed to duplicate project:', error);
+    }
+  };
+
+  const handleDelete = async (projectId: string) => {
+    if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+      return;
+    }
+    try {
+      const response = await fetch(`/api/projects/${projectId}?userId=${user?.id}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        setProjects(prev => prev.filter(p => p.id !== projectId));
+      }
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+    }
   };
 
   const handleShare = (projectId: string) => {
-    console.log('Share project:', projectId);
-    // Implementation for sharing project
+    // Link is copied in the ProjectCard component
+    console.log('Shared project:', projectId);
   };
 
-  const handleArchive = (projectId: string) => {
-    console.log('Archive project:', projectId);
-    // Implementation for archiving project
+  const handleArchive = async (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    const newStatus = project?.status === 'archived' ? 'draft' : 'archived';
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, userId: user?.id }),
+      });
+      if (response.ok) {
+        setProjects(prev => prev.map(p =>
+          p.id === projectId ? { ...p, status: newStatus } : p
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to archive project:', error);
+    }
   };
 
   // Show loading state while authenticating
@@ -763,8 +815,11 @@ export default function ProjectsPage() {
                 title={project.title}
                 status={project.status}
                 updatedAt={project.updated_at}
-                previewImage={project.previewImage}
-                onSettings={() => console.log('Settings for project:', project.id)}
+                previewImage={project.previewImage || project.preview_image_url}
+                responseCount={project.responseCount ?? 0}
+                publishedUrl={project.published_url}
+                activeChatSessionId={project.active_chat_session_id}
+                onRename={handleRename}
                 onDuplicate={() => handleDuplicate(project.id)}
                 onDelete={() => handleDelete(project.id)}
                 onShare={() => handleShare(project.id)}

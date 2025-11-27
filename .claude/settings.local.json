@@ -118,7 +118,15 @@
       "Bash(xargs kill:*)",
       "Bash(pkill:*)",
       "Bash(git reset:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(./supabase-cli status:*)",
+      "Bash(./supabase-cli init:*)",
+      "Bash(./supabase-cli link:*)",
+      "Bash(./supabase-cli login:*)",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__list_tables",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": [],
@@ -128,5 +136,8 @@
       "E:\\Surbee_Lyra_v1 | grep -E ''''",
       "E:\\e\\Surbee_Lyra_v1"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }

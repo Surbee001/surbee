@@ -36,13 +36,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
     const body = await request.json();
-    const { user_id, ...updates } = body;
+    const { user_id, userId, ...updates } = body;
+    const effectiveUserId = user_id || userId;
 
-    if (!user_id) {
+    if (!effectiveUserId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const { data: project, error } = await ProjectsService.updateProject(id, user_id, updates);
+    const { data: project, error } = await ProjectsService.updateProject(id, effectiveUserId, updates);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

@@ -17,8 +17,8 @@ export default function LoginPage() {
   useEffect(() => {
     document.documentElement.classList.remove('dark');
     document.documentElement.classList.add('light');
-    document.documentElement.style.background = 'white';
-    document.body.style.background = 'white';
+    document.documentElement.style.background = '#EEE9E5';
+    document.body.style.background = '#EEE9E5';
     window.scrollTo(0, 0);
   }, []);
 
@@ -76,8 +76,8 @@ export default function LoginPage() {
             font-weight: 400;
             font-style: normal;
           }
-          html { font-size: calc(100vw/1440); background: white !important; }
-          body { overflow-x:hidden; overflow: overlay; -webkit-font-smoothing: antialiased; background: white !important; }
+          html { font-size: calc(100vw/1440); background: #EEE9E5 !important; }
+          body { overflow-x:hidden; overflow: overlay; -webkit-font-smoothing: antialiased; background: #EEE9E5 !important; }
           @media screen and (min-width: 1440px) { html {font-size: 1px;} }
           @media screen and (min-width: 768px) and (max-width: 991px) { html {font-size: calc(100vw/768);} }
           @media screen and (min-width: 480px) and (max-width: 767px) { html {font-size: calc(100vw/480);} }
@@ -93,7 +93,7 @@ export default function LoginPage() {
           @media screen and (max-width:991px) { [hidetablet="yes"] { display:none; } }
         `}} />
 
-        <div className="section is--hero" style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white' }}>
+        <div className="section is--hero" style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#EEE9E5' }}>
           <style dangerouslySetInnerHTML={{__html: `
             .login-heading {
               overflow: visible !important;

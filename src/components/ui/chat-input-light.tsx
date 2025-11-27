@@ -48,7 +48,7 @@ export default function ChatInputLight({
   disableRotatingPlaceholders = false,
   isBusy = false,
   onStop,
-  borderRadius = '32px',
+  borderRadius = '19px',
   showModelSelector = false,
   selectedModel = 'gpt-5',
   onModelChange,

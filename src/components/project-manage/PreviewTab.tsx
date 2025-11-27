@@ -65,6 +65,7 @@ interface PreviewTabProps {
     dependencies?: string[];
     devDependencies?: string[];
   } | null;
+  activeChatSessionId?: string | null;
 }
 
 type DeviceType = 'desktop' | 'mobile' | 'tablet';
@@ -1184,7 +1185,7 @@ const PropertiesPanel: React.FC<{
   );
 };
 
-export const PreviewTab: React.FC<PreviewTabProps> = ({ projectId, sandboxBundle }) => {
+export const PreviewTab: React.FC<PreviewTabProps> = ({ projectId, sandboxBundle, activeChatSessionId }) => {
   const [device, setDevice] = useState<DeviceType>('desktop');
   const [sidebarView, setSidebarView] = useState<'preview' | 'code' | 'console'>('preview');
   const [isEditorOpen, setIsEditorOpen] = useState(true);
@@ -1251,7 +1252,7 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ projectId, sandboxBundle
             {sandboxBundle ? (
               <div className="relative w-full h-full rounded-2xl overflow-hidden">
                 <iframe
-                  src={`/project/${projectId}?sandbox=1`}
+                  src={`/project/${projectId}?sandbox=1${activeChatSessionId ? `&sessionId=${activeChatSessionId}` : ''}`}
                   className="w-full h-full border-none rounded-2xl"
                   title="Survey Preview"
                 />

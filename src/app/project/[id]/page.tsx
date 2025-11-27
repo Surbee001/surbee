@@ -18,6 +18,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealtime } from '@/contexts/RealtimeContext';
 import { useTheme } from '@/hooks/useTheme';
+import { useChatSession } from '@/hooks/useChatSession';
 import { ThinkingDisplay } from '../../../../components/ThinkingUi/components/thinking-display';
 import { ToolCall } from '../../../../components/ThinkingUi/components/tool-call';
 import { AILoader } from '@/components/ai-loader';
@@ -941,6 +942,84 @@ interface ProjectPageProps {
   };
 }
 
+// Helper function to extract questions from source files
+function extractQuestionsFromSourceFiles(files: Record<string, string>): Array<{
+  question_id: string;
+  question_text: string;
+  question_type: string;
+  options?: string[];
+  required?: boolean;
+  order_index: number;
+}> {
+  const questions: Map<string, any> = new Map();
+
+  // Regular expressions to match metadata attributes
+  const questionIdRegex = /data-question-id=["']([^"']+)["']/g;
+  const questionTextRegex = /data-question-text=["']([^"']+)["']/g;
+  const questionTypeRegex = /data-question-type=["']([^"']+)["']/g;
+  const questionOptionsRegex = /data-question-options=["']([^"']+)["']/g;
+  const questionRequiredRegex = /data-question-required=["'](true|false)["']/g;
+
+  // Process each file
+  Object.values(files).forEach((content) => {
+    if (typeof content !== 'string') return;
+
+    // Find all question IDs in this file
+    let match;
+    const questionIdsInFile: string[] = [];
+
+    while ((match = questionIdRegex.exec(content)) !== null) {
+      questionIdsInFile.push(match[1]);
+    }
+
+    // For each question ID, extract all its metadata
+    questionIdsInFile.forEach((questionId) => {
+      if (questions.has(questionId)) return; // Already processed
+
+      // Find the section of code containing this question
+      const questionSection = content.substring(
+        Math.max(0, content.indexOf(questionId) - 500),
+        content.indexOf(questionId) + 500
+      );
+
+      // Extract question text
+      const textMatch = questionSection.match(questionTextRegex);
+      const questionText = textMatch ? textMatch[0].match(/["']([^"']+)["']/)?.[1] : questionId;
+
+      // Extract question type
+      const typeMatch = questionSection.match(questionTypeRegex);
+      const questionType = typeMatch ? typeMatch[0].match(/["']([^"']+)["']/)?.[1] : 'text_input';
+
+      // Extract options if present
+      const optionsMatch = questionSection.match(questionOptionsRegex);
+      let options: string[] | undefined;
+      if (optionsMatch) {
+        const optionsStr = optionsMatch[0].match(/["']([^"']+)["']/)?.[1];
+        options = optionsStr ? JSON.parse(optionsStr.replace(/&quot;/g, '"')) : undefined;
+      }
+
+      // Extract required flag
+      const requiredMatch = questionSection.match(questionRequiredRegex);
+      const required = requiredMatch ? requiredMatch[0].includes('true') : false;
+
+      questions.set(questionId, {
+        question_id: questionId,
+        question_text: questionText || questionId,
+        question_type: questionType || 'text_input',
+        options,
+        required,
+      });
+    });
+  });
+
+  // Convert to array and add order_index
+  const questionsArray = Array.from(questions.values());
+  return questionsArray.map((q, index) => ({
+    ...q,
+    order_index: index + 1,
+  }));
+}
+
 export default function ProjectPage() {
 
   // In client components, use useParams() to read dynamic params
@@ -982,6 +1061,23 @@ export default function ProjectPage() {
   // Check if this is a sandbox preview request
   const isSandboxPreview = searchParams?.get('sandbox') === '1';
 
+  // Extract session ID from URL for chat session management
+  const sessionIdFromUrl = searchParams?.get('sessionId');
+
+  // Initialize chat session management (skip in sandbox preview mode)
+  const {
+    sessionId: currentSessionId,
+    isLoading: sessionLoading,
+    saveMessages: saveChatMessages,
+    loadSession,
+  } = useChatSession({
+    projectId: projectId || '',
+    userId: user?.id,
+    sessionId: sessionIdFromUrl,
+    // Disable session management in sandbox preview mode
+    enabled: !isSandboxPreview,
+  });
+
   // Enable mock mode by default (no database)
   const mockMode = false;
 
@@ -1007,6 +1103,37 @@ export default function ProjectPage() {
 
   // Reasoning and sandbox state
   const [sandboxContent, setSandboxContent] = useState<Record<string, string> | null>(null);
+  const [sandboxBundle, setSandboxBundle] = useState<SandboxBundle | null>(null);
+  const [sandboxError, setSandboxError] = useState<string | null>(null);
+  const [rendererKey, setRendererKey] = useState(0);
+  const [bundleVersions, setBundleVersions] = useState<BundleVersion[]>([]);
+  const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
+  const sandboxConfig = useMemo(() => {
+    return deriveSandboxConfig(sandboxBundle);
+  }, [sandboxBundle]);
+
+  const sandboxProviderProps = useMemo<SandboxProviderProps>(() => ({
+    template: "react-ts",
+    theme: "dark",
+    files: sandboxConfig.files,
+    customSetup: {
+      entry: "/index.tsx",
+      main: "/index.tsx",
+      dependencies: sandboxConfig.dependencies,
+      environment: "create-react-app",
+    },
+    options: {
+      activeFile: sandboxConfig.activeFile,
+      autorun: true,
+      recompileMode: "immediate",
+      recompileDelay: 300,
+      externalResources: [
+        "https://cdn.tailwindcss.com?plugins=forms,typography",
+        "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+      ],
+    },
+  }), [sandboxConfig]);
+  const sandboxAvailable = Boolean(sandboxBundle);
 
   // Initialize selected model ONCE from sessionStorage
   const [selectedModel, setSelectedModel] = useState<AIModel>(() => {
@@ -1045,7 +1172,7 @@ export default function ProjectPage() {
     console.error('🚨 Chat error:', error);
   }, []);
 
-  const { messages: rawMessages, sendMessage: originalSendMessage, status, stop, reload } = useChat<ChatMessage>({
+  const { messages: rawMessages, sendMessage: originalSendMessage, status, stop, reload, setMessages } = useChat<ChatMessage>({
     transport: chatTransport,
     // DO NOT pass body here - we'll pass it in sendMessage instead to allow dynamic model switching
     onError,
@@ -1059,7 +1186,153 @@ export default function ProjectPage() {
   // Use sendMessage directly - don't wrap it
   const sendMessage = originalSendMessage;
 
+  // Load and restore session messages when continuing from a previous session
+  const [sessionLoaded, setSessionLoaded] = useState(false);
+  useEffect(() => {
+    const loadAndRestoreSession = async () => {
+      if (!sessionIdFromUrl || !user?.id || sessionLoaded || isSandboxPreview) return;
+
+      try {
+        console.log('📥 Loading session messages for:', sessionIdFromUrl);
+        const session = await loadSession();
+
+        if (session?.messages && session.messages.length > 0) {
+          console.log('✅ Restoring', session.messages.length, 'messages from session');
+          // Transform session messages to the format useChat expects
+          const restoredMessages = session.messages.map((m: any, idx: number) => ({
+            id: m.id || `restored-${idx}`,
+            role: m.role,
+            content: m.content,
+            ...m
+          }));
+          setMessages(restoredMessages);
+          setHasStartedChat(true);
+
+          // Also try to restore sandbox bundle from the last assistant message
+          const lastAssistant = session.messages.filter((m: any) => m.role === 'assistant').pop();
+          if (lastAssistant?.toolInvocations) {
+            for (const tool of lastAssistant.toolInvocations) {
+              if (tool.result?.source_files) {
+                console.log('🔄 Restoring sandbox bundle from session');
+                setSandboxBundle({
+                  files: tool.result.source_files,
+                  entry: tool.result.entry || '/index.tsx',
+                  dependencies: tool.result.dependencies || []
+                });
+                break;
+              }
+            }
+          }
+        }
+        setSessionLoaded(true);
+      } catch (error) {
+        console.error('Failed to load session:', error);
+        setSessionLoaded(true);
+      }
+    };
+
+    loadAndRestoreSession();
+  }, [sessionIdFromUrl, user?.id, loadSession, setMessages, isSandboxPreview, sessionLoaded]);
+
   // No debouncing needed - we render directly from messages
+
+  // Save chat messages to session whenever they change
+  useEffect(() => {
+    if (messages.length > 0 && user?.id && !isSandboxPreview) {
+      // Convert messages to the format expected by saveChatMessages
+      const messagesToSave = messages.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'assistant',
+        content: msg.text || msg.content || '',
+        ...msg // Include any other properties
+      }));
+
+      // Save to database
+      saveChatMessages(messagesToSave as any).catch(err => {
+        console.error('Failed to save chat messages:', err);
+      });
+    }
+  }, [messages, user?.id, saveChatMessages, isSandboxPreview]);
+
+  // Capture and save preview screenshot after sandbox bundle is created
+  useEffect(() => {
+    if (!sandboxBundle || !projectId || !user?.id || isSandboxPreview) return;
+
+    // Generate preview from survey questions
+    const capturePreview = async () => {
+      try {
+        // Wait a bit for questions to be saved
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Fetch questions for this project to generate preview
+        const questionsRes = await fetch(`/api/projects/${projectId}/questions?userId=${user.id}`);
+        const questionsData = await questionsRes.json();
+
+        // Import the screenshot utility dynamically
+        const { generateSurveyPreview, captureSandboxScreenshot } = await import('@/lib/capture-sandbox-screenshot');
+
+        let screenshotDataUrl: string;
+
+        // If we have questions, generate a proper preview from them
+        if (questionsData.questions && questionsData.questions.length > 0) {
+          console.log('📸 Generating preview from survey questions:', questionsData.questions.length);
+          screenshotDataUrl = await generateSurveyPreview(
+            questionsData.questions.map((q: any) => ({
+              question_text: q.question_text,
+              question_type: q.question_type,
+              options: q.options,
+            })),
+            {
+              width: 400,
+              height: 300,
+              quality: 0.5,
+              format: 'jpeg'
+            }
+          );
+        } else {
+          // Fallback: generate a placeholder preview
+          console.log('📸 No questions found, generating placeholder preview');
+          const previewFrame = document.querySelector('[data-sp-preview-iframe]') as HTMLIFrameElement;
+          if (previewFrame) {
+            screenshotDataUrl = await captureSandboxScreenshot(previewFrame, {
+              width: 400,
+              height: 300,
+              quality: 0.5,
+              format: 'jpeg'
+            });
+          } else {
+            // Final fallback - just generate a basic placeholder
+            screenshotDataUrl = await captureSandboxScreenshot({} as HTMLIFrameElement, {
+              width: 400,
+              height: 300,
+              quality: 0.5,
+              format: 'jpeg'
+            });
+          }
+        }
+
+        // Save to database
+        const response = await fetch(`/api/projects/${projectId}/preview`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            previewImage: screenshotDataUrl,
+            sandboxBundle: sandboxBundle,
+          }),
+        });
+
+        if (response.ok) {
+          console.log('✅ Preview screenshot saved successfully');
+        } else {
+          console.error('Failed to save preview screenshot:', await response.text());
+        }
+      } catch (error) {
+        console.error('Error capturing/saving preview:', error);
+      }
+    };
+
+    capturePreview();
+  }, [sandboxBundle, projectId, user?.id, isSandboxPreview]);
 
   // Extract sandbox bundle from tool results
   const prevBundleRef = useRef<string | null>(null);
@@ -1091,11 +1364,31 @@ export default function ProjectPage() {
           if (output?.source_files && Object.keys(output.source_files).length > 0) {
             console.log('[Bundle Extraction] Found source_files in tool output!');
 
-            // Normalize all file paths to have leading slashes
+            // Helper function to fix common syntax errors in generated code
+            const fixSyntaxIssues = (code: string): string => {
+              // Simple approach: Convert all single-quoted strings to template literals
+              // This avoids apostrophe issues entirely
+              // Match patterns like: text: 'content with apostrophe's'
+
+              // Replace single-quoted strings with template literals (backticks)
+              // But only for property values, not for keys
+              let fixed = code.replace(/:\s*'([^']*?)'/gs, (match, content) => {
+                // If the content doesn't contain newlines or other special chars, use template literal
+                // Template literals handle apostrophes naturally
+                return `: \`${content}\``;
+              });
+
+              return fixed;
+            };
+
+            // Normalize all file paths to have leading slashes and fix syntax issues
             const normalizedFiles: Record<string, string> = {};
             Object.entries(output.source_files).forEach(([path, content]) => {
               const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-              normalizedFiles[normalizedPath] = content as string;
+              const contentStr = content as string;
+              // Fix syntax issues in the code
+              const fixedContent = fixSyntaxIssues(contentStr);
+              normalizedFiles[normalizedPath] = fixedContent;
             });
 
             // Auto-detect entry file if not specified
@@ -1147,6 +1440,37 @@ export default function ProjectPage() {
 
               console.log('[Bundle Extraction] New bundle detected! Updating sandbox...');
 
+              // Extract and save questions from the generated survey
+              const extractAndSaveQuestions = async () => {
+                if (!projectId || !user?.id) return;
+
+                try {
+                  const questions = extractQuestionsFromSourceFiles(normalizedFiles);
+
+                  if (questions.length > 0) {
+                    console.log('[Questions] Extracted', questions.length, 'questions from survey');
+
+                    // Save questions to database
+                    const response = await fetch(`/api/projects/${projectId}/questions`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        userId: user.id,
+                        questions,
+                      }),
+                    });
+
+                    if (response.ok) {
+                      console.log('[Questions] Successfully saved questions to database');
+                    } else {
+                      console.error('[Questions] Failed to save questions:', await response.text());
+                    }
+                  }
+                } catch (error) {
+                  console.error('[Questions] Error extracting/saving questions:', error);
+                }
+              };
+
               // Batch all state updates together to prevent cascading re-renders
               const versionId = `v${Date.now()}`;
               startTransition(() => {
@@ -1163,6 +1487,9 @@ export default function ProjectPage() {
                 });
                 setCurrentVersionId(versionId);
               });
+
+              // Extract and save questions asynchronously
+              extractAndSaveQuestions();
             } else {
               console.log('[Bundle Extraction] Bundle unchanged, skipping update');
             }
@@ -1193,37 +1520,6 @@ export default function ProjectPage() {
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   const [activeTopButton, setActiveTopButton] = useState<'upgrade' | 'publish' | null>(null);
   const [isCgihadiDropdownOpen, setIsCgihadiDropdownOpen] = useState(false);
-  const [sandboxBundle, setSandboxBundle] = useState<SandboxBundle | null>(null);
-  const [sandboxError, setSandboxError] = useState<string | null>(null);
-  const [rendererKey, setRendererKey] = useState(0);
-  const [bundleVersions, setBundleVersions] = useState<BundleVersion[]>([]);
-  const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
-  const sandboxConfig = useMemo(() => {
-    return deriveSandboxConfig(sandboxBundle);
-  }, [sandboxBundle]);
-
-  const sandboxProviderProps = useMemo<SandboxProviderProps>(() => ({
-    template: "react-ts",
-    theme: "dark",
-    files: sandboxConfig.files,
-    customSetup: {
-      entry: "/index.tsx",
-      main: "/index.tsx",
-      dependencies: sandboxConfig.dependencies,
-      environment: "create-react-app",
-    },
-    options: {
-      activeFile: sandboxConfig.activeFile,
-      autorun: true,
-      recompileMode: "immediate",
-      recompileDelay: 300,
-      externalResources: [
-        "https://cdn.tailwindcss.com?plugins=forms,typography",
-        "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
-      ],
-    },
-  }), [sandboxConfig]);
-  const sandboxAvailable = Boolean(sandboxBundle);
 
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -1391,7 +1687,10 @@ export default function ProjectPage() {
       fetch('/api/generate-title', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: message }),
+        body: JSON.stringify({
+          prompt: message,
+          model: selectedModelRef.current // Pass the selected model
+        }),
       })
         .then(async (response) => {
           if (response.ok && response.body) {
@@ -1408,7 +1707,26 @@ export default function ProjectPage() {
             }
 
             if (streamedTitle.trim()) {
-              setAutoGeneratedTitle(streamedTitle.trim());
+              const generatedTitle = streamedTitle.trim();
+              setAutoGeneratedTitle(generatedTitle);
+
+              // Save title to database
+              if (projectId && user?.id) {
+                fetch(`/api/projects/${projectId}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    user_id: user.id,
+                    title: generatedTitle,
+                  }),
+                })
+                  .then((res) => {
+                    if (res.ok) {
+                      console.log('✅ Title saved to database:', generatedTitle);
+                    }
+                  })
+                  .catch((err) => console.error('Failed to save title:', err));
+              }
             }
           }
         })
@@ -1417,7 +1735,20 @@ export default function ProjectPage() {
           // Fallback to simple title generation
           const words = message.trim().split(/\s+/);
           const titleWords = words.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-          setAutoGeneratedTitle(titleWords.join(' '));
+          const fallbackTitle = titleWords.join(' ');
+          setAutoGeneratedTitle(fallbackTitle);
+
+          // Save fallback title to database
+          if (projectId && user?.id) {
+            fetch(`/api/projects/${projectId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                user_id: user.id,
+                title: fallbackTitle,
+              }),
+            }).catch((err) => console.error('Failed to save title:', err));
+          }
         })
         .finally(() => {
           setIsTitleGenerating(false);
@@ -1435,13 +1766,15 @@ export default function ProjectPage() {
       const sendOptions = {
         body: {
           model: currentModel,
-          images: images // Send images in body, not in message content
+          images: images, // Send images in body, not in message content
+          projectId: id,
+          userId: user?.id
         }
       };
 
       sendMessage({ text: message }, sendOptions);
     } else {
-      const sendOptions = { body: { model: currentModel } };
+      const sendOptions = { body: { model: currentModel, projectId: id, userId: user?.id } };
       sendMessage({ text: message }, sendOptions);
     }
   }, [status, autoGeneratedTitle]); // sendMessage and selectedModel intentionally excluded - using refs/direct access
@@ -1842,7 +2175,7 @@ export default function ProjectPage() {
                 transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
                 style={{
                   position: 'absolute',
-                  left: '12px',
+                  left: '16px',
                   top: '60px',
                   zIndex: 1200,
                   border: 'none',

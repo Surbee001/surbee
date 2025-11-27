@@ -3,8 +3,8 @@ import { User } from "lucide-react";
 import { Project } from "@/types";
 
 export function ProjectCard({ project }: { project: Project }) {
-  // Mock response count - in real implementation, this would come from project data
-  const responseCount = 154;
+  // Use real response count from project data
+  const responseCount = project.response_count ?? 0;
 
   return (
     <div
@@ -33,7 +33,7 @@ export function ProjectCard({ project }: { project: Project }) {
             alt="User avatar"
           />
           <div className="text-sm flex flex-col justify-center h-[35px]">
-            <p className="font-medium truncate max-w-[120px]" style={{ color: 'var(--surbee-fg-primary)' }} title={project.space_id}>{project.space_id}</p>
+            <p className="font-medium truncate max-w-[120px]" style={{ color: 'var(--surbee-fg-primary)' }} title={project.title}>{project.title || project.space_id || 'Untitled Project'}</p>
             <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--surbee-fg-secondary)' }}>
               <User className="w-3 h-3" />
               <span>{responseCount}</span>
@@ -50,12 +50,25 @@ export function ProjectCard({ project }: { project: Project }) {
         </div>
       </div>
       <div
-        className="w-full rounded-[8px] bg-cover bg-center aspect-[210/119] mt-auto"
+        className="w-full rounded-[8px] bg-cover bg-center aspect-[210/119] mt-auto relative overflow-hidden"
         role="img"
         style={{
-          backgroundImage: 'url("https://endlesstools.io/embeds/4.png")',
+          backgroundImage: project.preview_image_url
+            ? `url("${project.preview_image_url}")`
+            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          backgroundColor: project.preview_image_url ? 'transparent' : '#f5f5f5'
         }}
-      />
+      >
+        {!project.preview_image_url && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-xs font-medium opacity-50" style={{ color: 'var(--surbee-fg-primary)' }}>
+                No preview yet
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

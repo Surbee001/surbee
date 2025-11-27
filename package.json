@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "supabase": "./supabase-cli",
+    "db:migration:new": "./supabase-cli migration new",
+    "db:push": "./supabase-cli db push",
+    "db:reset": "./supabase-cli db reset"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.40",
@@ -118,6 +122,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.4.20",
+    "eslint": "^9.39.1",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",

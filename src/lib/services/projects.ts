@@ -83,8 +83,8 @@ export class ProjectsService {
     updates: Partial<Pick<Project, 'title' | 'description' | 'status'>>
   ): Promise<{ data: Project | null; error: Error | null }> {
     try {
-      // Use admin client to bypass RLS for server-side operations
-      const { data: project, error } = await supabaseAdmin
+      // First try to update
+      const { data: existingProject, error: updateError } = await supabaseAdmin
         .from('projects')
         .update({
           ...updates,
@@ -95,14 +95,55 @@ export class ProjectsService {
         .select()
         .single();
 
-      if (error) {
-        if (error.code === 'PGRST116') {
-          return { data: null, error: null };
-        }
-        return { data: null, error: error as any };
+      // If project exists and was updated, return it
+      if (existingProject) {
+        return { data: existingProject as Project, error: null };
       }
 
-      return { data: project as Project, error: null };
+      // If no rows found (PGRST116), create the project with the updates
+      if (updateError?.code === 'PGRST116' || !existingProject) {
+        console.log('Project does not exist, creating with updates:', projectId);
+        const { data: newProject, error: createError } = await supabaseAdmin
+          .from('projects')
+          .insert({
+            id: projectId,
+            user_id: userId,
+            title: updates.title || 'Untitled Project',
+            description: updates.description || null,
+            status: updates.status || 'draft',
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          // Handle duplicate key (project was created between our check and insert)
+          if (createError.code === '23505') {
+            // Retry the update
+            const { data: retryProject, error: retryError } = await supabaseAdmin
+              .from('projects')
+              .update({
+                ...updates,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', projectId)
+              .eq('user_id', userId)
+              .select()
+              .single();
+
+            if (retryError) return { data: null, error: retryError as any };
+            return { data: retryProject as Project, error: null };
+          }
+          return { data: null, error: createError as any };
+        }
+
+        return { data: newProject as Project, error: null };
+      }
+
+      if (updateError) {
+        return { data: null, error: updateError as any };
+      }
+
+      return { data: existingProject as Project, error: null };
     } catch (error) {
       return { data: null, error: error as Error };
     }
@@ -303,21 +344,45 @@ export class ProjectsService {
 
   static async getPublishedProject(publishedUrl: string): Promise<{ data: Project | null; error: Error | null }> {
     try {
-      const { data: project, error } = await supabase
+      // Use admin client to bypass RLS - published surveys should be publicly accessible
+      // First try by published_url
+      const { data: project, error } = await supabaseAdmin
         .from('projects')
         .select('*')
         .eq('published_url', publishedUrl)
         .eq('status', 'published')
         .single();
 
-      if (error) {
-        if (error.code === 'PGRST116') {
+      if (project) {
+        return { data: project as Project, error: null };
+      }
+
+      // If not found by published_url, try by project ID
+      if (error?.code === 'PGRST116' || !project) {
+        const { data: projectById, error: idError } = await supabaseAdmin
+          .from('projects')
+          .select('*')
+          .eq('id', publishedUrl)
+          .eq('status', 'published')
+          .single();
+
+        if (projectById) {
+          return { data: projectById as Project, error: null };
+        }
+
+        if (idError?.code === 'PGRST116') {
           return { data: null, error: null };
         }
+        if (idError) {
+          return { data: null, error: idError as any };
+        }
+      }
+
+      if (error && error.code !== 'PGRST116') {
         return { data: null, error: error as any };
       }
 
-      return { data: project as Project, error: null };
+      return { data: null, error: null };
     } catch (error) {
       return { data: null, error: error as Error };
     }

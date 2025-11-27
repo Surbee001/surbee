@@ -17,9 +17,14 @@ export async function POST(req: NextRequest) {
     let messages: ChatMessage[];
     const selectedModel = body.model || 'gpt-5'; // Default to gpt-5
 
+    // Extract project context
+    const projectId = body.projectId;
+    const userId = body.userId;
+
     // CRITICAL DEBUG: Log exactly what model we're using
     console.log('🎯 SELECTED MODEL:', selectedModel);
     console.log('🎯 IS CLAUDE-HAIKU?', selectedModel === 'claude-haiku');
+    console.log('🎯 PROJECT CONTEXT:', { projectId, userId });
 
     if (body.messages) {
       // New format: direct messages array from useChat
@@ -110,7 +115,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Use the streaming workflow - it returns a streamText result
-    const result = streamWorkflowV3({ messages, model: selectedModel });
+    const result = streamWorkflowV3({
+      messages,
+      model: selectedModel,
+      projectId,
+      userId
+    });
 
     // Return the UI message stream response for useChat
     return result.toUIMessageStreamResponse();

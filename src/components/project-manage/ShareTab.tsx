@@ -6,9 +6,10 @@ import { api } from '@/lib/trpc/react';
 
 interface ShareTabProps {
   projectId: string;
+  publishedUrl?: string | null;
 }
 
-export const ShareTab: React.FC<ShareTabProps> = ({ projectId }) => {
+export const ShareTab: React.FC<ShareTabProps> = ({ projectId, publishedUrl }) => {
   const [copied, setCopied] = useState<'link' | 'embed' | null>(null);
   const [customSlug, setCustomSlug] = useState('');
   const [isEditingSlug, setIsEditingSlug] = useState(false);
@@ -16,10 +17,17 @@ export const ShareTab: React.FC<ShareTabProps> = ({ projectId }) => {
   const { data: shareSettings, isLoading } = api.project.getShareSettings.useQuery({ projectId });
   const updateSettings = api.project.updateShareSettings.useMutation();
 
-  const baseUrl = 'https://surbee.com/s/';
+  // Use window.location.origin for local dev, surbee.com for production
+  const baseUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? `${window.location.origin}/s/`
+    : 'https://surbee.com/s/';
+
+  // Priority: customSlug > publishedUrl > projectId
   const surveyUrl = shareSettings?.customSlug
     ? `${baseUrl}${shareSettings.customSlug}`
-    : `${baseUrl}${projectId}`;
+    : publishedUrl
+      ? `${baseUrl}${publishedUrl}`
+      : `${baseUrl}${projectId}`;
   const embedCode = `<iframe src="${surveyUrl}" width="100%" height="600" frameborder="0"></iframe>`;
 
   useEffect(() => {
