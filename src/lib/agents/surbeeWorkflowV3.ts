@@ -1245,6 +1245,106 @@ const tools = {
 export type ChatTools = InferUITools<typeof tools>;
 export type ChatMessage = UIMessage<never, UIDataTypes, ChatTools>;
 
+/**
+ * Convert ChatMessages to model-compatible messages with proper image handling
+ * This is necessary because convertToModelMessages doesn't handle our image format
+ */
+function convertMessagesWithImages(messages: ChatMessage[]): any[] {
+  console.log('🔄 Converting messages with custom image handler...');
+
+  return messages.map((msg, idx) => {
+    // Check if this message has image parts
+    const imageParts = msg.parts?.filter((p: any) => p.type === 'image') || [];
+    const textParts = msg.parts?.filter((p: any) => p.type === 'text') || [];
+    const hasImages = imageParts.length > 0;
+
+    if (hasImages) {
+      console.log(`📷 Message ${idx} has ${imageParts.length} images`);
+    }
+
+    if (msg.role === 'user' && hasImages) {
+      // Build multi-part content for user messages with images
+      const content: any[] = [];
+
+      // Add text parts
+      textParts.forEach((p: any) => {
+        content.push({ type: 'text', text: p.text || '' });
+      });
+
+      // Add image parts - convert to proper format
+      imageParts.forEach((p: any) => {
+        if (p.image) {
+          // Check if it's a base64 data URL
+          if (typeof p.image === 'string' && p.image.startsWith('data:')) {
+            console.log(`📷 Adding base64 image (length: ${p.image.length}, prefix: ${p.image.substring(0, 30)}...)`);
+            content.push({
+              type: 'image',
+              image: p.image // Pass the full data URL
+            });
+          } else if (typeof p.image === 'string') {
+            console.log(`📷 Adding URL image: ${p.image.substring(0, 50)}...`);
+            // Assume it's a URL
+            content.push({
+              type: 'image',
+              image: new URL(p.image)
+            });
+          }
+        }
+      });
+
+      console.log(`✅ Built user message with ${content.length} parts (${content.filter(c => c.type === 'image').length} images)`);
+
+      return {
+        role: 'user',
+        content
+      };
+    }
+
+    // For non-image messages, use convertToModelMessages format
+    // Extract text from parts
+    const textContent = textParts.map((p: any) => p.text || '').join('\n') || '';
+
+    if (msg.role === 'user') {
+      return {
+        role: 'user',
+        content: textContent
+      };
+    }
+
+    if (msg.role === 'assistant') {
+      // Handle assistant messages - may have tool calls
+      const toolParts = msg.parts?.filter((p: any) => p.type === 'tool-invocation') || [];
+
+      if (toolParts.length > 0) {
+        // Return assistant message with tool calls
+        return {
+          role: 'assistant',
+          content: textContent,
+          toolCalls: toolParts.map((p: any) => ({
+            id: p.toolInvocationId || p.toolCallId,
+            type: 'function',
+            function: {
+              name: p.toolName,
+              arguments: JSON.stringify(p.args || {})
+            }
+          }))
+        };
+      }
+
+      return {
+        role: 'assistant',
+        content: textContent
+      };
+    }
+
+    // Fallback
+    return {
+      role: msg.role,
+      content: textContent
+    };
+  });
+}
+
 // ============================================================================
 // New Streaming Workflow (useChat pattern)
 // ============================================================================
@@ -1876,7 +1976,8 @@ Project name for this session: ${projectName} (always use this project name when
       return false;
     },
     system: systemPrompt,
-    messages: convertToModelMessages(messages),
+    // Use custom converter that handles images properly
+    messages: totalImages > 0 ? convertMessagesWithImages(messages) : convertToModelMessages(messages),
     tools: {
       ...tools,
       save_survey_questions: saveSurveyQuestionsTool

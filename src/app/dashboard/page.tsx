@@ -280,11 +280,17 @@ function DashboardContent() {
     // DEBUG: Log what we're saving
     console.log('📝 SAVING TO SESSION STORAGE:');
     console.log('   - selectedModel:', selectedModel);
-    console.log('   - typeof selectedModel:', typeof selectedModel);
+    console.log('   - images:', images?.length || 0, 'images');
 
     try {
       sessionStorage.setItem('surbee_initial_prompt', message.trim());
       sessionStorage.setItem('surbee_selected_model', selectedModel);
+
+      // Save images if any were attached
+      if (images && images.length > 0) {
+        sessionStorage.setItem('surbee_initial_images', JSON.stringify(images));
+        console.log('✅ Saved', images.length, 'images to sessionStorage');
+      }
 
       // DEBUG: Verify what was saved
       const savedModel = sessionStorage.getItem('surbee_selected_model');
