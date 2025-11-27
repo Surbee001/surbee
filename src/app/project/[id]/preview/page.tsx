@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react';
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PreviewPageProps {
   params: {
