@@ -54,6 +54,8 @@ import {
   surbeFetchWebsite,
   imagegenGenerateImage,
   imagegenEditImage,
+  surbeSaveChatImage,
+  chatUploadedImages,
   sandboxInstances,
   projectFiles,
 } from './lovableTools';
@@ -1217,6 +1219,7 @@ const tools = {
   surbe_delete: surbeDelete,
   surbe_rename: surbeRename,
   surbe_copy: surbeCopy,
+  surbe_save_chat_image: surbeSaveChatImage,
 
   // Search & Analysis
   surbe_search_files: surbeSearchFiles,
@@ -1410,6 +1413,45 @@ export function streamWorkflowV3({ messages, model = 'gpt-5', projectId, userId 
 
   // Generate unique project name
   const projectName = `survey-${Date.now()}`;
+
+  // Store uploaded images from messages in the shared chatUploadedImages map
+  // This makes them accessible to the surbe_save_chat_image tool
+  if (totalImages > 0) {
+    const uploadedImages: { index: number; dataUrl: string; filename?: string; mediaType?: string }[] = [];
+    let imageIndex = 0;
+
+    messages.forEach((msg) => {
+      if (msg.parts) {
+        // Collect legacy image parts
+        msg.parts.filter((p: any) => p.type === 'image').forEach((p: any) => {
+          if (p.image && typeof p.image === 'string') {
+            uploadedImages.push({
+              index: imageIndex++,
+              dataUrl: p.image,
+              filename: `uploaded-image-${imageIndex}`,
+              mediaType: p.image.startsWith('data:') ? p.image.split(';')[0].replace('data:', '') : 'image/png'
+            });
+          }
+        });
+
+        // Collect new AI SDK file parts (images only)
+        msg.parts.filter((p: any) => p.type === 'file' && p.mediaType?.startsWith('image/')).forEach((p: any) => {
+          if (p.url && typeof p.url === 'string') {
+            uploadedImages.push({
+              index: imageIndex++,
+              dataUrl: p.url,
+              filename: p.filename || `uploaded-image-${imageIndex}`,
+              mediaType: p.mediaType || 'image/png'
+            });
+          }
+        });
+      }
+    });
+
+    // Store in shared map, keyed by project name
+    chatUploadedImages.set(projectName, uploadedImages);
+    console.log(`📷 Stored ${uploadedImages.length} uploaded images for project ${projectName}`);
+  }
 
   // Get the appropriate model based on selection
   const selectedModel = getModelConfig(model);
@@ -1783,7 +1825,12 @@ You have powerful tools at your disposal. ALWAYS use the right tool for the job:
   - Examples: framer-motion, react-hook-form, zod, lucide-react, @radix-ui/*
   - ALWAYS install dependencies immediately when you plan to use them.
 - \`surbe_remove_dependency\`: Remove npm packages.
-- \`surbe_download_to_repo\`: Download external files/assets to the project.
+- \`surbe_download_to_repo\`: Download external files/assets from URLs to the project.
+- \`surbe_save_chat_image\`: **IMPORTANT** - Save user-uploaded images from chat to the project.
+  - When a user uploads an image and asks you to use it (e.g., "use this as the header"), call this tool.
+  - Pass image_index: 0 for the most recent upload, target_path: "src/assets/filename.png"
+  - After saving, import in code: \`import myImage from "@/assets/filename.png"\`
+  - Do NOT recreate user images with imagegen - always use this tool to preserve their exact image.
 
 **Project Management:**
 - \`surb_init_sandbox\`: Initialize a new project sandbox. Call ONCE at the start of new projects.
@@ -2416,6 +2463,7 @@ CRITICAL: Always USE the tools to create/modify files. Don't just describe what 
       surbe_delete: surbeDelete,
       surbe_rename: surbeRename,
       surbe_copy: surbeCopy,
+      surbe_save_chat_image: surbeSaveChatImage,
 
       // Search & Analysis
       surbe_search_files: surbeSearchFiles,

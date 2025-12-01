@@ -6,15 +6,22 @@ import { Settings, Shield, CreditCard, HelpCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SkeletonText, SkeletonCard, SkeletonForm } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export default function AccountSettingsPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [showFade, setShowFade] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Reset scroll position and fade when component mounts
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+      setShowFade(false);
+    }
+
     const handleScroll = () => {
       if (scrollRef.current) {
         setShowFade(scrollRef.current.scrollTop > 0);
@@ -137,14 +144,14 @@ export default function AccountSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden">
 
       {/* Main Content Area */}
-      <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12">
+      <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12 overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full max-w-6xl mx-auto">
-          {/* Settings Navigation */}
-          <div className="lg:col-span-1">
-            <div className="space-y-4">
+          {/* Settings Navigation - Fixed */}
+          <div className="lg:col-span-1 flex flex-col">
+            <div className="space-y-4 flex-shrink-0">
               <h1 className="projects-title">
                 Settings
               </h1>
@@ -154,7 +161,7 @@ export default function AccountSettingsPage() {
                   { icon: Settings, label: 'General', active: false, href: '/dashboard/settings/general' },
                   { icon: HelpCircle, label: 'Account', active: true, href: '/dashboard/settings/account' },
                   { icon: Shield, label: 'Privacy & Security', active: false, href: '/dashboard/settings/privacy' },
-                  { icon: CreditCard, label: 'Billing & Plans', active: false, href: '/dashboard/settings/billing' },
+                  { icon: CreditCard, label: 'Billing', active: false, href: '/dashboard/settings/billing' },
                   { icon: Settings, label: 'Connectors', active: false, href: '/dashboard/settings/connectors' },
                 ].map((item) => {
                   const Icon = item.icon;
@@ -192,7 +199,7 @@ export default function AccountSettingsPage() {
           </div>
 
             {/* Account Content - Only this scrolls */}
-            <div className="lg:col-span-3 relative h-full flex flex-col min-h-0">
+            <div className="lg:col-span-3 relative flex flex-col min-h-0 overflow-hidden">
               {/* Fade overlay at top - only show when scrolling */}
               <div className={`absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[var(--surbee-bg-primary)] to-transparent z-10 pointer-events-none transition-opacity duration-300 ${
                 showFade ? 'opacity-100' : 'opacity-0'
@@ -219,21 +226,25 @@ export default function AccountSettingsPage() {
                         Log out of all devices
                       </span>
                       <button
-                        onClick={() => {
-                          // Logout logic here
-                          console.log('Logging out...');
+                        onClick={async () => {
+                          try {
+                            await signOut();
+                            router.push('/');
+                          } catch (error) {
+                            console.error('Logout error:', error);
+                            toast.error('Failed to log out. Please try again.');
+                          }
                         }}
-                        className="px-4 py-2 rounded-lg border text-[14px] font-medium transition-colors"
+                        className="px-6 py-2.5 rounded-lg font-medium text-[14px] transition-all"
                         style={{
-                          borderColor: 'var(--surbee-border-accent)',
-                          backgroundColor: 'transparent',
-                          color: 'var(--surbee-fg-primary)'
+                          backgroundColor: 'var(--surbee-fg-primary)',
+                          color: 'var(--surbee-bg-primary)'
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+                          e.currentTarget.style.opacity = '0.9';
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'transparent';
+                          e.currentTarget.style.opacity = '1';
                         }}
                       >
                         Log out
@@ -249,50 +260,38 @@ export default function AccountSettingsPage() {
                       </span>
                       <button
                         onClick={() => {
-                          if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-                            console.log('Deleting account...');
-                          }
+                          toast.warning('Are you sure you want to delete your account? This action cannot be undone. All your surveys, responses, and data will be permanently deleted.', {
+                            duration: 8000,
+                            action: {
+                              label: 'Yes, Delete Account',
+                              onClick: async () => {
+                                try {
+                                  // Delete account logic here
+                                  console.log('Deleting account...');
+                                  // TODO: Implement actual account deletion API call
+                                  toast.error('Account deletion initiated. This process may take a few moments.');
+                                } catch (error) {
+                                  console.error('Delete account error:', error);
+                                  toast.error('Failed to delete account. Please try again or contact support.');
+                                }
+                              }
+                            }
+                          });
                         }}
-                        className="text-[14px] underline"
-                        style={{ color: 'var(--surbee-fg-primary)' }}
+                        className="px-6 py-2.5 rounded-lg font-medium text-[14px] transition-all"
+                        style={{
+                          backgroundColor: 'var(--surbee-fg-primary)',
+                          color: 'var(--surbee-bg-primary)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.opacity = '0.9';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.opacity = '1';
+                        }}
                       >
-                        Contact support
+                        Delete account
                       </button>
-                    </div>
-
-                    <div className="h-px" style={{ backgroundColor: 'var(--surbee-border-primary)' }} />
-
-                    {/* Organization ID */}
-                    <div>
-                      <label className="text-[16px] mb-3 block" style={{ color: 'var(--surbee-fg-primary)' }}>
-                        Organization ID
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={user?.uid ? user.uid.substring(0, 36) : 'loading...'}
-                          readOnly
-                          className="flex-1 p-2.5 rounded-lg border text-[14px] font-mono"
-                          style={{
-                            backgroundColor: 'var(--surbee-bg-secondary)',
-                            borderColor: 'var(--surbee-border-accent)',
-                            color: 'var(--surbee-fg-primary)'
-                          }}
-                        />
-                        <button
-                          onClick={() => {
-                            const orgId = user?.uid ? user.uid.substring(0, 36) : '';
-                            navigator.clipboard.writeText(orgId);
-                          }}
-                          className="transition-opacity hover:opacity-70"
-                          style={{ color: 'var(--surbee-fg-primary)' }}
-                        >
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8 4V16C8 17.1046 8.89543 18 10 18H18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                            <rect x="10" y="6" width="10" height="12" rx="2" stroke="currentColor" strokeWidth="2"/>
-                          </svg>
-                        </button>
-                      </div>
                     </div>
                   </div>
                 </CardContent>

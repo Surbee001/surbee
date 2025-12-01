@@ -6,6 +6,7 @@ import { ThemeSelector } from '@/components/ui/theme-selector';
 import { Upload, Settings, User, Bell, Shield, CreditCard, HelpCircle, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,8 +18,10 @@ export default function GeneralSettingsPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [name, setName] = useState(user?.displayName || '');
+  const [surBeeCallName, setSurBeeCallName] = useState('');
   const [profilePicture, setProfilePicture] = useState(user?.photoURL || '');
   const [personalPreferences, setPersonalPreferences] = useState('');
+  const [tone, setTone] = useState('professional');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [workFunction, setWorkFunction] = useState('Select your work function');
   const [showFade, setShowFade] = useState(false);
@@ -50,19 +53,25 @@ export default function GeneralSettingsPage() {
     }
   };
 
-  const handleSave = () => {
-    // Save settings logic here
-    console.log('Saving settings:', { name, profilePicture, personalPreferences, notificationsEnabled });
+  const handleSave = async () => {
+    try {
+      // TODO: Implement actual save API call
+      console.log('Saving settings:', { name, surBeeCallName, profilePicture, personalPreferences, tone, notificationsEnabled, workFunction });
+      toast.success('Settings saved successfully!');
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast.error('Failed to save settings. Please try again.');
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Main Content Area */}
-      <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12">
+      <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12 overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full max-w-6xl mx-auto">
-          {/* Settings Navigation */}
-          <div className="lg:col-span-1">
-            <div className="space-y-4">
+          {/* Settings Navigation - Fixed */}
+          <div className="lg:col-span-1 flex flex-col">
+            <div className="space-y-4 flex-shrink-0">
               <h1 className="projects-title">
                 Settings
               </h1>
@@ -72,7 +81,7 @@ export default function GeneralSettingsPage() {
                   { icon: Settings, label: 'General', active: true, href: '/dashboard/settings/general' },
                   { icon: HelpCircle, label: 'Account', active: false, href: '/dashboard/settings/account' },
                   { icon: Shield, label: 'Privacy & Security', active: false, href: '/dashboard/settings/privacy' },
-                  { icon: CreditCard, label: 'Billing & Plans', active: false, href: '/dashboard/settings/billing' },
+                  { icon: CreditCard, label: 'Billing', active: false, href: '/dashboard/settings/billing' },
                   { icon: Settings, label: 'Connectors', active: false, href: '/dashboard/settings/connectors' },
                 ].map((item) => {
                   const Icon = item.icon;
@@ -110,7 +119,7 @@ export default function GeneralSettingsPage() {
           </div>
 
           {/* General Content - Only this scrolls */}
-          <div className="lg:col-span-3 relative h-full flex flex-col min-h-0">
+          <div className="lg:col-span-3 relative flex flex-col min-h-0 overflow-hidden">
       {/* Fade overlay at top - only show when scrolling */}
       <div className={`absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[var(--surbee-bg-primary)] to-transparent z-10 pointer-events-none transition-opacity duration-300 ${
         showFade ? 'opacity-100' : 'opacity-0'
@@ -182,8 +191,8 @@ export default function GeneralSettingsPage() {
                   </label>
                   <input
                     type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={surBeeCallName}
+                    onChange={(e) => setSurBeeCallName(e.target.value)}
                     placeholder="Hadi"
                     className="w-full p-3 rounded-lg border text-[15px] transition-all"
                     style={{
@@ -260,19 +269,71 @@ export default function GeneralSettingsPage() {
                 </div>
               </div>
 
+              {/* Tone Preference */}
+              <div>
+                <label className="text-[16px] font-medium mb-3 block" style={{ color: 'var(--surbee-fg-primary)' }}>
+                  What tone should Surbee use when talking to you?
+                </label>
+                <div className="flex gap-2 flex-wrap">
+                  {['professional', 'casual', 'friendly', 'formal', 'creative'].map((toneOption) => (
+                    <button
+                      key={toneOption}
+                      onClick={() => setTone(toneOption)}
+                      className="px-4 py-2 rounded-lg text-[14px] font-medium transition-all"
+                      style={{
+                        backgroundColor: tone === toneOption
+                          ? 'var(--surbee-fg-primary)'
+                          : 'var(--surbee-bg-secondary)',
+                        color: tone === toneOption
+                          ? 'var(--surbee-bg-primary)'
+                          : 'var(--surbee-fg-primary)',
+                        borderColor: tone === toneOption
+                          ? 'var(--surbee-fg-primary)'
+                          : 'var(--surbee-card-border)',
+                        borderWidth: '1px',
+                        borderStyle: 'solid'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (tone !== toneOption) {
+                          e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+                          e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (tone !== toneOption) {
+                          e.currentTarget.style.backgroundColor = 'var(--surbee-bg-secondary)';
+                          e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                        }
+                      }}
+                    >
+                      {toneOption.charAt(0).toUpperCase() + toneOption.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Personal Preferences */}
               <div>
                 <label className="text-[16px] font-medium mb-1 block" style={{ color: 'var(--surbee-fg-primary)' }}>
                   What personal preferences should Surbee consider in responses?
                 </label>
                 <p className="text-[13px] mb-3" style={{ color: 'var(--surbee-fg-muted)' }}>
-                  Your preferences will apply to all conversations, within Anthropic's guidelines.{' '}
-                  <a href="#" className="underline">Learn about preferences</a>
+                  Your preferences will apply to all conversations with Surbee.{' '}
+                  <a 
+                    href="#" 
+                    className="underline"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toast.info('Preferences help documentation coming soon');
+                    }}
+                  >
+                    Learn about preferences
+                  </a>
                 </p>
                 <textarea
                   value={personalPreferences}
                   onChange={(e) => setPersonalPreferences(e.target.value)}
-                  placeholder="e.g. I primarily code in Python (not a coding beginner)"
+                  placeholder="e.g. I prefer concise survey questions, focus on user research for SaaS products, and use data-driven insights"
                   rows={4}
                   className="w-full p-3 rounded-lg border text-[15px] resize-none transition-all"
                   style={{

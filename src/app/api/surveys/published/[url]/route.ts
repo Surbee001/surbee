@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ProjectsService } from '@/lib/services/projects';
-import { getDb } from '@/lib/mongodb';
 
 // Get a published survey by its public URL
 export async function GET(
@@ -16,18 +15,20 @@ export async function GET(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    if (!project || !project.survey_schema) {
+    // Check for sandbox_bundle (AI-generated survey) first, then survey_schema as fallback
+    if (!project || (!project.sandbox_bundle && !project.survey_schema)) {
       return NextResponse.json(
         { error: 'Survey not found' },
         { status: 404 }
       );
     }
 
-    // Return only the survey schema and basic project info (no sensitive data)
+    // Return the project data including sandbox_bundle for rendering
     return NextResponse.json({
       id: project.id,
       title: project.title,
       description: project.description,
+      sandbox_bundle: project.sandbox_bundle,
       survey_schema: project.survey_schema,
       published_at: project.published_at
     });

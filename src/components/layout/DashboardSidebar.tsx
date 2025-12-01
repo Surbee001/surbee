@@ -253,14 +253,6 @@ export default function DashboardSidebar() {
                   <span>Changelog</span>
                 </button>
 
-                {/* Blog */}
-                <button
-                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/blog'); }}
-                  className="user-menu-item"
-                >
-                  <span>Blog</span>
-                </button>
-
                 {/* Give Feedback */}
                 <button
                   onClick={() => { setIsUserMenuOpen(false); setIsFeedbackModalOpen(true); }}

@@ -9,6 +9,7 @@ import { Toaster } from 'sonner'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { RealtimeProvider } from '@/contexts/RealtimeContext'
+import { AnalyticsProvider } from '@/contexts/AnalyticsContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -59,14 +60,16 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <ErrorBoundary>
           <RealtimeProvider>
             <ThemeProvider>
-              <api.Provider client={trpcClient} queryClient={queryClient}>
-                <QueryClientProvider client={queryClient}>
-                  <ErrorBoundary>
-                    {children}
-                  </ErrorBoundary>
-                  <Toaster position="top-right" />
-                </QueryClientProvider>
-              </api.Provider>
+              <AnalyticsProvider>
+                <api.Provider client={trpcClient} queryClient={queryClient}>
+                  <QueryClientProvider client={queryClient}>
+                    <ErrorBoundary>
+                      {children}
+                    </ErrorBoundary>
+                    <Toaster position="top-right" />
+                  </QueryClientProvider>
+                </api.Provider>
+              </AnalyticsProvider>
             </ThemeProvider>
           </RealtimeProvider>
         </ErrorBoundary>

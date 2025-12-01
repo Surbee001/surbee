@@ -11,28 +11,26 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, redirectTo = '/login' }: AuthGuardProps) {
-  // Bypass all auth checks for demo mode
-  // const { user, loading } = useAuth();
-  // const router = useRouter();
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
-  // useEffect(() => {
-  //   if (!loading && !user) {
-  //     router.push(redirectTo);
-  //   }
-  // }, [user, loading, router, redirectTo]);
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push(redirectTo);
+    }
+  }, [user, loading, router, redirectTo]);
 
-  // if (loading) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center">
-  //       <LoadingSpinner size="lg" text="Authenticating..." />
-  //     </div>
-  //   );
-  // }
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>
+        <LoadingSpinner size="lg" text="Loading..." />
+      </div>
+    );
+  }
 
-  // Always render children for demo mode
-  // if (!user) {
-  //   return null;
-  // }
+  if (!user) {
+    return null;
+  }
 
   return <>{children}</>;
 }

@@ -19,6 +19,21 @@ import {
 } from "@/lib/community/data";
 import { CommunitySurveyCard } from "@/components/community/CommunitySurveyCard";
 
+// Type for marketplace surveys from API
+interface MarketplaceSurvey {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  responseCount: number;
+  createdAt: string;
+  publishedAt: string;
+  previewImage?: string;
+  publishedUrl?: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  estimatedTime: string;
+}
+
 const difficultyFilters: Array<{
   value: "all" | CommunitySurvey["difficulty"];
   label: string;
@@ -56,6 +71,30 @@ function CommunitySurveysContent() {
     searchParams.get("duration") ?? "all"
   );
 
+  // State for published surveys from API
+  const [publishedSurveys, setPublishedSurveys] = useState<MarketplaceSurvey[]>([]);
+  const [loadingPublished, setLoadingPublished] = useState(true);
+
+  // Fetch published surveys from API
+  useEffect(() => {
+    const fetchPublishedSurveys = async () => {
+      try {
+        setLoadingPublished(true);
+        const response = await fetch('/api/surveys/marketplace?limit=100');
+        if (response.ok) {
+          const data = await response.json();
+          setPublishedSurveys(data.surveys || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch published surveys:', error);
+      } finally {
+        setLoadingPublished(false);
+      }
+    };
+
+    fetchPublishedSurveys();
+  }, []);
+
   useEffect(() => {
     const nextCategory = searchParams.get("category") ?? "all";
     if (nextCategory !== activeCategory) {
@@ -74,7 +113,23 @@ function CommunitySurveysContent() {
       (category) => category.slug === activeCategory
     );
 
-    let results = communitySurveys.slice();
+    // Convert published surveys to CommunitySurvey format
+    const publishedAsCommunitySurveys: CommunitySurvey[] = publishedSurveys.map((survey) => ({
+      id: survey.id,
+      title: survey.title,
+      description: survey.description,
+      category: survey.category || 'General',
+      responseCount: survey.responseCount || 0,
+      createdAt: survey.createdAt,
+      previewImage: survey.previewImage,
+      difficulty: survey.difficulty || 'intermediate',
+      estimatedTime: survey.estimatedTime || '5-10 min',
+      tags: [],
+      author: 'Community',
+    }));
+
+    // Combine static surveys with published surveys (published first)
+    let results = [...publishedAsCommunitySurveys, ...communitySurveys];
 
     if (activeCategory !== "all" && activeCategoryMeta) {
       const keywords = activeCategoryMeta.keywords ?? [
@@ -124,7 +179,7 @@ function CommunitySurveysContent() {
     }
 
     return results;
-  }, [searchQuery, activeCategory, difficulty, timeFilter]);
+  }, [searchQuery, activeCategory, difficulty, timeFilter, publishedSurveys]);
 
   const handleCategoryChange = (nextCategory: string) => {
     setActiveCategory(nextCategory);

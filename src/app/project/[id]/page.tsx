@@ -381,7 +381,7 @@ function ProjectSandboxView({
 
             {/* Code Editor - Full width */}
             <SandpackCodeEditor
-              className="flex-1 min-w-0"
+              className="flex-1 min-w-0 h-full"
               showLineNumbers
               showInlineErrors
               wrapContent
@@ -396,7 +396,7 @@ function ProjectSandboxView({
 
             {/* Code Editor */}
             <SandpackCodeEditor
-              className="flex-1 min-w-0"
+              className="flex-1 min-w-0 h-full"
               showLineNumbers
               showInlineErrors
               wrapContent
@@ -3031,18 +3031,17 @@ export default function ProjectPage() {
           </div>
         </div>
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex relative">
-          {/* Restored rounded preview frame with border, like before */}
-          <div
-            className="flex-1 flex flex-col relative rounded-[0.625rem] border mt-0 mr-3 mb-3 ml-2 overflow-hidden"
-            style={{
-              backgroundColor: isDarkMode ? '#242424' : '#F8F8F8',
-              borderColor: isDarkMode ? 'var(--surbee-border-accent)' : 'rgba(0, 0, 0, 0.1)'
-            }}
-          >
-            {/* Show Sandbox View when code or console mode is active */}
-            {(sidebarView === 'code' || sidebarView === 'console') && sandboxAvailable ? (
+                  {/* Main Content Area */}
+                <div className="flex-1 flex relative">
+                  {/* Restored rounded preview frame with border, like before */}
+                  <div
+                    className="flex-1 flex flex-col relative rounded-[0.625rem] border mt-3 mr-3 mb-3 ml-2 overflow-hidden"
+                    style={{
+                      backgroundColor: isDarkMode ? '#242424' : '#F8F8F8',
+                      borderColor: isDarkMode ? 'var(--surbee-border-accent)' : 'rgba(0, 0, 0, 0.1)'
+                    }}
+                  >
+                    {/* Show Sandbox View when code or console mode is active */}            {(sidebarView === 'code' || sidebarView === 'console') && sandboxAvailable ? (
               <ProjectSandboxView
                 showConsole={sidebarView === 'console'}
                 viewMode={sidebarView === 'code' ? 'code' : 'console'}

@@ -1,58 +1,21 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ThemeSelector } from '@/components/ui/theme-selector';
-import { Settings, User, Bell, Shield, CreditCard, HelpCircle } from 'lucide-react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { SkeletonText, SkeletonCard, SkeletonForm } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
-  const [autoSave, setAutoSave] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-  const [analyticsTracking, setAnalyticsTracking] = useState(true);
-  const [exportFormat, setExportFormat] = useState('csv');
-  const [metadataSettings, setMetadataSettings] = useState({
-    timestamps: true,
-    ipAddresses: false,
-    userAgents: false,
-    responseTimes: false
-  });
-  const [showFade, setShowFade] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const { loading: authLoading } = useAuth();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (scrollRef.current) {
-        setShowFade(scrollRef.current.scrollTop > 0);
-      }
-    };
-
-    const scrollElement = scrollRef.current;
-    if (scrollElement) {
-      scrollElement.addEventListener('scroll', handleScroll);
-      return () => scrollElement.removeEventListener('scroll', handleScroll);
-    }
-  }, []);
-
-  // Only show loading on first visit, not on navigation
   useEffect(() => {
     if (!authLoading) {
-      const hasLoaded = sessionStorage.getItem('dashboard_loaded');
-      if (hasLoaded) {
-        setIsLoading(false);
-      } else {
-        const timer = setTimeout(() => {
-          setIsLoading(false);
-          sessionStorage.setItem('dashboard_loaded', 'true');
-        }, 800);
-        return () => clearTimeout(timer);
-      }
+      router.replace('/dashboard/settings/general');
     }
-  }, [authLoading]);
+  }, [authLoading, router]);
+
+  // Show nothing while redirecting
+  return null;
 
   if (authLoading || isLoading) {
     return (

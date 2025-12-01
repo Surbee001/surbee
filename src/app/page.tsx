@@ -9,101 +9,6 @@ export default function LandNewReact2() {
     // Initial html class manipulation
     !function(o: any,c: any){var n=c.documentElement,t=" w-mod-";n.className+=t+"js",("ontouchstart"in o||o.DocumentTouch&&c instanceof DocumentTouch)&&(n.className+=t+"touch")}(window,document);
 
-    // Inline script for hero lines
-    const initHeroLines = () => {
-      // Ambient pulse effect: randomly light up lines
-      const startAmbientPulse = () => {
-        const lines = document.querySelectorAll('.hero--line');
-        if (lines.length === 0) return;
-
-        setInterval(() => {
-          // Pick a random line
-          const randomIndex = Math.floor(Math.random() * lines.length);
-          const randomLine = lines[randomIndex] as HTMLElement;
-
-          if (randomLine) {
-            const originalColor = randomLine.style.backgroundColor;
-
-            // Pulse
-            randomLine.style.transition = 'background-color 0.4s ease-in-out';
-            randomLine.style.backgroundColor = '#FBD8C6'; // Light flash
-
-            setTimeout(() => {
-              randomLine.style.backgroundColor = 'var(--_colors---orange)'; // Brand orange peak
-            }, 400);
-
-            setTimeout(() => {
-              randomLine.style.transition = 'background-color 0.8s ease-out';
-              randomLine.style.backgroundColor = 'black';
-            }, 800);
-          }
-        }, 200); // New pulse every 200ms
-      };
-
-      startAmbientPulse();
-
-      document.querySelectorAll('.hero--line-wrapper, .line--wrapper-hero').forEach((wrapper: any) => {
-        const line = wrapper.querySelector('.hero--line');
-        if (!line) return;
-
-        let timeout: any;
-
-        wrapper.addEventListener('mouseenter', () => {
-          clearTimeout(timeout);
-          line.style.transition = 'none';
-          line.style.backgroundColor = 'var(--_colors---orange)';
-          
-          // Proximity effect - light up neighbors
-          const prev = wrapper.previousElementSibling;
-          const next = wrapper.nextElementSibling;
-          if (prev) {
-            const prevLine = prev.querySelector('.hero--line');
-            if (prevLine) {
-               prevLine.style.transition = 'background-color 0.3s ease';
-               prevLine.style.backgroundColor = '#FBD8C6'; 
-            }
-          }
-          if (next) {
-            const nextLine = next.querySelector('.hero--line');
-            if (nextLine) {
-               nextLine.style.transition = 'background-color 0.3s ease';
-               nextLine.style.backgroundColor = '#FBD8C6';
-            }
-          }
-        });
-
-        wrapper.addEventListener('mouseleave', () => {
-          clearTimeout(timeout);
-          void line.offsetWidth;
-          line.style.transition = 'background-color 1s ease';
-          line.style.backgroundColor = '#FBD8C6';
-          
-          // Neighbors fade out
-          const prev = wrapper.previousElementSibling;
-          const next = wrapper.nextElementSibling;
-           if (prev) {
-            const prevLine = prev.querySelector('.hero--line');
-            if (prevLine) {
-               prevLine.style.transition = 'background-color 0.5s ease';
-               prevLine.style.backgroundColor = 'black'; 
-            }
-          }
-          if (next) {
-            const nextLine = next.querySelector('.hero--line');
-            if (nextLine) {
-               nextLine.style.transition = 'background-color 0.5s ease';
-               nextLine.style.backgroundColor = 'black';
-            }
-          }
-
-          timeout = setTimeout(() => {
-            line.style.transition = 'none';
-            line.style.backgroundColor = 'black';
-          }, 1200);
-        });
-      });
-    };
-
     // Inline script for carousel logos
     const initCarousel = () => {
       let elements = document.querySelectorAll("a.dj-logo-linked");
@@ -120,18 +25,23 @@ export default function LandNewReact2() {
     };
 
     // Run initializations
-    // Use setTimeout to ensure DOM is ready if scripts load async
     const timer = setTimeout(() => {
-        initHeroLines();
         initCarousel();
-        
-        // Force background color as requested
         document.body.style.backgroundColor = '#EEE9E5';
-    }, 1000);
+    }, 500);
+
+    // Fallback: If main-wrapper is still invisible after 3 seconds, force show it
+    const fallbackTimer = setTimeout(() => {
+      const mainWrapper = document.querySelector('.main-wrapper') as HTMLElement;
+      if (mainWrapper && getComputedStyle(mainWrapper).opacity === '0') {
+        mainWrapper.style.opacity = '1';
+        mainWrapper.style.transition = 'opacity 0.3s ease';
+      }
+    }, 3000);
 
     return () => {
       clearTimeout(timer);
-      // Clean up if needed, though usually body style changes persist until overwritten
+      clearTimeout(fallbackTimer);
     };
   }, []);
 
@@ -160,12 +70,6 @@ export default function LandNewReact2() {
         }
         .black--bg h1, .black--bg h2, .black--bg h3, .black--bg p, .black--bg div {
           color: inherit;
-        }
-
-        /* Hero line styles */
-        .hero--line {
-          background-color: black !important;
-          transition: background-color 0.4s ease-in-out !important;
         }
 
         /* Kalice Regular Font */
@@ -513,9 +417,10 @@ export default function LandNewReact2() {
           <style dangerouslySetInnerHTML={{__html: `
             .heading--96 {
               overflow: visible !important;
-              padding-bottom: 48px;
+              padding-bottom: 32px;
               line-height: 1.1;
             }
+
           `}} />
           <div className="container--872 is--16margin-bottom">
             <h1 animation="loading-split" className="heading--96">Smart surveys, instantly</h1>
@@ -523,98 +428,16 @@ export default function LandNewReact2() {
           <div className="container--532 is--56padding-bottom">
             <p animation="loading" className="paragraph--16">Surbee understands your specific domain to generate accurate surveys from natural language. With our built-in "Cipher" accuracy detector, you get the most reliable results free from fraud and spam.</p>
           </div>
-          <div className="container--1376 is--hero is--1">
-            {/* Lines */}
-             <div hidetablet="yes" data-wf--home-line-animation--variant="base" className="hero--line-wrapper">
-              <div className="hero--line is--7 hero--line-animation"></div>
-            </div>
-            {/* ... more lines from source ... */}
-            <div hidetablet="yes" data-wf--home-line-animation--variant="6" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-db7fd1c6-ec19-5033-1363-94b7730a180c hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="5" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-2bb13c25-31f5-1677-8862-4b908dea27db hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="4" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-ffe72b27-22fa-8a17-e00b-c62adff00661 hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="3" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-8cbed752-6364-8924-fad1-f0b1877eb55f hero--line-animation"></div></div>
-            <div className="line--wrapper-hero is--desktop-only"><div className="hero--line is--2 is--orional"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="1" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-aad54e9e-f0d1-acce-71e0-f8121f23ec05 hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="2" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-94fb2906-afc2-27ec-dc36-6b400658de0a hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="3" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-8cbed752-6364-8924-fad1-f0b1877eb55f hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="4" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-ffe72b27-22fa-8a17-e00b-c62adff00661 hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="5" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-2bb13c25-31f5-1677-8862-4b908dea27db hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="6" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-db7fd1c6-ec19-5033-1363-94b7730a180c hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="7" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-43772568-2209-83f4-7167-76179a482446 hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="7" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-43772568-2209-83f4-7167-76179a482446 hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="7" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-43772568-2209-83f4-7167-76179a482446 hero--line-animation"></div></div>
-            {/* ... Many lines ... */}
-             <div hidetablet="no" data-wf--home-line-animation--variant="6" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-db7fd1c6-ec19-5033-1363-94b7730a180c hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="5" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-2bb13c25-31f5-1677-8862-4b908dea27db hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="4" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-ffe72b27-22fa-8a17-e00b-c62adff00661 hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="3" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-8cbed752-6364-8924-fad1-f0b1877eb55f hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="2" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-94fb2906-afc2-27ec-dc36-6b400658de0a hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="1" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-aad54e9e-f0d1-acce-71e0-f8121f23ec05 hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="2" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-94fb2906-afc2-27ec-dc36-6b400658de0a hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="3" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-8cbed752-6364-8924-fad1-f0b1877eb55f hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="4" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-ffe72b27-22fa-8a17-e00b-c62adff00661 hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="5" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-2bb13c25-31f5-1677-8862-4b908dea27db hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="6" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-db7fd1c6-ec19-5033-1363-94b7730a180c hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="7" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-43772568-2209-83f4-7167-76179a482446 hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="7" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-43772568-2209-83f4-7167-76179a482446 hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="6" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-db7fd1c6-ec19-5033-1363-94b7730a180c hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="5" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-2bb13c25-31f5-1677-8862-4b908dea27db hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="4" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-ffe72b27-22fa-8a17-e00b-c62adff00661 hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="3" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-8cbed752-6364-8924-fad1-f0b1877eb55f hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="2" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-94fb2906-afc2-27ec-dc36-6b400658de0a hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="1" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-aad54e9e-f0d1-acce-71e0-f8121f23ec05 hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="2" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-94fb2906-afc2-27ec-dc36-6b400658de0a hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="3" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-8cbed752-6364-8924-fad1-f0b1877eb55f hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="4" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-ffe72b27-22fa-8a17-e00b-c62adff00661 hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="5" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-2bb13c25-31f5-1677-8862-4b908dea27db hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="6" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-db7fd1c6-ec19-5033-1363-94b7730a180c hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="7" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-43772568-2209-83f4-7167-76179a482446 hero--line-animation"></div></div>
+          <div animation="loading" style={{ display: 'flex', justifyContent: 'center', marginTop: '8px' }}>
+            <Link href="/login" className="btn--book is--white w-inline-block" style={{ padding: '16rem 32rem', fontSize: '14rem', minHeight: '52rem' }}>
+              <div className="hover--bg is--purple"></div>
+              <div className="relative">Get Started</div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 21 21" fill="none" className="icon--20" style={{ width: '18rem', height: '18rem' }}>
+                <path d="M0.564451 0.635007C1.00098 0.170908 1.85566 -0.0818191 2.48518 0.0238669C4.314 0.32714 4.02911 2.71656 6.38637 2.98307C7.72352 3.13471 8.40359 2.19732 9.75453 2.74873C10.5816 3.08876 11.0687 3.9756 11.0182 4.85325C10.9952 5.22086 10.816 5.65279 10.8206 6.03418C10.8436 8.13411 13.0676 9.61372 14.878 8.21682C16.3576 7.07725 15.6729 5.37709 16.9596 4.52241C18.9308 3.21742 21.2789 5.6482 19.9417 7.49081C18.8205 9.03474 16.9504 7.80786 15.5397 9.23233C14.6896 10.0916 14.9194 10.9141 14.4966 11.7918C14.1841 12.4351 13.4857 12.8992 12.7643 12.9543C11.3904 13.06 10.9676 11.9296 9.80967 11.5712C7.11238 10.7395 5.38465 13.7079 7.22726 15.8216C7.75109 16.419 8.49549 16.6166 8.61037 17.5677C8.97337 20.6878 4.97109 20.9543 4.43807 18.4775C4.07506 16.7912 5.92227 16.2535 5.16409 14.0295C4.78729 12.9221 3.78098 12.6924 3.45014 11.8929C3.19741 11.2817 3.19281 10.3535 3.56042 9.78373C4.09344 8.95203 4.75053 9.02095 5.50871 8.59821C7.13076 7.69299 7.63162 5.58846 6.0785 4.35699C5.37086 3.79639 4.62187 3.71368 3.73503 3.82856C2.84819 3.94344 2.47599 4.50403 1.37318 4.11805C-0.0604741 3.64016 -0.441862 1.70565 0.564451 0.635007ZM8.69767 6.98076C5.95443 7.38972 7.17671 11.7136 9.77751 10.4638C11.6063 9.58615 10.6827 6.68208 8.69767 6.98076Z" fill="currentColor"></path>
+              </svg>
+            </Link>
           </div>
-          
-          <div className="container--1376 is--hero is--end">
-             {/* More lines in the second container */}
-             <div hidetablet="no" data-wf--home-line-animation--variant="2" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-94fb2906-afc2-27ec-dc36-6b400658de0a hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="1" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-aad54e9e-f0d1-acce-71e0-f8121f23ec05 hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="2" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-94fb2906-afc2-27ec-dc36-6b400658de0a hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="3" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-8cbed752-6364-8924-fad1-f0b1877eb55f hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="4" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-ffe72b27-22fa-8a17-e00b-c62adff00661 hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="5" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-2bb13c25-31f5-1677-8862-4b908dea27db hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="6" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-db7fd1c6-ec19-5033-1363-94b7730a180c hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="7" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-43772568-2209-83f4-7167-76179a482446 hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="7" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-43772568-2209-83f4-7167-76179a482446 hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="6" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-db7fd1c6-ec19-5033-1363-94b7730a180c hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="5" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-2bb13c25-31f5-1677-8862-4b908dea27db hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="4" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-ffe72b27-22fa-8a17-e00b-c62adff00661 hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="3" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-8cbed752-6364-8924-fad1-f0b1877eb55f hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="2" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-94fb2906-afc2-27ec-dc36-6b400658de0a hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="1" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-aad54e9e-f0d1-acce-71e0-f8121f23ec05 hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="2" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-94fb2906-afc2-27ec-dc36-6b400658de0a hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="3" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-8cbed752-6364-8924-fad1-f0b1877eb55f hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="4" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-ffe72b27-22fa-8a17-e00b-c62adff00661 hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="5" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-2bb13c25-31f5-1677-8862-4b908dea27db hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="6" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-db7fd1c6-ec19-5033-1363-94b7730a180c hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="7" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-43772568-2209-83f4-7167-76179a482446 hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="8" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-a8ceaa45-e92c-2ce1-363d-669efc0f4cf1 hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="7" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-43772568-2209-83f4-7167-76179a482446 hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="6" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-db7fd1c6-ec19-5033-1363-94b7730a180c hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="5" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-2bb13c25-31f5-1677-8862-4b908dea27db hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="4" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-ffe72b27-22fa-8a17-e00b-c62adff00661 hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="3" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-8cbed752-6364-8924-fad1-f0b1877eb55f hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="2" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-94fb2906-afc2-27ec-dc36-6b400658de0a hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="1" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-aad54e9e-f0d1-acce-71e0-f8121f23ec05 hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="2" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-94fb2906-afc2-27ec-dc36-6b400658de0a hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="3" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-8cbed752-6364-8924-fad1-f0b1877eb55f hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="4" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-ffe72b27-22fa-8a17-e00b-c62adff00661 hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="5" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-2bb13c25-31f5-1677-8862-4b908dea27db hero--line-animation"></div></div>
-            <div className="line--wrapper-hero is--newone"><div className="hero--line is--6 is--rotate is--smallltablet"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="7" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-43772568-2209-83f4-7167-76179a482446 hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="8" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-a8ceaa45-e92c-2ce1-363d-669efc0f4cf1 hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="7" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-43772568-2209-83f4-7167-76179a482446 hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="6" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-db7fd1c6-ec19-5033-1363-94b7730a180c hero--line-animation"></div></div>
-            <div hidetablet="no" data-wf--home-line-animation--variant="5" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-2bb13c25-31f5-1677-8862-4b908dea27db hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="4" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-ffe72b27-22fa-8a17-e00b-c62adff00661 hero--line-animation"></div></div>
-            <div hidetablet="yes" data-wf--home-line-animation--variant="7" className="hero--line-wrapper"><div className="hero--line is--7 w-variant-43772568-2209-83f4-7167-76179a482446 hero--line-animation"></div></div>
-          </div>
+
         </section>
 
         <section className="section is--padding">
@@ -1194,19 +1017,22 @@ export default function LandNewReact2() {
         </div>
       </main>
 
-      {/* Scripts */}
+      {/* Scripts - Core libraries first with afterInteractive to ensure proper loading order */}
       <Script src="/landnew/d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=67bdd03200678df04ba07593" strategy="beforeInteractive" />
-      <Script src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/js/webflow.schunk.57d5559d2f0cd9f8.js" strategy="lazyOnload" />
-      <Script src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/js/webflow.schunk.b324484631ca48aa.js" strategy="lazyOnload" />
-      <Script src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/js/webflow.ae197c71.7d3d5a39186a7021.js" strategy="lazyOnload" />
-      <Script src="/landnew/cdn.jsdelivr.net/npm/split-type@0.3.4" strategy="lazyOnload" />
-      <Script src="/landnew/cdnjs.cloudflare.com/ajax/libs/gsap/3.12.3/gsap.min.js" strategy="lazyOnload" />
-      <Script src="/landnew/cdnjs.cloudflare.com/ajax/libs/gsap/3.12.3/ScrollTrigger.min.js" strategy="lazyOnload" />
-      <Script src="/landnew/cdnjs.cloudflare.com/ajax/libs/gsap/3.12.3/CustomEase.min.js" strategy="lazyOnload" />
-      <Script src="/landnew/cdn.jsdelivr.net/npm/gsap@3.12.7/dist/MotionPathPlugin.min.js" strategy="lazyOnload" />
-      <Script src="/landnew/cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" strategy="lazyOnload" />
-      <Script src="/landnew/cdnjs.cloudflare.com/ajax/libs/bodymovin/5.9.6/lottie.min.js" strategy="lazyOnload" />
-      
+      <Script src="/landnew/cdn.jsdelivr.net/npm/split-type@0.3.4" strategy="afterInteractive" />
+      <Script src="/landnew/cdnjs.cloudflare.com/ajax/libs/gsap/3.12.3/gsap.min.js" strategy="afterInteractive" />
+      <Script src="/landnew/cdnjs.cloudflare.com/ajax/libs/gsap/3.12.3/ScrollTrigger.min.js" strategy="afterInteractive" />
+      <Script src="/landnew/cdnjs.cloudflare.com/ajax/libs/gsap/3.12.3/CustomEase.min.js" strategy="afterInteractive" />
+      <Script src="/landnew/cdn.jsdelivr.net/npm/gsap@3.12.7/dist/MotionPathPlugin.min.js" strategy="afterInteractive" />
+      <Script src="/landnew/cdnjs.cloudflare.com/ajax/libs/bodymovin/5.9.6/lottie.min.js" strategy="afterInteractive" />
+      <Script src="/landnew/cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" strategy="afterInteractive" />
+
+      {/* Webflow chunks */}
+      <Script src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/js/webflow.schunk.57d5559d2f0cd9f8.js" strategy="afterInteractive" />
+      <Script src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/js/webflow.schunk.b324484631ca48aa.js" strategy="afterInteractive" />
+      <Script src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/js/webflow.ae197c71.7d3d5a39186a7021.js" strategy="afterInteractive" />
+
+      {/* Custom scripts that depend on the libraries above */}
       <Script src='/landnew/deepjudge-code.netlify.app/script.js' strategy="lazyOnload" />
       <Script src='/landnew/deepjudge-code.netlify.app/home.js' strategy="lazyOnload" />
       

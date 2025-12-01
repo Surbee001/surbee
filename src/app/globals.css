@@ -475,12 +475,12 @@ body {
   --sidebar-ring: oklch(0.439 0 0);
 
   /* Dark Theme Variables */
-  --surbee-bg-primary: #1C1C1C;
-  --surbee-bg-secondary: #242424;
-  --surbee-bg-tertiary: #242424;
-  --surbee-bg-elevated: #1a1a1a;
+  --surbee-bg-primary: #131314;
+  --surbee-bg-secondary: #1E1E1F;
+  --surbee-bg-tertiary: #252526;
+  --surbee-bg-elevated: #1E1E1F;
 
-  --surbee-fg-primary: #fafafa;
+  --surbee-fg-primary: #E8E8E8;
   --surbee-fg-secondary: #d1d5db;
   --surbee-fg-muted: #9ca3af;
   --surbee-fg-inverse: #0a0a0a;
@@ -490,9 +490,9 @@ body {
   --surbee-border-focus: #9ca3af;
   --surbee-border-accent: rgba(42, 42, 42, 0.65);
 
-  --surbee-card-bg: #242424;
+  --surbee-card-bg: #1E1E1F;
   --surbee-card-border: rgba(255, 255, 255, 0.08);
-  --surbee-card-hover: #242424;
+  --surbee-card-hover: #252526;
 
   --surbee-accent-primary: #9ca3af;
   --surbee-accent-hover: #6b7280;
@@ -507,15 +507,15 @@ body {
   --surbee-info: #3b82f6;
   --surbee-info-subtle: rgba(59, 130, 246, 0.1);
 
-  --surbee-input-bg: #242424;
-  --surbee-input-border: rgba(255, 255, 255, 0.12);
+  --surbee-input-bg: #1E1E1F;
+  --surbee-input-border: rgba(255, 255, 255, 0.1);
   --surbee-input-placeholder: #6b7280;
   --surbee-input-focus: #9ca3af;
 
-  --surbee-sidebar-bg: #141414;
-  --surbee-sidebar-hover: #1a1a1a;
-  --surbee-sidebar-active: #202020;
-  --surbee-sidebar-border: rgba(255, 255, 255, 0.08);
+  --surbee-sidebar-bg: #0E0E0E;
+  --surbee-sidebar-hover: #161616;
+  --surbee-sidebar-active: #1a1a1a;
+  --surbee-sidebar-border: rgba(255, 255, 255, 0.06);
 
   --surbee-scrollbar: rgba(255, 255, 255, 0.3);
   --surbee-scrollbar-hover: rgba(255, 255, 255, 0.5);
@@ -629,11 +629,9 @@ body {
 
 /* Professional Dashboard Sidebar Styles */
 .dashboard-sidebar {
-  position: fixed;
-  left: 0;
-  top: 0;
-  height: 100vh;
-  width: 200px;
+  position: relative;
+  height: 100%;
+  width: 100%;
   background-color: var(--surbee-sidebar-bg);
   display: flex;
   flex-direction: column;
@@ -886,8 +884,8 @@ body {
   bottom: 80px;
   z-index: 1200;
   border: none;
-  background: hsl(0, 0%, 16%);
-  color: hsl(0, 0%, 100%);
+  background: #1E1E1F;
+  color: #E8E8E8;
   border-radius: 0.75rem;
   min-width: 8rem;
   width: 17rem;
@@ -920,7 +918,7 @@ body {
   font-weight: 600;
   line-height: 1.5;
   letter-spacing: 0.009em;
-  color: hsl(0, 0%, 100%);
+  color: #E8E8E8;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -952,7 +950,7 @@ body {
   line-height: 1.43;
   letter-spacing: 0.014em;
   background: hsl(0, 0%, 93%, 0.08);
-  color: hsl(0, 0%, 100%);
+  color: #E8E8E8;
   border: none;
   cursor: pointer;
   transition: background-color 0.15s cubic-bezier(0, 0, 0.2, 1);
@@ -973,7 +971,7 @@ body {
   height: 1.25rem;
   border-radius: 50%;
   background-color: hsl(0, 0%, 93%, 0.08);
-  color: hsl(0, 0%, 100%);
+  color: #E8E8E8;
   flex-shrink: 0;
 }
 
@@ -990,7 +988,7 @@ body {
   font-weight: 456;
   line-height: 1.43;
   letter-spacing: 0.014em;
-  color: hsl(0, 0%, 100%);
+  color: #E8E8E8;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -1017,7 +1015,7 @@ body {
   font-weight: 456;
   line-height: 1.43;
   letter-spacing: 0.014em;
-  color: hsl(0, 0%, 100%);
+  color: #E8E8E8;
 }
 
 .user-menu-theme-toggle {
@@ -1044,12 +1042,12 @@ body {
 
 .user-menu-theme-btn:hover {
   background: hsl(0, 0%, 93%, 0.12);
-  color: hsl(0, 0%, 100%);
+  color: #E8E8E8;
 }
 
 .user-menu-theme-btn.active {
   background: hsl(0, 0%, 93%, 0.15);
-  color: hsl(0, 0%, 100%);
+  color: #E8E8E8;
 }
 
 /* New badge for Merch */
@@ -1089,7 +1087,7 @@ body {
 }
 
 .user-menu-footer-link:hover {
-  color: hsl(0, 0%, 100%);
+  color: #E8E8E8;
 }
 
 /* Feedback Modal Styles */
@@ -1154,7 +1152,7 @@ body {
   max-height: 300px;
   border: none;
   background: transparent;
-  color: hsl(0, 0%, 100%);
+  color: #E8E8E8;
   font-size: 0.875rem;
   font-weight: 456;
   line-height: 1.43;
@@ -1407,7 +1405,7 @@ body {
 .age-range-button {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
+  color: #E8E8E8;
   padding: 1rem;
   border-radius: 0.5rem;
   font-size: 0.875rem;
@@ -1424,13 +1422,13 @@ body {
 .age-range-button.selected {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.3);
-  color: white;
+  color: #E8E8E8;
 }
 
 .onboarding-select {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
+  color: #E8E8E8;
   padding: 0.875rem 1rem;
   border-radius: 0.5rem;
   font-size: 1rem;
@@ -1446,7 +1444,7 @@ body {
 
 .onboarding-select option {
   background: #1f1f1f;
-  color: white;
+  color: #E8E8E8;
 }
 
 .onboarding-button:hover:not(:disabled) {
@@ -1461,7 +1459,7 @@ body {
 .onboarding-input {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
+  color: #E8E8E8;
   padding: 0.875rem 1rem;
   border-radius: 0.5rem;
   font-size: 1rem;
@@ -2409,6 +2407,16 @@ body {
   }
   100% {
     background-position: 200% 0;
+  }
+}
+
+/* Smooth shimmer animation - continuous right-moving effect */
+@keyframes shimmer-smooth {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
   }
 }
 

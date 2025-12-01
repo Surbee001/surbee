@@ -80,6 +80,12 @@ export default function NotificationsSettingsPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Reset scroll position and fade when component mounts
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+      setShowFade(false);
+    }
+
     const handleScroll = () => {
       if (scrollRef.current) {
         setShowFade(scrollRef.current.scrollTop > 0);
@@ -273,14 +279,14 @@ export default function NotificationsSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden">
 
       {/* Main Content Area */}
-      <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12">
+      <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12 overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full max-w-6xl mx-auto">
-          {/* Settings Navigation */}
-          <div className="lg:col-span-1">
-            <div className="space-y-4">
+          {/* Settings Navigation - Fixed */}
+          <div className="lg:col-span-1 flex flex-col">
+            <div className="space-y-4 flex-shrink-0">
               <h1 className="text-[28px] font-bold" style={{ color: 'var(--surbee-fg-primary)' }}>
                 Settings
               </h1>
@@ -291,7 +297,7 @@ export default function NotificationsSettingsPage() {
                   { icon: Settings, label: 'Appearance', active: false, href: '/dashboard/settings' },
                   { icon: Bell, label: 'Notifications', active: true, href: '/dashboard/settings/notifications' },
                   { icon: Shield, label: 'Privacy & Security', active: false, href: '/dashboard/settings/privacy' },
-                  { icon: CreditCard, label: 'Billing & Plans', active: false, href: '/dashboard/settings/billing' },
+                  { icon: CreditCard, label: 'Billing', active: false, href: '/dashboard/settings/billing' },
                   { icon: HelpCircle, label: 'Help', active: false, href: '/dashboard/settings/account' },
                 ].map((item) => {
                   const Icon = item.icon;
@@ -329,7 +335,7 @@ export default function NotificationsSettingsPage() {
           </div>
 
             {/* Notifications Content - Only this scrolls */}
-            <div className="lg:col-span-3 relative h-full flex flex-col min-h-0">
+            <div className="lg:col-span-3 relative flex flex-col min-h-0 overflow-hidden">
               {/* Fade overlay at top - only show when scrolling */}
               <div className={`absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[var(--surbee-bg-primary)] to-transparent z-10 pointer-events-none transition-opacity duration-300 ${
                 showFade ? 'opacity-100' : 'opacity-0'

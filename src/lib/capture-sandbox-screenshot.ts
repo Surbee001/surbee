@@ -23,104 +23,183 @@ export async function generateSurveyPreview(
   questions: SurveyQuestion[],
   options: ScreenshotOptions = {}
 ): Promise<string> {
-  // Use smaller dimensions to keep the image under PostgreSQL limits
+  // Higher resolution for better quality
   const {
-    width = 400,
-    height = 300,
-    quality = 0.5,
-    format = 'jpeg'
+    width = 800,
+    height = 600,
+    quality = 0.92,
+    format = 'png'
   } = options;
 
   const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
+  // Use 2x resolution for retina displays
+  const dpr = 2;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
   const ctx = canvas.getContext('2d');
 
   if (!ctx) {
     throw new Error('Cannot get canvas context');
   }
 
-  // Create gradient background
-  const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, '#1a1a1a');
-  gradient.addColorStop(1, '#0d0d0d');
-  ctx.fillStyle = gradient;
+  // Scale for retina
+  ctx.scale(dpr, dpr);
+
+  // Beautiful gradient background - mimicking a modern survey interface
+  const bgGradient = ctx.createLinearGradient(0, 0, width, height);
+  bgGradient.addColorStop(0, '#0a0a0a');
+  bgGradient.addColorStop(0.5, '#111111');
+  bgGradient.addColorStop(1, '#0d0d0d');
+  ctx.fillStyle = bgGradient;
   ctx.fillRect(0, 0, width, height);
 
-  // Scale factor for smaller canvas
-  const scale = width / 800;
+  // Add subtle grid pattern
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < width; i += 40) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i, height);
+    ctx.stroke();
+  }
+  for (let i = 0; i < height; i += 40) {
+    ctx.beginPath();
+    ctx.moveTo(0, i);
+    ctx.lineTo(width, i);
+    ctx.stroke();
+  }
 
-  // Draw card background
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
-  roundRect(ctx, 20 * scale, 20 * scale, width - 40 * scale, height - 40 * scale, 8 * scale);
+  // Main card container with subtle glow
+  const cardX = 40;
+  const cardY = 40;
+  const cardWidth = width - 80;
+  const cardHeight = height - 80;
+
+  // Card shadow/glow
+  ctx.shadowColor = 'rgba(255, 255, 255, 0.05)';
+  ctx.shadowBlur = 40;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+
+  // Card background
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+  roundRect(ctx, cardX, cardY, cardWidth, cardHeight, 16);
   ctx.fill();
 
-  // Draw survey header
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-  ctx.font = `bold ${Math.round(16 * scale)}px system-ui, -apple-system, sans-serif`;
-  ctx.textAlign = 'left';
-  ctx.fillText('Survey Preview', 35 * scale, 50 * scale);
+  // Reset shadow
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
 
-  // Draw divider
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+  // Card border
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
   ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(35 * scale, 60 * scale);
-  ctx.lineTo(width - 35 * scale, 60 * scale);
+  roundRect(ctx, cardX, cardY, cardWidth, cardHeight, 16);
   ctx.stroke();
 
-  // Draw questions - show fewer on smaller canvas
-  let yOffset = 75 * scale;
-  const maxQuestions = Math.min(questions.length, 3);
+  // Progress bar at top
+  const progressY = cardY + 24;
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+  roundRect(ctx, cardX + 32, progressY, cardWidth - 64, 4, 2);
+  ctx.fill();
+
+  // Progress fill (show ~30%)
+  const progressGradient = ctx.createLinearGradient(cardX + 32, 0, cardX + 32 + (cardWidth - 64) * 0.3, 0);
+  progressGradient.addColorStop(0, 'rgba(134, 239, 172, 0.8)');
+  progressGradient.addColorStop(1, 'rgba(134, 239, 172, 0.4)');
+  ctx.fillStyle = progressGradient;
+  roundRect(ctx, cardX + 32, progressY, (cardWidth - 64) * 0.3, 4, 2);
+  ctx.fill();
+
+  // Draw questions with modern styling
+  let yOffset = cardY + 60;
+  const maxQuestions = Math.min(questions.length, 4);
+  const questionSpacing = (cardHeight - 120) / Math.max(maxQuestions, 1);
 
   for (let i = 0; i < maxQuestions; i++) {
     const q = questions[i];
+    const isActive = i === 0; // First question highlighted
 
-    // Question number badge
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+    // Question container
+    if (isActive) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+      roundRect(ctx, cardX + 24, yOffset - 12, cardWidth - 48, questionSpacing - 16, 12);
+      ctx.fill();
+    }
+
+    // Question number
+    const numberBg = isActive ? 'rgba(134, 239, 172, 0.2)' : 'rgba(255, 255, 255, 0.08)';
+    ctx.fillStyle = numberBg;
     ctx.beginPath();
-    ctx.arc(45 * scale, yOffset + 8 * scale, 10 * scale, 0, Math.PI * 2);
+    ctx.arc(cardX + 56, yOffset + 20, 16, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.font = `600 ${Math.round(10 * scale)}px system-ui, -apple-system, sans-serif`;
+    ctx.fillStyle = isActive ? 'rgba(134, 239, 172, 1)' : 'rgba(255, 255, 255, 0.6)';
+    ctx.font = 'bold 14px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`${i + 1}`, 45 * scale, yOffset + 11 * scale);
+    ctx.fillText(`${i + 1}`, cardX + 56, yOffset + 25);
 
     // Question text
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.font = `500 ${Math.round(11 * scale)}px system-ui, -apple-system, sans-serif`;
+    ctx.fillStyle = isActive ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.7)';
+    ctx.font = `${isActive ? '600' : '500'} 16px system-ui, -apple-system, sans-serif`;
     ctx.textAlign = 'left';
-    const questionText = truncateText(q.question_text, 40);
-    ctx.fillText(questionText, 60 * scale, yOffset + 11 * scale);
+    const questionText = truncateText(q.question_text, 50);
+    ctx.fillText(questionText, cardX + 88, yOffset + 26);
 
-    // Question type badge
-    const typeLabel = getQuestionTypeLabel(q.question_type);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
-    ctx.font = `400 ${Math.round(9 * scale)}px system-ui, -apple-system, sans-serif`;
-    const typeBadgeWidth = ctx.measureText(typeLabel).width + 10 * scale;
-    roundRect(ctx, 60 * scale, yOffset + 16 * scale, typeBadgeWidth, 14 * scale, 3 * scale);
-    ctx.fill();
+    // Input field placeholder for active question
+    if (isActive) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+      roundRect(ctx, cardX + 88, yOffset + 44, Math.min(400, cardWidth - 140), 44, 8);
+      ctx.fill();
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.fillText(typeLabel, 65 * scale, yOffset + 26 * scale);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 1;
+      roundRect(ctx, cardX + 88, yOffset + 44, Math.min(400, cardWidth - 140), 44, 8);
+      ctx.stroke();
 
-    yOffset += 55 * scale;
+      // Placeholder text
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.font = '400 14px system-ui, -apple-system, sans-serif';
+      ctx.fillText('Type your answer...', cardX + 104, yOffset + 72);
+    }
+
+    yOffset += questionSpacing;
   }
 
-  // Draw "more questions" indicator if there are more
+  // More questions indicator
   if (questions.length > maxQuestions) {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.font = `400 ${Math.round(10 * scale)}px system-ui, -apple-system, sans-serif`;
+    ctx.font = '500 13px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`+ ${questions.length - maxQuestions} more questions`, width / 2, height - 25 * scale);
+    ctx.fillText(`+ ${questions.length - maxQuestions} more questions`, width / 2, height - 60);
   }
 
-  // Draw footer
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-  ctx.font = `400 ${Math.round(8 * scale)}px system-ui, -apple-system, sans-serif`;
-  ctx.textAlign = 'right';
-  ctx.fillText('Powered by Surbee', width - 35 * scale, height - 12 * scale);
+  // Navigation buttons at bottom
+  const btnY = height - 80;
+
+  // Back button
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+  roundRect(ctx, cardX + 32, btnY, 100, 40, 8);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  ctx.font = '500 14px system-ui, -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Back', cardX + 82, btnY + 26);
+
+  // Next/Submit button
+  const nextBtnGradient = ctx.createLinearGradient(cardX + cardWidth - 132, btnY, cardX + cardWidth - 32, btnY);
+  nextBtnGradient.addColorStop(0, 'rgba(134, 239, 172, 0.9)');
+  nextBtnGradient.addColorStop(1, 'rgba(134, 239, 172, 0.7)');
+  ctx.fillStyle = nextBtnGradient;
+  roundRect(ctx, cardX + cardWidth - 132, btnY, 100, 40, 8);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+  ctx.font = '600 14px system-ui, -apple-system, sans-serif';
+  ctx.fillText('Next', cardX + cardWidth - 82, btnY + 26);
 
   return canvas.toDataURL(`image/${format}`, quality);
 }
@@ -155,53 +234,130 @@ function generatePlaceholderPreview(
   quality: number
 ): string {
   const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
+  // Use 2x resolution for retina displays
+  const dpr = 2;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+
   const ctx = canvas.getContext('2d');
 
   if (!ctx) {
     throw new Error('Cannot get canvas context');
   }
 
-  // Scale factor for smaller canvas
-  const scale = width / 800;
+  ctx.scale(dpr, dpr);
 
-  // Create gradient background
-  const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, '#1a1a1a');
-  gradient.addColorStop(1, '#0d0d0d');
-  ctx.fillStyle = gradient;
+  // Beautiful gradient background
+  const bgGradient = ctx.createLinearGradient(0, 0, width, height);
+  bgGradient.addColorStop(0, '#0a0a0a');
+  bgGradient.addColorStop(0.5, '#111111');
+  bgGradient.addColorStop(1, '#0d0d0d');
+  ctx.fillStyle = bgGradient;
   ctx.fillRect(0, 0, width, height);
 
-  // Draw card
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
-  roundRect(ctx, 30 * scale, 30 * scale, width - 60 * scale, height - 60 * scale, 8 * scale);
+  // Add subtle grid
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < width; i += 30) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i, height);
+    ctx.stroke();
+  }
+  for (let i = 0; i < height; i += 30) {
+    ctx.beginPath();
+    ctx.moveTo(0, i);
+    ctx.lineTo(width, i);
+    ctx.stroke();
+  }
+
+  // Main card
+  const cardX = 24;
+  const cardY = 24;
+  const cardWidth = width - 48;
+  const cardHeight = height - 48;
+
+  ctx.shadowColor = 'rgba(255, 255, 255, 0.03)';
+  ctx.shadowBlur = 30;
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+  roundRect(ctx, cardX, cardY, cardWidth, cardHeight, 12);
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+  ctx.lineWidth = 1;
+  roundRect(ctx, cardX, cardY, cardWidth, cardHeight, 12);
+  ctx.stroke();
+
+  // Progress bar
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+  roundRect(ctx, cardX + 20, cardY + 20, cardWidth - 40, 3, 1.5);
   ctx.fill();
 
-  // Draw decorative elements
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-  roundRect(ctx, 50 * scale, 50 * scale, width - 100 * scale, 25 * scale, 4 * scale);
+  const progressGradient = ctx.createLinearGradient(cardX + 20, 0, cardX + 20 + (cardWidth - 40) * 0.3, 0);
+  progressGradient.addColorStop(0, 'rgba(134, 239, 172, 0.8)');
+  progressGradient.addColorStop(1, 'rgba(134, 239, 172, 0.4)');
+  ctx.fillStyle = progressGradient;
+  roundRect(ctx, cardX + 20, cardY + 20, (cardWidth - 40) * 0.3, 3, 1.5);
   ctx.fill();
 
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-  roundRect(ctx, 50 * scale, 85 * scale, width - 100 * scale, 40 * scale, 4 * scale);
+  // Placeholder content lines
+  const contentY = cardY + 50;
+  const lineHeight = 24;
+
+  // Active question area
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+  roundRect(ctx, cardX + 16, contentY, cardWidth - 32, 80, 8);
   ctx.fill();
 
-  roundRect(ctx, 50 * scale, 135 * scale, width - 100 * scale, 40 * scale, 4 * scale);
+  // Question number
+  ctx.fillStyle = 'rgba(134, 239, 172, 0.2)';
+  ctx.beginPath();
+  ctx.arc(cardX + 40, contentY + 24, 12, 0, Math.PI * 2);
   ctx.fill();
 
-  roundRect(ctx, 50 * scale, 185 * scale, (width - 100 * scale) * 0.6, 25 * scale, 4 * scale);
-  ctx.fill();
-
-  // Draw text
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-  ctx.font = `bold ${Math.round(12 * scale)}px system-ui, -apple-system, sans-serif`;
+  ctx.fillStyle = 'rgba(134, 239, 172, 0.9)';
+  ctx.font = 'bold 11px system-ui, -apple-system, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('Survey Preview', width / 2, height - 40 * scale);
+  ctx.fillText('1', cardX + 40, contentY + 28);
 
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-  ctx.font = `${Math.round(9 * scale)}px system-ui, -apple-system, sans-serif`;
-  ctx.fillText('Click to view', width / 2, height - 25 * scale);
+  // Question text placeholder
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  roundRect(ctx, cardX + 64, contentY + 14, cardWidth - 100, 20, 4);
+  ctx.fill();
+
+  // Input field
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+  roundRect(ctx, cardX + 64, contentY + 44, cardWidth - 100, 28, 6);
+  ctx.fill();
+
+  // Other question lines
+  for (let i = 0; i < 2; i++) {
+    const y = contentY + 100 + i * lineHeight;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.beginPath();
+    ctx.arc(cardX + 40, y + 10, 10, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    roundRect(ctx, cardX + 64, y + 4, cardWidth - 100, 12, 3);
+    ctx.fill();
+  }
+
+  // Buttons at bottom
+  const btnY = cardY + cardHeight - 44;
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+  roundRect(ctx, cardX + 20, btnY, 70, 28, 6);
+  ctx.fill();
+
+  const nextGradient = ctx.createLinearGradient(cardX + cardWidth - 90, btnY, cardX + cardWidth - 20, btnY);
+  nextGradient.addColorStop(0, 'rgba(134, 239, 172, 0.9)');
+  nextGradient.addColorStop(1, 'rgba(134, 239, 172, 0.7)');
+  ctx.fillStyle = nextGradient;
+  roundRect(ctx, cardX + cardWidth - 90, btnY, 70, 28, 6);
+  ctx.fill();
 
   return canvas.toDataURL(`image/${format}`, quality);
 }

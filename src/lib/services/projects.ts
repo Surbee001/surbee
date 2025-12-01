@@ -388,6 +388,41 @@ export class ProjectsService {
     }
   }
 
+  // Get all published surveys for the marketplace
+  static async getAllPublishedSurveys(options?: {
+    limit?: number;
+    offset?: number;
+    category?: string;
+  }): Promise<{ data: Project[] | null; error: Error | null; total?: number }> {
+    try {
+      const limit = options?.limit || 50;
+      const offset = options?.offset || 0;
+
+      // Build query
+      let query = supabaseAdmin
+        .from('projects')
+        .select('id, title, description, status, published_url, published_at, preview_image_url, user_id, created_at, updated_at', { count: 'exact' })
+        .eq('status', 'published')
+        .not('published_url', 'is', null)
+        .order('published_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      const { data: projects, error, count } = await query;
+
+      if (error) {
+        return { data: null, error: error as any };
+      }
+
+      return {
+        data: projects as Project[],
+        error: null,
+        total: count || 0
+      };
+    } catch (error) {
+      return { data: null, error: error as Error };
+    }
+  }
+
   static async updateSurveySchema(
     projectId: string,
     userId: string,

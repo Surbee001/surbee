@@ -506,41 +506,6 @@ function AskSurbeeComponent({ activeTab, projectId }: { activeTab: TabType; proj
           </div>
         )}
       </div>
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-html {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  line-height: 1.5;
-  text-size-adjust: 100%;
-  tab-size: 4;
-  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  font-feature-settings: normal;
-  font-variation-settings: normal;
-  -webkit-tap-highlight-color: transparent;
-  color-scheme: dark;
-}
-
-body {
-  border: 0px solid rgb(229, 231, 235);
-  box-sizing: border-box;
-  font-family: "Inter", sans-serif;
-  font-feature-settings: "liga", "calt";
-  -webkit-font-smoothing: antialiased;
-  counter-reset: katexEqnNo 0 mmlEqnNo 0;
-  margin: 0px;
-  background-color: #141414;
-  font-size: 1.0625rem;
-  line-height: 1.74994rem;
-  letter-spacing: -0.01em;
-  font-weight: 400;
-  color: white;
-  text-wrap: pretty;
-}
-`,
-        }}
-      />
     </>
   );
 }
@@ -623,231 +588,267 @@ export default function ProjectManagePage() {
   }, []);
 
   return (
-    <AuthGuard>
-      <AppLayout fullBleed>
-        <ComponentRegistryProvider>
-          {/* Top bar with back button and tabs - in the sidebar area */}
-          <div
-            ref={containerRef}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '16px 24px',
-              flexShrink: 0
-            }}
-          >
-                  {/* Back Button */}
-                  <button
-                    onClick={handleBack}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: '32px',
-                      height: '32px',
-                      backgroundColor: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: 'var(--surbee-fg-secondary)',
-                      transition: 'color 200ms ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = 'var(--surbee-fg-primary)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
-                    }}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M19 12H5M12 19l-7-7 7-7"/>
-                    </svg>
-                  </button>
+            <ComponentRegistryProvider>
+              <div 
+                className="flex flex-col h-full" 
+                style={{ 
+                  backgroundColor: 'var(--surbee-sidebar-bg)',
+                  padding: '16px',
+                  width: '100%',
+                  overflow: 'hidden'
+                }}
+              >
+                            {/* Header (Back Button and Tabs) - OUTSIDE the window */}
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '0 4px',
+                                marginBottom: 16,
+                                flexShrink: 0,
+                                position: 'relative',
+                                zIndex: 0
+                              }}
+                            >
+                              {/* Back Button */}
+                              <button
+                                onClick={handleBack}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '32px',
+                                  height: '32px',
+                                  backgroundColor: 'transparent',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  color: 'var(--surbee-fg-secondary)',
+                                  transition: 'color 200ms ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                                }}
+                              >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                                </svg>
+                              </button>
+                
+                              {/* Tabs - On the Right */}
+                              <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                                    <button
+                                      onClick={() => setActiveTab('preview')}
+                                      style={{
+                                        padding: '0',
+                                        fontSize: '14px',
+                                        fontWeight: activeTab === 'preview' ? '500' : '400',
+                                        color: activeTab === 'preview'
+                                          ? 'var(--surbee-fg-primary)'
+                                          : 'var(--surbee-fg-tertiary)',
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'color 200ms ease, opacity 200ms ease',
+                                        opacity: activeTab === 'preview' ? 1 : 0.6,
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        if (activeTab !== 'preview') {
+                                          e.currentTarget.style.opacity = '0.9';
+                                          e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                                        }
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        if (activeTab !== 'preview') {
+                                          e.currentTarget.style.opacity = '0.6';
+                                          e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
+                                        }
+                                      }}
+                                    >
+                                      Preview
+                                    </button>
+                
+                                    <button
+                                      onClick={() => setActiveTab('insights')}
+                                      style={{
+                                        padding: '0',
+                                        fontSize: '14px',
+                                        fontWeight: activeTab === 'insights' ? '500' : '400',
+                                        color: activeTab === 'insights'
+                                          ? 'var(--surbee-fg-primary)'
+                                          : 'var(--surbee-fg-tertiary)',
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'color 200ms ease, opacity 200ms ease',
+                                        opacity: activeTab === 'insights' ? 1 : 0.6,
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        if (activeTab !== 'insights') {
+                                          e.currentTarget.style.opacity = '0.9';
+                                          e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                                        }
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        if (activeTab !== 'insights') {
+                                          e.currentTarget.style.opacity = '0.6';
+                                          e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
+                                        }
+                                      }}
+                                    >
+                                      Insights
+                                    </button>
 
-                  {/* Tabs - On the Right */}
-                  <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                    <button
-                      onClick={() => setActiveTab('preview')}
-                      style={{
-                        padding: '0',
-                        fontSize: '14px', // Increased to 14px
-                        fontWeight: activeTab === 'preview' ? '500' : '400',
-                        color: activeTab === 'preview'
-                          ? 'var(--surbee-fg-primary)'
-                          : 'var(--surbee-fg-tertiary)',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'color 200ms ease, opacity 200ms ease',
-                        opacity: activeTab === 'preview' ? 1 : 0.6,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (activeTab !== 'preview') {
-                          e.currentTarget.style.opacity = '0.9';
-                          e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (activeTab !== 'preview') {
-                          e.currentTarget.style.opacity = '0.6';
-                          e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
-                        }
-                      }}
-                    >
-                      Preview
-                    </button>
+                                    <button
+                                      onClick={() => setActiveTab('cipher')}
+                                      style={{
+                                        padding: '0',
+                                        fontSize: '14px',
+                                        fontWeight: activeTab === 'cipher' ? '500' : '400',
+                                        color: activeTab === 'cipher'
+                                          ? 'var(--surbee-fg-primary)'
+                                          : 'var(--surbee-fg-tertiary)',
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'color 200ms ease, opacity 200ms ease',
+                                        opacity: activeTab === 'cipher' ? 1 : 0.6,
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        if (activeTab !== 'cipher') {
+                                          e.currentTarget.style.opacity = '0.9';
+                                          e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                                        }
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        if (activeTab !== 'cipher') {
+                                          e.currentTarget.style.opacity = '0.6';
+                                          e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
+                                        }
+                                      }}
+                                    >
+                                      Cipher
+                                    </button>
 
-                    <button
-                      onClick={() => setActiveTab('insights')}
-                      style={{
-                        padding: '0',
-                        fontSize: '14px', // Increased to 14px
-                        fontWeight: activeTab === 'insights' ? '500' : '400',
-                        color: activeTab === 'insights'
-                          ? 'var(--surbee-fg-primary)'
-                          : 'var(--surbee-fg-tertiary)',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'color 200ms ease, opacity 200ms ease',
-                        opacity: activeTab === 'insights' ? 1 : 0.6,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (activeTab !== 'insights') {
-                          e.currentTarget.style.opacity = '0.9';
-                          e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (activeTab !== 'insights') {
-                          e.currentTarget.style.opacity = '0.6';
-                          e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
-                        }
-                      }}
-                    >
-                      Insights
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTab('cipher')}
-                      style={{
-                        padding: '0',
-                        fontSize: '14px',
-                        fontWeight: activeTab === 'cipher' ? '500' : '400',
-                        color: activeTab === 'cipher'
-                          ? 'var(--surbee-fg-primary)'
-                          : 'var(--surbee-fg-tertiary)',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'color 200ms ease, opacity 200ms ease',
-                        opacity: activeTab === 'cipher' ? 1 : 0.6,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (activeTab !== 'cipher') {
-                          e.currentTarget.style.opacity = '0.9';
-                          e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (activeTab !== 'cipher') {
-                          e.currentTarget.style.opacity = '0.6';
-                          e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
-                        }
-                      }}
-                    >
-                      Cipher
-                    </button>
-
-                    <button
-                      onClick={() => setActiveTab('share')}
-                      style={{
-                        padding: '0',
-                        fontSize: '14px', // Increased to 14px
-                        fontWeight: activeTab === 'share' ? '500' : '400',
-                        color: activeTab === 'share'
-                          ? 'var(--surbee-fg-primary)'
-                          : 'var(--surbee-fg-tertiary)',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'color 200ms ease, opacity 200ms ease',
-                        opacity: activeTab === 'share' ? 1 : 0.6,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (activeTab !== 'share') {
-                          e.currentTarget.style.opacity = '0.9';
-                          e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (activeTab !== 'share') {
-                          e.currentTarget.style.opacity = '0.6';
-                          e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
-                        }
-                      }}
-                    >
-                      Share
-                    </button>
-                  </nav>
+                                    <button
+                                      onClick={() => setActiveTab('share')}
+                                      style={{
+                                        padding: '0',
+                                        fontSize: '14px',
+                                        fontWeight: activeTab === 'share' ? '500' : '400',
+                                        color: activeTab === 'share'
+                                          ? 'var(--surbee-fg-primary)'
+                                          : 'var(--surbee-fg-tertiary)',
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'color 200ms ease, opacity 200ms ease',
+                                        opacity: activeTab === 'share' ? 1 : 0.6,
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        if (activeTab !== 'share') {
+                                          e.currentTarget.style.opacity = '0.9';
+                                          e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                                        }
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        if (activeTab !== 'share') {
+                                          e.currentTarget.style.opacity = '0.6';
+                                          e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
+                                        }
+                                      }}
+                                    >
+                                      Share
+                                    </button>
+                              </nav>
+                            </div>
+                
+                                        {/* Main Content Window */}
+                
+                                        <motion.div
+                
+                                          ref={containerRef}
+                
+                                          className="flex-1 flex flex-col overflow-hidden no-scrollbar rounded-xl shadow-sm"
+                
+                                          initial={{ y: -20, opacity: 1 }}
+                
+                                          animate={{ 
+                
+                                            y: isExiting ? -20 : 0,
+                
+                                            opacity: 1
+                
+                                          }}
+                
+                                          transition={{
+                
+                                            duration: 0.3,
+                
+                                            ease: [0.2, 0.8, 0.2, 1]
+                
+                                          }}
+                
+                                          style={{
+                
+                                            backgroundColor: 'var(--surbee-bg-primary)',
+                
+                                            scrollbarWidth: 'none',
+                
+                                            msOverflowStyle: 'none',
+                
+                                            width: '100%',
+                
+                                            willChange: 'transform',
+                
+                                            boxSizing: 'border-box',
+                
+                                            position: 'relative',
+                
+                                            zIndex: 10,
+                
+                                            border: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))'
+                
+                                          }}
+                
+                                        >          {/* Tab Content */}
+          {activeTab === 'insights' ? (
+            <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
+              <AnalysisDotsManager projectId={projectId}>
+                <div className="overflow-y-auto" style={{ padding: '24px', height: '100%' }}>
+                  <InsightsTabRedesign projectId={projectId} />
+                </div>
+              </AnalysisDotsManager>
             </div>
-
-          {/* Main Content Container - The rounded box with animation */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{
-              opacity: isExiting ? 0 : 1,
-              scale: isExiting ? 0.98 : 1
-            }}
-            transition={{
-              duration: 0.25,
-              ease: [0.32, 0.72, 0, 1]
-            }}
-            className="flex-1 flex flex-col rounded-xl overflow-hidden no-scrollbar"
-            style={{
-              backgroundColor: 'var(--surbee-bg-primary)',
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              margin: '0 16px 16px 16px',
-              minHeight: 0, // Important for flex children to shrink properly
-            }}
-          >
-              {/* Tab Content */}
-              {activeTab === 'insights' ? (
-                <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
-                  <AnalysisDotsManager projectId={projectId}>
-                    <div className="overflow-y-auto" style={{ padding: '24px', height: '100%' }}>
-                      <InsightsTabRedesign projectId={projectId} />
-                    </div>
-                  </AnalysisDotsManager>
-                </div>
-              ) : activeTab === 'cipher' ? (
-                <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
-                  <div className="overflow-y-auto" style={{ padding: '24px', height: '100%' }}>
-                    <CipherTab projectId={projectId} />
-                  </div>
-                </div>
-              ) : (
-                <div className="flex-1 overflow-auto" style={{ padding: '24px' }}>
-                  {activeTab === 'preview' && <PreviewTab projectId={projectId} sandboxBundle={sandboxBundle} activeChatSessionId={activeChatSessionId} />}
-                  {activeTab === 'share' && <ShareTabRedesign projectId={projectId} publishedUrl={publishedUrl} />}
-                </div>
-              )}
-
-            {/* Ask Surbee Component - Inside container at bottom - Hidden for Preview and Cipher Tabs */}
-            {activeTab !== 'preview' && activeTab !== 'cipher' && (
-              <div className="ask-surbee-container">
-                <AskSurbeeComponent activeTab={activeTab} projectId={projectId} />
+          ) : activeTab === 'cipher' ? (
+            <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
+              <div className="overflow-y-auto" style={{ padding: '24px', height: '100%' }}>
+                <CipherTab projectId={projectId} />
               </div>
-            )}
-          </motion.div>
-          <style jsx global>{`
-            .no-scrollbar::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
-        </ComponentRegistryProvider>
-      </AppLayout>
-    </AuthGuard>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-auto" style={{ padding: '24px' }}>
+              {activeTab === 'preview' && <PreviewTab projectId={projectId} sandboxBundle={sandboxBundle} activeChatSessionId={activeChatSessionId} />}
+              {activeTab === 'share' && <ShareTabRedesign projectId={projectId} publishedUrl={publishedUrl} />}
+            </div>
+          )}
+
+          {/* Ask Surbee Component - Inside container at bottom - Hidden for Preview and Cipher Tabs */}
+          {activeTab !== 'preview' && activeTab !== 'cipher' && (
+            <div className="ask-surbee-container">
+              <AskSurbeeComponent activeTab={activeTab} projectId={projectId} />
+            </div>
+          )}
+        </motion.div>
+        <style jsx global>{`
+          .no-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
+      </div>
+    </ComponentRegistryProvider>
   );
 }

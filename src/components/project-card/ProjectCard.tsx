@@ -53,7 +53,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
   const handleCardClick = () => {
     if (isRenaming) return;
-    router.push(`/project/${id}/manage`);
+    router.push(`/dashboard/projects/${id}/manage`);
   };
 
   const handleEditClick = (e: React.MouseEvent) => {
@@ -102,13 +102,25 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         >
           <div className="w-full flex justify-between">
             <div className="flex gap-[5px]">
-              <img
-                className="rounded-[8px]"
-                height={35}
-                width={35}
-                src={userAvatar || "https://endlesstools.io/_next/image?url=/embeds/avatars/4.png&w=96&q=75"}
-                alt="User avatar"
-              />
+              <div className="rounded-[8px] overflow-hidden flex-shrink-0" style={{ width: 35, height: 35 }}>
+                {userAvatar ? (
+                  <img
+                    className="w-full h-full object-cover"
+                    src={userAvatar}
+                    alt="User avatar"
+                    onError={(e) => {
+                      // Fallback to default if image fails to load
+                      e.currentTarget.src = "https://endlesstools.io/_next/image?url=/embeds/avatars/4.png&w=96&q=75";
+                    }}
+                  />
+                ) : (
+                  <img
+                    className="w-full h-full object-cover"
+                    src="https://endlesstools.io/_next/image?url=/embeds/avatars/4.png&w=96&q=75"
+                    alt="User avatar"
+                  />
+                )}
+              </div>
               <div className="text-sm flex flex-col justify-center h-[35px]">
                 {isRenaming ? (
                   <input
@@ -180,7 +192,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         {/* Open in new tab */}
         <ContextMenuItem
           className="flex items-center gap-2 px-2 py-1.5 text-sm text-zinc-300 rounded-md cursor-pointer hover:bg-white/5 focus:bg-white/5"
-          onClick={() => window.open(`/project/${id}/manage`, '_blank')}
+          onClick={() => window.open(`/dashboard/projects/${id}/manage`, '_blank')}
         >
           <ExternalLink className="h-4 w-4 text-zinc-500" />
           <span>Open in new tab</span>
@@ -226,7 +238,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           className="flex items-center gap-2 px-2 py-1.5 text-sm text-zinc-300 rounded-md cursor-pointer hover:bg-white/5 focus:bg-white/5"
           onClick={() => {
             onSettings?.(id);
-            router.push(`/project/${id}/manage?tab=settings`);
+            router.push(`/dashboard/projects/${id}/manage?tab=settings`);
           }}
         >
           <Settings className="h-4 w-4 text-zinc-500" />

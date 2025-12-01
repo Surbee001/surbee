@@ -557,9 +557,9 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
               currentSection="analytics"
               onSectionChange={(section) => {
                 if (section === 'preview' || section === 'share') {
-                  router.push(`/project/${projectId}/manage`);
+                  router.push(`/dashboard/projects/${projectId}/manage`);
                 } else if (section === 'insights') {
-                  router.push(`/project/${projectId}/manage`);
+                  router.push(`/dashboard/projects/${projectId}/manage`);
                 }
               }}
               isDarkMode={isDarkMode}

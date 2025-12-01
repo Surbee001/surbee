@@ -1,5 +1,5 @@
 import React from "react";
-import AppLayout from "@/components/layout/AppLayout";
+import DashboardLayoutClient from "@/components/layout/DashboardLayoutClient";
 
 export default function DashboardLayout({
   children,
@@ -7,9 +7,9 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <AppLayout>
+    <DashboardLayoutClient>
       {children}
-    </AppLayout>
+    </DashboardLayoutClient>
   );
 }
 

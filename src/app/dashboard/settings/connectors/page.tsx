@@ -6,6 +6,8 @@ import { Settings, HelpCircle, Shield, CreditCard, ExternalLink, Check } from 'l
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Image as IKImage } from '@imagekit/next';
+import { toast } from 'sonner';
+import { Copy } from 'lucide-react';
 
 const connectors = [
   { name: 'Google Sheets', icon: 'https://ik.imagekit.io/on0moldgr/SurbeeIcons/Sheets?updatedAt=1760287548067', connected: false },
@@ -24,8 +26,15 @@ export default function ConnectorsSettingsPage() {
   const [showFade, setShowFade] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [connectorStates, setConnectorStates] = useState(connectors);
+  const [showApiKey, setShowApiKey] = useState(false);
 
   useEffect(() => {
+    // Reset scroll position and fade when component mounts
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+      setShowFade(false);
+    }
+
     const handleScroll = () => {
       if (scrollRef.current) {
         setShowFade(scrollRef.current.scrollTop > 0);
@@ -45,16 +54,34 @@ export default function ConnectorsSettingsPage() {
         conn.name === name ? { ...conn, connected: !conn.connected } : conn
       )
     );
+    const connector = connectorStates.find(c => c.name === name);
+    if (connector) {
+      if (connector.connected) {
+        toast.success(`Disconnected from ${name}`);
+      } else {
+        toast.success(`Connected to ${name}`);
+      }
+    }
+  };
+
+  const handleShowApiKey = () => {
+    setShowApiKey(!showApiKey);
+  };
+
+  const handleViewApiDocs = () => {
+    // TODO: Open API documentation
+    window.open('https://docs.surbee.com/api', '_blank');
+    toast.info('Opening API documentation...');
   };
 
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Main Content Area */}
-      <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12">
+      <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12 overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full max-w-6xl mx-auto">
-          {/* Settings Navigation */}
-          <div className="lg:col-span-1">
-            <div className="space-y-4">
+          {/* Settings Navigation - Fixed */}
+          <div className="lg:col-span-1 flex flex-col">
+            <div className="space-y-4 flex-shrink-0">
               <h1 className="projects-title">
                 Settings
               </h1>
@@ -64,7 +91,7 @@ export default function ConnectorsSettingsPage() {
                   { icon: Settings, label: 'General', active: false, href: '/dashboard/settings/general' },
                   { icon: HelpCircle, label: 'Account', active: false, href: '/dashboard/settings/account' },
                   { icon: Shield, label: 'Privacy & Security', active: false, href: '/dashboard/settings/privacy' },
-                  { icon: CreditCard, label: 'Billing & Plans', active: false, href: '/dashboard/settings/billing' },
+                  { icon: CreditCard, label: 'Billing', active: false, href: '/dashboard/settings/billing' },
                   { icon: Settings, label: 'Connectors', active: true, href: '/dashboard/settings/connectors' },
                 ].map((item) => {
                   const Icon = item.icon;
@@ -102,7 +129,7 @@ export default function ConnectorsSettingsPage() {
           </div>
 
           {/* Connectors Content - Only this scrolls */}
-          <div className="lg:col-span-3 relative h-full flex flex-col min-h-0">
+          <div className="lg:col-span-3 relative flex flex-col min-h-0 overflow-hidden">
             {/* Fade overlay at top - only show when scrolling */}
             <div className={`absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[var(--surbee-bg-primary)] to-transparent z-10 pointer-events-none transition-opacity duration-300 ${
               showFade ? 'opacity-100' : 'opacity-0'
@@ -204,8 +231,8 @@ export default function ConnectorsSettingsPage() {
                       </label>
                       <div className="flex gap-2">
                         <input
-                          type="password"
-                          value="sk_live_••••••••••••••••••••••••"
+                          type={showApiKey ? 'text' : 'password'}
+                          value={showApiKey ? 'surbee_demo_xxxxxxxxxxxxxxxxxxxx' : 'surbee_••••••••••••••••••••'}
                           readOnly
                           className="flex-1 p-2.5 rounded-lg border text-[14px] font-mono"
                           style={{
@@ -215,18 +242,48 @@ export default function ConnectorsSettingsPage() {
                           }}
                         />
                         <button
-                          className="px-4 py-2.5 rounded-lg border transition-colors text-[14px] font-medium"
+                          onClick={handleShowApiKey}
+                          className="px-4 py-2.5 rounded-lg border transition-colors text-[14px] font-medium flex items-center justify-center"
                           style={{
                             borderColor: 'var(--surbee-border-accent)',
                             backgroundColor: 'var(--surbee-sidebar-hover)',
                             color: 'var(--surbee-fg-primary)'
                           }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+                          }}
                         >
-                          Show
+                          {showApiKey ? 'Hide' : 'Show'}
                         </button>
+                        {showApiKey && (
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText('surbee_demo_xxxxxxxxxxxxxxxxxxxx');
+                              toast.success('API key copied to clipboard');
+                            }}
+                            className="px-4 py-2.5 rounded-lg border transition-colors text-[14px] font-medium flex items-center justify-center"
+                            style={{
+                              borderColor: 'var(--surbee-border-accent)',
+                              backgroundColor: 'var(--surbee-sidebar-hover)',
+                              color: 'var(--surbee-fg-primary)'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+                            }}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                     <button
+                      onClick={handleViewApiDocs}
                       className="flex items-center gap-2 text-[14px] font-medium transition-colors"
                       style={{ color: 'var(--surbee-fg-primary)' }}
                       onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}

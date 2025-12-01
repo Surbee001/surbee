@@ -1,8 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { v4 as uuidv4 } from 'uuid'
 
 interface RouteContext {
   params: Promise<{ id: string }>
+}
+
+/**
+ * POST /api/projects/[id]/responses
+ * Save a new survey response (public endpoint for respondents)
+ */
+export async function POST(request: NextRequest, context: RouteContext) {
+  try {
+    const { id: projectId } = await context.params
+    const body = await request.json()
+    const { responses, completed_at, device_data, timing_data } = body
+
+    if (!responses) {
+      return NextResponse.json({ error: 'Responses data is required' }, { status: 400 })
+    }
+
+    // Verify the project exists and is published (public endpoint, no user auth needed)
+    const { data: project, error: projectError } = await supabaseAdmin
+      .from('projects')
+      .select('id, status')
+      .eq('id', projectId)
+      .single()
+
+    if (projectError || !project) {
+      return NextResponse.json({ error: 'Survey not found' }, { status: 404 })
+    }
+
+    // Insert the response
+    const { data: newResponse, error: insertError } = await supabaseAdmin
+      .from('survey_responses')
+      .insert({
+        id: uuidv4(),
+        survey_id: projectId,
+        responses,
+        completed_at: completed_at || new Date().toISOString(),
+        device_data: device_data || null,
+        timing_data: timing_data || null,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('Error inserting response:', insertError)
+      return NextResponse.json({ error: 'Failed to save response' }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      response: newResponse,
+    }, { status: 201 })
+  } catch (error) {
+    console.error('Error saving response:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
 
 /**

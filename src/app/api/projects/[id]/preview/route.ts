@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ProjectsService } from '@/lib/services/projects';
 import { supabaseAdmin } from '@/lib/supabase-server';
+
+// Helper to trigger screenshot capture in background
+async function triggerScreenshotCapture(projectId: string, userId: string) {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://surbee.com';
+    // Fire and forget - don't wait for screenshot to complete
+    fetch(`${baseUrl}/api/projects/${projectId}/screenshot`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    }).catch(err => console.log('Screenshot capture initiated:', err?.message || 'success'));
+  } catch (err) {
+    console.log('Could not trigger screenshot:', err);
+  }
+}
 
 export async function POST(
   request: NextRequest,
@@ -28,7 +42,18 @@ export async function POST(
       .select()
       .single();
 
-    // If project was updated, return it
+    // If project was updated, trigger screenshot capture in background
+    if (existingProject && sandboxBundle) {
+      // Capture screenshot asynchronously (don't block response)
+      triggerScreenshotCapture(projectId, userId);
+
+      return NextResponse.json({
+        success: true,
+        project: existingProject
+      }, { status: 200 });
+    }
+
+    // If project was updated but no sandbox, just return
     if (existingProject) {
       return NextResponse.json({
         success: true,
@@ -75,6 +100,11 @@ export async function POST(
           return NextResponse.json({ success: true, project: retryProject }, { status: 200 });
         }
         return NextResponse.json({ error: createError.message }, { status: 500 });
+      }
+
+      // Trigger screenshot capture for new project
+      if (sandboxBundle) {
+        triggerScreenshotCapture(projectId, userId);
       }
 
       return NextResponse.json({

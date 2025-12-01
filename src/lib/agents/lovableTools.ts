@@ -20,6 +20,16 @@ interface ProjectFiles {
 }
 const projectFiles = new Map<string, ProjectFiles>();
 
+// Store for user-uploaded images from chat (keyed by project name)
+// Images are stored as { index: number, dataUrl: string, filename?: string }[]
+interface UploadedImage {
+  index: number;
+  dataUrl: string;
+  filename?: string;
+  mediaType?: string;
+}
+export const chatUploadedImages = new Map<string, UploadedImage[]>();
+
 // Helper to get the latest project name (for tools that don't receive it)
 let latestProjectName: string | null = null;
 
@@ -813,6 +823,121 @@ export const surbeDelete = tool({
       message: `Deleted file ${file_path}`,
       file_path
     };
+  },
+});
+
+// Tool to save user-uploaded images from chat to the project
+export const surbeSaveChatImage = tool({
+  description: `Save a user-uploaded image from the chat to the project assets folder.
+
+USE THIS TOOL when users upload an image and want to use it in their survey/project (e.g., as a header, logo, background, etc.)
+
+How it works:
+1. When users upload images in the chat, they are automatically stored and indexed (0, 1, 2, etc.)
+2. Call this tool with the image_index to save the image to your project
+3. The image will be saved to the specified target_path (recommend: src/assets/)
+4. After saving, import the image in your code using ES6 imports
+
+Parameters:
+- image_index: Which uploaded image to save (0 = first/most recent, 1 = second, etc.)
+- target_path: Where to save in the project (e.g., "src/assets/header-image.png")
+
+Example workflow:
+1. User uploads an image and says "use this as the survey header"
+2. Call: surbe_save_chat_image(image_index: 0, target_path: "src/assets/header.png")
+3. In your code: import headerImage from "@/assets/header.png"
+4. Use: <img src={headerImage} alt="Header" />
+
+IMPORTANT:
+- Always use this tool when users provide an image they want incorporated into the project
+- Do NOT use imagegen_generate_image to recreate user-uploaded images
+- Do NOT ask users for file paths - just use image_index 0 for their most recent upload`,
+  inputSchema: z.object({
+    image_index: z.number().default(0).describe("Index of the uploaded image to save (0 = most recent, 1 = second most recent, etc.)"),
+    target_path: z.string().describe("Destination path in the project (e.g., 'src/assets/header.png')"),
+  }),
+  execute: async ({ image_index, target_path }) => {
+    console.log(`📷 Saving chat image ${image_index} to ${target_path}`);
+
+    if (!latestProjectName) {
+      console.error('❌ No project initialized');
+      return {
+        status: 'error',
+        message: 'No project initialized. Call surb_init_sandbox first.',
+      };
+    }
+
+    const uploadedImages = chatUploadedImages.get(latestProjectName);
+
+    if (!uploadedImages || uploadedImages.length === 0) {
+      return {
+        status: 'error',
+        message: 'No uploaded images found in this chat session. Ask the user to upload an image first.',
+        available_images: 0
+      };
+    }
+
+    if (image_index < 0 || image_index >= uploadedImages.length) {
+      return {
+        status: 'error',
+        message: `Invalid image index ${image_index}. Available images: 0-${uploadedImages.length - 1}`,
+        available_images: uploadedImages.length
+      };
+    }
+
+    const image = uploadedImages[image_index];
+    const sandbox = sandboxInstances.get(latestProjectName);
+    const files = projectFiles.get(latestProjectName);
+
+    if (!sandbox || !files) {
+      return {
+        status: 'error',
+        message: 'Sandbox not found. Initialize the project first.',
+      };
+    }
+
+    try {
+      // Extract base64 data from data URL
+      const dataUrl = image.dataUrl;
+      const base64Match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+
+      if (!base64Match) {
+        return {
+          status: 'error',
+          message: 'Invalid image format. Expected base64 data URL.',
+        };
+      }
+
+      const mimeType = base64Match[1];
+      const base64Data = base64Match[2];
+
+      // Convert base64 to Buffer for E2B
+      const imageBuffer = Buffer.from(base64Data, 'base64');
+
+      // Write to E2B sandbox as binary
+      await sandbox.files.write(`/home/user/${target_path}`, imageBuffer);
+
+      // Also track in project files (store as data URL for reference)
+      files.files.set(target_path, `[Binary Image: ${mimeType}, ${imageBuffer.length} bytes]`);
+
+      console.log(`✅ Saved chat image to ${target_path} (${imageBuffer.length} bytes)`);
+
+      return {
+        status: 'success',
+        message: `Image saved to ${target_path}`,
+        target_path,
+        original_filename: image.filename || 'uploaded-image',
+        mime_type: mimeType,
+        size_bytes: imageBuffer.length,
+        usage_hint: `Import in code: import myImage from "@/${target_path.replace(/^src\//, '')}"`
+      };
+    } catch (error) {
+      console.error(`❌ Failed to save chat image: ${error}`);
+      return {
+        status: 'error',
+        message: `Failed to save image: ${error}`,
+      };
+    }
   },
 });
 

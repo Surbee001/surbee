@@ -407,7 +407,7 @@ export default function ChatInputLight({
   const hasMessage = chatText.trim().length > 0;
   const buttonDisabled = isBusy ? false : (!hasMessage || isInputDisabled);
   const buttonBaseClass = "flex justify-center items-center ease-in transition-all duration-150 cursor-pointer";
-  const idleActiveClass = detectedTheme === 'white' ? 'bg-black text-white p-1.5 rounded-full' : 'bg-white text-black p-1.5 rounded-full';
+  const idleActiveClass = detectedTheme === 'white' ? 'bg-black text-white p-1.5 rounded-full' : 'bg-[#E8E8E8] text-black p-1.5 rounded-full';
   const idleInactiveClass = detectedTheme === 'white' ? 'text-gray-500 hover:text-gray-600 p-1.5 rounded-full' : 'text-gray-400 hover:text-gray-300 p-1.5 rounded-full';
   const busyClass = idleActiveClass;
 
@@ -422,8 +422,8 @@ export default function ChatInputLight({
             ? '1px solid rgba(255, 255, 255, 0.8)'
             : detectedTheme === 'white'
               ? '1px solid rgba(0, 0, 0, 0.1)'
-              : '1px solid var(--surbee-border-accent)',
-          backgroundColor: detectedTheme === 'white' ? '#F8F8F8' : '#242424',
+              : 'none',
+          backgroundColor: detectedTheme === 'white' ? '#F8F8F8' : '#1E1E1F',
           boxShadow: shouldGlow ? '0 0 20px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.2)' : 'none'
         }}
         onDragOver={handleDragOver}
@@ -552,10 +552,10 @@ export default function ChatInputLight({
                     overflowY: "auto",
                     outline: "transparent solid 2px",
                     outlineOffset: "2px",
-                    color: detectedTheme === 'white' ? "rgb(0, 0, 0)" : "rgb(255, 255, 255)",
+                    color: detectedTheme === 'white' ? "rgb(0, 0, 0)" : "#E8E8E8",
                     opacity: isInputDisabled ? 0.5 : 1,
                     pointerEvents: isInputDisabled ? "none" : "auto",
-                    caretColor: detectedTheme === 'white' ? "rgb(0, 0, 0)" : "rgb(255, 255, 255)",
+                    caretColor: detectedTheme === 'white' ? "rgb(0, 0, 0)" : "#E8E8E8",
                     fontFamily: "var(--font-epilogue), sans-serif",
                     // Additional subtle refinements to mirror provided textarea styles
                     letterSpacing: "-0.01em",

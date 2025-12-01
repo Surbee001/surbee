@@ -1,16 +1,23 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { Globe, AlertTriangle, CheckCircle2, Users, Loader2 } from 'lucide-react'
-import { SimpleSurveyRenderer } from '@/components/survey/SimpleSurveyRenderer'
+import { Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react'
+
+interface SandboxBundle {
+  files: Record<string, string>;
+  entry: string;
+  dependencies?: string[];
+  devDependencies?: string[];
+}
 
 interface PublishedSurvey {
   id: string
   title: string
   description?: string
-  survey_schema: any
+  sandbox_bundle?: SandboxBundle
+  survey_schema?: any
   published_at: string
 }
 
@@ -21,6 +28,7 @@ export default function PublishedSurveyPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isCompleted, setIsCompleted] = useState(false)
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
 
   useEffect(() => {
     const fetchSurvey = async () => {
@@ -52,20 +60,43 @@ export default function PublishedSurveyPage() {
     fetchSurvey()
   }, [publishedUrl])
 
-  const handleSurveyComplete = async (responses: Record<string, any>) => {
-    console.log('Survey completed with responses:', responses)
+  // Listen for messages from the sandbox (for form submissions)
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      // Handle survey completion from sandbox
+      if (event.data?.type === 'SURVEY_COMPLETE' || event.data?.type === 'survey-response') {
+        const responses = event.data.responses || event.data.data
 
-    // TODO: Save responses to database
-    // For now, just show the completion message
-    setIsCompleted(true)
-  }
+        if (survey?.id && responses) {
+          try {
+            // Save responses to the database
+            await fetch(`/api/projects/${survey.id}/responses`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                responses,
+                completed_at: new Date().toISOString(),
+              }),
+            })
+          } catch (err) {
+            console.error('Error saving response:', err)
+          }
+        }
+
+        setIsCompleted(true)
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [survey?.id])
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center">
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="animate-spin h-12 w-12 text-green-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading survey...</p>
+          <Loader2 className="animate-spin h-8 w-8 text-white/60 mx-auto mb-4" />
+          <p className="text-white/40 text-sm">Loading survey...</p>
         </div>
       </div>
     )
@@ -73,90 +104,104 @@ export default function PublishedSurveyPage() {
 
   if (error || !survey) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center max-w-md mx-auto p-8"
-        >
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className="w-8 h-8 text-red-600" />
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-400" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Survey Unavailable</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="text-xl font-semibold text-white mb-2">Survey Unavailable</h1>
+          <p className="text-white/50 text-sm">
             {error || 'The survey you\'re looking for is not available.'}
           </p>
-        </motion.div>
+        </div>
       </div>
     )
   }
 
   if (isCompleted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center max-w-md mx-auto p-8"
-        >
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 className="w-10 h-10 text-green-600" />
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="w-8 h-8 text-green-400" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Thank You!</h1>
-          <p className="text-gray-600 text-lg mb-6">
+          <h1 className="text-xl font-semibold text-white mb-2">Thank You!</h1>
+          <p className="text-white/50 text-sm">
             Your responses have been recorded successfully.
           </p>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <p className="text-green-800 text-sm">
-              Your feedback is valuable and will help improve our services.
-            </p>
-          </div>
-        </motion.div>
+        </div>
       </div>
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Survey Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-4xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <Globe className="w-4 h-4 text-green-600" />
-              </div>
-              <div>
-                <h1 className="font-semibold text-gray-900">{survey.title}</h1>
-                {survey.description && (
-                  <p className="text-sm text-gray-600">{survey.description}</p>
-                )}
-              </div>
-            </div>
-            <div className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-              Published
-            </div>
-          </div>
-        </div>
-      </div>
+  // Render sandbox bundle if available
+  if (survey.sandbox_bundle?.files) {
+    // Convert sandbox bundle files to Sandpack format
+    const sandpackFiles: Record<string, string> = {}
 
-      {/* Survey Content */}
-      <div className="py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="max-w-4xl mx-auto px-6"
+    for (const [filename, content] of Object.entries(survey.sandbox_bundle.files)) {
+      // Sandpack expects paths starting with /
+      const normalizedPath = filename.startsWith('/') ? filename : `/${filename}`
+      sandpackFiles[normalizedPath] = content
+    }
+
+    // Determine entry point
+    const entryFile = survey.sandbox_bundle.entry?.startsWith('/')
+      ? survey.sandbox_bundle.entry
+      : `/${survey.sandbox_bundle.entry || 'App.tsx'}`
+
+    return (
+      <div className="h-screen w-screen overflow-hidden bg-[#0a0a0a]">
+        <SandpackProvider
+          template="react-ts"
+          files={sandpackFiles}
+          options={{
+            activeFile: entryFile,
+            visibleFiles: [entryFile],
+            externalResources: [
+              'https://cdn.tailwindcss.com',
+            ],
+          }}
+          customSetup={{
+            dependencies: {
+              'react': '^18.2.0',
+              'react-dom': '^18.2.0',
+              'lucide-react': '^0.400.0',
+              'framer-motion': '^11.0.0',
+              ...(survey.sandbox_bundle.dependencies?.reduce((acc, dep) => {
+                const [name, version] = dep.includes('@') && !dep.startsWith('@')
+                  ? dep.split('@')
+                  : [dep, 'latest']
+                return { ...acc, [name]: version }
+              }, {}) || {}),
+            },
+          }}
+          theme="dark"
         >
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <SimpleSurveyRenderer
-              surveyData={survey.survey_schema}
-              surveyId={survey.id}
-              onComplete={handleSurveyComplete}
-              className="rounded-2xl"
+          <div className="h-full w-full">
+            <SandpackPreview
+              showNavigator={false}
+              showOpenInCodeSandbox={false}
+              showRefreshButton={false}
+              style={{ height: '100%', width: '100%' }}
             />
           </div>
-        </motion.div>
+        </SandpackProvider>
+      </div>
+    )
+  }
+
+  // Fallback: show error if no sandbox bundle
+  return (
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="text-center max-w-md mx-auto p-8">
+        <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <AlertTriangle className="w-8 h-8 text-yellow-400" />
+        </div>
+        <h1 className="text-xl font-semibold text-white mb-2">Survey Not Ready</h1>
+        <p className="text-white/50 text-sm">
+          This survey hasn't been built yet. Please check back later.
+        </p>
       </div>
     </div>
   )

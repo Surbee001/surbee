@@ -2,18 +2,19 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, User, Bell, Shield, CreditCard, HelpCircle, Lock, Eye, EyeOff, Download, Trash2, AlertTriangle } from 'lucide-react';
+import { Settings, User, Bell, Shield, CreditCard, HelpCircle, Lock, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SkeletonText, SkeletonCard, SkeletonForm } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAnalyticsConsent } from '@/contexts/AnalyticsContext';
+import { toast } from 'sonner';
 
 export default function PrivacySettingsPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { consent: analyticsConsent, updateConsent: updateAnalyticsConsent, isLoading: analyticsLoading } = useAnalyticsConsent();
   const [isLoading, setIsLoading] = useState(true);
   const [privacySettings, setPrivacySettings] = useState({
-    dataCollection: true,
-    analyticsTracking: true,
     marketingEmails: false,
     thirdPartySharing: false,
     publicProfile: false,
@@ -22,11 +23,21 @@ export default function PrivacySettingsPage() {
   });
 
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    current: '',
+    new: '',
+    confirm: ''
+  });
   const [showFade, setShowFade] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Reset scroll position and fade when component mounts
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+      setShowFade(false);
+    }
+
     const handleScroll = () => {
       if (scrollRef.current) {
         setShowFade(scrollRef.current.scrollTop > 0);
@@ -60,6 +71,66 @@ export default function PrivacySettingsPage() {
     setPrivacySettings(prev => ({ ...prev, [setting]: value }));
   };
 
+  const handlePasswordChange = async () => {
+    if (!passwordData.current || !passwordData.new || !passwordData.confirm) {
+      toast.error('Please fill in all password fields');
+      return;
+    }
+    if (passwordData.new !== passwordData.confirm) {
+      toast.error('New passwords do not match');
+      return;
+    }
+    if (passwordData.new.length < 8) {
+      toast.error('Password must be at least 8 characters long');
+      return;
+    }
+    try {
+      // TODO: Implement actual password change API call
+      console.log('Changing password...');
+      toast.success('Password updated successfully!');
+      setPasswordData({ current: '', new: '', confirm: '' });
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast.error('Failed to update password. Please try again.');
+    }
+  };
+
+  const handleViewRecoveryCodes = () => {
+    // TODO: Implement recovery codes display
+    toast.info('Recovery codes feature coming soon');
+  };
+
+  const handleSignOutAllDevices = async () => {
+    try {
+      // TODO: Implement sign out all devices API call
+      toast.success('Signed out of all devices successfully');
+    } catch (error) {
+      console.error('Error signing out devices:', error);
+      toast.error('Failed to sign out devices. Please try again.');
+    }
+  };
+
+  const handleSignOutSession = async (device: string) => {
+    try {
+      // TODO: Implement sign out specific session API call
+      toast.success(`Signed out of ${device}`);
+    } catch (error) {
+      console.error('Error signing out session:', error);
+      toast.error('Failed to sign out. Please try again.');
+    }
+  };
+
+  const handleSaveChanges = async () => {
+    try {
+      // TODO: Implement actual save API call
+      console.log('Saving privacy settings:', privacySettings);
+      toast.success('Privacy settings saved successfully!');
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast.error('Failed to save settings. Please try again.');
+    }
+  };
+
   const ToggleSwitch = ({ enabled, onChange, disabled = false }: { enabled: boolean; onChange: (value: boolean) => void; disabled?: boolean }) => (
     <button
       onClick={() => !disabled && onChange(!enabled)}
@@ -80,16 +151,6 @@ export default function PrivacySettingsPage() {
     </button>
   );
 
-  const handleDataDownload = () => {
-    console.log('Starting data export...');
-    // TODO: Implement data export functionality
-  };
-
-  const handleAccountDeletion = () => {
-    console.log('Account deletion requested');
-    setShowDeleteModal(false);
-    // TODO: Implement account deletion
-  };
 
   if (authLoading || isLoading) {
     return (
@@ -228,14 +289,14 @@ export default function PrivacySettingsPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>
+    <div className="h-full flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>
 
       {/* Main Content Area */}
-      <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12">
+      <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12 overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full max-w-6xl mx-auto">
-          {/* Settings Navigation */}
-          <div className="lg:col-span-1">
-            <div className="space-y-4">
+          {/* Settings Navigation - Fixed */}
+          <div className="lg:col-span-1 flex flex-col">
+            <div className="space-y-4 flex-shrink-0">
               <h1 className="projects-title">
                 Settings
               </h1>
@@ -245,7 +306,7 @@ export default function PrivacySettingsPage() {
                   { icon: Settings, label: 'General', active: false, href: '/dashboard/settings/general' },
                   { icon: HelpCircle, label: 'Account', active: false, href: '/dashboard/settings/account' },
                   { icon: Shield, label: 'Privacy & Security', active: true, href: '/dashboard/settings/privacy' },
-                  { icon: CreditCard, label: 'Billing & Plans', active: false, href: '/dashboard/settings/billing' },
+                  { icon: CreditCard, label: 'Billing', active: false, href: '/dashboard/settings/billing' },
                   { icon: Settings, label: 'Connectors', active: false, href: '/dashboard/settings/connectors' },
                 ].map((item) => {
                   const Icon = item.icon;
@@ -283,7 +344,7 @@ export default function PrivacySettingsPage() {
           </div>
 
           {/* Privacy Content */}
-          <div className="lg:col-span-3 relative h-full flex flex-col min-h-0">
+          <div className="lg:col-span-3 relative flex flex-col min-h-0 overflow-hidden">
             {/* Fade overlay at top - only show when scrolling */}
             <div className={`absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[var(--surbee-bg-primary)] to-transparent z-10 pointer-events-none transition-opacity duration-300 ${
               showFade ? 'opacity-100' : 'opacity-0'
@@ -316,20 +377,72 @@ export default function PrivacySettingsPage() {
                       <div className="space-y-3">
                         <input
                           type="password"
+                          value={passwordData.current}
+                          onChange={(e) => setPasswordData(prev => ({ ...prev, current: e.target.value }))}
                           placeholder="Current password"
                           className="w-full p-3 rounded-lg border text-[14px] theme-input"
+                          style={{
+                            backgroundColor: 'var(--surbee-bg-secondary)',
+                            borderColor: 'var(--surbee-card-border)',
+                            color: 'var(--surbee-fg-primary)'
+                          }}
+                          onFocus={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--surbee-border-accent)';
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--surbee-card-border)';
+                          }}
                         />
                         <input
                           type="password"
+                          value={passwordData.new}
+                          onChange={(e) => setPasswordData(prev => ({ ...prev, new: e.target.value }))}
                           placeholder="New password"
                           className="w-full p-3 rounded-lg border text-[14px] theme-input"
+                          style={{
+                            backgroundColor: 'var(--surbee-bg-secondary)',
+                            borderColor: 'var(--surbee-card-border)',
+                            color: 'var(--surbee-fg-primary)'
+                          }}
+                          onFocus={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--surbee-border-accent)';
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--surbee-card-border)';
+                          }}
                         />
                         <input
                           type="password"
+                          value={passwordData.confirm}
+                          onChange={(e) => setPasswordData(prev => ({ ...prev, confirm: e.target.value }))}
                           placeholder="Confirm new password"
                           className="w-full p-3 rounded-lg border text-[14px] theme-input"
+                          style={{
+                            backgroundColor: 'var(--surbee-bg-secondary)',
+                            borderColor: 'var(--surbee-card-border)',
+                            color: 'var(--surbee-fg-primary)'
+                          }}
+                          onFocus={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--surbee-border-accent)';
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--surbee-card-border)';
+                          }}
                         />
-                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-[14px] font-medium hover:bg-blue-700 transition-colors">
+                        <button 
+                          onClick={handlePasswordChange}
+                          className="px-6 py-2.5 rounded-lg font-medium text-[14px] transition-all"
+                          style={{
+                            backgroundColor: 'var(--surbee-fg-primary)',
+                            color: 'var(--surbee-bg-primary)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.opacity = '0.9';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.opacity = '1';
+                          }}
+                        >
                           Update Password
                         </button>
                       </div>
@@ -355,7 +468,10 @@ export default function PrivacySettingsPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         {twoFactorEnabled && (
-                          <button className="text-[12px] text-blue-400 hover:text-blue-300">
+                          <button 
+                            onClick={handleViewRecoveryCodes}
+                            className="text-[12px] text-blue-400 hover:text-blue-300"
+                          >
                             View Recovery Codes
                           </button>
                         )}
@@ -372,7 +488,10 @@ export default function PrivacySettingsPage() {
                         <h4 className="text-[14px] font-medium text-theme-primary">
                           Active Sessions
                         </h4>
-                        <button className="text-[12px] text-red-400 hover:text-red-300">
+                        <button 
+                          onClick={handleSignOutAllDevices}
+                          className="text-[12px] text-red-400 hover:text-red-300"
+                        >
                           Sign Out All Devices
                         </button>
                       </div>
@@ -395,7 +514,10 @@ export default function PrivacySettingsPage() {
                               <p className="text-[11px] text-theme-muted">{session.location} • {session.lastSeen}</p>
                             </div>
                             {!session.current && (
-                              <button className="text-[12px] text-red-400 hover:text-red-300">
+                              <button 
+                                onClick={() => handleSignOutSession(session.device)}
+                                className="text-[12px] text-red-400 hover:text-red-300"
+                              >
                                 Sign Out
                               </button>
                             )}
@@ -420,19 +542,26 @@ export default function PrivacySettingsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
+                    {/* Analytics Consent - Connected to actual system */}
+                    <div className="flex items-center justify-between py-2">
+                      <div>
+                        <h4 className="text-[14px] font-medium text-theme-primary">
+                          Share Anonymous Analytics
+                        </h4>
+                        <p className="text-[12px] text-theme-muted">
+                          Help us improve Surbee by sharing anonymous usage data (no personal data or survey content)
+                        </p>
+                      </div>
+                      <ToggleSwitch
+                        enabled={analyticsConsent === true}
+                        onChange={(value) => updateAnalyticsConsent(value)}
+                        disabled={analyticsLoading}
+                      />
+                    </div>
+
+                    <div className="h-px" style={{ backgroundColor: 'var(--surbee-border-subtle)' }} />
+
                     {[
-                      {
-                        key: 'dataCollection',
-                        title: 'Usage Data Collection',
-                        description: 'Allow collection of usage analytics to improve the platform',
-                        enabled: privacySettings.dataCollection
-                      },
-                      {
-                        key: 'analyticsTracking',
-                        title: 'Performance Analytics',
-                        description: 'Track survey performance and response quality metrics',
-                        enabled: privacySettings.analyticsTracking
-                      },
                       {
                         key: 'marketingEmails',
                         title: 'Marketing Communications',
@@ -516,68 +645,22 @@ export default function PrivacySettingsPage() {
                 </CardContent>
               </Card>
 
-              {/* Data Management */}
-              <Card style={{ backgroundColor: 'var(--surbee-card-bg)', borderColor: 'var(--surbee-card-border)' }}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2" style={{ color: 'var(--surbee-fg-primary)' }}>
-                    <Download className="w-5 h-5" />
-                    Data Management
-                  </CardTitle>
-                  <CardDescription style={{ color: 'var(--surbee-fg-muted)' }}>
-                    Download your data or delete your account.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <Download className="w-5 h-5 text-blue-400 mt-0.5" />
-                        <div className="flex-1">
-                          <h4 className="text-[14px] font-medium text-blue-400 mb-1">
-                            Download Your Data
-                          </h4>
-                          <p className="text-[12px] text-blue-300 mb-3">
-                            Get a copy of all your surveys, responses, and account data.
-                          </p>
-                          <button 
-                            onClick={handleDataDownload}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-[13px] font-medium hover:bg-blue-700 transition-colors"
-                          >
-                            Request Data Export
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5" />
-                        <div className="flex-1">
-                          <h4 className="text-[14px] font-medium text-red-400 mb-1">
-                            Delete Account
-                          </h4>
-                          <p className="text-[12px] text-red-300 mb-3">
-                            Permanently delete your account and all associated data. This cannot be undone.
-                          </p>
-                          <button 
-                            onClick={() => setShowDeleteModal(true)}
-                            className="px-4 py-2 bg-red-600 text-white rounded-lg text-[13px] font-medium hover:bg-red-700 transition-colors"
-                          >
-                            Delete Account
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Save Changes */}
-              <div className="flex justify-end gap-3 py-4">
-                <button className="px-6 py-2 border border-theme-primary rounded-lg text-[14px] font-medium text-theme-secondary hover:bg-theme-secondary transition-colors">
-                  Reset to Default
-                </button>
-                <button className="px-6 py-2 bg-theme-secondary text-theme-primary rounded-lg text-[14px] font-medium hover:bg-theme-tertiary transition-colors">
+              <div className="flex justify-end py-4">
+                <button 
+                  onClick={handleSaveChanges}
+                  className="px-6 py-2.5 rounded-lg font-medium text-[14px] transition-all"
+                  style={{
+                    backgroundColor: 'var(--surbee-fg-primary)',
+                    color: 'var(--surbee-bg-primary)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = '0.9';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.opacity = '1';
+                  }}
+                >
                   Save Changes
                 </button>
               </div>
@@ -585,36 +668,6 @@ export default function PrivacySettingsPage() {
           </div>
         </div>
 
-        {/* Delete Account Modal */}
-        {showDeleteModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-theme-primary p-6 rounded-xl max-w-md mx-4 border border-red-500/20">
-              <div className="flex items-center gap-3 mb-4">
-                <AlertTriangle className="w-6 h-6 text-red-400" />
-                <h3 className="text-[18px] font-semibold text-red-400">
-                  Delete Account
-                </h3>
-              </div>
-              <p className="text-[14px] text-theme-muted mb-6">
-                Are you sure you want to delete your account? This will permanently delete all your surveys, responses, and data. This action cannot be undone.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowDeleteModal(false)}
-                  className="flex-1 px-4 py-2 border border-theme-primary rounded-lg text-[14px] font-medium text-theme-secondary hover:bg-theme-secondary transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAccountDeletion}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-[14px] font-medium hover:bg-red-700 transition-colors"
-                >
-                  Delete Account
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

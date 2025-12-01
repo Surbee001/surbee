@@ -551,36 +551,6 @@ export default function Marketplace() {
           justifyContent: "center",
         }}
       >
-        {/* Empty State */}
-        <div
-          style={{
-            textAlign: "center",
-            padding: "60px 20px",
-          }}
-        >
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>📭</div>
-          <h2
-            style={{
-              fontSize: '24px',
-              fontWeight: '600',
-              marginBottom: '12px',
-              color: 'var(--surbee-fg-primary)',
-            }}
-          >
-            No projects yet
-          </h2>
-          <p
-            style={{
-              fontSize: '16px',
-              color: 'var(--surbee-fg-secondary)',
-              maxWidth: '400px',
-              margin: '0 auto',
-              lineHeight: '1.5',
-            }}
-          >
-            When users publish their surveys and templates, they'll appear here for the community to discover and use.
-          </p>
-        </div>
       </main>
     </div>
   );

@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { 
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import {
   Plus,
   Search,
   Filter,
-  ChevronLeft,
-  ChevronRight,
   ChevronDown,
   MoreHorizontal,
   Copy,
@@ -32,6 +30,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import type { Project } from '@/types/database';
 import { ProjectCard } from '@/components/project-card/ProjectCard';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProjectWithStats extends Project {
   responseCount?: number;
@@ -74,7 +73,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center justify-between gap-2 px-3 py-2 text-sm font-medium border rounded-xl transition-colors cursor-pointer"
+        <button className="flex items-center justify-between gap-2 px-3 py-2 text-sm font-medium border rounded-lg transition-colors cursor-pointer"
                 style={{
                   color: 'var(--surbee-fg-primary)',
                   backgroundColor: 'transparent',
@@ -92,7 +91,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
           <ChevronDown size={16} style={{ color: 'var(--surbee-fg-secondary)' }} />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="rounded-xl border" style={{ borderColor: 'var(--surbee-sidebar-border)', backgroundColor: 'var(--surbee-sidebar-bg)', width: `${dynamicWidth}px` }}>
+      <DropdownMenuContent align="start" className="rounded-2xl border" style={{ borderColor: 'var(--surbee-sidebar-border)', backgroundColor: 'var(--surbee-sidebar-bg)', width: `${dynamicWidth}px` }}>
         {options.map((option) => (
           <DropdownMenuItem
             key={option.value}
@@ -135,52 +134,34 @@ const InfoIcon: React.FC = () => (
   </span>
 );
 
-// Skeleton Loading Component - Updated to match exact ProjectCard layout
+
+// Skeleton Loading Component - Matches ProjectCard structure exactly
 const SkeletonCard: React.FC = () => (
   <div
-    className="group w-full p-[5px] rounded-[12px] relative border flex flex-col gap-[5px] h-full"
-    style={{ 
-      backgroundColor: "#141414",
-      borderColor: 'var(--surbee-border-accent)'
+    className="w-full p-[5px] rounded-[12px] relative border flex flex-col gap-[5px] h-full"
+    style={{
+      backgroundColor: 'var(--surbee-card-bg)',
+      borderColor: 'transparent',
+      boxSizing: 'border-box'
     }}
   >
-    {/* Header with avatar, title, and edit button */}
     <div className="w-full flex justify-between">
       <div className="flex gap-[5px]">
-        {/* User Avatar Skeleton */}
-        <div 
-          className="rounded-[8px] bg-gray-800 animate-pulse"
-          style={{ height: '35px', width: '35px' }}
-        />
-        
-        {/* Title and response count skeleton */}
+        {/* Avatar skeleton */}
+        <Skeleton className="w-[35px] h-[35px] rounded-[8px]" />
         <div className="text-sm flex flex-col justify-center h-[35px] gap-1">
-          <div 
-            className="bg-gray-800 animate-pulse rounded"
-            style={{ height: '14px', width: '120px' }}
-          />
-          <div className="flex items-center gap-1">
-            <div 
-              className="bg-gray-800 animate-pulse rounded"
-              style={{ height: '12px', width: '12px' }}
-            />
-            <div 
-              className="bg-gray-800 animate-pulse rounded"
-              style={{ height: '12px', width: '30px' }}
-            />
-          </div>
+          {/* Title skeleton */}
+          <Skeleton className="h-3.5 w-24 rounded" />
+          {/* Response count skeleton */}
+          <Skeleton className="h-2.5 w-12 rounded" />
         </div>
       </div>
-      
-      {/* Edit Button Skeleton */}
-      <div
-        className="w-[66px] h-[35px] bg-gray-800 animate-pulse rounded-lg"
-      />
+      {/* Edit button skeleton (hidden, matches hover state) */}
+      <div className="w-[66px] h-[35px]" />
     </div>
-    
-    {/* Preview Image Skeleton */}
+    {/* Preview image skeleton */}
     <div className="w-full rounded-[8px] aspect-[210/119] mt-auto overflow-hidden">
-      <div className="w-full h-full bg-gray-800 animate-pulse" />
+      <Skeleton className="w-full h-full rounded-[8px]" />
     </div>
   </div>
 );
@@ -348,71 +329,6 @@ const OldProjectCard: React.FC<{
   );
 };
 
-// Pagination Component
-const Pagination: React.FC<{
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-}> = ({ currentPage, totalPages, onPageChange }) => {
-  const getPageNumbers = () => {
-    const delta = 2;
-    const range = [];
-    const rangeWithDots = [];
-
-    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
-      range.push(i);
-    }
-
-    if (currentPage - delta > 2) {
-      rangeWithDots.push(1, '...');
-    } else {
-      rangeWithDots.push(1);
-    }
-
-    rangeWithDots.push(...range);
-
-    if (currentPage + delta < totalPages - 1) {
-      rangeWithDots.push('...', totalPages);
-    } else {
-      if (totalPages > 1) rangeWithDots.push(totalPages);
-    }
-
-    return rangeWithDots;
-  };
-
-  if (totalPages <= 1) return null;
-
-  return (
-    <div className="pagination-container">
-      <button
-        className="pagination-btn"
-        disabled={currentPage === 1}
-        onClick={() => onPageChange(currentPage - 1)}
-      >
-        <ChevronLeft size={16} />
-      </button>
-
-      {getPageNumbers().map((pageNum, index) => (
-        <button
-          key={index}
-          className={`pagination-btn ${pageNum === currentPage ? 'active' : ''}`}
-          disabled={pageNum === '...'}
-          onClick={() => typeof pageNum === 'number' && onPageChange(pageNum)}
-        >
-          {pageNum}
-        </button>
-      ))}
-
-      <button
-        className="pagination-btn"
-        disabled={currentPage === totalPages}
-        onClick={() => onPageChange(currentPage + 1)}
-      >
-        <ChevronRight size={16} />
-      </button>
-    </div>
-  );
-};
 
 
 export default function ProjectsPage() {
@@ -422,9 +338,10 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [displayedCount, setDisplayedCount] = useState(12); // Start with 12 items
   const [sortBy, setSortBy] = useState<'updated' | 'created' | 'title' | 'responses'>('updated');
-  const itemsPerPage = 8;
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const itemsPerLoad = 8;
 
   // Dropdown options
 
@@ -503,17 +420,35 @@ export default function ProjectsPage() {
     return filtered;
   }, [projects, searchQuery, sortBy, pinnedIds]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
-  const currentProjects = filteredProjects.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Get displayed projects (infinite scroll)
+  const displayedProjects = useMemo(() => {
+    return filteredProjects.slice(0, displayedCount);
+  }, [filteredProjects, displayedCount]);
 
-  // Reset to first page when filters change
+  const hasMore = displayedCount < filteredProjects.length;
+
+  // Reset displayed count when filters change
   useEffect(() => {
-    setCurrentPage(1);
+    setDisplayedCount(12);
   }, [searchQuery, sortBy]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          setDisplayedCount(prev => prev + itemsPerLoad);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(loadMoreRef.current);
+
+    return () => observer.disconnect();
+  }, [hasMore]);
 
   // Handle search input changes
   const handleSearchChange = (value: string) => {
@@ -633,7 +568,7 @@ export default function ProjectsPage() {
                 </TooltipProvider>
               </div>
             </div>
-            <button className="px-6 py-2.5 flex items-center gap-2 text-sm font-medium rounded-xl border" style={{ backgroundColor: '#000000', color: '#ffffff', borderColor: '#000000' }}>
+            <button className="px-6 py-2.5 flex items-center gap-2 text-sm font-medium rounded-lg border" style={{ backgroundColor: '#ffffff', color: '#000000', borderColor: '#e5e5e5' }}>
               <Plus className="w-4 h-4" />
               New Project
             </button>
@@ -733,20 +668,20 @@ export default function ProjectsPage() {
             </div>
             <button
               onClick={handleCreateSurvey}
-              className="px-6 py-2.5 flex items-center gap-2 text-sm font-medium transition-all rounded-xl border cursor-pointer"
+              className="px-6 py-2.5 flex items-center gap-2 text-sm font-medium transition-all rounded-lg border cursor-pointer"
               style={{
-                backgroundColor: '#000000',
-                color: '#ffffff',
-                borderColor: '#000000',
+                backgroundColor: '#ffffff',
+                color: '#000000',
+                borderColor: '#e5e5e5',
                 fontFamily: 'var(--font-inter), sans-serif'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#1a1a1a';
-                e.currentTarget.style.borderColor = '#1a1a1a';
+                e.currentTarget.style.backgroundColor = '#f5f5f5';
+                e.currentTarget.style.borderColor = '#d4d4d4';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#000000';
-                e.currentTarget.style.borderColor = '#000000';
+                e.currentTarget.style.backgroundColor = '#ffffff';
+                e.currentTarget.style.borderColor = '#e5e5e5';
               }}
             >
               <Plus className="w-4 h-4" />
@@ -808,7 +743,7 @@ export default function ProjectsPage() {
           <div className="mx-auto w-full max-w-[1280px] px-6 md:px-8">
           {/* Project Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-            {currentProjects.map((project) => (
+            {displayedProjects.map((project) => (
               <ProjectCard
                 key={project.id}
                 id={project.id}
@@ -816,6 +751,7 @@ export default function ProjectsPage() {
                 status={project.status}
                 updatedAt={project.updated_at}
                 previewImage={project.previewImage || project.preview_image_url}
+                userAvatar={user?.user_metadata?.picture || user?.user_metadata?.avatar_url}
                 responseCount={project.responseCount ?? 0}
                 publishedUrl={project.published_url}
                 activeChatSessionId={project.active_chat_session_id}
@@ -828,12 +764,17 @@ export default function ProjectsPage() {
             ))}
           </div>
 
-          {/* Pagination */}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
+          {/* Infinite scroll trigger */}
+          {hasMore && (
+            <div
+              ref={loadMoreRef}
+              className="flex justify-center py-8"
+            >
+              <div className="animate-pulse text-sm" style={{ color: 'var(--surbee-fg-muted)' }}>
+                Loading more...
+              </div>
+            </div>
+          )}
 
           {/* Empty State */}
           {filteredProjects.length === 0 && !loading && (
