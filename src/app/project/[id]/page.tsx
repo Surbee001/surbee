@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRealtime } from '@/contexts/RealtimeContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useChatSession } from '@/hooks/useChatSession';
+import { useDashboardChat } from '@/hooks/useDashboardChat';
 import { ThinkingDisplay } from '../../../../components/ThinkingUi/components/thinking-display';
 import { ToolCall } from '../../../../components/ThinkingUi/components/tool-call';
 import { AILoader } from '@/components/ai-loader';
@@ -1233,6 +1234,46 @@ export default function ProjectPage() {
 
     loadAndRestoreSession();
   }, [sessionIdFromUrl, user?.id, loadSession, setMessages, isSandboxPreview, sessionLoaded]);
+
+  // Restore chat context from dashboard if coming from dashboard chat
+  const { loadChatContext, clearChatContext } = useDashboardChat();
+  const [dashboardContextLoaded, setDashboardContextLoaded] = useState(false);
+
+  useEffect(() => {
+    if (dashboardContextLoaded || !user?.id) return;
+
+    const fromDashboard = searchParams?.get('fromDashboard') === 'true';
+    if (fromDashboard) {
+      const context = loadChatContext();
+      if (context && context.messages.length > 0) {
+        console.log('📥 Restoring chat context from dashboard:', context.messages.length, 'messages');
+
+        // Transform messages to the format useChat expects
+        const restoredMessages = context.messages.map((msg: any, idx: number) => ({
+          id: msg.id || `dashboard-${idx}`,
+          role: msg.role,
+          parts: msg.parts || [{ type: 'text', text: msg.content || '' }],
+          ...msg
+        }));
+
+        setMessages(restoredMessages);
+        setHasStartedChat(true);
+
+        // Restore model selection if available
+        if (context.model && (context.model === 'gpt-5' || context.model === 'claude-haiku' || context.model === 'mistral')) {
+          setSelectedModel(context.model as AIModel);
+        }
+
+        clearChatContext();
+
+        // Remove query param from URL
+        const url = new URL(window.location.href);
+        url.searchParams.delete('fromDashboard');
+        window.history.replaceState({}, '', url.toString());
+      }
+      setDashboardContextLoaded(true);
+    }
+  }, [searchParams, user?.id, loadChatContext, clearChatContext, setMessages, dashboardContextLoaded]);
 
   // No debouncing needed - we render directly from messages
 

@@ -110,6 +110,7 @@ export default function DocumentViewer({ document: doc, onClose }: DocumentViewe
               <p className="text-[12px] text-theme-muted">
                 {formatDate(doc.date)} <span className="mx-2">&middot;</span> {doc.size}
               </p>
+            </div>
           </div>
 
           {/* Tags */}

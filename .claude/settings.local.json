@@ -141,7 +141,9 @@
       "WebFetch(domain:www.onedesigncompany.com)",
       "Bash(git submodule:*)",
       "Bash(timeout 120 npm run build:*)",
-      "Bash(SKIP_BUILD_STATIC_GENERATION=1 npm run build:*)"
+      "Bash(SKIP_BUILD_STATIC_GENERATION=1 npm run build:*)",
+      "Bash(timeout 15 npm run dev:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": [],

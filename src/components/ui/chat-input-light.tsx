@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { ArrowUp, Plus, X, Settings2, Crosshair, Eye, Lightbulb, Square } from "lucide-react";
+import { ArrowUp, Plus, X, Settings2, Crosshair, Eye, Lightbulb, Square, Hammer } from "lucide-react";
 import ChatSettingsMenu from "@/components/ui/chat-settings-menu";
 import { ImageViewerModal } from "@/components/ui/image-viewer-modal";
 import ModelSelector, { AIModel } from "@/components/ui/model-selector";
@@ -36,6 +36,11 @@ interface ChatInputLightProps {
   showModelSelector?: boolean; // optional, shows model selector dropdown
   selectedModel?: AIModel; // optional, currently selected AI model
   onModelChange?: (model: AIModel) => void; // optional, callback when model changes
+  showBuildToggle?: boolean; // optional, shows build mode toggle
+  isBuildMode?: boolean; // optional, whether build mode is active
+  onToggleBuildMode?: () => void; // optional, callback to toggle build mode
+  hideAttachButton?: boolean; // optional, hides the attach/plus button
+  compact?: boolean; // optional, makes the chatbox thinner in height
 }
 
 export default function ChatInputLight({
@@ -60,6 +65,11 @@ export default function ChatInputLight({
   showModelSelector = false,
   selectedModel = 'gpt-5',
   onModelChange,
+  showBuildToggle = false,
+  isBuildMode = false,
+  onToggleBuildMode,
+  hideAttachButton = false,
+  compact = false,
 }: ChatInputLightProps) {
   const [chatText, setChatText] = useState("");
   // Initialize theme by checking DOM immediately
@@ -134,26 +144,8 @@ export default function ChatInputLight({
     if (chatText.trim().length > 0) return; // do not rotate while typing
 
     const interval = setInterval(() => {
-      setPlaceholderIndex((idx) => {
-        const next = (idx + 1) % (placeholderList.length + 1); // +1 for the duplicate
-        // Update attribute immediately for snappy UX
-        const nextText = placeholderList[next % placeholderList.length] || "";
-        if (contentEditableRef.current) {
-          contentEditableRef.current.setAttribute("data-placeholder", nextText);
-        }
-        
-        // When we reach the duplicate (end), reset to 0 without animation
-        if (next === placeholderList.length) {
-          // Reset immediately without transition to create seamless loop
-          setTimeout(() => {
-            setPlaceholderIndex(0);
-          }, 0);
-          return placeholderList.length; // Show the duplicate item
-        }
-        
-        return next;
-      });
-    }, 2500);
+      setPlaceholderIndex((idx) => (idx + 1) % placeholderList.length);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [chatText, placeholderList, placeholderIndex, disableRotatingPlaceholders, placeholder]);
@@ -412,10 +404,10 @@ export default function ChatInputLight({
   const busyClass = idleActiveClass;
 
   return (
-    <div className={`w-full max-w-2xl mx-auto ${className}`}>
+    <div className={`w-full mx-auto ${className}`}>
       <div 
         ref={chatboxContainerRef}
-        className={`relative flex flex-col max-h-[40rem] min-h-[122px] z-10 transition-all duration-500`}
+        className={`relative flex flex-col max-h-[40rem] ${compact ? 'min-h-[70px]' : 'min-h-[122px]'} z-10 transition-all duration-500`}
         style={{
           borderRadius: borderRadius,
           border: shouldGlow
@@ -505,30 +497,32 @@ export default function ChatInputLight({
                     fontWeight: 400,
                     fontSize: "1rem",
                     lineHeight: "1.5rem",
-                    height: "1.5rem", // Fixed height to contain one line
+                    height: "1.5rem",
                   }}
                 >
+                  {/* Single placeholder with fade transition and staggered word appearance */}
                   <div
-                    className={`transition-transform ease-in-out duration-500 ${
-                      placeholderIndex === placeholderList.length ? 'transition-none' : ''
-                    }`}
+                    key={placeholderIndex}
+                    className="overflow-hidden text-ellipsis whitespace-nowrap animate-fade-in-placeholder"
                     style={{
-                      transform: `translateY(calc(-${placeholderIndex} * 1.5rem))`,
+                      height: "1.5rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.25em",
                     }}
                   >
-                    {/* Render all placeholders plus one extra at the end for seamless loop */}
-                    {[...placeholderList, placeholderList[0]].map((text, i) => (
-                      <div
-                        key={`${text}-${i}`}
-                        className="overflow-hidden text-ellipsis whitespace-nowrap"
-                        style={{ 
-                          height: "1.5rem",
-                          display: "flex",
-                          alignItems: "center"
+                    {(placeholderList[placeholderIndex % placeholderList.length] || "").split(" ").map((word, wordIdx) => (
+                      <span
+                        key={`${word}-${wordIdx}`}
+                        className="inline-block animate-word-fade-in"
+                        style={{
+                          animationDelay: `${wordIdx * 60}ms`,
+                          opacity: 0,
+                          animationFillMode: "forwards",
                         }}
                       >
-                        {text}
-                      </div>
+                        {word}
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -574,28 +568,30 @@ export default function ChatInputLight({
           <div className="flex-shrink-0 px-6 pb-4">
           <div className="flex flex-row items-center justify-between w-full gap-2 relative">
             <div className="flex flex-row gap-1 items-center min-w-0 flex-1">
-              <button
-                onClick={() => uploadInputRef.current?.click()}
-                className={`inline-flex items-center justify-center rounded-md transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-[28px] w-7 ${detectedTheme === 'white' ? 'text-gray-700 hover:text-black hover:bg-black/5' : 'text-gray-300 hover:text-white hover:bg-white/5'}`}
-                type="button"
-                disabled={isInputDisabled}
-                title="Add"
-              >
-                <Plus className="h-3 w-3" />
-                <input
-                  ref={uploadInputRef}
-                  type="file"
-                  className="hidden"
-                  multiple
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files.length > 0) {
-                      Array.from(e.target.files).slice(0, 5).forEach(processFile)
-                    }
-                    if (e.target) e.target.value = "";
-                  }}
-                  accept="image/*"
-                />
-              </button>
+              {!hideAttachButton && (
+                <button
+                  onClick={() => uploadInputRef.current?.click()}
+                  className={`inline-flex items-center justify-center rounded-md transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-[28px] w-7 ${detectedTheme === 'white' ? 'text-gray-700 hover:text-black hover:bg-black/5' : 'text-gray-300 hover:text-white hover:bg-white/5'}`}
+                  type="button"
+                  disabled={isInputDisabled}
+                  title="Add"
+                >
+                  <Plus className="h-3 w-3" />
+                  <input
+                    ref={uploadInputRef}
+                    type="file"
+                    className="hidden"
+                    multiple
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        Array.from(e.target.files).slice(0, 5).forEach(processFile)
+                      }
+                      if (e.target) e.target.value = "";
+                    }}
+                    accept="image/*"
+                  />
+                </button>
+              )}
               {showModelSelector && onModelChange && (
                 <ModelSelector
                   selectedModel={selectedModel}
@@ -631,6 +627,27 @@ export default function ChatInputLight({
               )}
             </div>
             <div className="flex flex-row items-center gap-2 flex-shrink-0">
+              {showBuildToggle && onToggleBuildMode && (
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-medium ${isBuildMode ? 'text-blue-400' : (detectedTheme === 'white' ? 'text-gray-500' : 'text-zinc-500')}`}>
+                    Build
+                  </span>
+                  <button
+                    onClick={onToggleBuildMode}
+                    className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${
+                      isBuildMode ? 'bg-blue-500' : (detectedTheme === 'white' ? 'bg-gray-300' : 'bg-zinc-600')
+                    }`}
+                    type="button"
+                    title={isBuildMode ? "Build mode on - click to switch to chat" : "Chat mode - click to switch to build"}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white transition-transform absolute top-0.5 ${
+                        isBuildMode ? 'translate-x-5' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+              )}
               <button
                 className={`${buttonBaseClass} ${isBusy ? busyClass : (hasMessage && !isInputDisabled ? idleActiveClass : idleInactiveClass)}`}
                 disabled={buttonDisabled}

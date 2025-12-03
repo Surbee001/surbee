@@ -21,6 +21,7 @@ import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealtime } from '@/contexts/RealtimeContext';
 import { CommunityProjectCard } from '@/components/community/CommunityProjectCard';
+import { DashboardChatContainer } from '@/components/dashboard/DashboardChatContainer';
  
 
 interface ChatMessage {
@@ -716,172 +717,13 @@ function DashboardContent() {
       )}
 
       <div className="relative flex flex-col h-full">
-      {/* Content Area - Chat */}
-      <div className="w-full max-w-2xl flex flex-col mx-auto flex-1" style={{ 
-        height: '100%',
-        justifyContent: hasStartedChat ? 'flex-start' : 'flex-start',
-        paddingTop: hasStartedChat ? '0' : '17%',
-        transition: 'all 0.4s ease-in-out'
-      }}>
-              {/* Greeting Text */}
-              <AnimatePresence mode="wait">
-                {!hasStartedChat && (
-                  <motion.div 
-                    className="text-center mb-4"
-                    initial={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -50, scale: 0.95 }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                    style={{ 
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <h1 className="text-white text-center" style={{
-                      color: 'var(--surbee-fg-primary)',
-                      fontFamily: 'Kalice-Trial-Regular, sans-serif',
-                      fontSize: '42px',
-                      lineHeight: '40px',
-                      fontWeight: 400,
-                      letterSpacing: '-0.01em',
-                      marginBottom: '0.5rem'
-                    }}>
-                      {greeting}
-                    </h1>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Messages Area - Inside Container */}
-              <AnimatePresence>
-                {hasStartedChat && (
-                  <motion.div 
-                    ref={chatAreaRef}
-                    className="w-full overflow-y-auto mb-4 flex-1 scrollbar-hide"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                    style={{ 
-                      scrollBehavior: 'smooth',
-                      maxHeight: 'calc(100vh - 200px)',
-                      paddingTop: '2rem'
-                    }}
-                  >
-                    <div className="space-y-6">
-                      {messages.map((message, idx) => (
-                      <div
-                        key={message.id}
-                        className={`group relative ${
-                          message.isUser ? 'text-right' : 'text-left'
-                        }`}
-                      >
-                        {/* Thinking dropdown should appear above the AI answer it belongs to */}
-                        {!message.isUser && (
-                          <ThoughtProcess
-                            isThinking={isThinking && idx === messages.length - 1}
-                            currentThought={idx === messages.length - 1 ? currentThought : ''}
-                            thoughts={idx === messages.length - 1 ? thoughts : []}
-                            phase={idx === messages.length - 1 ? thinkPhase : 'answered'}
-                            startTime={Date.now() - thinkingDuration * 1000}
-                          />
-                        )}
-                        <div
-                          className="text-base leading-relaxed w-full"
-                          style={{
-                            color: 'var(--surbee-fg-primary)',
-                            fontFamily: 'var(--font-inter), sans-serif',
-                            lineHeight: '1.6',
-                            wordWrap: 'break-word',
-                            fontSize: '16px'
-                          }}
-                        >
-                          {/* Chat bubble styling */}
-                          {message.isUser ? (
-                            <div className="flex justify-end w-full">
-                              <span
-                                className="text-white inline-block rounded-xl max-w-[85%] px-4 py-3 whitespace-pre-wrap break-words"
-                                style={{
-                                  backgroundColor: 'var(--surbee-card-bg)',
-                                  color: 'var(--surbee-fg-primary)',
-                                  overflowWrap: 'anywhere',
-                                  fontSize: '16px',
-                                  lineHeight: '1.5'
-                                }}
-                              >
-                                {message.text}
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="w-full max-w-full">
-                              <MarkdownRenderer 
-                                content={message.text} 
-                                className="text-[16px] leading-6 w-full max-w-full prose prose-invert prose-sm max-w-none"
-                              />
-                            </div>
-                          )}
-                        </div>
-                        {!message.isUser && (
-                          <div className="mt-2 group">
-                            <AIResponseActions
-                              message={message.text}
-                              onCopy={(content) => navigator.clipboard.writeText(content)}
-                              onThumbsUp={() => recordAIFeedback('home_chat', String(message.id), 'thumbs_up')}
-                              onThumbsDown={() => recordAIFeedback('home_chat', String(message.id), 'thumbs_down')}
-                              onRetry={() => {
-                                const lastUser = [...messages].reverse().find(m => m.isUser)?.text || '';
-                                if (lastUser) handleSendMessage(lastUser);
-                              }}
-                              onCreateSurvey={() => {
-                                const prompt = [...messages].reverse().find(m => m.isUser)?.text || '';
-                                if (prompt) {
-                                  const projectId = `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                                  try { sessionStorage.setItem('surbee_initial_prompt', prompt); } catch {}
-                                  window.location.href = `/project/${projectId}`;
-                                }
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                      ))}
-                      
-                      {/* Removed duplicate shimmer; ThoughtProcess handles thinking UI */}
-                      
-                      {/* Thinking Duration Display */}
-                      {thinkingDuration > 0 && !isThinking && (
-                        <div className="text-left text-xs text-gray-400" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
-                          Thought for {thinkingDuration} seconds
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Chat Input */}
-              <div
-                className="w-full relative"
-                style={{
-                  transform: hasStartedChat ? 'translateY(0)' : 'translateY(0)',
-                  width: '100%',
-                  maxWidth: hasStartedChat ? '100%' : '42rem',
-                  marginTop: hasStartedChat ? '0' : '0rem',
-                }}
-              >
-                <ChatInputLight
-                  onSendMessage={(message, images) => {
-                    handleSendMessage(message, images);
-                  }}
-                  isInputDisabled={isInputDisabled}
-                  placeholder={"What survey do you want to create today?"}
-                  className="chat-input-grey"
-                  shouldGlow={chatboxGlow}
-                  showModelSelector={true}
-                  selectedModel={selectedModel}
-                  onModelChange={setSelectedModel}
-                />
-              </div>
+        {/* Dashboard Chat Container - handles greeting, messages, and input */}
+        {user && (
+          <DashboardChatContainer
+            userId={user.id}
+            greeting={greeting}
+          />
+        )}
       </div>
 
 
@@ -907,8 +749,6 @@ function DashboardContent() {
 
       {/* Invite Modal (center popup) */}
       <InviteModal open={inviteOpen} onOpenChange={setInviteOpen} />
-
-      </div>
     </ImageKitProvider>
   );
 }

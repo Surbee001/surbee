@@ -6,11 +6,13 @@ import { cn } from "@/lib/utils";
 export const TextGenerateEffect = ({
   words,
   className,
+  textClassName = "text-sm leading-relaxed",
   filter = true,
   duration = 0.5,
 }: {
   words: string;
   className?: string;
+  textClassName?: string;
   filter?: boolean;
   duration?: number;
 }) => {
@@ -52,8 +54,8 @@ export const TextGenerateEffect = ({
 
   return (
     <div className={cn("", className)}>
-      <div className="">
-        <div className="text-sm leading-relaxed">
+      <div>
+        <div className={cn("whitespace-pre-wrap break-words", textClassName)}>
           {renderWords()}
         </div>
       </div>
