@@ -5,6 +5,44 @@ import Link from 'next/link';
 import Script from 'next/script';
 
 export default function LandNewReact2() {
+  // Typing effect logic
+  const [typingText, setTypingText] = React.useState("");
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [loopNum, setLoopNum] = React.useState(0);
+  const [typingSpeed, setTypingSpeed] = React.useState(150);
+
+  const prompts = React.useMemo(() => [
+    "Create a customer satisfaction survey for a B2B SaaS product...",
+    "Generate a 10-question market research survey for Gen Z...",
+    "Build an employee engagement survey focusing on remote work...",
+    "Design a product feedback form for a new mobile banking app."
+  ], []);
+
+  useEffect(() => {
+    const handleTyping = () => {
+      const i = loopNum % prompts.length;
+      const fullText = prompts[i];
+
+      setTypingText(
+        isDeleting
+          ? fullText.substring(0, typingText.length - 1)
+          : fullText.substring(0, typingText.length + 1)
+      );
+
+      setTypingSpeed(isDeleting ? 30 : 50);
+
+      if (!isDeleting && typingText === fullText) {
+        setTimeout(() => setIsDeleting(true), 2000);
+      } else if (isDeleting && typingText === "") {
+        setIsDeleting(false);
+        setLoopNum(loopNum + 1);
+      }
+    };
+
+    const timer = setTimeout(handleTyping, typingSpeed);
+    return () => clearTimeout(timer);
+  }, [typingText, isDeleting, loopNum, typingSpeed, prompts]);
+
   useEffect(() => {
     // Initial html class manipulation
     !function(o: any,c: any){var n=c.documentElement,t=" w-mod-";n.className+=t+"js",("ontouchstart"in o||o.DocumentTouch&&c instanceof DocumentTouch)&&(n.className+=t+"touch")}(window,document);
@@ -189,6 +227,12 @@ export default function LandNewReact2() {
           .w-editor .main-wrapper {
             opacity:1 !important;
           }
+          
+          /* Force visibility to fix loading issues */
+          .main-wrapper {
+            opacity: 1 !important;
+            transition: opacity 0.5s ease-in-out;
+          }
         `}} />
       </div>
 
@@ -311,106 +355,309 @@ export default function LandNewReact2() {
       <div className="bookademobg"></div>
 
 
-      <nav animation="loading-reverse" className="navbar is--activ">
-        <div className="container--navbar">
-          <a href="/" aria-current="page" className="brand--link w-inline-block w--current">
-            <img src="/logo.svg" alt="Surbee" className="brand--img" style={{height: '20px', width: 'auto', filter: 'brightness(0) invert(1)'}}/>
+      {/* New Sidestage-style Navbar */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .nav-new {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 1000;
+          padding: 20px 48px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: #EEE9E5;
+          font-size: 16px !important;
+        }
+        .nav-new * {
+          font-size: inherit;
+        }
+        .nav-new .nav-logo {
+          height: 32px;
+          width: auto;
+        }
+        .nav-new .nav-links-wrap {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
+        .nav-new .nav-link-block {
+          display: flex;
+          align-items: center;
+          gap: 3px;
+          padding: 10px 16px;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+          font-size: 14px !important;
+          font-weight: 500;
+          letter-spacing: -0.01em;
+          color: #1a1a1a;
+          text-decoration: none;
+          position: relative;
+          cursor: pointer;
+          line-height: 1.2;
+        }
+        .nav-new .nav-link-block .bracket {
+          opacity: 0;
+          transition: opacity 0.2s ease, transform 0.2s ease;
+          color: #1D402C;
+          font-size: 14px !important;
+        }
+        .nav-new .nav-link-block .bracket-left {
+          transform: translateX(8px);
+        }
+        .nav-new .nav-link-block .bracket-right {
+          transform: translateX(-8px);
+        }
+        .nav-new .nav-link-block:hover .bracket {
+          opacity: 1;
+          transform: translateX(0);
+        }
+        .nav-new .nav-link-block .nav-text {
+          position: relative;
+          overflow: hidden;
+          height: 17px;
+        }
+        .nav-new .nav-link-block .nav-text-main,
+        .nav-new .nav-link-block .nav-text-hover {
+          display: block;
+          font-size: 14px !important;
+          line-height: 17px;
+        }
+        .nav-new .nav-link-block .nav-text-main {
+          transition: transform 0.25s ease;
+        }
+        .nav-new .nav-link-block .nav-text-hover {
+          position: absolute;
+          top: 0;
+          left: 0;
+          transform: translateY(100%);
+          transition: transform 0.25s ease;
+          color: #1D402C;
+        }
+        .nav-new .nav-link-block:hover .nav-text-main {
+          transform: translateY(-100%);
+        }
+        .nav-new .nav-link-block:hover .nav-text-hover {
+          transform: translateY(0);
+        }
+
+        /* Dropdown styles */
+        .nav-new .nav-dropdown {
+          position: relative;
+        }
+        .nav-new .nav-dropdown-menu {
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%) translateY(8px);
+          background: #fff;
+          border-radius: 12px;
+          padding: 8px;
+          min-width: 160px;
+          border: 1px solid rgba(0,0,0,0.08);
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+        }
+        .nav-new .nav-dropdown:hover .nav-dropdown-menu {
+          opacity: 1;
+          visibility: visible;
+          transform: translateX(-50%) translateY(0);
+        }
+        .nav-new .nav-dropdown-menu a {
+          display: block;
+          padding: 10px 16px;
+          font-size: 14px !important;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+          color: #1a1a1a;
+          text-decoration: none;
+          border-radius: 8px;
+          transition: background 0.15s ease;
+          white-space: nowrap;
+        }
+        .nav-new .nav-dropdown-menu a:hover {
+          background: #f5f3f0;
+          color: #1D402C;
+        }
+        .nav-new .nav-dropdown .dropdown-arrow {
+          width: 12px;
+          height: 12px;
+          margin-left: 4px;
+          transition: transform 0.2s ease;
+        }
+        .nav-new .nav-dropdown:hover .dropdown-arrow {
+          transform: rotate(180deg);
+        }
+
+        /* Get Started button - matches hero button */
+        .nav-new .nav-cta {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 12px 20px;
+          background: #fff;
+          color: #1a1a1a;
+          font-family: 'Suisse intl mono', 'SF Mono', monospace;
+          font-size: 12px !important;
+          font-weight: 500;
+          letter-spacing: -0.02em;
+          text-transform: uppercase;
+          border-radius: 4px;
+          text-decoration: none;
+          position: relative;
+          overflow: hidden;
+          min-height: 45px;
+          transition: color 0.2s ease;
+        }
+        .nav-new .nav-cta .hover-bg {
+          position: absolute;
+          inset: 0;
+          background: #1D402C;
+          transition: transform 0.2s ease;
+        }
+        .nav-new .nav-cta .hover-bg {
+          top: auto;
+          bottom: 0;
+          height: 100%;
+          transform: translateY(100%);
+        }
+        .nav-new .nav-cta:hover {
+          color: #fff;
+        }
+        .nav-new .nav-cta:hover .hover-bg {
+          transform: translateY(0);
+        }
+        .nav-new .nav-cta span,
+        .nav-new .nav-cta svg {
+          position: relative;
+          z-index: 1;
+        }
+        .nav-new .nav-cta svg {
+          width: 16px;
+          height: 16px;
+        }
+
+        /* Mobile menu */
+        .nav-new .nav-mobile-trigger {
+          display: none;
+          flex-direction: column;
+          gap: 5px;
+          cursor: pointer;
+          padding: 8px;
+        }
+        .nav-new .nav-mobile-trigger span {
+          width: 24px;
+          height: 2px;
+          background: #1a1a1a;
+          transition: all 0.3s ease;
+        }
+
+        @media screen and (max-width: 991px) {
+          .nav-new {
+            padding: 16px 24px;
+          }
+          .nav-new .nav-links-wrap {
+            display: none;
+          }
+          .nav-new .nav-cta {
+            display: none;
+          }
+          .nav-new .nav-mobile-trigger {
+            display: flex;
+          }
+        }
+      `}} />
+
+      <nav className="nav-new">
+        <a href="/" aria-label="Surbee Home">
+          <img src="/logo.svg" alt="Surbee" className="nav-logo" style={{ filter: 'brightness(0)' }} />
+        </a>
+
+        <div className="nav-links-wrap">
+          <a href="/product" className="nav-link-block">
+            <span className="bracket bracket-left">(</span>
+            <span className="nav-text">
+              <span className="nav-text-main">Product</span>
+              <span className="nav-text-hover">Product</span>
+            </span>
+            <span className="bracket bracket-right">)</span>
           </a>
-          <div className="navbar--menu">
-            <div className="navbar--menu-inside">
-              <div data-wf--slot-item-navbar-link--variant="base" className="navbar--link-parent">
-                <a href="/product" className="navbar--link">Product</a>
-              </div>
-              <div data-wf--slot-item-navbar-link--variant="base" className="navbar--link-parent">
-                <a href="/enterprise" className="navbar--link">Enterprise</a>
-              </div>
-              <div data-wf--slot-item-navbar-link--variant="base" className="navbar--link-parent">
-                <a href="/pricing" className="navbar--link">Pricing</a>
-              </div>
-              <div className="navbar--link-parent is--dropdown">
-                <div className="navbar--dropdown">
-                  <div className="navbar--dropdown-trigger">
-                    <div>Company</div>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 12 14" fill="none" className="navbar--arrow">
-                      <mask id="mask0_2781_1663" style={{maskType:'alpha'}} maskUnits="userSpaceOnUse" x="0" y="0" width="12" height="14">
-                        <rect width="12" height="14" fill="#D9D9D9"></rect>
-                      </mask>
-                      <g mask="url(#mask0_2781_1663)">
-                        <path d="M6 10L2 5.8363L2.82051 5L6 8.30961L9.17949 5L10 5.8363L6 10Z" fill="currentColor"></path>
-                      </g>
-                    </svg>
-                  </div>
-                  <div className="navbar--dropdown-response">
-                    <div className="navbar--dropdown-response-inner">
-                      <a href="/about-us" className="navbar--dropdown-link">About</a>
-                      <a href="/careers" className="navbar--dropdown-link">Careers</a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="navbar--link-parent is--dropdown">
-                <div className="navbar--dropdown">
-                  <div className="navbar--dropdown-trigger">
-                    <div>Resources</div>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 12 14" fill="none" className="navbar--arrow">
-                      <mask id="mask0_2781_1663_2" style={{maskType:'alpha'}} maskUnits="userSpaceOnUse" x="0" y="0" width="12" height="14">
-                        <rect width="12" height="14" fill="#D9D9D9"></rect>
-                      </mask>
-                      <g mask="url(#mask0_2781_1663_2)">
-                        <path d="M6 10L2 5.8363L2.82051 5L6 8.30961L9.17949 5L10 5.8363L6 10Z" fill="currentColor"></path>
-                      </g>
-                    </svg>
-                  </div>
-                  <div className="navbar--dropdown-response">
-                    <div className="navbar--dropdown-response-inner">
-                      <a href="/blog" className="navbar--dropdown-link" style={{ display: 'none' }}>Blog</a>
-                      <a href="/news" className="navbar--dropdown-link">News</a>
-                      <a href="/learn" className="navbar--dropdown-link">Learn</a>
-                      <a href="/students" className="navbar--dropdown-link">Students</a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div data-wf--slot-item-navbar-link--variant="mobile-only" className="navbar--link-parent w-variant-5f88acbf-b0fd-c730-0807-c0a07b967ede">
-                <a href="/about-us" className="navbar--link">About</a>
-              </div>
-              <div data-wf--slot-item-navbar-link--variant="mobile-only" className="navbar--link-parent w-variant-5f88acbf-b0fd-c730-0807-c0a07b967ede">
-                <a href="/careers" className="navbar--link">Careers</a>
-              </div>
-              <div data-wf--slot-item-navbar-link--variant="mobile-only" className="navbar--link-parent w-variant-5f88acbf-b0fd-c730-0807-c0a07b967ede" style={{ display: 'none' }}>
-                <a href="/blog" className="navbar--link">Blog</a>
-              </div>
-              <div data-wf--slot-item-navbar-link--variant="mobile-only" className="navbar--link-parent w-variant-5f88acbf-b0fd-c730-0807-c0a07b967ede">
-                <a href="/news" className="navbar--link">News</a>
-              </div>
+
+          <a href="/enterprise" className="nav-link-block">
+            <span className="bracket bracket-left">(</span>
+            <span className="nav-text">
+              <span className="nav-text-main">Enterprise</span>
+              <span className="nav-text-hover">Enterprise</span>
+            </span>
+            <span className="bracket bracket-right">)</span>
+          </a>
+
+          <a href="/pricing" className="nav-link-block">
+            <span className="bracket bracket-left">(</span>
+            <span className="nav-text">
+              <span className="nav-text-main">Pricing</span>
+              <span className="nav-text-hover">Pricing</span>
+            </span>
+            <span className="bracket bracket-right">)</span>
+          </a>
+
+          <div className="nav-dropdown">
+            <div className="nav-link-block">
+              <span className="bracket bracket-left">(</span>
+              <span className="nav-text">
+                <span className="nav-text-main">Company</span>
+                <span className="nav-text-hover">Company</span>
+              </span>
+              <svg className="dropdown-arrow" viewBox="0 0 12 12" fill="none">
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span className="bracket bracket-right">)</span>
             </div>
-            <div id="w-node-_9c17e2da-1455-530c-46e9-c4b3514ab2a8-514ab289" className="btn--nav-wrapper">
-              <Link href="/login" className="w-inline-block">
-                <div animation="bookademo" className="btn--nav is--full">
-                  <div className="hover--bg is--purple"></div>
-                  <div className="relative">Get Started</div>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 21 21" fill="none" className="icon--20 is--nav">
-                    <path d="M0.564451 0.635007C1.00098 0.170908 1.85566 -0.0818191 2.48518 0.0238669C4.314 0.32714 4.02911 2.71656 6.38637 2.98307C7.72352 3.13471 8.40359 2.19732 9.75453 2.74873C10.5816 3.08876 11.0687 3.9756 11.0182 4.85325C10.9952 5.22086 10.816 5.65279 10.8206 6.03418C10.8436 8.13411 13.0676 9.61372 14.878 8.21682C16.3576 7.07725 15.6729 5.37709 16.9596 4.52241C18.9308 3.21742 21.2789 5.6482 19.9417 7.49081C18.8205 9.03474 16.9504 7.80786 15.5397 9.23233C14.6896 10.0916 14.9194 10.9141 14.4966 11.7918C14.1841 12.4351 13.4857 12.8992 12.7643 12.9543C11.3904 13.06 10.9676 11.9296 9.80967 11.5712C7.11238 10.7395 5.38465 13.7079 7.22726 15.8216C7.75109 16.419 8.49549 16.6166 8.61037 17.5677C8.97337 20.6878 4.97109 20.9543 4.43807 18.4775C4.07506 16.7912 5.92227 16.2535 5.16409 14.0295C4.78729 12.9221 3.78098 12.6924 3.45014 11.8929C3.19741 11.2817 3.19281 10.3535 3.56042 9.78373C4.09344 8.95203 4.75053 9.02095 5.50871 8.59821C7.13076 7.69299 7.63162 5.58846 6.0785 4.35699C5.37086 3.79639 4.62187 3.71368 3.73503 3.82856C2.84819 3.94344 2.47599 4.50403 1.37318 4.11805C-0.0604741 3.64016 -0.441862 1.70565 0.564451 0.635007ZM8.69767 6.98076C5.95443 7.38972 7.17671 11.7136 9.77751 10.4638C11.6063 9.58615 10.6827 6.68208 8.69767 6.98076Z" fill="white"></path>
-                  </svg>
-                </div>
-              </Link>
-            </div>
-            <div className="navbar--menu-privacy">
-              <a href="/privacy-policy" className="footer--link is--white-opacity">Privacy Policy<br/></a>
-              <a href="/terms" className="footer--link is--white-opacity">Terms of Service<br/></a>
-              <a href="#" className="footer--link is--white-opacity cky-banner-element">Cookie Settings<br/></a>
+            <div className="nav-dropdown-menu">
+              <a href="/about-us">About</a>
+              <a href="/careers">Careers</a>
             </div>
           </div>
-          <div id="w-node-_9c17e2da-1455-530c-46e9-c4b3514ab2b8-514ab289" className="menu--trigger">
-            <div className="overflow--hidden is--nav">
-              <div className="menu--trigger-text">
-                <div>Menu</div>
-                <div>Close</div>
-              </div>
+
+          <div className="nav-dropdown">
+            <div className="nav-link-block">
+              <span className="bracket bracket-left">(</span>
+              <span className="nav-text">
+                <span className="nav-text-main">Resources</span>
+                <span className="nav-text-hover">Resources</span>
+              </span>
+              <svg className="dropdown-arrow" viewBox="0 0 12 12" fill="none">
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span className="bracket bracket-right">)</span>
+            </div>
+            <div className="nav-dropdown-menu">
+              <a href="/news">News</a>
+              <a href="/learn">Learn</a>
+              <a href="/students">Students</a>
             </div>
           </div>
         </div>
+
+        <Link href="/login" className="nav-cta">
+          <div className="hover-bg"></div>
+          <span>Get Started</span>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" fill="none">
+            <path d="M0.564451 0.635007C1.00098 0.170908 1.85566 -0.0818191 2.48518 0.0238669C4.314 0.32714 4.02911 2.71656 6.38637 2.98307C7.72352 3.13471 8.40359 2.19732 9.75453 2.74873C10.5816 3.08876 11.0687 3.9756 11.0182 4.85325C10.9952 5.22086 10.816 5.65279 10.8206 6.03418C10.8436 8.13411 13.0676 9.61372 14.878 8.21682C16.3576 7.07725 15.6729 5.37709 16.9596 4.52241C18.9308 3.21742 21.2789 5.6482 19.9417 7.49081C18.8205 9.03474 16.9504 7.80786 15.5397 9.23233C14.6896 10.0916 14.9194 10.9141 14.4966 11.7918C14.1841 12.4351 13.4857 12.8992 12.7643 12.9543C11.3904 13.06 10.9676 11.9296 9.80967 11.5712C7.11238 10.7395 5.38465 13.7079 7.22726 15.8216C7.75109 16.419 8.49549 16.6166 8.61037 17.5677C8.97337 20.6878 4.97109 20.9543 4.43807 18.4775C4.07506 16.7912 5.92227 16.2535 5.16409 14.0295C4.78729 12.9221 3.78098 12.6924 3.45014 11.8929C3.19741 11.2817 3.19281 10.3535 3.56042 9.78373C4.09344 8.95203 4.75053 9.02095 5.50871 8.59821C7.13076 7.69299 7.63162 5.58846 6.0785 4.35699C5.37086 3.79639 4.62187 3.71368 3.73503 3.82856C2.84819 3.94344 2.47599 4.50403 1.37318 4.11805C-0.0604741 3.64016 -0.441862 1.70565 0.564451 0.635007ZM8.69767 6.98076C5.95443 7.38972 7.17671 11.7136 9.77751 10.4638C11.6063 9.58615 10.6827 6.68208 8.69767 6.98076Z" fill="currentColor"/>
+          </svg>
+        </Link>
+
+        <div className="nav-mobile-trigger">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
       </nav>
+
+      {/* Spacer for fixed navbar */}
+      <div style={{ height: '70px' }}></div>
 
       <main className="main-wrapper">
         <section className="section is--hero">
@@ -420,35 +667,73 @@ export default function LandNewReact2() {
               padding-bottom: 32px;
               line-height: 1.1;
             }
-
+            @media (max-width: 991px) {
+              .hero-flex-container {
+                flex-direction: column;
+              }
+              .hero-right {
+                margin-top: 32px;
+                max-width: 100% !important;
+              }
+            }
           `}} />
-          <div className="container--872 is--16margin-bottom">
-            <h1 animation="loading-split" className="heading--96">Smart surveys, instantly</h1>
-          </div>
-          <div className="container--532 is--56padding-bottom">
-            <p animation="loading" className="paragraph--16">Surbee understands your specific domain to generate accurate surveys from natural language. With our built-in "Cipher" accuracy detector, you get the most reliable results free from fraud and spam.</p>
-          </div>
-          <div animation="loading" style={{ display: 'flex', justifyContent: 'center', marginTop: '8px' }}>
-            <Link href="/login" className="btn--book is--white w-inline-block" style={{ padding: '16rem 32rem', fontSize: '14rem', minHeight: '52rem' }}>
-              <div className="hover--bg is--purple"></div>
-              <div className="relative">Get Started</div>
-              <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 21 21" fill="none" className="icon--20" style={{ width: '18rem', height: '18rem' }}>
-                <path d="M0.564451 0.635007C1.00098 0.170908 1.85566 -0.0818191 2.48518 0.0238669C4.314 0.32714 4.02911 2.71656 6.38637 2.98307C7.72352 3.13471 8.40359 2.19732 9.75453 2.74873C10.5816 3.08876 11.0687 3.9756 11.0182 4.85325C10.9952 5.22086 10.816 5.65279 10.8206 6.03418C10.8436 8.13411 13.0676 9.61372 14.878 8.21682C16.3576 7.07725 15.6729 5.37709 16.9596 4.52241C18.9308 3.21742 21.2789 5.6482 19.9417 7.49081C18.8205 9.03474 16.9504 7.80786 15.5397 9.23233C14.6896 10.0916 14.9194 10.9141 14.4966 11.7918C14.1841 12.4351 13.4857 12.8992 12.7643 12.9543C11.3904 13.06 10.9676 11.9296 9.80967 11.5712C7.11238 10.7395 5.38465 13.7079 7.22726 15.8216C7.75109 16.419 8.49549 16.6166 8.61037 17.5677C8.97337 20.6878 4.97109 20.9543 4.43807 18.4775C4.07506 16.7912 5.92227 16.2535 5.16409 14.0295C4.78729 12.9221 3.78098 12.6924 3.45014 11.8929C3.19741 11.2817 3.19281 10.3535 3.56042 9.78373C4.09344 8.95203 4.75053 9.02095 5.50871 8.59821C7.13076 7.69299 7.63162 5.58846 6.0785 4.35699C5.37086 3.79639 4.62187 3.71368 3.73503 3.82856C2.84819 3.94344 2.47599 4.50403 1.37318 4.11805C-0.0604741 3.64016 -0.441862 1.70565 0.564451 0.635007ZM8.69767 6.98076C5.95443 7.38972 7.17671 11.7136 9.77751 10.4638C11.6063 9.58615 10.6827 6.68208 8.69767 6.98076Z" fill="currentColor"></path>
-              </svg>
-            </Link>
+          
+                    <div className="hero-flex-container" style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      maxWidth: '1328px',
+                      margin: '0 auto',
+                      padding: '0 24px'
+                    }}>
+                      <div className="hero-left" style={{ maxWidth: '900px', textAlign: 'left' }}>
+                        <h1 animation="loading-split" className="heading--96" style={{ textAlign: 'left' }}>Smart surveys, instantly</h1>
+                        <div animation="loading" style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '8px' }}>
+                          <Link href="/login" className="btn--book is--white w-inline-block" style={{ padding: '16rem 32rem', fontSize: '14rem', minHeight: '52rem' }}>
+                            <div className="hover--bg is--purple"></div>
+                            <div className="relative">Get Started</div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 21 21" fill="none" className="icon--20" style={{ width: '18rem', height: '18rem' }}>
+                              <path d="M0.564451 0.635007C1.00098 0.170908 1.85566 -0.0818191 2.48518 0.0238669C4.314 0.32714 4.02911 2.71656 6.38637 2.98307C7.72352 3.13471 8.40359 2.19732 9.75453 2.74873C10.5816 3.08876 11.0687 3.9756 11.0182 4.85325C10.9952 5.22086 10.816 5.65279 10.8206 6.03418C10.8436 8.13411 13.0676 9.61372 14.878 8.21682C16.3576 7.07725 15.6729 5.37709 16.9596 4.52241C18.9308 3.21742 21.2789 5.6482 19.9417 7.49081C18.8205 9.03474 16.9504 7.80786 15.5397 9.23233C14.6896 10.0916 14.9194 10.9141 14.4966 11.7918C14.1841 12.4351 13.4857 12.8992 12.7643 12.9543C11.3904 13.06 10.9676 11.9296 9.80967 11.5712C7.11238 10.7395 5.38465 13.7079 7.22726 15.8216C7.75109 16.419 8.49549 16.6166 8.61037 17.5677C8.97337 20.6878 4.97109 20.9543 4.43807 18.4775C4.07506 16.7912 5.92227 16.2535 5.16409 14.0295C4.78729 12.9221 3.78098 12.6924 3.45014 11.8929C3.19741 11.2817 3.19281 10.3535 3.56042 9.78373C4.09344 8.95203 4.75053 9.02095 5.50871 8.59821C7.13076 7.69299 7.63162 5.58846 6.0785 4.35699C5.37086 3.79639 4.62187 3.71368 3.73503 3.82856C2.84819 3.94344 2.47599 4.50403 1.37318 4.11805C-0.0604741 3.64016 -0.441862 1.70565 0.564451 0.635007ZM8.69767 6.98076C5.95443 7.38972 7.17671 11.7136 9.77751 10.4638C11.6063 9.58615 10.6827 6.68208 8.69767 6.98076Z" fill="currentColor"></path>
+                            </svg>
+                          </Link>
+                        </div>
+                      </div>
+                      <div className="hero-right" style={{ maxWidth: '500px', paddingTop: '16px' }}>
+                        <p animation="loading" className="paragraph--16" style={{ textAlign: 'left' }}>Surbee understands your specific domain to generate accurate surveys from natural language. With our built-in "Cipher" accuracy detector, you get the most reliable results free from fraud and spam.</p>
+                      </div>
+                    </div>
+          
+                    <div animation="loading" className="container--video" style={{ maxWidth: '1328px', margin: '60px auto 0', padding: '0 24px' }}>
+                      <div style={{
+                        width: '100%',
+                        height: '600px',              borderRadius: '32px', 
+              overflow: 'hidden', 
+              position: 'relative',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+              backgroundColor: '#000'
+            }}>
+              <video 
+                width="100%" 
+                height="100%" 
+                autoPlay 
+                muted 
+                loop 
+                playsInline
+                style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+              >
+                <source src="https://d2v9y0dukr6mq2.cloudfront.net/video/preview/v190204_a001_04.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
           </div>
 
         </section>
 
         <section className="section is--padding">
-          <div className="container--1328 is--56margin-bottom">
-            <div className="grid--2els is--40gap-tablet">
-              <h2 animation="fade-split" className="h2 is--h3-tablet">Faster survey creation by AI, refined by intelligence.</h2>
-              <div animation="fade" id="w-node-bd73b603-5240-5152-4cf3-25732eaf20b0-2f3181c1" className="max--430">
-                <div animation="fade" className="label--parent is--20margin-bottom">
-                  <div className="div-block-2 is--blue"></div>
-                  <div className="label">what’s surbee</div>
-                </div>
+          <div className="container--1328 is--56margin-bottom" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+            <div style={{ maxWidth: '800px' }}>
+              <h2 animation="fade-split" className="h2 is--h3-tablet" style={{ textAlign: 'center' }}>Faster survey creation by AI, refined by intelligence.</h2>
+              <div animation="fade" className="max--600" style={{ margin: '20px auto 0', maxWidth: '600px' }}>
                 <p className="body--14">Generate surveys using natural language or our intuitive no-code builder. Surbee understands your domain's context to create relevant questions, while Cipher works in the background to ensure every response is authentic and accurate.</p>
               </div>
             </div>
@@ -456,10 +741,22 @@ export default function LandNewReact2() {
           <div className="container--1328 is--search-home">
             <img src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/67c6fe5a7f5f031522f54ae0_Frame%20634264.svg" loading="lazy" animation="fade" alt="" className="img--100 is--home-search"/>
             <div animation="fade" className="search--animation-search is--search">
-              <div typing="Create a customer satisfaction survey for a B2B SaaS product with a focus on churn reduction. Generate a 10-question market research survey for Gen Z consumers in the fashion industry. Build an employee engagement survey focusing on remote work challenges. Design a product feedback form for a new mobile banking app.">Create a customer satisfaction survey for a B2B SaaS product...</div>
+              <div style={{ color: '#000', fontSize: '16px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80%' }}>
+                {typingText}<span className="cursor">|</span>
+              </div>
               <div className="div-block-12"><div>Generate</div></div>
             </div>
           </div>
+          <style dangerouslySetInnerHTML={{__html: `
+            .cursor {
+              animation: blink 1s step-end infinite;
+              color: #000;
+            }
+            @keyframes blink {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0; }
+            }
+          `}} />
         </section>
 
         <section className="section is--yourcollective-home">
@@ -691,7 +988,7 @@ export default function LandNewReact2() {
                   <div className="trustedby--number-wrapper">
                     <div className="trustedby--number">99.9%</div>
                   </div>
-                  <p className="paragraph--14 is--big">Saved per user  per year searching</p>
+                  <p className="paragraph--14 is--big">Saved per user per year searching</p>
                 </div>
                 <div animation="fade-item" className="bento-item trustedby--card">
                   <div className="trustedby--number-wrapper">
@@ -1033,8 +1330,8 @@ export default function LandNewReact2() {
       <Script src="/landnew/cdn.prod.website-files.com/67bdd03200678df04ba07593/js/webflow.ae197c71.7d3d5a39186a7021.js" strategy="afterInteractive" />
 
       {/* Custom scripts that depend on the libraries above */}
-      <Script src='/landnew/deepjudge-code.netlify.app/script.js' strategy="lazyOnload" />
-      <Script src='/landnew/deepjudge-code.netlify.app/home.js' strategy="lazyOnload" />
+      <Script src='/landnew/deepjudge-code.netlify.app/script.js' strategy="afterInteractive" />
+      <Script src='/landnew/deepjudge-code.netlify.app/home.js' strategy="afterInteractive" />
       
       {/* JSON-LD Scripts */}
       <Script id="json-ld-org" type="application/ld+json">
