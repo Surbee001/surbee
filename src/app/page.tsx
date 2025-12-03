@@ -706,24 +706,16 @@ export default function LandNewReact2() {
                     <div animation="loading" className="container--video" style={{ maxWidth: '1328px', margin: '60px auto 0', padding: '0 24px' }}>
                       <div style={{
                         width: '100%',
-                        height: '600px',              borderRadius: '32px', 
-              overflow: 'hidden', 
-              position: 'relative',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-              backgroundColor: '#000'
+                        height: '600px',
+                        borderRadius: '32px',
+                        overflow: 'hidden',
+                        position: 'relative'
             }}>
-              <video 
-                width="100%" 
-                height="100%" 
-                autoPlay 
-                muted 
-                loop 
-                playsInline
-                style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-              >
-                <source src="https://d2v9y0dukr6mq2.cloudfront.net/video/preview/v190204_a001_04.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
+              <img
+                src="https://ik.imagekit.io/on0moldgr/Surbee%20Art/cgihadi_Warm_dusk_meadow_surrounded_by_tall_golden_grass_where__b8e4844a-8e6d-4be8-acfb-d1e2eed2ada2.png"
+                alt="Warm dusk meadow"
+                style={{ objectFit: 'cover', minWidth: 'calc(100% + 60px)', minHeight: 'calc(100% + 60px)', position: 'absolute', top: '-30px', left: '-30px' }}
+              />
             </div>
           </div>
 
