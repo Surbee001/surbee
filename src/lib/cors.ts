@@ -11,6 +11,9 @@ const ALLOWED_ORIGINS = [
   'https://surbee.vercel.app',
   'https://surbee.co',
   'https://www.surbee.co',
+  'https://surbee.dev',
+  'https://www.surbee.dev',
+  'https://dashboard.surbee.dev',
   // Add more production domains as needed
 ];
 

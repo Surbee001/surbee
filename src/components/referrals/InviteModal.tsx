@@ -83,7 +83,7 @@ export default function InviteModal({ open, onOpenChange }: InviteModalProps) {
   })
   const redeem = api.user.redeemReferral.useMutation()
 
-  const baseUrl = "https://surbee.dev"
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : "https://dashboard.surbee.dev"
   const inviteUrl = useMemo(() => {
     const code = referral.data?.code
     return code ? `${baseUrl}/?ref=${encodeURIComponent(code)}` : ""

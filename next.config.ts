@@ -17,6 +17,14 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: '*.surbee.dev',
+      },
+      {
+        protocol: 'https',
+        hostname: 'dashboard.surbee.dev',
+      },
+      {
+        protocol: 'https',
         hostname: 'ik.imagekit.io',
       },
       {

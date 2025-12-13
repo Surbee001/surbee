@@ -26,7 +26,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   // Content Security Policy - adjust as needed for your app
   response.headers.set(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://api.deepseek.com https://vercel.live; frame-ancestors 'none';"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.surbee.dev https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://api.deepseek.com https://vercel.live; frame-ancestors 'none';"
   );
 
   // Strict Transport Security (HTTPS only)
@@ -38,6 +38,13 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
 }
 
 export const middleware = async (request: NextRequest) => {
+  const { pathname } = request.nextUrl;
+
+  // Redirect root path to /login (landing page is hidden)
+  if (pathname === '/') {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
   // Create an unmodified response
   let supabaseResponse = NextResponse.next({
     request: {
