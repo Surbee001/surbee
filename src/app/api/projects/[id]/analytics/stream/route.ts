@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ProjectsService } from '@/lib/services/projects';
 import { AnalyticsService } from '@/lib/services/analytics';
 import type { SurveyResponse } from '@/types/database';
+import { requireAuth } from '@/lib/auth-utils';
+import { getCorsHeaders, handleCorsPreflightRequest } from '@/lib/cors';
 
 // Store active connections for each project
 const activeConnections = new Map<string, Set<ReadableStreamDefaultController>>();
@@ -26,15 +28,14 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Security: Get authenticated user from session instead of trusting client
+    const [user, errorResponse] = await requireAuth();
+    if (!user) return errorResponse;
+
     const projectId = params.id;
-    const userId = request.nextUrl.searchParams.get('userId');
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-    }
-
-    // Verify project ownership
-    const { data: project, error } = await ProjectsService.getProject(projectId, userId);
+    // Verify project ownership using authenticated user
+    const { data: project, error } = await ProjectsService.getProject(projectId, user.id);
     if (error || !project) {
       return NextResponse.json(
         { error: 'Project not found or you do not have permission' },
@@ -86,15 +87,13 @@ export async function GET(
       }
     });
 
-    // Return SSE response
+    // Return SSE response with proper CORS
     return new NextResponse(customReadable, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
+        ...getCorsHeaders(request),
       }
     });
   } catch (error) {
@@ -107,11 +106,5 @@ export async function GET(
 }
 
 export async function OPTIONS(request: NextRequest) {
-  return new NextResponse(null, {
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
-    }
-  });
+  return handleCorsPreflightRequest(request);
 }

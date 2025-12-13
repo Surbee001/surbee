@@ -5,9 +5,9 @@ import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface PreviewPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 interface SandboxBundle {
@@ -18,7 +18,7 @@ interface SandboxBundle {
 }
 
 export default function PreviewPage({ params }: PreviewPageProps) {
-  const resolvedParams = (params && typeof params.then === 'function') ? (React as any).use(params) : params
+  const resolvedParams = React.use(params);
   const projectId: string | undefined = resolvedParams?.id
   const { user } = useAuth();
 
@@ -43,10 +43,20 @@ export default function PreviewPage({ params }: PreviewPageProps) {
 
       try {
         // Fetch project data from API
-        const response = await fetch(`/api/projects/${projectId}?userId=${user.id}`);
+        const response = await fetch(`/api/projects/${projectId}`);
 
         if (!response.ok) {
-          throw new Error('Failed to load project');
+          const errorData = await response.json().catch(() => ({}));
+          console.error('=== PREVIEW: API error ===', response.status, errorData);
+
+          if (response.status === 401) {
+            setError('Please log in to view this preview');
+          } else if (response.status === 404) {
+            setError('Project not found');
+          } else {
+            setError(errorData.message || errorData.error || 'Failed to load project');
+          }
+          return;
         }
 
         const data = await response.json();

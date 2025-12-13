@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { Copy, ThumbsUp, ThumbsDown, Search, ChevronRight, CheckCircle2 } from "lucide-react";
-import ChatInputLight from "@/components/ui/chat-input-light";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { Copy, ThumbsUp, ThumbsDown, Search, ChevronRight, CheckCircle2, Download } from "lucide-react";
+import ChatInputLight, { ReferenceItem } from "@/components/ui/chat-input-light";
 import { AIModel } from "@/components/ui/model-selector";
 import { Response } from "@/components/ai-elements/response";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
@@ -16,7 +16,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
-import { SearchModal } from "./SearchModal";
+import { SearchModal, ReferenceItem as SearchReferenceItem } from "./SearchModal";
+import { ImportSurveyModal } from "./ImportSurveyModal";
+import { useUserPreferences } from "@/contexts/UserPreferencesContext";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
+import { ChartLoadingSpinner } from "@/components/ui/chart-loading-animation";
 
 interface Message {
   id: string;
@@ -29,27 +35,25 @@ interface DashboardChatContainerProps {
   greeting: string;
 }
 
-// Mock responses for testing
-const MOCK_RESPONSES = [
-  "I found **3 surveys** in your account:\n\n1. **Customer Satisfaction Survey** - 127 responses\n2. **Product Feedback Form** - 89 responses\n3. **Employee Engagement Survey** - 45 responses\n\nWould you like me to analyze any of these?",
-  "Here's a quick summary of your **Customer Satisfaction Survey**:\n\n- **Average rating**: 4.2/5 ⭐\n- **Response rate**: 68%\n- **Top feedback theme**: Users love the new dashboard design\n- **Area for improvement**: Mobile experience\n\nWould you like more detailed insights?",
-  "Based on your surveys, here are some trends I noticed:\n\n📈 **Positive trends**:\n- Customer satisfaction up 12% this quarter\n- NPS score improved from 42 to 58\n\n📉 **Areas to watch**:\n- Response rates declining on longer surveys\n- Mobile users have lower completion rates\n\nWant me to create a detailed report?",
-];
+// Generate unique chat session ID
+const generateChatSessionId = () => {
+  return `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
 
 export function DashboardChatContainer({
   userId,
   greeting,
 }: DashboardChatContainerProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { preferences } = useUserPreferences();
   const [hasStartedChat, setHasStartedChat] = useState(false);
   const [selectedModel, setSelectedModel] = useState<AIModel>("claude-haiku");
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [feedbackGiven, setFeedbackGiven] = useState<Record<string, "up" | "down">>({});
   const [isBuildMode, setIsBuildMode] = useState(false); // Default to chat mode
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const chatAreaRef = useRef<HTMLDivElement>(null);
-  const mockResponseIndex = useRef(0);
   const [effectfulMessages, setEffectfulMessages] = useState<Record<string, boolean>>({});
   const effectTimeoutsRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [searchWebEnabled, setSearchWebEnabled] = useState(true);
@@ -59,7 +63,20 @@ export function DashboardChatContainer({
   const [isModelOpen, setIsModelOpen] = useState(false);
   const [isModelExplicitlySelected, setIsModelExplicitlySelected] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [references, setReferences] = useState<ReferenceItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Chat session ID management
+  const [chatSessionId, setChatSessionId] = useState<string | null>(() => {
+    // Check URL for existing chat session
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('chatId') || null;
+    }
+    return null;
+  });
+  const chatSessionSavedRef = useRef(false);
 
   const triggerResponseEffect = useCallback((messageId: string) => {
     setEffectfulMessages((prev) => ({ ...prev, [messageId]: true }));
@@ -73,12 +90,127 @@ export function DashboardChatContainer({
     effectTimeoutsRef.current[messageId] = timeout;
   }, []);
 
-  // Auto-scroll on new messages
+  // Setup chat transport for Vercel AI SDK
+  const chatTransport = useMemo(() => new DefaultChatTransport({ api: '/api/dashboard/chat' }), []);
+
+  // Error handler for useChat
+  const onError = useCallback((error: Error) => {
+    console.error('🚨 Dashboard chat error:', error);
+  }, []);
+
+  // Use Vercel AI SDK useChat hook - same pattern as project page
+  const { 
+    messages: rawMessages, 
+    sendMessage, 
+    status, 
+    stop, 
+    setMessages,
+  } = useChat({
+    transport: chatTransport,
+    onError,
+    experimental_throttle: 50,
+  });
+
+  // Track if a chart is currently being generated
+  const [isGeneratingChart, setIsGeneratingChart] = useState(false);
+
+  // Transform raw messages to our Message type
+  const messages: Message[] = useMemo(() => {
+    let chartToolCallActive = false;
+    
+    const transformed = rawMessages.map((m, msgIdx) => {
+      // Extract content from various formats
+      let content = '';
+      let hasChartToolCall = false;
+      const isLastMessage = msgIdx === rawMessages.length - 1;
+      
+      // If content is a string, use it directly
+      if (typeof m.content === 'string') {
+        content = m.content;
+      }
+      // If there are parts, extract text and tool results from them
+      else if (m.parts && Array.isArray(m.parts)) {
+        const textParts: string[] = [];
+        
+        m.parts.forEach((p: any) => {
+          if (p.type === 'text') {
+            textParts.push(p.text);
+          }
+          // AI SDK v5 UI Message format: tool parts have type like 'tool-generate_chart'
+          // and state like 'input-streaming', 'input-available', 'output-available'
+          else if (typeof p.type === 'string' && p.type.startsWith('tool-')) {
+            const toolName = p.type.replace('tool-', '');
+            if (toolName === 'generate_chart') {
+              hasChartToolCall = true;
+              // Check if output is available
+              if (p.state === 'output-available' && p.output) {
+                const result = p.output;
+                if (typeof result === 'string' && result.includes('```chart')) {
+                  textParts.push(result);
+                  if (isLastMessage) chartToolCallActive = false;
+                }
+              } else {
+                // Still processing - only track for last message
+                if (isLastMessage) chartToolCallActive = true;
+              }
+            }
+          }
+          // Legacy format: tool-invocation or tool-call
+          else if (p.type === 'tool-invocation' || p.type === 'tool-call') {
+            const toolName = p.toolName || p.name;
+            if (toolName === 'generate_chart') {
+              hasChartToolCall = true;
+              // Check if this invocation has a result (completed)
+              if (p.state === 'result' || p.result) {
+                const result = p.result;
+                if (typeof result === 'string' && result.includes('```chart')) {
+                  textParts.push(result);
+                  if (isLastMessage) chartToolCallActive = false;
+                }
+              } else {
+                if (isLastMessage) chartToolCallActive = true;
+              }
+            }
+          }
+          // Check for tool results (legacy format)
+          else if (p.type === 'tool-result') {
+            const result = p.result;
+            // If the result contains a chart code block, include it
+            if (typeof result === 'string' && result.includes('```chart')) {
+              textParts.push(result);
+              if (isLastMessage) chartToolCallActive = false;
+            }
+          }
+        });
+        
+        content = textParts.join('\n');
+      }
+      
+      return {
+        id: m.id,
+        role: m.role as "user" | "assistant",
+        content,
+        hasChartToolCall,
+      };
+    });
+
+    // Update chart generation state - show loading when Charts mode is active and streaming
+    const isChartMode = selectedCreateType === 'Charts';
+    const shouldShowChartLoading = (chartToolCallActive || (isChartMode && status === 'streaming')) && status !== 'ready';
+    setIsGeneratingChart(shouldShowChartLoading);
+    
+    return transformed;
+  }, [rawMessages, status, selectedCreateType]);
+
+  // Check if AI is currently processing (submitted or streaming)
+  const isLoading = status === 'streaming' || status === 'submitted';
+
+  // Auto-scroll on new messages and when loading state changes
   useEffect(() => {
     if (chatAreaRef.current) {
       chatAreaRef.current.scrollTop = chatAreaRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isLoading]);
 
   useEffect(() => {
     return () => {
@@ -88,8 +220,213 @@ export function DashboardChatContainer({
     };
   }, []);
 
+  // Track generated title for the current session
+  const [generatedTitle, setGeneratedTitle] = useState<string | null>(null);
+  const titleGeneratedRef = useRef(false);
+
+  // Generate title using AI (same as project page)
+  const generateTitle = useCallback(async (prompt: string): Promise<string> => {
+    try {
+      const response = await fetch('/api/generate-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          model: selectedModel,
+        }),
+      });
+
+      if (response.ok && response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let streamedTitle = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          streamedTitle += decoder.decode(value, { stream: true });
+        }
+
+        if (streamedTitle.trim()) {
+          return streamedTitle.trim();
+        }
+      }
+    } catch (error) {
+      console.error('Title generation failed:', error);
+    }
+
+    // Fallback to simple title generation
+    const words = prompt.trim().split(/\s+/);
+    const titleWords = words.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+    return titleWords.join(' ');
+  }, [selectedModel]);
+
+  // Save chat session to database when messages change
+  const saveChatSession = useCallback(async (sessionId: string, msgs: Message[], title?: string) => {
+    if (!userId || msgs.length === 0) return;
+    
+    try {
+      await fetch('/api/dashboard/chat-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          userId,
+          title: title || 'New Chat',
+          messages: msgs,
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to save chat session:', error);
+    }
+  }, [userId]);
+
+  // Update URL with chat session ID and save to database
+  useEffect(() => {
+    if (hasStartedChat && chatSessionId && messages.length > 0) {
+      // Update URL with chatId if not already present
+      const currentChatId = searchParams.get('chatId');
+      if (currentChatId !== chatSessionId) {
+        const newUrl = `${pathname}?chatId=${chatSessionId}`;
+        window.history.replaceState({}, '', newUrl);
+      }
+      
+      // Generate title from first user message if not already generated
+      const firstUserMessage = messages.find(m => m.role === 'user');
+      if (firstUserMessage?.content && !titleGeneratedRef.current && !generatedTitle) {
+        titleGeneratedRef.current = true;
+        generateTitle(firstUserMessage.content).then(title => {
+          setGeneratedTitle(title);
+          // Save with generated title
+          saveChatSession(chatSessionId, messages, title);
+          chatSessionSavedRef.current = true;
+        });
+      }
+      
+      // Save chat session (debounced - only save after assistant responds)
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage?.role === 'assistant' && lastMessage.content && !chatSessionSavedRef.current && generatedTitle) {
+        saveChatSession(chatSessionId, messages, generatedTitle);
+        chatSessionSavedRef.current = true;
+      }
+    }
+  }, [hasStartedChat, chatSessionId, messages, pathname, searchParams, saveChatSession, generateTitle, generatedTitle]);
+
+  // Reset saved flag when user sends new message
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.role === 'user') {
+      chatSessionSavedRef.current = false;
+    }
+  }, [messages]);
+
+  // Track previous chatId to detect navigation changes
+  const prevChatIdRef = useRef<string | null>(null);
+
+  // Load existing chat session from URL or reset to fresh state
+  useEffect(() => {
+    const urlChatId = searchParams.get('chatId');
+    const prevChatId = prevChatIdRef.current;
+    
+    // Update ref for next comparison
+    prevChatIdRef.current = urlChatId;
+    
+    // Only reset if we navigated FROM a chat TO no chat (clicking Home)
+    // Don't reset if we never had a chatId (fresh page load or new chat)
+    if (prevChatId && !urlChatId) {
+      setMessages([]);
+      setChatSessionId(null);
+      setHasStartedChat(false);
+      setGeneratedTitle(null);
+      titleGeneratedRef.current = false;
+      chatSessionSavedRef.current = false;
+      return;
+    }
+    
+    const loadChatSession = async () => {
+      if (urlChatId && !hasStartedChat) {
+        try {
+          const response = await fetch(`/api/dashboard/chat-session?sessionId=${urlChatId}&userId=${userId}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.session?.messages && data.session.messages.length > 0) {
+              // Restore messages
+              const restoredMessages = data.session.messages.map((m: any, idx: number) => ({
+                id: m.id || `restored-${idx}`,
+                role: m.role,
+                content: m.content,
+              }));
+              setMessages(restoredMessages);
+              setChatSessionId(urlChatId);
+              setHasStartedChat(true);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load chat session:', error);
+        }
+      }
+    };
+    
+    if (userId) {
+      loadChatSession();
+    }
+  }, [searchParams, userId, hasStartedChat, setMessages]);
+
+  // Handle adding a reference from SearchModal
+  const handleAddReference = useCallback((item: SearchReferenceItem) => {
+    setReferences(prev => {
+      // Don't add duplicates
+      if (prev.some(r => r.id === item.id && r.type === item.type)) {
+        return prev;
+      }
+      return [...prev, { id: item.id, type: item.type, title: item.title }];
+    });
+  }, []);
+
+  // Handle removing a reference
+  const handleRemoveReference = useCallback((id: string) => {
+    setReferences(prev => prev.filter(r => r.id !== id));
+  }, []);
+
+  // Handle importing a survey
+  const handleImportSurvey = useCallback((url: string) => {
+    // Send a message to the AI to analyze and import the survey
+    const importMessage = `Please analyze this survey and help me recreate it in Surbee. Here's the URL: ${url}
+
+Analyze the survey structure, questions, and design. Then help me build a similar survey.`;
+    
+    // Generate chat session ID if needed
+    let sessionId = chatSessionId;
+    if (!sessionId) {
+      sessionId = generateChatSessionId();
+      setChatSessionId(sessionId);
+    }
+
+    setHasStartedChat(true);
+    setIsBuildMode(true);
+    setSelectedCreateType('Survey');
+    
+    sendMessage(
+      { text: importMessage },
+      {
+        body: {
+          userId,
+          model: selectedModel,
+          createMode: 'Survey',
+          searchWebEnabled: true, // Enable web search to fetch the survey
+          userPreferences: {
+            displayName: preferences.displayName,
+            tone: preferences.tone,
+            workFunction: preferences.workFunction,
+            personalPreferences: preferences.personalPreferences,
+          },
+        },
+      }
+    );
+  }, [chatSessionId, sendMessage, userId, selectedModel, preferences]);
+
   const handleSendMessage = useCallback(
-    (message: string, files?: any[]) => {
+    async (message: string, files?: any[], refs?: ReferenceItem[]) => {
       if (!message.trim()) return;
 
       // If build mode is on, go straight to builder
@@ -106,31 +443,48 @@ export function DashboardChatContainer({
         return;
       }
 
-      // Chat mode - add user message and mock response
-      const userMessage: Message = {
-        id: `user-${Date.now()}`,
-        role: "user",
-        content: message.trim(),
-      };
+      // Generate chat session ID if this is the first message
+      let sessionId = chatSessionId;
+      if (!sessionId) {
+        sessionId = generateChatSessionId();
+        setChatSessionId(sessionId);
+      }
 
-      setMessages(prev => [...prev, userMessage]);
       setHasStartedChat(true);
-      setIsLoading(true);
 
-      // Simulate AI response with delay
-      setTimeout(() => {
-        const assistantMessage: Message = {
-          id: `assistant-${Date.now()}`,
-          role: "assistant",
-          content: MOCK_RESPONSES[mockResponseIndex.current % MOCK_RESPONSES.length],
-        };
-        mockResponseIndex.current++;
-        setMessages(prev => [...prev, assistantMessage]);
-        setIsLoading(false);
-        triggerResponseEffect(assistantMessage.id);
-      }, 1500);
+      // Build context message with references
+      let contextMessage = message.trim();
+      const activeRefs = refs || references;
+      
+      if (activeRefs.length > 0) {
+        const refContext = activeRefs.map(r => `@${r.type}:${r.id}`).join(' ');
+        contextMessage = `[References: ${refContext}]\n\n${contextMessage}`;
+      }
+
+      // Clear references after sending
+      setReferences([]);
+
+      // Use Vercel AI SDK sendMessage - pass body with each request for dynamic model switching
+      sendMessage(
+        { text: contextMessage },
+        {
+          body: {
+            userId,
+            model: selectedModel,
+            createMode: selectedCreateType,
+            searchWebEnabled,
+            references: activeRefs,
+            userPreferences: {
+              displayName: preferences.displayName,
+              tone: preferences.tone,
+              workFunction: preferences.workFunction,
+              personalPreferences: preferences.personalPreferences,
+            },
+          },
+        }
+      );
     },
-    [selectedModel, isBuildMode, router, triggerResponseEffect]
+    [selectedModel, isBuildMode, router, chatSessionId, sendMessage, userId, preferences, selectedCreateType, searchWebEnabled, references]
   );
 
   const handleModelChange = useCallback((model: AIModel) => {
@@ -204,7 +558,7 @@ export function DashboardChatContainer({
             transition={{ duration: 0.3, delay: 0.2 }}
             style={{
               paddingTop: '0px',
-              paddingBottom: '160px',
+              paddingBottom: '200px',
             }}
           >
             <motion.div
@@ -237,16 +591,16 @@ export function DashboardChatContainer({
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      <div className="max-w-none ai-response-markdown text-sm leading-relaxed text-white">
+                      <div className="max-w-none ai-response-markdown text-sm leading-relaxed text-[var(--surbee-fg-primary)]">
                         {effectfulMessages[msg.id] ? (
                           <TextGenerateEffect
                             words={msg.content}
-                            className="text-white"
-                            textClassName="text-base leading-relaxed text-white break-words whitespace-pre-wrap"
+                            className="text-[var(--surbee-fg-primary)]"
+                            textClassName="text-base leading-relaxed text-[var(--surbee-fg-primary)] break-words whitespace-pre-wrap"
                             duration={0.45}
                           />
                         ) : (
-                          <Response>{msg.content}</Response>
+                          <MarkdownRenderer content={msg.content} />
                         )}
                       </div>
 
@@ -289,13 +643,21 @@ export function DashboardChatContainer({
 
               {/* Loading indicator */}
               {isLoading && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <div className="flex gap-1">
-                    <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
-                  <span className="text-sm">Thinking...</span>
+                <div className="flex flex-col items-start gap-3">
+                  {isGeneratingChart ? (
+                    <ChartLoadingSpinner size="md" />
+                  ) : (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <div className="flex gap-1">
+                        <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                      <span className="text-sm">
+                        {selectedCreateType === 'Charts' ? 'Analyzing data...' : 'Thinking...'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </motion.div>
@@ -350,6 +712,8 @@ export function DashboardChatContainer({
             disableRotatingPlaceholders={hasStartedChat && !isBuildMode}
             hideAttachButton={true}
             compact={hasStartedChat}
+            references={references}
+            onRemoveReference={handleRemoveReference}
           />
           
           {/* Hidden file input */}
@@ -467,11 +831,11 @@ export function DashboardChatContainer({
                   </div>
                 </DropdownMenuItem>
 
-                {/* Charts option (disabled) */}
+                {/* Charts option */}
                 <DropdownMenuItem
-                  disabled
-                  className="cursor-not-allowed opacity-50"
+                  className="cursor-pointer"
                   style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-fg-primary)', marginBottom: '0' }}
+                  onSelect={() => { setSelectedCreateType('Charts'); setIsCreateOpen(false); }}
                 >
                   <div className="flex items-start gap-3 w-full">
                     <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
@@ -482,17 +846,8 @@ export function DashboardChatContainer({
                     <div className="flex flex-col w-full">
                       <div className="flex items-center gap-2">
                         <p className="text-sm mb-0.5">Charts</p>
-                        <span
-                          className="text-xs px-1.5 py-0.5 rounded-full"
-                          style={{
-                            backgroundColor: 'rgba(232, 232, 232, 0.1)',
-                            color: 'rgba(232, 232, 232, 0.5)',
-                            fontSize: '10px',
-                          }}
-                        >
-                          Coming soon
-                        </span>
                       </div>
+                      <p className="text-sm" style={{ color: 'rgba(232, 232, 232, 0.5)' }}>Generate data visualizations</p>
                     </div>
                   </div>
                 </DropdownMenuItem>
@@ -527,7 +882,7 @@ export function DashboardChatContainer({
                   width: '280px',
                 }}
               >
-                {/* Search for surveys or templates */}
+                {/* Reference surveys or chats */}
                 <DropdownMenuItem
                   className="cursor-pointer"
                   style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)', marginBottom: '1px' }}
@@ -540,21 +895,28 @@ export function DashboardChatContainer({
                     <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'rgba(232, 232, 232, 0.6)' }}>
                       <path d="M1.719 6.484a5.35 5.35 0 0 0 5.344 5.344 5.3 5.3 0 0 0 3.107-1.004l3.294 3.301a.8.8 0 0 0 .57.228c.455 0 .77-.342.77-.79a.77.77 0 0 0-.221-.55L11.308 9.72a5.28 5.28 0 0 0 1.098-3.235 5.35 5.35 0 0 0-5.344-5.343A5.35 5.35 0 0 0 1.72 6.484m1.145 0a4.2 4.2 0 0 1 4.199-4.198 4.2 4.2 0 0 1 4.198 4.198 4.2 4.2 0 0 1-4.198 4.199 4.2 4.2 0 0 1-4.2-4.199" />
                     </svg>
-                    <span className="text-sm">Search surveys or templates</span>
+                    <span className="text-sm">Reference surveys or chats</span>
                   </div>
                 </DropdownMenuItem>
 
-                {/* Folders */}
+                {/* Import Survey */}
                 <DropdownMenuItem
                   className="cursor-pointer"
                   style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)', marginBottom: '1px' }}
+                  onSelect={() => {
+                    setIsImportModalOpen(true);
+                    setIsSourcesOpen(false);
+                  }}
                 >
                   <div className="flex items-center gap-3 w-full">
-                    <svg height="20" width="20" viewBox="0 0 20 20" fill="currentColor" style={{ color: 'rgba(232, 232, 232, 0.6)' }}>
-                      <path d="M4.782 16.187q-.996 0-1.498-.495-.495-.489-.495-1.473V6.481q0-.958.457-1.434t1.295-.476h1.81q.31 0 .539.044.234.045.425.146.197.102.406.28l.387.317q.242.203.464.292.222.082.546.082h6.093q.99 0 1.492.496.502.494.502 1.472v6.52q-.001.983-.476 1.472-.477.495-1.327.495zm.013-1.022h10.397q.47 0 .73-.247.26-.255.26-.743V7.757q0-.495-.26-.749t-.73-.254h-6.34q-.312 0-.547-.044-.234-.045-.431-.146a2.2 2.2 0 0 1-.4-.273l-.388-.324a1.7 1.7 0 0 0-.463-.292 1.4 1.4 0 0 0-.533-.089H4.75q-.456 0-.698.242-.24.24-.241.71v7.63q0 .495.254.75.255.247.73.247M3.41 9.078v-.959h13.165v.959z" />
-                    </svg>
-                    <span className="text-sm">Folders</span>
-                    <ChevronRight size={14} className="ml-auto" style={{ color: 'rgba(232, 232, 232, 0.4)' }} />
+                    <Download size={16} style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
+                    <span className="text-sm">Import survey</span>
+                    <span 
+                      className="ml-auto text-[10px] px-1.5 py-0.5 rounded-md"
+                      style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)', color: 'rgb(74, 222, 128)' }}
+                    >
+                      NEW
+                    </span>
                   </div>
                 </DropdownMenuItem>
 
@@ -782,6 +1144,14 @@ export function DashboardChatContainer({
       <SearchModal
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}
+        onSelectReference={handleAddReference}
+      />
+
+      {/* Import Survey Modal */}
+      <ImportSurveyModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={handleImportSurvey}
       />
     </div>
   );

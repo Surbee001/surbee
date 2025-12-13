@@ -16,8 +16,11 @@ export default function DashboardLayoutClient({
   // without being constrained by the default dashboard white box container.
   const isManagePage = pathname?.includes('/manage');
 
+  // Hide sidebar for pricing page (full screen)
+  const isPricingPage = pathname?.includes('/pricing');
+
   return (
-    <AppLayout fullBleed={isManagePage}>
+    <AppLayout fullBleed={isManagePage || isPricingPage} hideSidebar={isPricingPage}>
       {children}
     </AppLayout>
   );

@@ -28,6 +28,7 @@ import { Response } from '@/components/ai-elements/response';
 import { ToolCallTree } from '@/components/ToolCallTree';
 import { VersionHistory } from '@/components/VersionHistory';
 import { Switch } from "@/components/ui/switch";
+import { ProjectSettingsModal } from '@/components/project/ProjectSettingsModal';
 import {
   SandboxProvider,
   SandboxLayout,
@@ -325,7 +326,7 @@ function ProjectSandboxView({
 
   return (
     <SandboxProvider key={bundleKey} {...providerProps}>
-      <SandboxLayout className="flex flex-col h-full !bg-[#0a0a0a] !border-none !rounded-none">
+      <SandboxLayout className="flex flex-col h-full min-h-0 overflow-hidden !bg-[#0a0a0a] !border-none !rounded-none">
         {/* Top bar with info and download */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
           <span className="text-xs text-zinc-400 leading-relaxed">{dependencySummary}</span>
@@ -376,33 +377,37 @@ function ProjectSandboxView({
         {/* Main Content Area */}
         {viewMode === 'code' ? (
           // Code view: File tree on left, code editor on right (no preview)
-          <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex overflow-hidden min-h-0">
             {/* File Explorer */}
             <SandpackFileExplorer className="w-64 shrink-0 border-r border-zinc-800 text-sm text-zinc-200" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }} />
 
             {/* Code Editor - Full width */}
-            <SandpackCodeEditor
-              className="flex-1 min-w-0 h-full"
-              showLineNumbers
-              showInlineErrors
-              wrapContent
-              style={{ fontSize: 14, backgroundColor: '#0a0a0a' }}
-            />
+            <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
+              <SandpackCodeEditor
+                className="h-full w-full"
+                showLineNumbers
+                showInlineErrors
+                wrapContent
+                style={{ fontSize: 14, backgroundColor: '#0a0a0a' }}
+              />
+            </div>
           </div>
         ) : (
           // Console view: File tree, code editor, and preview
-          <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex overflow-hidden min-h-0">
             {/* File Explorer */}
             <SandpackFileExplorer className="w-56 shrink-0 border-r border-zinc-800 text-xs text-zinc-200" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }} />
 
             {/* Code Editor */}
-            <SandpackCodeEditor
-              className="flex-1 min-w-0 h-full"
-              showLineNumbers
-              showInlineErrors
-              wrapContent
-              style={{ fontSize: 14, backgroundColor: '#0a0a0a' }}
-            />
+            <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
+              <SandpackCodeEditor
+                className="h-full w-full"
+                showLineNumbers
+                showInlineErrors
+                wrapContent
+                style={{ fontSize: 14, backgroundColor: '#0a0a0a' }}
+              />
+            </div>
 
             {/* Preview */}
             <div className="flex-1 border-l border-zinc-800 bg-[#0a0a0a]">
@@ -1030,7 +1035,7 @@ export default function ProjectPage() {
   const { user, loading: authLoading } = useAuth();
   const { subscribeToProject } = useRealtime();
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [isMounted, setIsMounted] = useState(false);
 
   // Prevent hydration errors by only checking theme on client
@@ -1038,7 +1043,7 @@ export default function ProjectPage() {
     setIsMounted(true);
   }, []);
 
-  const isDarkMode = isMounted && theme === 'dark';
+  const isDarkMode = isMounted && resolvedTheme === 'dark';
 
   const handleNavigation = (path: string) => {
     router.push(path);
@@ -1101,6 +1106,7 @@ export default function ProjectPage() {
   const [filePreviews, setFilePreviews] = useState<{ [key: string]: string }>({});
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isProjectSettingsOpen, setIsProjectSettingsOpen] = useState(false);
 
   // Reasoning and sandbox state
   const [sandboxContent, setSandboxContent] = useState<Record<string, string> | null>(null);
@@ -2340,8 +2346,8 @@ export default function ProjectPage() {
               >
                 {/* User info header */}
                 <div className="user-menu-header-section">
-                  <div className="user-menu-username">Demo</div>
-                  <div className="user-menu-email">demo@example.com</div>
+                  <div className="user-menu-username">{user?.email?.split('@')[0] || 'User'}</div>
+                  <div className="user-menu-email">{user?.email || ''}</div>
                 </div>
 
                 {/* Back to Dashboard */}
@@ -2357,25 +2363,12 @@ export default function ProjectPage() {
                   </div>
                 </button>
 
-                {/* Set up profile button */}
-                <button
-                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard/settings'); }}
-                  className="user-menu-setup-profile"
-                >
-                  Set up profile
-                </button>
-
                 {/* Project Settings */}
                 <button
-                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard/settings'); }}
-                  className="user-menu-item"
+                  onClick={() => { setIsUserMenuOpen(false); setIsProjectSettingsOpen(true); }}
+                  className="user-menu-setup-profile"
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="user-menu-icon-circle">
-                      <SettingsIcon className="h-4 w-4" />
-                    </div>
-                    <span>Project Settings</span>
-                  </div>
+                  Project Settings
                 </button>
 
                 {/* Theme selector */}
@@ -2405,38 +2398,6 @@ export default function ProjectPage() {
                     </button>
                   </div>
                 </div>
-
-                {/* Pricing */}
-                <button
-                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/pricing'); }}
-                  className="user-menu-item"
-                >
-                  <span>Pricing</span>
-                </button>
-
-                {/* Changelog */}
-                <button
-                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/changelog'); }}
-                  className="user-menu-item"
-                >
-                  <span>Changelog</span>
-                </button>
-
-                {/* Blog */}
-                <button
-                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/blog'); }}
-                  className="user-menu-item"
-                >
-                  <span>Blog</span>
-                </button>
-
-                {/* Give Feedback */}
-                <button
-                  onClick={() => { setIsUserMenuOpen(false); }}
-                  className="user-menu-item"
-                >
-                  <span>Give Feedback</span>
-                </button>
 
                 {/* Support */}
                 <button
@@ -2581,7 +2542,16 @@ export default function ProjectPage() {
                             const reasoningParts = msg.parts.filter(p => p.type === 'reasoning');
                             const hasReasoning = reasoningParts.length > 0;
                             const isLastMessage = idx === messages.length - 1;
-                            const isThinking = isLastMessage && status !== 'ready';
+
+                            // Check if there are any text or tool parts (means thinking is done)
+                            const hasNonReasoningParts = msg.parts.some(p =>
+                              p.type === 'text' || p.type.startsWith('tool-')
+                            );
+
+                            // isThinking should be true only when:
+                            // 1. It's the last message and still streaming
+                            // 2. AND there are no text/tool parts yet (reasoning is still happening)
+                            const isThinking = isLastMessage && status !== 'ready' && !hasNonReasoningParts;
 
                             if (!hasReasoning && !isThinking) return null;
 
@@ -2624,9 +2594,15 @@ export default function ProjectPage() {
                             // Render text content with markdown
                             if (part.type === 'text') {
                               return (
-                                <div key={`text-${partIdx}`} className="max-w-none ai-response-markdown">
+                                <motion.div
+                                  key={`text-${partIdx}`}
+                                  className="max-w-none ai-response-markdown"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ duration: 0.3, ease: "easeOut" }}
+                                >
                                   <Response>{part.text}</Response>
-                                </div>
+                                </motion.div>
                               );
                             }
 
@@ -2726,7 +2702,7 @@ export default function ProjectPage() {
       </div>
 
       {/* Right Side - Preview */}
-      <div className="flex-1 flex flex-col relative" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
+      <div className="flex-1 flex flex-col relative overflow-hidden" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
         {/* Header */}
         <div className="h-14 flex items-center justify-between pl-2 pr-4" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
           {/* Left Section */}
@@ -2784,9 +2760,9 @@ export default function ProjectPage() {
 
           {/* Center Section - Device Controls */}
           <div className="hidden md:flex flex-1 items-center justify-center">
-            <div className="relative flex h-8 min-w-[340px] max-w-[560px] items-center justify-between gap-2 rounded-full border px-1 text-sm page-dropdown" style={{
-              borderColor: isDarkMode ? 'var(--surbee-border-accent)' : 'rgba(0, 0, 0, 0.1)',
-              backgroundColor: 'var(--surbee-sidebar-bg)'
+            <div className="relative flex h-8 min-w-[340px] max-w-[560px] items-center justify-between gap-2 rounded-full px-1 text-sm page-dropdown" style={{
+              border: isDarkMode ? '1px solid #3a3a3a' : '1px solid rgba(0, 0, 0, 0.1)',
+              backgroundColor: isDarkMode ? '#1f1f1f' : 'var(--surbee-sidebar-bg)'
             }}>
               {/* Device View Buttons - Hidden on mobile */}
               <div className="hidden md:flex items-center gap-0.5">
@@ -2947,7 +2923,7 @@ export default function ProjectPage() {
                 backgroundColor: activeTopButton === 'upgrade'
                   ? (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
                   : 'transparent',
-                color: isDarkMode ? '#d1d5db' : '#000000'
+                color: isDarkMode ? '#ffffff' : '#000000'
               }}
               onMouseEnter={(e) => {
                 const isDark = document.documentElement.classList.contains('dark');
@@ -2961,7 +2937,7 @@ export default function ProjectPage() {
                   e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
                 }
               }}
-              onClick={() => router.push('/dashboard/upgrade-plan')}
+              onClick={() => router.push('/dashboard/pricing')}
             >
               Upgrade
             </button>
@@ -3073,13 +3049,13 @@ export default function ProjectPage() {
         </div>
 
                   {/* Main Content Area */}
-                <div className="flex-1 flex relative">
+                <div className="flex-1 flex relative overflow-hidden min-h-0">
                   {/* Restored rounded preview frame with border, like before */}
                   <div
-                    className="flex-1 flex flex-col relative rounded-[0.625rem] border mt-3 mr-3 mb-3 ml-2 overflow-hidden"
+                    className="flex-1 flex flex-col relative rounded-[0.625rem] mt-3 mr-3 mb-3 ml-2 overflow-hidden"
                     style={{
                       backgroundColor: isDarkMode ? '#242424' : '#F8F8F8',
-                      borderColor: isDarkMode ? 'var(--surbee-border-accent)' : 'rgba(0, 0, 0, 0.1)'
+                      border: isDarkMode ? 'none' : '1px solid rgba(0, 0, 0, 0.1)'
                     }}
                   >
                     {/* Show Sandbox View when code or console mode is active */}            {(sidebarView === 'code' || sidebarView === 'console') && sandboxAvailable ? (
@@ -3134,6 +3110,15 @@ export default function ProjectPage() {
       
       {/* Invite Modal */}
       <InviteModal open={inviteOpen} onOpenChange={setInviteOpen} />
+
+      {/* Project Settings Modal */}
+      <ProjectSettingsModal
+        isOpen={isProjectSettingsOpen}
+        onClose={() => setIsProjectSettingsOpen(false)}
+        projectId={projectId || ''}
+        projectTitle={autoGeneratedTitle || project?.title || 'Untitled Survey'}
+        userId={user?.id || ''}
+      />
     </div>
     </AppLayout>
   );

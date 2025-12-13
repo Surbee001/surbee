@@ -23,6 +23,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   signInWithOAuth: (provider: 'github' | 'google') => Promise<{ error: Error | null }>;
   updateUserProfile: (profile: UserProfile) => Promise<void>;
+  updatePassword: (password: string) => Promise<{ error: Error | null }>;
+  deleteAccount: () => Promise<{ error: Error | null }>;
   clearError: () => void;
 }
 
@@ -123,9 +125,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      // Clear local storage preferences
+      localStorage.removeItem('surbee_user_preferences');
       setError(null);
     } catch (err: any) {
       setError(err.message);
+    }
+  };
+
+  const deleteAccount = async (): Promise<{ error: Error | null }> => {
+    try {
+      if (!user) {
+        return { error: new Error('No user logged in') };
+      }
+
+      // First, delete all user data from our database
+      // Delete user's projects/surveys
+      const { error: projectsError } = await supabase
+        .from('projects')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (projectsError) {
+        console.error('Error deleting projects:', projectsError);
+      }
+
+      // Delete user's survey responses (if they have any as a respondent)
+      const { error: responsesError } = await supabase
+        .from('survey_responses')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (responsesError) {
+        console.error('Error deleting responses:', responsesError);
+      }
+
+      // Clear local storage
+      localStorage.removeItem('surbee_user_preferences');
+      sessionStorage.clear();
+
+      // Finally, sign out the user
+      // Note: For full account deletion from Supabase Auth, you need a server-side function
+      // with service role key. Here we sign out and the user data is already deleted.
+      await supabase.auth.signOut();
+
+      setUser(null);
+      setSession(null);
+      setError(null);
+
+      return { error: null };
+    } catch (err: any) {
+      setError(err.message);
+      return { error: err };
     }
   };
 
@@ -135,7 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard`,
+          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
         },
       });
       if (oauthError) {
@@ -164,6 +215,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updatePassword = async (password: string) => {
+    try {
+      setError(null);
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: password
+      });
+      
+      if (updateError) {
+        setError(updateError.message);
+        return { error: updateError };
+      }
+      return { error: null };
+    } catch (err: any) {
+      setError(err.message);
+      return { error: err };
+    }
+  };
+
   const clearError = () => {
     setError(null);
   };
@@ -180,6 +249,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     signInWithOAuth,
     updateUserProfile,
+    updatePassword,
+    deleteAccount,
     clearError,
   };
 

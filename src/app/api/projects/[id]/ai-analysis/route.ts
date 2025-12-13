@@ -52,7 +52,7 @@ export async function POST(
       maxTokens: 1024,
     });
 
-    return result.toDataStreamResponse();
+    return result.toUIMessageStreamResponse();
   } catch (error) {
     console.error('Error in AI analysis:', error);
     return new Response('Failed to generate analysis', { status: 500 });

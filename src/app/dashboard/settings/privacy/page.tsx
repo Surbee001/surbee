@@ -7,20 +7,15 @@ import { useRouter } from 'next/navigation';
 import { SkeletonText, SkeletonCard, SkeletonForm } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAnalyticsConsent } from '@/contexts/AnalyticsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { toast } from 'sonner';
 
 export default function PrivacySettingsPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, updatePassword } = useAuth();
+  const { settings, updatePrivacy } = useSettings();
   const { consent: analyticsConsent, updateConsent: updateAnalyticsConsent, isLoading: analyticsLoading } = useAnalyticsConsent();
   const [isLoading, setIsLoading] = useState(true);
-  const [privacySettings, setPrivacySettings] = useState({
-    marketingEmails: false,
-    thirdPartySharing: false,
-    publicProfile: false,
-    activityVisibility: 'private', // public, friends, private
-    searchEngineIndexing: false
-  });
 
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [passwordData, setPasswordData] = useState({
@@ -68,11 +63,11 @@ export default function PrivacySettingsPage() {
   }, [authLoading]);
 
   const handlePrivacyToggle = (setting: string, value: boolean) => {
-    setPrivacySettings(prev => ({ ...prev, [setting]: value }));
+    updatePrivacy({ [setting]: value });
   };
 
   const handlePasswordChange = async () => {
-    if (!passwordData.current || !passwordData.new || !passwordData.confirm) {
+    if (!passwordData.new || !passwordData.confirm) {
       toast.error('Please fill in all password fields');
       return;
     }
@@ -80,18 +75,39 @@ export default function PrivacySettingsPage() {
       toast.error('New passwords do not match');
       return;
     }
-    if (passwordData.new.length < 8) {
-      toast.error('Password must be at least 8 characters long');
+    // Security: Strong password requirements
+    if (passwordData.new.length < 12) {
+      toast.error('Password must be at least 12 characters long');
+      return;
+    }
+    if (!/[a-z]/.test(passwordData.new)) {
+      toast.error('Password must contain at least one lowercase letter');
+      return;
+    }
+    if (!/[A-Z]/.test(passwordData.new)) {
+      toast.error('Password must contain at least one uppercase letter');
+      return;
+    }
+    if (!/[0-9]/.test(passwordData.new)) {
+      toast.error('Password must contain at least one number');
+      return;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(passwordData.new)) {
+      toast.error('Password must contain at least one special character');
       return;
     }
     try {
-      // TODO: Implement actual password change API call
-      console.log('Changing password...');
+      const { error } = await updatePassword(passwordData.new);
+      
+      if (error) {
+        throw error;
+      }
+      
       toast.success('Password updated successfully!');
       setPasswordData({ current: '', new: '', confirm: '' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error changing password:', error);
-      toast.error('Failed to update password. Please try again.');
+      toast.error(error.message || 'Failed to update password. Please try again.');
     }
   };
 
@@ -121,14 +137,8 @@ export default function PrivacySettingsPage() {
   };
 
   const handleSaveChanges = async () => {
-    try {
-      // TODO: Implement actual save API call
-      console.log('Saving privacy settings:', privacySettings);
-      toast.success('Privacy settings saved successfully!');
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      toast.error('Failed to save settings. Please try again.');
-    }
+    // Changes are saved automatically via the context
+    toast.success('Privacy settings saved successfully!');
   };
 
   const ToggleSwitch = ({ enabled, onChange, disabled = false }: { enabled: boolean; onChange: (value: boolean) => void; disabled?: boolean }) => (
@@ -516,7 +526,7 @@ export default function PrivacySettingsPage() {
                             {!session.current && (
                               <button 
                                 onClick={() => handleSignOutSession(session.device)}
-                                className="text-[12px] text-red-400 hover:text-red-300"
+                                className="px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white"
                               >
                                 Sign Out
                               </button>
@@ -566,22 +576,22 @@ export default function PrivacySettingsPage() {
                         key: 'marketingEmails',
                         title: 'Marketing Communications',
                         description: 'Receive emails about new features and product updates',
-                        enabled: privacySettings.marketingEmails
+                        enabled: settings.privacy?.marketingEmails
                       },
                       {
                         key: 'thirdPartySharing',
                         title: 'Third-party Data Sharing',
                         description: 'Allow sharing aggregated data with research partners',
-                        enabled: privacySettings.thirdPartySharing
+                        enabled: settings.privacy?.thirdPartySharing
                       },
                       {
                         key: 'searchEngineIndexing',
                         title: 'Search Engine Indexing',
                         description: 'Allow search engines to index your public surveys',
-                        enabled: privacySettings.searchEngineIndexing
+                        enabled: settings.privacy?.searchEngineIndexing
                       }
                     ].map((setting) => (
-                      <div key={setting.key} className="flex items-center justify-between py-2">
+                      <div key={setting.key} className="flex items-center justify-between py-4">
                         <div>
                           <h4 className="text-[14px] font-medium text-theme-primary">
                             {setting.title}
@@ -622,7 +632,7 @@ export default function PrivacySettingsPage() {
                         </p>
                       </div>
                       <ToggleSwitch
-                        enabled={privacySettings.publicProfile}
+                        enabled={settings.privacy?.publicProfile}
                         onChange={(value) => handlePrivacyToggle('publicProfile', value)}
                       />
                     </div>
@@ -632,8 +642,8 @@ export default function PrivacySettingsPage() {
                         Activity Visibility
                       </label>
                       <select
-                        value={privacySettings.activityVisibility}
-                        onChange={(e) => setPrivacySettings(prev => ({ ...prev, activityVisibility: e.target.value }))}
+                        value={settings.privacy?.activityVisibility}
+                        onChange={(e) => updatePrivacy({ activityVisibility: e.target.value as any })}
                         className="w-full p-3 rounded-lg border text-[14px] theme-input"
                       >
                         <option value="public">Public - Anyone can see</option>

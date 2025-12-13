@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ProjectsService } from '@/lib/services/projects';
+import { requireAuth, sanitizeErrorMessage } from '@/lib/auth-utils';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -8,14 +9,12 @@ interface RouteContext {
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-    }
+    // Security: Get authenticated user from session instead of trusting client
+    const [user, errorResponse] = await requireAuth();
+    if (!user) return errorResponse;
 
-    const { data: project, error } = await ProjectsService.getProject(id, userId);
+    const { data: project, error } = await ProjectsService.getProject(id, user.id);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -36,14 +35,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
     const body = await request.json();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { user_id, userId, ...updates } = body;
-    const effectiveUserId = user_id || userId;
 
-    if (!effectiveUserId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-    }
+    // Security: Get authenticated user from session instead of trusting client
+    const [user, errorResponse] = await requireAuth();
+    if (!user) return errorResponse;
 
-    const { data: project, error } = await ProjectsService.updateProject(id, effectiveUserId, updates);
+    const { data: project, error } = await ProjectsService.updateProject(id, user.id, updates);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -59,14 +58,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-    }
+    // Security: Get authenticated user from session instead of trusting client
+    const [user, errorResponse] = await requireAuth();
+    if (!user) return errorResponse;
 
-    const { error } = await ProjectsService.deleteProject(id, userId);
+    const { error } = await ProjectsService.deleteProject(id, user.id);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

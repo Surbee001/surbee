@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { requireAuth } from '@/lib/auth-utils'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -12,19 +13,17 @@ interface RouteContext {
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id: projectId } = await context.params
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
-    }
+    // Security: Get authenticated user from session instead of trusting client
+    const [user, errorResponse] = await requireAuth()
+    if (!user) return errorResponse
 
     // Verify user owns the project
     const { data: project, error: projectError } = await supabaseAdmin
       .from('projects')
       .select('id')
       .eq('id', projectId)
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
       .single()
 
     if (projectError || !project) {
@@ -56,40 +55,36 @@ export async function GET(request: NextRequest, context: RouteContext) {
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { id: projectId } = await context.params
+
+    // Security: Get authenticated user from session instead of trusting client
+    const [user, errorResponse] = await requireAuth()
+    if (!user) return errorResponse
+
     const body = await request.json()
-    const { userId, questions } = body
+    const { questions } = body
 
-    console.log('[Questions API] Saving questions for project:', projectId, 'user:', userId)
-
-    if (!userId || !questions || !Array.isArray(questions)) {
-      return NextResponse.json({ error: 'User ID and questions array are required' }, { status: 400 })
+    if (!questions || !Array.isArray(questions)) {
+      return NextResponse.json({ error: 'Questions array is required' }, { status: 400 })
     }
 
-    // Verify user owns the project - use less strict check since project might be new
+    // Verify user owns the project
     const { data: project, error: projectError } = await supabaseAdmin
       .from('projects')
       .select('id, user_id')
       .eq('id', projectId)
       .single()
 
-    console.log('[Questions API] Project query result:', { project, error: projectError })
-
     if (projectError) {
-      console.error('[Questions API] Project query error:', projectError)
-      return NextResponse.json({
-        error: 'Project query failed',
-        details: projectError.message
-      }, { status: 500 })
+      // Security: Don't expose internal error details
+      return NextResponse.json({ error: 'Project query failed' }, { status: 500 })
     }
 
     if (!project) {
-      console.error('[Questions API] Project not found:', projectId)
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
     // Check if user owns the project
-    if (project.user_id !== userId) {
-      console.error('[Questions API] User mismatch. Expected:', project.user_id, 'Got:', userId)
+    if (project.user_id !== user.id) {
       return NextResponse.json({ error: 'Unauthorized - user does not own this project' }, { status: 403 })
     }
 

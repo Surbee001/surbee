@@ -1,12 +1,26 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
-import { api } from "@/lib/trpc/react";
-import { HelpCircle, Check, ChevronUp, ChevronDown, Gift, X, Copy, ArrowRight, ExternalLink, Settings as SettingsIcon, Sun, Moon, Laptop } from "lucide-react";
+import { HelpCircle, Check, ChevronUp, ChevronDown, Gift, X, Copy, ArrowRight, ExternalLink, Settings as SettingsIcon, Sun, Moon, Laptop, MessageSquare, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 const SidebarItem = ({ 
   label, 
@@ -19,7 +33,7 @@ const SidebarItem = ({
   isActive?: boolean;
   onClick?: () => void;
   comingSoon?: boolean;
-  icon?: 'arrow' | 'external' | null;
+  icon?: 'arrow' | 'external' | 'chevron-down' | 'chevron-up' | null;
 }) => (
   <div 
     className={`sidebar-item group ${isActive ? 'active' : ''}`}
@@ -32,6 +46,8 @@ const SidebarItem = ({
       )}
       {icon === 'arrow' && <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
       {icon === 'external' && <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
+      {icon === 'chevron-down' && <ChevronDown className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
+      {icon === 'chevron-up' && <ChevronUp className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
     </span>
   </div>
 );
@@ -40,11 +56,115 @@ export default function DashboardSidebar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [isChatsOpen, setIsChatsOpen] = useState(false);
+  const [recentChats, setRecentChats] = useState<any[]>([]);
   const [feedbackText, setFeedbackText] = useState('');
+  const [renamingChatId, setRenamingChatId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState<{ id: string; type: string; title: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const renameInputRef = useRef<HTMLInputElement>(null);
   const pathname = usePathname();
   const router = useRouter();
   const { signOut, user, userProfile } = useAuth();
   const { theme, setTheme } = useTheme();
+
+
+  // Focus rename input when renaming
+  useEffect(() => {
+    if (renamingChatId && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [renamingChatId]);
+
+  const handleRenameChat = async (chatId: string, chatType: string) => {
+    if (!renameValue.trim()) {
+      setRenamingChatId(null);
+      return;
+    }
+    
+    try {
+      if (chatType === 'dashboard') {
+        await fetch('/api/dashboard/chat-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: chatId,
+            userId: user?.id,
+            title: renameValue.trim(),
+          }),
+        });
+      } else {
+        // For project chats, update the project title
+        await fetch(`/api/projects/${chatId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: renameValue.trim() }),
+        });
+      }
+      
+      // Update local state
+      setRecentChats(prev => prev.map(c => 
+        c.id === chatId ? { ...c, title: renameValue.trim() } : c
+      ));
+    } catch (error) {
+      console.error('Failed to rename chat:', error);
+    }
+    
+    setRenamingChatId(null);
+    setRenameValue('');
+  };
+
+  const openDeleteDialog = (chat: { id: string; type: string; title: string }) => {
+    setChatToDelete(chat);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteChat = async () => {
+    if (!chatToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      if (chatToDelete.type === 'dashboard') {
+        await fetch(`/api/dashboard/chat-session?sessionId=${chatToDelete.id}`, {
+          method: 'DELETE',
+        });
+      } else {
+        await fetch(`/api/projects/${chatToDelete.id}`, {
+          method: 'DELETE',
+        });
+      }
+      
+      // Remove from local state
+      setRecentChats(prev => prev.filter(c => c.id !== chatToDelete.id));
+      setDeleteDialogOpen(false);
+      setChatToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete chat:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const toggleChats = async () => {
+    const newState = !isChatsOpen;
+    setIsChatsOpen(newState);
+    
+    if (newState && recentChats.length === 0 && user?.id) {
+      try {
+        // Fetch more chats (20) so users can scroll through their history
+        const res = await fetch(`/api/chats/recent?userId=${user.id}&limit=20`);
+        if (res.ok) {
+          const data = await res.json();
+          setRecentChats(data.recentChats || []);
+        }
+      } catch (e) {
+        console.error("Failed to fetch chats", e);
+      }
+    }
+  };
 
   const handleSendFeedback = () => {
     if (feedbackText.trim()) {
@@ -63,11 +183,6 @@ export default function DashboardSidebar() {
   }, [user, userProfile]);
 
   const initialLetter = useMemo(() => (displayName?.[0]?.toUpperCase() || "U"), [displayName]);
-
-  const { data: credits, isLoading: creditsLoading } = api.user.credits.useQuery(undefined, {
-    enabled: Boolean(user),
-    retry: 0,
-  });
 
   const handleNavigation = (path: string) => {
     router.push(path);
@@ -142,6 +257,149 @@ export default function DashboardSidebar() {
             onClick={() => handleNavigation('/dashboard/marketplace')}
             icon="arrow"
           />
+          
+          <div className="sidebar-group">
+            <SidebarItem
+              label="Chats"
+              isActive={isChatsOpen}
+              onClick={toggleChats}
+              icon={isChatsOpen ? 'chevron-up' : 'chevron-down'}
+            />
+            
+            <AnimatePresence>
+              {isChatsOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pl-4 py-1 space-y-1">
+                    <div 
+                      className="text-xs text-zinc-400 hover:text-zinc-100 cursor-pointer py-1.5 px-2 rounded-md hover:bg-white/5 transition-colors truncate"
+                      onClick={() => {
+                        // Clear any chatId from URL and go to fresh dashboard
+                        router.push('/dashboard');
+                      }}
+                    >
+                      + New Chat
+                    </div>
+                    <div 
+                      className="overflow-y-auto space-y-1 custom-scrollbar"
+                      style={{ maxHeight: '150px' }}
+                    >
+                    {recentChats.map((chat) => (
+                      <div 
+                        key={chat.id}
+                        className="group relative text-xs text-zinc-400 hover:text-zinc-100 cursor-pointer py-1.5 px-2 rounded-md hover:bg-white/5 transition-colors flex items-center gap-1.5"
+                      >
+                        {renamingChatId === chat.id ? (
+                          <input
+                            ref={renameInputRef}
+                            type="text"
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onBlur={() => handleRenameChat(chat.id, chat.type)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleRenameChat(chat.id, chat.type);
+                              if (e.key === 'Escape') { setRenamingChatId(null); setRenameValue(''); }
+                            }}
+                            className="flex-1 bg-transparent border border-zinc-600 rounded px-1 py-0.5 text-xs text-zinc-100 outline-none focus:border-zinc-400"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        ) : (
+                          <>
+                            <div 
+                              className="flex-1 flex items-center gap-1.5 truncate"
+                              onClick={() => {
+                                if (chat.type === 'dashboard' && chat.chatId) {
+                                  handleNavigation(`/dashboard?chatId=${chat.chatId}`);
+                                } else if (chat.projectId) {
+                                  handleNavigation(`/project/${chat.projectId}`);
+                                }
+                              }}
+                              title={chat.title}
+                            >
+                              {chat.type === 'dashboard' && (
+                                <MessageSquare className="w-3 h-3 opacity-50 flex-shrink-0" />
+                              )}
+                              <span className="truncate">{chat.title}</span>
+                            </div>
+                            
+                            {/* 3-dot menu dropdown */}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded transition-all flex-shrink-0"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MoreHorizontal className="w-3.5 h-3.5" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                align="end"
+                                side="bottom"
+                                sideOffset={4}
+                                style={{
+                                  borderRadius: '12px',
+                                  padding: '4px',
+                                  border: '1px solid rgba(232, 232, 232, 0.08)',
+                                  backgroundColor: 'rgb(19, 19, 20)',
+                                  boxShadow: 'rgba(0, 0, 0, 0.2) 0px 8px 24px',
+                                  minWidth: '140px',
+                                }}
+                              >
+                                <DropdownMenuItem
+                                  className="cursor-pointer"
+                                  style={{ 
+                                    borderRadius: '8px', 
+                                    padding: '8px 12px', 
+                                    color: 'var(--surbee-fg-primary)',
+                                    fontSize: '13px',
+                                  }}
+                                  onSelect={() => {
+                                    setRenameValue(chat.title);
+                                    setRenamingChatId(chat.id);
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Pencil className="w-3.5 h-3.5 opacity-60" />
+                                    <span>Rename</span>
+                                  </div>
+                                </DropdownMenuItem>
+<DropdownMenuItem
+                                                  className="cursor-pointer"
+                                                  style={{ 
+                                                    borderRadius: '8px', 
+                                                    padding: '8px 12px', 
+                                                    color: '#ef4444',
+                                                    fontSize: '13px',
+                                                  }}
+                                                  onSelect={() => openDeleteDialog({ id: chat.id, type: chat.type, title: chat.title })}
+                                                >
+                                                  <div className="flex items-center gap-2">
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                    <span>Delete</span>
+                                                  </div>
+                                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                    {recentChats.length === 0 && (
+                      <div className="text-xs text-zinc-500 py-1 px-2 italic">
+                        No recent chats
+                      </div>
+                    )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           <SidebarItem label="Get Help" onClick={() => {}} icon="external" />
         </nav>
 
@@ -237,12 +495,12 @@ export default function DashboardSidebar() {
                   </div>
                 </div>
 
-                {/* Pricing */}
+                {/* Upgrade Plan */}
                 <button
-                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/pricing'); }}
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard/pricing'); }}
                   className="user-menu-item"
                 >
-                  <span>Pricing</span>
+                  <span>Upgrade plan</span>
                 </button>
 
                 {/* Changelog */}
@@ -400,6 +658,65 @@ export default function DashboardSidebar() {
           )}
         </div>
       </div>
+
+      {/* Delete Chat Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent
+          className="sm:max-w-[400px] border-none"
+          style={{
+            backgroundColor: 'rgb(19, 19, 20)',
+            borderRadius: '16px',
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle 
+              className="text-lg font-semibold"
+              style={{ color: 'var(--surbee-fg-primary)' }}
+            >
+              Delete Chat
+            </DialogTitle>
+            <DialogDescription 
+              className="text-sm mt-2"
+              style={{ color: 'var(--surbee-fg-muted)' }}
+            >
+              Are you sure you want to delete{' '}
+              <span className="font-medium" style={{ color: 'var(--surbee-fg-primary)' }}>
+                "{chatToDelete?.title}"
+              </span>
+              ? This action cannot be undone and will permanently remove the chat and all its messages.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-6 gap-3 sm:gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={isDeleting}
+              className="flex-1 sm:flex-none cursor-pointer hover:opacity-80 transition-opacity"
+              style={{
+                backgroundColor: 'transparent',
+                border: '1px solid rgba(232, 232, 232, 0.12)',
+                color: 'var(--surbee-fg-primary)',
+                borderRadius: '10px',
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteChat}
+              disabled={isDeleting}
+              className="flex-1 sm:flex-none cursor-pointer hover:opacity-80 transition-opacity"
+              style={{
+                backgroundColor: '#ef4444',
+                color: 'white',
+                borderRadius: '10px',
+              }}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

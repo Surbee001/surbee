@@ -21,6 +21,7 @@ import {
   ContextMessage,
   ReasoningResult
 } from '@/types/reasoning.types';
+import { getCorsHeaders, handleCorsPreflightRequest } from '@/lib/cors';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -37,8 +38,8 @@ interface StreamRequest {
   enableParallel?: boolean;
 }
 
-// Server-Sent Events helper
-function createSSEResponse() {
+// Server-Sent Events helper - now takes request for proper CORS
+function createSSEResponse(request: NextRequest) {
   const stream = new ReadableStream({
     start(controller) {
       // Store controller for later use
@@ -51,9 +52,7 @@ function createSSEResponse() {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
       'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      ...getCorsHeaders(request),
     }
   });
 }
@@ -368,9 +367,7 @@ The survey has been built and is now ready for use. All HTML, styling, and inter
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
       'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      ...getCorsHeaders(request),
     }
   });
 }
@@ -681,9 +678,7 @@ The survey has been built and is now ready for use. All HTML, styling, and inter
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache, no-transform',
         'Connection': 'keep-alive',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
+        ...getCorsHeaders(request),
       }
     });
 

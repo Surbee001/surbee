@@ -14,8 +14,15 @@ export interface FileUIPart {
   url: string; // data URL or regular URL
 }
 
+// Reference item for surveys/chats
+export interface ReferenceItem {
+  id: string;
+  type: 'survey' | 'chat';
+  title: string;
+}
+
 interface ChatInputLightProps {
-  onSendMessage: (message: string, files?: FileUIPart[]) => void;
+  onSendMessage: (message: string, files?: FileUIPart[], references?: ReferenceItem[]) => void;
   isInputDisabled?: boolean;
   placeholder?: string;
   className?: string;
@@ -41,6 +48,8 @@ interface ChatInputLightProps {
   onToggleBuildMode?: () => void; // optional, callback to toggle build mode
   hideAttachButton?: boolean; // optional, hides the attach/plus button
   compact?: boolean; // optional, makes the chatbox thinner in height
+  references?: ReferenceItem[]; // optional, referenced surveys/chats
+  onRemoveReference?: (id: string) => void; // optional, callback to remove a reference
 }
 
 export default function ChatInputLight({
@@ -70,6 +79,8 @@ export default function ChatInputLight({
   onToggleBuildMode,
   hideAttachButton = false,
   compact = false,
+  references = [],
+  onRemoveReference,
 }: ChatInputLightProps) {
   const [chatText, setChatText] = useState("");
   // Initialize theme by checking DOM immediately
@@ -200,7 +211,11 @@ export default function ChatInputLight({
       })));
     }
 
-    onSendMessage(chatText.trim(), fileUIParts.length > 0 ? fileUIParts : undefined);
+    onSendMessage(
+      chatText.trim(), 
+      fileUIParts.length > 0 ? fileUIParts : undefined,
+      references.length > 0 ? references : undefined
+    );
     setChatText("");
     setFiles([]);
     setFilePreviews({});
@@ -452,6 +467,46 @@ export default function ChatInputLight({
             ))}
           </div>
         )}
+
+        {/* Reference Pills - for surveys and chats */}
+        {references.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-3 pt-3">
+            {references.map((ref) => (
+              <div
+                key={`${ref.type}-${ref.id}`}
+                className="flex items-center gap-1.5 h-7 px-2.5 rounded-full transition-all duration-150"
+                style={{
+                  backgroundColor: 'rgba(2, 133, 255, 0.15)',
+                }}
+              >
+                {ref.type === 'survey' ? (
+                  <svg height="12" width="12" viewBox="0 0 16 16" fill="currentColor" style={{ color: '#0285ff' }}>
+                    <path d="M6.08 5.5h3.85a.3.3 0 0 0 .3-.32.3.3 0 0 0-.3-.3H6.08a.3.3 0 0 0-.32.3c0 .18.13.32.32.32m0 1.77h3.85a.3.3 0 0 0 .3-.32.3.3 0 0 0-.3-.3H6.08a.3.3 0 0 0-.32.3c0 .18.13.32.32.32m0 1.77H7.9a.3.3 0 0 0 .31-.3.3.3 0 0 0-.31-.32H6.08a.3.3 0 0 0-.32.32c0 .17.13.3.32.3m-2.35 2.81c0 1.07.52 1.6 1.57 1.6h5.4c1.05 0 1.57-.53 1.57-1.6v-7.7c0-1.06-.52-1.6-1.57-1.6H5.3c-1.05 0-1.57.54-1.57 1.6zm.82-.01V4.17c0-.51.27-.8.8-.8h5.3c.53 0 .8.29.8.8v7.67c0 .5-.27.79-.8.79h-5.3c-.53 0-.8-.28-.8-.8Z" />
+                  </svg>
+                ) : (
+                  <svg height="12" width="12" viewBox="0 0 16 16" fill="currentColor" style={{ color: '#0285ff' }}>
+                    <path d="M8 1C4.134 1 1 3.582 1 6.8c0 1.67.85 3.16 2.2 4.22v2.78a.8.8 0 001.3.62l2.08-1.67c.47.05.94.05 1.42.05 3.866 0 7-2.582 7-5.8S11.866 1 8 1z" />
+                  </svg>
+                )}
+                <span 
+                  className="text-xs font-medium max-w-[100px] truncate"
+                  style={{ color: '#0285ff' }}
+                >
+                  {ref.title}
+                </span>
+                {onRemoveReference && (
+                  <button
+                    onClick={() => onRemoveReference(ref.id)}
+                    className="ml-0.5 rounded-full p-0.5 transition-colors hover:opacity-70"
+                    style={{ color: '#0285ff' }}
+                  >
+                    <X size={10} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
         
         {/* Selected Element Pill */}
         {selectedElement && (
@@ -485,7 +540,7 @@ export default function ChatInputLight({
         
         {/* Main content area with consistent height */}
         <div className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 min-h-0 px-6" style={{ paddingTop: (files.length > 0 || selectedElement) ? '0.75rem' : '1rem' }}>
+          <div className="flex-1 min-h-0 px-6" style={{ paddingTop: (files.length > 0 || selectedElement || references.length > 0) ? '0.75rem' : '1rem' }}>
           <form id="prompt">
             <div className={`relative w-full leading-[22px] text-sm max-sm:text-[14px] resize-none bg-transparent focus:outline-none border-none`}>
               {/* Animated rotating placeholder overlay (shown only when empty and rotating enabled) */}

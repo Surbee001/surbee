@@ -52,6 +52,7 @@ export function useChatSession({
     const loadInitialSession = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         const queryParams = new URLSearchParams({
           userId,
           ...(initialSessionId && { sessionId: initialSessionId }),
@@ -62,7 +63,10 @@ export function useChatSession({
         );
 
         if (!response.ok) {
-          throw new Error('Failed to load session');
+          // Log the actual error for debugging
+          const errorData = await response.json().catch(() => ({}));
+          console.warn('Chat session load failed:', response.status, errorData);
+          return;
         }
 
         const data = await response.json();
@@ -70,8 +74,7 @@ export function useChatSession({
           setSessionId(data.session.id);
         }
       } catch (err) {
-        console.error('Error loading session:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        console.warn('Chat session load error:', err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setIsLoading(false);
       }
@@ -108,7 +111,9 @@ export function useChatSession({
         });
 
         if (!response.ok) {
-          throw new Error('Failed to save messages');
+          const errorData = await response.json().catch(() => ({}));
+          console.warn('Chat session save failed:', response.status, errorData);
+          return;
         }
 
         const data = await response.json();
@@ -116,8 +121,7 @@ export function useChatSession({
           setSessionId(data.session.id);
         }
       } catch (err) {
-        console.error('Error saving messages:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        console.warn('Chat session save error:', err instanceof Error ? err.message : 'Unknown error');
       }
     },
     [userId, projectId, sessionId, enabled]

@@ -231,17 +231,6 @@ const PaintBrushIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </g>{' '}
   </svg>
 );
-const TelescopeIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 512 512" fill="currentColor" {...props}>
-    {' '}
-    <g>
-      {' '}
-      <path d="M452.425,202.575l-38.269-23.11c-1.266-10.321-5.924-18.596-13.711-21.947l-86.843-52.444l-0.275,0.598c-3.571-7.653-9.014-13.553-16.212-16.668L166.929,10.412l-0.236,0.543v-0.016c-3.453-2.856-7.347-5.239-11.594-7.08C82.569-10.435,40.76,14.5,21.516,59.203C2.275,103.827,12.82,151.417,45.142,165.36c4.256,1.826,8.669,3.005,13.106,3.556l-0.19,0.464l146.548,40.669c7.19,3.107,15.206,3.004,23.229,0.37l-0.236,0.566L365.55,238.5c7.819,3.366,17.094,1.125,25.502-5.082l42.957,11.909c7.67,3.312,18.014-3.548,23.104-15.362C462.202,218.158,460.11,205.894,452.425,202.575z M154.516,99.56c-11.792,27.374-31.402,43.783-47.19,49.132c-6.962,2.281-13.176,2.556-17.605,0.637c-14.536-6.254-25.235-41.856-8.252-81.243c16.976-39.378,50.186-56.055,64.723-49.785c4.429,1.904,8.519,6.592,11.626,13.246C164.774,46.699,166.3,72.216,154.516,99.56z" />{' '}
-      <path d="M297.068,325.878c-1.959-2.706-2.25-6.269-0.724-9.25c1.518-2.981,4.562-4.846,7.913-4.846h4.468c4.909,0,8.889-3.972,8.889-8.897v-7.74c0-4.909-3.98-8.897-8.889-8.897h-85.789c-4.908,0-8.897,3.988-8.897,8.897v7.74c0,4.925,3.989,8.897,8.897,8.897h4.492c3.344,0,6.388,1.865,7.914,4.846c1.518,2.981,1.235,6.544-0.732,9.25L128.715,459.116c-3.225,4.287-2.352,10.36,1.927,13.569c4.295,3.225,10.368,2.344,13.578-1.943l107.884-122.17l4.036,153.738c0,5.333,4.342,9.691,9.691,9.691c5.358,0,9.692-4.358,9.692-9.691l4.043-153.738l107.885,122.17c3.209,4.287,9.282,5.168,13.568,1.943c4.288-3.209,5.145-9.282,1.951-13.569L297.068,325.878z" />{' '}
-      <path d="M287.227,250.81c0-11.807-9.573-21.388-21.396-21.388c-11.807,0-21.38,9.582-21.38,21.388c0,11.831,9.574,21.428,21.38,21.428C277.654,272.238,287.227,262.642,287.227,250.81z" />{' '}
-    </g>{' '}
-  </svg>
-);
 const LightbulbIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" {...props}>
     {' '}
@@ -313,6 +302,26 @@ const MicIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <line x1="12" y1="19" x2="12" y2="23"></line>{' '}
   </svg>
 );
+const FileTextIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
+    <line x1="10" y1="9" x2="8" y2="9" />
+  </svg>
+);
 
 const toolsList = [
   {
@@ -334,21 +343,43 @@ const toolsList = [
     icon: TelescopeIcon,
     extra: '5 left',
   },
+  {
+    id: 'survey',
+    name: 'Select Survey',
+    shortName: 'Survey',
+    icon: FileTextIcon,
+  },
 ];
 
 // --- The Final, Self-Contained PromptBox Component ---
 export const PromptBox = React.forwardRef<
   HTMLTextAreaElement,
-  React.TextareaHTMLAttributes<HTMLTextAreaElement>
->(({ className, ...props }, ref) => {
+  React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+    selectedSurvey?: any;
+    setSelectedSurvey?: (survey: any) => void;
+    onSend?: (value: string) => void;
+  }
+>(({ className, selectedSurvey, setSelectedSurvey, onSend, ...props }, ref) => {
   // ... all state and handlers are unchanged ...
   const internalTextareaRef = React.useRef<HTMLTextAreaElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [value, setValue] = React.useState('');
+  
+  // Controlled vs Uncontrolled logic
+  const isControlled = props.value !== undefined;
+  const [internalValue, setInternalValue] = React.useState('');
+  const value = isControlled ? (props.value as string) : internalValue;
+  
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [selectedTool, setSelectedTool] = React.useState<string | null>(null);
   const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
   const [isImageDialogOpen, setIsImageDialogOpen] = React.useState(false);
+
+  // Survey Selection State
+  const [isSurveyDialogOpen, setIsSurveyDialogOpen] = React.useState(false);
+  const [surveys, setSurveys] = React.useState<any[]>([]);
+  const [isLoadingSurveys, setIsLoadingSurveys] = React.useState(false);
+  const [surveySearch, setSurveySearch] = React.useState('');
+
   React.useImperativeHandle(ref, () => internalTextareaRef.current!, []);
   React.useLayoutEffect(() => {
     const textarea = internalTextareaRef.current;
@@ -359,7 +390,7 @@ export const PromptBox = React.forwardRef<
     }
   }, [value]);
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setValue(e.target.value);
+    if (!isControlled) setInternalValue(e.target.value);
     if (props.onChange) props.onChange(e);
   };
   const handlePlusClick = () => {
@@ -386,6 +417,49 @@ export const PromptBox = React.forwardRef<
     ? toolsList.find((t) => t.id === selectedTool)
     : null;
   const ActiveToolIcon = activeTool?.icon;
+
+  const handleToolSelect = (toolId: string) => {
+      if (toolId === 'survey') {
+          setIsSurveyDialogOpen(true);
+          fetchSurveys();
+      } else {
+          setSelectedTool(toolId);
+      }
+      setIsPopoverOpen(false);
+  };
+
+  const fetchSurveys = async () => {
+      if (surveys.length > 0) return;
+      setIsLoadingSurveys(true);
+      try {
+          const res = await fetch('/api/projects');
+          const data = await res.json();
+          if (data.projects) setSurveys(data.projects);
+      } catch (e) {
+          console.error(e);
+      } finally {
+          setIsLoadingSurveys(false);
+      }
+  };
+
+  const handleSendClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (onSend && (value.trim().length > 0 || imagePreview)) {
+          onSend(value);
+          if (!isControlled) setInternalValue('');
+          
+          if (internalTextareaRef.current) {
+               internalTextareaRef.current.style.height = 'auto';
+               internalTextareaRef.current.focus();
+          }
+          setImagePreview(null);
+      }
+  };
+
+  const filteredSurveys = surveys.filter(s => 
+      s.title.toLowerCase().includes(surveySearch.toLowerCase())
+  );
 
   return (
     <div
@@ -440,6 +514,46 @@ export const PromptBox = React.forwardRef<
         </Dialog>
       )}
 
+      {/* Survey Selector Dialog */}
+      <Dialog open={isSurveyDialogOpen} onOpenChange={setIsSurveyDialogOpen}>
+        <DialogContent className="max-w-md bg-[#1a1a1a] border border-zinc-800 text-white">
+            <div className="flex flex-col gap-4 p-4">
+                <h2 className="text-lg font-semibold">Select a Survey</h2>
+                <input 
+                    type="text" 
+                    placeholder="Search surveys..." 
+                    value={surveySearch}
+                    onChange={(e) => setSurveySearch(e.target.value)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded p-2 text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
+                />
+                <div className="max-h-[300px] overflow-y-auto flex flex-col gap-2">
+                    {isLoadingSurveys ? (
+                        <div className="text-center py-4 text-zinc-400">Loading...</div>
+                    ) : filteredSurveys.length === 0 ? (
+                        <div className="text-center py-4 text-zinc-400">No surveys found.</div>
+                    ) : (
+                        filteredSurveys.map(survey => (
+                            <button
+                                key={survey.id}
+                                onClick={() => {
+                                    if (setSelectedSurvey) setSelectedSurvey(survey);
+                                    setIsSurveyDialogOpen(false);
+                                }}
+                                className="flex items-start gap-3 p-3 rounded hover:bg-zinc-800 text-left transition-colors"
+                            >
+                                <FileTextIcon className="w-5 h-5 mt-0.5 text-zinc-400" />
+                                <div>
+                                    <div className="font-medium">{survey.title}</div>
+                                    <div className="text-xs text-zinc-500">{new Date(survey.updated_at).toLocaleDateString()}</div>
+                                </div>
+                            </button>
+                        ))
+                    )}
+                </div>
+            </div>
+        </DialogContent>
+      </Dialog>
+
       <textarea
         ref={internalTextareaRef}
         rows={1}
@@ -470,6 +584,46 @@ export const PromptBox = React.forwardRef<
               </TooltipContent>{' '}
             </Tooltip>
 
+            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+              <PopoverTrigger asChild>
+                 <button
+                  type="button"
+                  className="flex items-center justify-center text-zinc-400 transition-colors hover:text-white"
+                >
+                  <Settings2Icon className="h-6 w-6 text-zinc-400" />
+                  <span className="sr-only">Tools</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-2 bg-[#252525] border-zinc-700">
+                 <div className="flex flex-col gap-1">
+                     {toolsList.map((tool) => (
+                         <button
+                            key={tool.id}
+                            onClick={() => handleToolSelect(tool.id)}
+                            className="flex items-center gap-2 p-2 hover:bg-zinc-700 rounded text-sm text-zinc-200"
+                         >
+                             <tool.icon className="w-4 h-4" />
+                             {tool.name}
+                         </button>
+                     ))}
+                 </div>
+              </PopoverContent>
+            </Popover>
+
+            {selectedSurvey && (
+                 <>
+                <div className="h-4 w-px bg-border dark:bg-gray-600" />
+                <button
+                  onClick={() => setSelectedSurvey && setSelectedSurvey(null)}
+                  className="flex h-8 items-center gap-2 rounded-full px-3 text-sm bg-[#252525] hover:bg-[#303030] border border-zinc-700 cursor-pointer text-zinc-200 transition-colors flex-row items-center justify-center"
+                >
+                  <FileTextIcon className="h-4 w-4 text-blue-400" />
+                  <span className="truncate max-w-[100px]">{selectedSurvey.title}</span>
+                  <XIcon className="h-4 w-4 text-zinc-400 hover:text-zinc-200" />
+                </button>
+              </>
+            )}
+
             {activeTool && (
               <>
                 <div className="h-4 w-px bg-border dark:bg-gray-600" />
@@ -489,7 +643,8 @@ export const PromptBox = React.forwardRef<
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={handleSendClick}
                     disabled={!hasValue}
                     className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-0 disabled:pointer-events-none bg-[#1a1a1a] text-zinc-400 hover:bg-[#1a1a1a] active:bg-[#1a1a1a] focus:bg-[#1a1a1a] disabled:bg-[#232323]"
                   >

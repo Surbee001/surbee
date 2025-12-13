@@ -10,6 +10,8 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { RealtimeProvider } from '@/contexts/RealtimeContext'
 import { AnalyticsProvider } from '@/contexts/AnalyticsContext'
+import { UserPreferencesProvider } from '@/contexts/UserPreferencesContext'
+import { SettingsProvider } from '@/contexts/SettingsContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -60,16 +62,20 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <ErrorBoundary>
           <RealtimeProvider>
             <ThemeProvider>
-              <AnalyticsProvider>
-                <api.Provider client={trpcClient} queryClient={queryClient}>
-                  <QueryClientProvider client={queryClient}>
-                    <ErrorBoundary>
-                      {children}
-                    </ErrorBoundary>
-                    <Toaster position="top-right" />
-                  </QueryClientProvider>
-                </api.Provider>
-              </AnalyticsProvider>
+              <UserPreferencesProvider>
+                <SettingsProvider>
+                  <AnalyticsProvider>
+                    <api.Provider client={trpcClient} queryClient={queryClient}>
+                      <QueryClientProvider client={queryClient}>
+                        <ErrorBoundary>
+                          {children}
+                        </ErrorBoundary>
+                        <Toaster position="top-right" />
+                      </QueryClientProvider>
+                    </api.Provider>
+                  </AnalyticsProvider>
+                </SettingsProvider>
+              </UserPreferencesProvider>
             </ThemeProvider>
           </RealtimeProvider>
         </ErrorBoundary>

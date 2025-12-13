@@ -46,7 +46,12 @@ export default function LoginForm() {
     setLoading(true)
     setError(null)
     try {
-      const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: typeof window !== 'undefined' ? window.location.origin + redirectTo : undefined } })
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: typeof window !== 'undefined' ? window.location.origin + '/auth/callback?next=' + encodeURIComponent(redirectTo) : undefined
+        }
+      })
       if (error) throw error
     } catch (err: any) {
       setError(err?.message || 'OAuth error')

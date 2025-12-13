@@ -3,11 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import { streamText, tool } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
+import { requireAuth } from '@/lib/auth-utils';
 
-// Create Supabase client
+// Create Supabase client with anon key + RLS instead of service role
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Tool implementations
 async function getSurveyQuestions(projectId: string): Promise<string> {
@@ -98,16 +99,16 @@ async function getProjectDetails(projectId: string): Promise<string> {
 async function getAllAnswersForQuestion(projectId: string, questionId: string, limit: number = 50): Promise<string> {
   const { data: responses, error } = await supabase
     .from('survey_responses')
-    .select('id, respondent_name, respondent_email, responses, created_at')
+    .select('id, responses, created_at')
     .eq('survey_id', projectId)
     .limit(limit);
 
   if (error) return JSON.stringify({ error: error.message });
 
-  const answers = responses?.map((r) => ({
+  // Security: Don't expose PII (respondent_name, respondent_email) in API responses
+  const answers = responses?.map((r, index) => ({
     response_id: r.id,
-    respondent_name: r.respondent_name || 'Anonymous',
-    respondent_email: r.respondent_email || 'N/A',
+    respondent: `Respondent ${index + 1}`,
     answer: r.responses?.[questionId],
     submitted_at: r.created_at,
   })).filter((a) => a.answer !== undefined && a.answer !== null) || [];
@@ -153,7 +154,7 @@ async function getSurveyStats(projectId: string): Promise<string> {
 async function queryResponses(projectId: string, options: any): Promise<string> {
   let query = supabase
     .from('survey_responses')
-    .select('id, created_at, completed_at, respondent_name, respondent_email, fraud_score, is_flagged, device_data, timing_data')
+    .select('id, created_at, completed_at, fraud_score, is_flagged, device_data, timing_data')
     .eq('survey_id', projectId);
 
   if (options.completed_only) {
@@ -174,10 +175,10 @@ async function queryResponses(projectId: string, options: any): Promise<string> 
 
   if (error) return JSON.stringify({ error: error.message });
 
-  const formatted = data?.map((r) => ({
+  // Security: Don't expose PII (respondent_name, respondent_email) in API responses
+  const formatted = data?.map((r, index) => ({
     id: r.id,
-    name: r.respondent_name || 'Anonymous',
-    email: r.respondent_email || 'N/A',
+    respondent: `Respondent ${index + 1}`,
     submitted_at: r.created_at,
     completed_at: r.completed_at,
     quality_score: r.fraud_score,
@@ -242,18 +243,18 @@ async function getParticipantList(projectId: string, options: any): Promise<stri
 
   const { data, error } = await supabase
     .from('survey_responses')
-    .select('id, respondent_name, respondent_email, created_at, completed_at')
+    .select('id, created_at, completed_at')
     .eq('survey_id', projectId)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
   if (error) return JSON.stringify({ error: error.message });
 
+  // Security: Don't expose PII (respondent_name, respondent_email) in API responses
   const participants = data?.map((r, index) => ({
     number: offset + index + 1,
     id: r.id,
-    name: r.respondent_name || 'Anonymous',
-    email: r.respondent_email || 'N/A',
+    respondent: `Respondent ${offset + index + 1}`,
     submitted_at: r.created_at,
     completed: !!r.completed_at,
   }));
@@ -306,22 +307,28 @@ function createTools(projectId: string) {
   return {
     get_survey_stats: tool({
       description: 'Get overall statistics for the survey including total responses, completion rate, average time, etc.',
-      parameters: z.object({}),
+      inputSchema: z.object({
+        include_incomplete: z.boolean().default(false).describe('Whether to include incomplete responses in stats (default: false)'),
+      }),
       execute: async () => getSurveyStats(projectId),
     }),
     get_survey_questions: tool({
       description: 'Get the full list of survey questions with their types, options, and IDs.',
-      parameters: z.object({}),
+      inputSchema: z.object({
+        include_hidden: z.boolean().default(false).describe('Whether to include hidden questions (default: false)'),
+      }),
       execute: async () => getSurveyQuestions(projectId),
     }),
     get_project_details: tool({
       description: 'Get full project details including title, description, status, creation date.',
-      parameters: z.object({}),
+      inputSchema: z.object({
+        include_metadata: z.boolean().default(false).describe('Whether to include additional metadata (default: false)'),
+      }),
       execute: async () => getProjectDetails(projectId),
     }),
     query_responses: tool({
       description: 'Query and filter survey responses. Can filter by completion status, flagged status, etc.',
-      parameters: z.object({
+      inputSchema: z.object({
         limit: z.number().optional().describe('Maximum number of responses to return (default 10)'),
         completed_only: z.boolean().optional().describe('Only return completed responses'),
         flagged_only: z.boolean().optional().describe('Only return flagged/suspicious responses'),
@@ -332,21 +339,21 @@ function createTools(projectId: string) {
     }),
     get_response_details: tool({
       description: 'Get detailed information about a specific response by ID.',
-      parameters: z.object({
+      inputSchema: z.object({
         response_id: z.string().describe('The ID of the response to fetch'),
       }),
       execute: async ({ response_id }) => getResponseDetails(projectId, response_id),
     }),
     analyze_question: tool({
       description: 'Analyze responses to a specific question - get distribution, common answers, percentages.',
-      parameters: z.object({
+      inputSchema: z.object({
         question_id: z.string().describe('The question ID to analyze'),
       }),
       execute: async ({ question_id }) => analyzeQuestion(projectId, question_id),
     }),
     get_all_answers_for_question: tool({
       description: 'Get every single answer submitted for a specific question, with respondent info.',
-      parameters: z.object({
+      inputSchema: z.object({
         question_id: z.string().describe('The question ID to get all answers for'),
         limit: z.number().optional().describe('Maximum number of answers to return (default 50)'),
       }),
@@ -354,7 +361,7 @@ function createTools(projectId: string) {
     }),
     get_participant_list: tool({
       description: 'Get a list of survey participants with their basic info.',
-      parameters: z.object({
+      inputSchema: z.object({
         limit: z.number().optional().describe('Maximum number of participants to return'),
         offset: z.number().optional().describe('Number of participants to skip'),
       }),
@@ -362,7 +369,7 @@ function createTools(projectId: string) {
     }),
     get_time_series_data: tool({
       description: 'Get response counts over time for charting/graphing.',
-      parameters: z.object({
+      inputSchema: z.object({
         group_by: z.enum(['hour', 'day', 'week', 'month']).optional().describe('How to group the time series data'),
       }),
       execute: async (args) => getTimeSeriesData(projectId, args),
@@ -375,20 +382,20 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Security: Get authenticated user from session instead of trusting client
+    const [user, errorResponse] = await requireAuth();
+    if (!user) return errorResponse;
+
     const { id: projectId } = await params;
     const body = await request.json();
-    const { messages, userId } = body;
+    const { messages } = body;
 
-    if (!userId) {
-      return Response.json({ error: 'User ID required' }, { status: 401 });
-    }
-
-    // Verify user owns the project
+    // Verify user owns the project using authenticated user ID
     const { data: project, error: projectError } = await supabase
       .from('projects')
       .select('*')
       .eq('id', projectId)
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
       .single();
 
     if (projectError || !project) {
@@ -433,8 +440,8 @@ Tools: get_survey_stats, get_survey_questions, get_project_details, query_respon
       maxSteps: 5,
     });
 
-    // Return the data stream response for custom parsing
-    return result.toDataStreamResponse();
+    // Return the UI message stream response for useChat
+    return result.toUIMessageStreamResponse();
   } catch (error: any) {
     console.error('Error in project chat API:', error);
     return Response.json(

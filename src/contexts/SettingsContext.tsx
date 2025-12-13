@@ -78,12 +78,21 @@ export interface EnterpriseSettings {
   };
 }
 
+export interface PrivacySettings {
+  marketingEmails: boolean;
+  thirdPartySharing: boolean;
+  publicProfile: boolean;
+  activityVisibility: 'public' | 'team' | 'private';
+  searchEngineIndexing: boolean;
+}
+
 export interface AppSettings {
   preferences: PreferencesSettings;
   personalization: PersonalizationSettings;
   notifications: NotificationSettings;
   api: APISettings;
   enterprise: EnterpriseSettings;
+  privacy: PrivacySettings;
 }
 
 // Default settings
@@ -144,6 +153,13 @@ const defaultSettings: AppSettings = {
       amount: 29,
     },
   },
+  privacy: {
+    marketingEmails: false,
+    thirdPartySharing: false,
+    publicProfile: false,
+    activityVisibility: 'private',
+    searchEngineIndexing: false,
+  },
 };
 
 // Action types
@@ -153,6 +169,7 @@ type SettingsAction =
   | { type: 'UPDATE_NOTIFICATIONS'; payload: Partial<NotificationSettings> }
   | { type: 'UPDATE_API'; payload: Partial<APISettings> }
   | { type: 'UPDATE_ENTERPRISE'; payload: Partial<EnterpriseSettings> }
+  | { type: 'UPDATE_PRIVACY'; payload: Partial<PrivacySettings> }
   | { type: 'LOAD_SETTINGS'; payload: AppSettings }
   | { type: 'RESET_SETTINGS' }
   | { type: 'ADD_API_KEY'; payload: APIKey }
@@ -188,6 +205,11 @@ function settingsReducer(state: AppSettings, action: SettingsAction): AppSetting
       return {
         ...state,
         enterprise: { ...state.enterprise, ...action.payload },
+      };
+    case 'UPDATE_PRIVACY':
+      return {
+        ...state,
+        privacy: { ...state.privacy, ...action.payload },
       };
     case 'LOAD_SETTINGS':
       return action.payload;
@@ -250,6 +272,7 @@ interface SettingsContextType {
   updateNotifications: (updates: Partial<NotificationSettings>) => void;
   updateAPI: (updates: Partial<APISettings>) => void;
   updateEnterprise: (updates: Partial<EnterpriseSettings>) => void;
+  updatePrivacy: (updates: Partial<PrivacySettings>) => void;
   resetSettings: () => void;
   addAPIKey: (key: APIKey) => void;
   removeAPIKey: (keyId: string) => void;
@@ -275,7 +298,8 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       const stored = localStorage.getItem('surbee-settings');
       if (stored) {
         const parsedSettings = JSON.parse(stored);
-        dispatch({ type: 'LOAD_SETTINGS', payload: { ...defaultSettings, ...parsedSettings } });
+        // Merge default settings with parsed settings to ensure new fields (like privacy) are present
+        dispatch({ type: 'LOAD_SETTINGS', payload: { ...defaultSettings, ...parsedSettings, privacy: { ...defaultSettings.privacy, ...parsedSettings.privacy } } });
       }
       isInitialized.current = true;
     } catch (error) {
@@ -385,6 +409,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     updateNotifications: (updates) => dispatch({ type: 'UPDATE_NOTIFICATIONS', payload: updates }),
     updateAPI: (updates) => dispatch({ type: 'UPDATE_API', payload: updates }),
     updateEnterprise: (updates) => dispatch({ type: 'UPDATE_ENTERPRISE', payload: updates }),
+    updatePrivacy: (updates) => dispatch({ type: 'UPDATE_PRIVACY', payload: updates }),
     resetSettings: () => dispatch({ type: 'RESET_SETTINGS' }),
     addAPIKey: (key) => dispatch({ type: 'ADD_API_KEY', payload: key }),
     removeAPIKey: (keyId) => dispatch({ type: 'REMOVE_API_KEY', payload: keyId }),

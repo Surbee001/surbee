@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { Globe, Lock, AlertTriangle, CheckCircle2, Users } from 'lucide-react'
+import { Lock, Users } from 'lucide-react'
 import { surveyManager, StoredSurvey } from '@/lib/survey-manager'
 import { SimpleSurveyRenderer } from '@/components/survey/SimpleSurveyRenderer'
 
@@ -39,7 +38,7 @@ export default function PublishedSurveyPage() {
           }
 
           // Check if response limit is reached
-          if (foundSurvey.settings.limitResponses && 
+          if (foundSurvey.settings.limitResponses &&
               foundSurvey.responseCount >= (foundSurvey.settings.limitResponses || 0)) {
             setError('This survey has reached its response limit')
             setLoading(false)
@@ -72,164 +71,99 @@ export default function PublishedSurveyPage() {
 
   const handleSurveyComplete = (responses: Record<string, any>) => {
     console.log('Survey completed with responses:', responses)
-    
+
     // Record the response
     if (surveyId) {
       surveyManager.recordResponse(surveyId)
     }
-    
+
     setIsCompleted(true)
   }
 
+  // Clean loading state - just white screen
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading survey...</p>
-        </div>
-      </div>
-    )
+    return <div className="min-h-screen bg-white" />
   }
 
   if (error || !survey) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex items-center justify-center">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center max-w-md mx-auto p-8"
-        >
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className="w-8 h-8 text-red-600" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Survey Unavailable</h1>
-          <p className="text-gray-600 mb-6">
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">Survey Unavailable</h1>
+          <p className="text-gray-500 text-sm">
             {error || 'The survey you\'re looking for is not available.'}
           </p>
-        </motion.div>
+        </div>
       </div>
     )
   }
 
   if (passwordRequired) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 flex items-center justify-center">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-auto"
-        >
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-8 max-w-md mx-auto border border-gray-100 shadow-sm">
           <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-8 h-8 text-purple-600" />
+            <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-6 h-6 text-gray-600" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Password Required</h1>
-            <p className="text-gray-600">
-              This survey is password protected. Please enter the password to continue.
+            <h1 className="text-xl font-semibold text-gray-900 mb-2">Password Required</h1>
+            <p className="text-gray-500 text-sm">
+              This survey is password protected.
             </p>
           </div>
 
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                 placeholder="Enter password"
                 required
               />
               {passwordError && (
-                <p className="text-red-600 text-sm mt-1">{passwordError}</p>
+                <p className="text-red-500 text-sm mt-1">{passwordError}</p>
               )}
             </div>
             <button
               type="submit"
-              className="w-full py-2 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              className="w-full py-2.5 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
             >
               Access Survey
             </button>
           </form>
-        </motion.div>
+        </div>
       </div>
     )
   }
 
   if (isCompleted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center max-w-md mx-auto p-8"
-        >
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 className="w-10 h-10 text-green-600" />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Thank You!</h1>
-          <p className="text-gray-600 text-lg mb-6">
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">Thank You!</h1>
+          <p className="text-gray-500 text-sm">
             Your responses have been recorded successfully.
           </p>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <p className="text-green-800 text-sm">
-              🎉 Your feedback is valuable and will help improve our services.
-            </p>
-          </div>
-        </motion.div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Survey Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-4xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <Globe className="w-4 h-4 text-green-600" />
-              </div>
-              <div>
-                <h1 className="font-semibold text-gray-900">Live Survey</h1>
-                <p className="text-sm text-gray-600">{survey.title}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1 text-sm text-gray-600">
-                <Users className="w-4 h-4" />
-                <span>{survey.responseCount} responses</span>
-              </div>
-              <div className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                Published
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Survey Content */}
-      <div className="py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="max-w-4xl mx-auto px-6"
-        >
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <SimpleSurveyRenderer
-              surveyData={survey.data}
-              surveyId={surveyId}
-              onComplete={handleSurveyComplete}
-              className="rounded-2xl"
-            />
-          </div>
-        </motion.div>
-      </div>
+    <div className="min-h-screen bg-white">
+      {/* Survey Content - Full screen, no header clutter */}
+      <SimpleSurveyRenderer
+        surveyData={survey.data}
+        surveyId={surveyId}
+        onComplete={handleSurveyComplete}
+      />
     </div>
   )
 }

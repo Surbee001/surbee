@@ -16,6 +16,7 @@ import {
   X,
   Search,
   User,
+  MessageSquare,
 } from 'lucide-react';
 
 import {
@@ -259,6 +260,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 Analytics
               </a>
             </nav>
+          </div>
+
+          {/* Chats Section */}
+          <div className="px-4 py-3 border-t">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-medium text-sidebar-foreground flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Chats
+              </h4>
+            </div>
+            {/* Chats List will be populated here */}
+            <div className="text-xs text-muted-foreground pl-6">
+              <a href="/dashboard" className="block py-1 hover:text-sidebar-foreground transition-colors">
+                New Chat
+              </a>
+              {/* Dynamic list would go here */}
+            </div>
           </div>
 
           {/* Knowledge Base Section */}

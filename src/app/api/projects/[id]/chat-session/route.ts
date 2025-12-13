@@ -20,15 +20,33 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
     }
 
-    // Verify user owns the project
-    const { data: project, error: projectError } = await supabaseAdmin
+    // Get or create the project
+    let { data: project, error: projectError } = await supabaseAdmin
       .from('projects')
       .select('id, active_chat_session_id')
       .eq('id', projectId)
       .eq('user_id', userId)
       .single()
 
-    if (projectError || !project) {
+    // If project doesn't exist, create it
+    if (projectError?.code === 'PGRST116' || !project) {
+      const { data: newProject, error: createError } = await supabaseAdmin
+        .from('projects')
+        .insert({
+          id: projectId,
+          user_id: userId,
+          title: 'Untitled Project',
+          status: 'draft',
+        })
+        .select('id, active_chat_session_id')
+        .single()
+
+      if (createError) {
+        console.error('Failed to create project:', createError)
+        return NextResponse.json({ error: 'Failed to create project' }, { status: 500 })
+      }
+      project = newProject
+    } else if (projectError) {
       return NextResponse.json({ error: 'Project not found or unauthorized' }, { status: 403 })
     }
 
@@ -113,15 +131,37 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Verify user owns the project
-    const { data: project, error: projectError } = await supabaseAdmin
+    // Get or create the project
+    let { data: project, error: projectError } = await supabaseAdmin
       .from('projects')
       .select('id')
       .eq('id', projectId)
       .eq('user_id', userId)
       .single()
 
-    if (projectError || !project) {
+    // If project doesn't exist, create it
+    if (projectError?.code === 'PGRST116' || !project) {
+      // Generate title from first user message
+      const firstUserMessage = messages.find((m: any) => m.role === 'user')
+      const projectTitle = firstUserMessage?.content?.substring(0, 50) || 'Untitled Project'
+
+      const { data: newProject, error: createError } = await supabaseAdmin
+        .from('projects')
+        .insert({
+          id: projectId,
+          user_id: userId,
+          title: projectTitle,
+          status: 'draft',
+        })
+        .select('id')
+        .single()
+
+      if (createError) {
+        console.error('Failed to create project:', createError)
+        return NextResponse.json({ error: 'Failed to create project' }, { status: 500 })
+      }
+      project = newProject
+    } else if (projectError) {
       return NextResponse.json({ error: 'Project not found or unauthorized' }, { status: 403 })
     }
 

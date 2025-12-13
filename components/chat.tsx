@@ -52,6 +52,7 @@ export function Chat({
   const { setDataStream } = useDataStream();
 
   const [input, setInput] = useState<string>('');
+  const [selectedSurvey, setSelectedSurvey] = useState<any>(null);
 
   const {
     messages,
@@ -131,6 +132,31 @@ export function Chat({
 
   const showGreeting = messages.length === 0;
 
+  const handleSend = (text: string) => {
+    if (status !== 'ready') {
+      toast({
+        type: 'error',
+        description: 'Please wait for the model to finish its response!',
+      });
+      return;
+    }
+
+    let content = text;
+    if (selectedSurvey) {
+      const surveyData = selectedSurvey.survey_schema
+        ? JSON.stringify(selectedSurvey.survey_schema, null, 2)
+        : 'No schema available';
+      content += `\n\n[Context: User selected survey "${selectedSurvey.title}" (ID: ${selectedSurvey.id}). Survey Schema/Data:\n${surveyData}]`;
+    }
+
+    if (content.trim().length > 0) {
+      sendMessage({
+        role: 'user',
+        parts: [{ type: 'text', text: content }],
+      });
+    }
+  };
+
   return (
     <>
       <div className="flex flex-col min-w-0 h-dvh bg-[#191A1A] font-dmsans border-zinc-700">
@@ -161,6 +187,9 @@ export function Chat({
                 >
                   {!isReadonly && (
                     <PromptBox
+                      selectedSurvey={selectedSurvey}
+                      setSelectedSurvey={setSelectedSurvey}
+                      onSend={handleSend}
                       onKeyDown={(event) => {
                         if (
                           event.key === 'Enter' &&
@@ -168,22 +197,8 @@ export function Chat({
                           !event.nativeEvent.isComposing
                         ) {
                           event.preventDefault();
-                          const textarea =
-                            event.currentTarget as HTMLTextAreaElement;
-                          const value = textarea.value;
-                          if (status !== 'ready') {
-                            toast({
-                              type: 'error',
-                              description:
-                                'Please wait for the model to finish its response!',
-                            });
-                          } else if (value.trim().length > 0) {
-                            sendMessage({
-                              role: 'user',
-                              parts: [{ type: 'text', text: value }],
-                            });
-                            textarea.value = '';
-                          }
+                          handleSend(event.currentTarget.value);
+                          event.currentTarget.value = '';
                         }
                       }}
                       className="w-full text-lg"
@@ -214,6 +229,9 @@ export function Chat({
               >
                 {!isReadonly && (
                   <PromptBox
+                    selectedSurvey={selectedSurvey}
+                    setSelectedSurvey={setSelectedSurvey}
+                    onSend={handleSend}
                     onKeyDown={(event) => {
                       if (
                         event.key === 'Enter' &&
@@ -221,22 +239,8 @@ export function Chat({
                         !event.nativeEvent.isComposing
                       ) {
                         event.preventDefault();
-                        const textarea =
-                          event.currentTarget as HTMLTextAreaElement;
-                        const value = textarea.value;
-                        if (status !== 'ready') {
-                          toast({
-                            type: 'error',
-                            description:
-                              'Please wait for the model to finish its response!',
-                          });
-                        } else if (value.trim().length > 0) {
-                          sendMessage({
-                            role: 'user',
-                            parts: [{ type: 'text', text: value }],
-                          });
-                          textarea.value = '';
-                        }
+                        handleSend(event.currentTarget.value);
+                        event.currentTarget.value = '';
                       }
                     }}
                     className="w-full text-lg"

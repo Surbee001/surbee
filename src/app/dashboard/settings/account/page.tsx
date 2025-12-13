@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 
 export default function AccountSettingsPage() {
   const router = useRouter();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, signOut, deleteAccount } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [showFade, setShowFade] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -266,12 +266,19 @@ export default function AccountSettingsPage() {
                               label: 'Yes, Delete Account',
                               onClick: async () => {
                                 try {
-                                  // Delete account logic here
-                                  console.log('Deleting account...');
-                                  // TODO: Implement actual account deletion API call
-                                  toast.error('Account deletion initiated. This process may take a few moments.');
+                                  toast.loading('Deleting your account...');
+                                  const { error } = await deleteAccount();
+                                  if (error) {
+                                    toast.dismiss();
+                                    toast.error(`Failed to delete account: ${error.message}`);
+                                    return;
+                                  }
+                                  toast.dismiss();
+                                  toast.success('Your account has been deleted successfully.');
+                                  router.push('/');
                                 } catch (error) {
                                   console.error('Delete account error:', error);
+                                  toast.dismiss();
                                   toast.error('Failed to delete account. Please try again or contact support.');
                                 }
                               }

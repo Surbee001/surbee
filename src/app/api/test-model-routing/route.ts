@@ -3,11 +3,6 @@ import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 
-// Debug: Log API key presence
-console.log('ENV CHECK - ANTHROPIC_API_KEY exists?', !!process.env.ANTHROPIC_API_KEY);
-console.log('ENV CHECK - ANTHROPIC_API_KEY length:', process.env.ANTHROPIC_API_KEY?.length || 0);
-console.log('ENV CHECK - ANTHROPIC_API_KEY starts with:', process.env.ANTHROPIC_API_KEY?.substring(0, 7));
-
 // Create Anthropic provider with explicit API key
 const anthropic = createAnthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,

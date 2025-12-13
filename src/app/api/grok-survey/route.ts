@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Grok4FastSystem } from "@/lib/grok/grok-4-fast-system";
+import { getCorsHeaders, handleCorsPreflightRequest } from "@/lib/cors";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // 5 minutes for reasoning models
@@ -137,14 +138,14 @@ export async function POST(req: NextRequest) {
       }
     })();
 
-    // Return streaming response
+    // Return streaming response with proper CORS
     return new NextResponse(stream.readable, {
       headers: {
         "Content-Type": "text/event-stream; charset=utf-8",
         "Cache-Control": "no-cache, no-transform",
         "Connection": "keep-alive",
         "X-Accel-Buffering": "no",
-        "Access-Control-Allow-Origin": "*",
+        ...getCorsHeaders(req),
       },
     });
   } catch (error: unknown) {
@@ -155,14 +156,8 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * OPTIONS handler for CORS
+ * OPTIONS handler for CORS preflight
  */
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
-  });
+export async function OPTIONS(req: NextRequest) {
+  return handleCorsPreflightRequest(req);
 }

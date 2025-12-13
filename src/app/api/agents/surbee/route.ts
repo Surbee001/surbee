@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest } from "next/server";
 import { runWorkflow, type SerializedRunItem } from "@/lib/agents/surbeeWorkflow";
+import { getCorsHeaders } from "@/lib/cors";
 
 // Increase max listeners to prevent warnings during streaming
 import { EventEmitter } from 'events';
@@ -467,7 +468,7 @@ export async function POST(request: NextRequest) {
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
       "X-Accel-Buffering": "no",
-      "Access-Control-Allow-Origin": "*",
+      ...getCorsHeaders(request),
     },
   });
 }

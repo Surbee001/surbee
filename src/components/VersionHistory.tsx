@@ -65,15 +65,6 @@ export function VersionHistory({ versions, currentVersionId, onRestore }: Versio
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--surbee-border-accent)' }}>
-        <h3 className="text-sm font-semibold" style={{ color: 'var(--surbee-fg-primary)' }}>
-          Version History
-        </h3>
-        <p className="text-xs mt-1" style={{ color: 'var(--surbee-fg-secondary)' }}>
-          {versions.length} {versions.length === 1 ? 'version' : 'versions'} saved
-        </p>
-      </div>
-
       <div className="flex-1 overflow-y-auto">
         <div className="p-2 space-y-2">
           {sortedVersions.map((version, index) => {

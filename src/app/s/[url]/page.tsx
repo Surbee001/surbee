@@ -1,9 +1,7 @@
 "use client"
 
-import React, { useEffect, useState, useRef, useCallback } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
-import { Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react'
-import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react'
 
 interface SandboxBundle {
   files: Record<string, string>;
@@ -28,7 +26,8 @@ export default function PublishedSurveyPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isCompleted, setIsCompleted] = useState(false)
-  const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  const [iframeHtml, setIframeHtml] = useState<string | null>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
     const fetchSurvey = async () => {
@@ -39,8 +38,15 @@ export default function PublishedSurveyPage() {
         const response = await fetch(`/api/surveys/published/${publishedUrl}`)
 
         if (!response.ok) {
-          if (response.status === 404) {
-            setError('Survey not found')
+          const errorData = await response.json().catch(() => ({}))
+          console.error('=== SHARED SURVEY: API error ===', response.status, errorData)
+
+          // Use specific error message from API if available
+          const apiError = errorData.error || errorData.message
+          if (apiError) {
+            setError(apiError)
+          } else if (response.status === 404) {
+            setError('This survey is not available. It may not be published yet or the link may be incorrect.')
           } else {
             setError('Failed to load survey')
           }
@@ -49,6 +55,12 @@ export default function PublishedSurveyPage() {
 
         const data = await response.json()
         setSurvey(data)
+
+        // Generate iframe HTML if sandbox bundle exists
+        if (data.sandbox_bundle?.files) {
+          const html = generateSurveyHtml(data.sandbox_bundle)
+          setIframeHtml(html)
+        }
       } catch (err) {
         console.error('Error loading survey:', err)
         setError('Failed to load survey')
@@ -60,16 +72,15 @@ export default function PublishedSurveyPage() {
     fetchSurvey()
   }, [publishedUrl])
 
-  // Listen for messages from the sandbox (for form submissions)
+  // Listen for messages from the iframe (for form submissions)
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
-      // Handle survey completion from sandbox
+      // Handle survey completion from iframe
       if (event.data?.type === 'SURVEY_COMPLETE' || event.data?.type === 'survey-response') {
         const responses = event.data.responses || event.data.data
 
         if (survey?.id && responses) {
           try {
-            // Save responses to the database
             await fetch(`/api/projects/${survey.id}/responses`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -91,118 +102,120 @@ export default function PublishedSurveyPage() {
     return () => window.removeEventListener('message', handleMessage)
   }, [survey?.id])
 
+  // Show nothing during load
   if (loading) {
+    return null
+  }
+
+  // Render survey in iframe - exactly as designed, full screen
+  if (iframeHtml) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="animate-spin h-8 w-8 text-white/60 mx-auto mb-4" />
-          <p className="text-white/40 text-sm">Loading survey...</p>
-        </div>
-      </div>
+      <iframe
+        ref={iframeRef}
+        srcDoc={iframeHtml}
+        style={{ width: '100vw', height: '100vh', border: 'none', display: 'block' }}
+        title={survey?.title || 'Survey'}
+        sandbox="allow-scripts allow-forms allow-same-origin"
+      />
     )
   }
 
+  // Only show error if actually failed
   if (error || !survey) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-8">
-          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className="w-8 h-8 text-red-400" />
-          </div>
-          <h1 className="text-xl font-semibold text-white mb-2">Survey Unavailable</h1>
-          <p className="text-white/50 text-sm">
-            {error || 'The survey you\'re looking for is not available.'}
-          </p>
-        </div>
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <p>{error || 'Survey not found'}</p>
       </div>
     )
   }
 
-  if (isCompleted) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-8">
-          <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="w-8 h-8 text-green-400" />
-          </div>
-          <h1 className="text-xl font-semibold text-white mb-2">Thank You!</h1>
-          <p className="text-white/50 text-sm">
-            Your responses have been recorded successfully.
-          </p>
-        </div>
-      </div>
-    )
+  return null
+}
+
+// Generate standalone HTML for the survey
+function generateSurveyHtml(bundle: SandboxBundle): string {
+  const files = bundle.files
+
+  // Find the main App component
+  let appCode = files['/App.tsx'] || files['App.tsx'] || files['/App.jsx'] || files['App.jsx'] || ''
+
+  // Find any CSS
+  let cssCode = files['/styles.css'] || files['styles.css'] || files['/index.css'] || files['index.css'] || ''
+
+  // Get all component files
+  const componentFiles: Record<string, string> = {}
+  for (const [path, content] of Object.entries(files)) {
+    if ((path.endsWith('.tsx') || path.endsWith('.jsx')) && !path.includes('index')) {
+      const name = path.replace(/^\//, '').replace(/\.(tsx|jsx)$/, '')
+      componentFiles[name] = content
+    }
   }
 
-  // Render sandbox bundle if available
-  if (survey.sandbox_bundle?.files) {
-    // Convert sandbox bundle files to Sandpack format
-    const sandpackFiles: Record<string, string> = {}
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Survey</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    html, body, #root { margin: 0; padding: 0; min-height: 100vh; width: 100%; }
+    ${cssCode}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-type="module">
+    const { useState, useEffect, useRef, useCallback } = React;
 
-    for (const [filename, content] of Object.entries(survey.sandbox_bundle.files)) {
-      // Sandpack expects paths starting with /
-      const normalizedPath = filename.startsWith('/') ? filename : `/${filename}`
-      sandpackFiles[normalizedPath] = content
+    // Lucide icons as simple SVG components
+    const ChevronRight = (props) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m9 18 6-6-6-6"/></svg>
+    );
+    const ChevronLeft = (props) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m15 18-6-6 6-6"/></svg>
+    );
+    const Check = (props) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M20 6 9 17l-5-5"/></svg>
+    );
+    const Star = (props) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    );
+    const Send = (props) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+    );
+    const ArrowRight = (props) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    );
+    const ArrowLeft = (props) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+    );
+
+    // Simple motion wrapper (no-op for animations)
+    const motion = {
+      div: ({ children, ...props }) => <div {...props}>{children}</div>,
+      button: ({ children, ...props }) => <button {...props}>{children}</button>,
+      span: ({ children, ...props }) => <span {...props}>{children}</span>,
+      p: ({ children, ...props }) => <p {...props}>{children}</p>,
+    };
+    const AnimatePresence = ({ children }) => children;
+
+    // Helper to send responses to parent
+    const sendResponse = (responses) => {
+      window.parent.postMessage({ type: 'SURVEY_COMPLETE', responses }, '*');
+    };
+
+    ${appCode
+      .replace(/import\s+.*?from\s+['"].*?['"];?\n?/g, '')
+      .replace(/export\s+default\s+/g, 'const App = ')
+      .replace(/export\s+/g, 'const ')
     }
 
-    // Determine entry point
-    const entryFile = survey.sandbox_bundle.entry?.startsWith('/')
-      ? survey.sandbox_bundle.entry
-      : `/${survey.sandbox_bundle.entry || 'App.tsx'}`
-
-    return (
-      <div className="h-screen w-screen overflow-hidden bg-[#0a0a0a]">
-        <SandpackProvider
-          template="react-ts"
-          files={sandpackFiles}
-          options={{
-            activeFile: entryFile,
-            visibleFiles: [entryFile],
-            externalResources: [
-              'https://cdn.tailwindcss.com',
-            ],
-          }}
-          customSetup={{
-            dependencies: {
-              'react': '^18.2.0',
-              'react-dom': '^18.2.0',
-              'lucide-react': '^0.400.0',
-              'framer-motion': '^11.0.0',
-              ...(survey.sandbox_bundle.dependencies?.reduce((acc, dep) => {
-                const [name, version] = dep.includes('@') && !dep.startsWith('@')
-                  ? dep.split('@')
-                  : [dep, 'latest']
-                return { ...acc, [name]: version }
-              }, {}) || {}),
-            },
-          }}
-          theme="dark"
-        >
-          <div className="h-full w-full">
-            <SandpackPreview
-              showNavigator={false}
-              showOpenInCodeSandbox={false}
-              showRefreshButton={false}
-              style={{ height: '100%', width: '100%' }}
-            />
-          </div>
-        </SandpackProvider>
-      </div>
-    )
-  }
-
-  // Fallback: show error if no sandbox bundle
-  return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-      <div className="text-center max-w-md mx-auto p-8">
-        <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-          <AlertTriangle className="w-8 h-8 text-yellow-400" />
-        </div>
-        <h1 className="text-xl font-semibold text-white mb-2">Survey Not Ready</h1>
-        <p className="text-white/50 text-sm">
-          This survey hasn't been built yet. Please check back later.
-        </p>
-      </div>
-    </div>
-  )
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>`
 }

@@ -30,10 +30,7 @@ export async function POST(request: NextRequest) {
 
   // Check for DeepSeek API key
   const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
-  console.log('DeepSeek API Key exists:', !!deepseekApiKey);
-  console.log('DeepSeek API Key length:', deepseekApiKey?.length);
-  console.log('DeepSeek API Key prefix:', deepseekApiKey?.substring(0, 10));
-  
+
   if (!deepseekApiKey) {
     return NextResponse.json(
       { ok: false, error: "DeepSeek API key not configured" },
@@ -198,10 +195,7 @@ export async function PUT(request: NextRequest) {
 
   // Check for DeepSeek API key
   const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
-  console.log('DeepSeek API Key exists:', !!deepseekApiKey);
-  console.log('DeepSeek API Key length:', deepseekApiKey?.length);
-  console.log('DeepSeek API Key prefix:', deepseekApiKey?.substring(0, 10));
-  
+
   if (!deepseekApiKey) {
     return NextResponse.json(
       { ok: false, error: "DeepSeek API key not configured" },

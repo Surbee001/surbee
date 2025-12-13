@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
       maxTokens: 4096,
     });
 
-    // Return streaming response in Data Stream format
-    return result.toDataStreamResponse();
+    // Return UI message stream response for useChat
+    return result.toUIMessageStreamResponse();
   } catch (error) {
     console.error('Error in dashboard chat API:', error);
     return Response.json(

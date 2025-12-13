@@ -1,6 +1,7 @@
 "use client"
 
 import React from 'react'
+import { ChartRenderer } from '@/components/dashboard/ChartRenderer'
 
 interface MarkdownRendererProps {
   content: string
@@ -22,7 +23,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
       if (currentParagraph.length > 0) {
         const paragraphText = currentParagraph.join('\n')
         elements.push(
-          <p key={elements.length} className="mb-4 text-[15px] leading-6 text-zinc-100">
+          <p key={elements.length} className="mb-4 text-[15px] leading-6" style={{ color: 'var(--surbee-fg-primary)' }}>
             {parseInlineMarkdown(paragraphText)}
           </p>
         )
@@ -35,7 +36,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
         elements.push(
           <ul key={elements.length} className="mb-4 ml-4 space-y-1">
             {listItems.map((item, i) => (
-              <li key={i} className="text-[15px] leading-6 text-zinc-100 list-disc">
+              <li key={i} className="text-[15px] leading-6 list-disc" style={{ color: 'var(--surbee-fg-primary)' }}>
                 {parseInlineMarkdown(item)}
               </li>
             ))}
@@ -47,13 +48,30 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
 
     const flushCodeBlock = () => {
       if (codeContent.length > 0) {
-        elements.push(
-          <pre key={elements.length} className="mb-4 bg-zinc-800 border border-zinc-700 rounded-lg p-4 overflow-x-auto">
-            <code className="text-sm text-zinc-200 font-mono">
-              {codeContent.join('\n')}
-            </code>
-          </pre>
-        )
+        if (codeLanguage === 'chart') {
+          try {
+            const chartData = JSON.parse(codeContent.join('\n'))
+            elements.push(
+              <div key={elements.length} className="mb-4 not-prose">
+                <ChartRenderer {...chartData} />
+              </div>
+            )
+          } catch (e) {
+             elements.push(
+              <pre key={elements.length} className="mb-4 bg-red-900/20 border border-red-900/50 rounded-lg p-4 text-red-400 text-sm">
+                Error parsing chart data
+              </pre>
+            )
+          }
+        } else {
+          elements.push(
+            <pre key={elements.length} className="mb-4 bg-zinc-800 border border-zinc-700 rounded-lg p-4 overflow-x-auto">
+              <code className="text-sm text-zinc-200 font-mono">
+                {codeContent.join('\n')}
+              </code>
+            </pre>
+          )
+        }
         codeContent = []
         inCodeBlock = false
         codeLanguage = ''
@@ -84,7 +102,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
         flushParagraph()
         flushList()
         elements.push(
-          <h1 key={elements.length} className="mb-4 text-2xl font-bold text-white">
+          <h1 key={elements.length} className="mb-4 text-2xl font-bold" style={{ color: 'var(--surbee-fg-primary)' }}>
             {line.slice(2)}
           </h1>
         )
@@ -95,7 +113,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
         flushParagraph()
         flushList()
         elements.push(
-          <h2 key={elements.length} className="mb-3 text-xl font-semibold text-white">
+          <h2 key={elements.length} className="mb-3 text-xl font-semibold" style={{ color: 'var(--surbee-fg-primary)' }}>
             {line.slice(3)}
           </h2>
         )
@@ -106,7 +124,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
         flushParagraph()
         flushList()
         elements.push(
-          <h3 key={elements.length} className="mb-3 text-lg font-semibold text-white">
+          <h3 key={elements.length} className="mb-3 text-lg font-semibold" style={{ color: 'var(--surbee-fg-primary)' }}>
             {line.slice(4)}
           </h3>
         )
@@ -127,7 +145,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
         if (match) {
           elements.push(
             <ol key={elements.length} className="mb-4 ml-4 space-y-1" start={parseInt(match[1])}>
-              <li className="text-[15px] leading-6 text-zinc-100 list-decimal">
+              <li className="text-[15px] leading-6 list-decimal" style={{ color: 'var(--surbee-fg-primary)' }}>
                 {parseInlineMarkdown(match[2])}
               </li>
             </ol>
@@ -165,7 +183,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
     currentText = currentText.replace(/\*\*(.*?)\*\*/g, (match, content) => {
       const placeholder = `__BOLD_${key}__`
       parts.push(
-        <strong key={`bold-${key}`} className="font-semibold text-white">
+        <strong key={`bold-${key}`} className="font-semibold" style={{ color: 'var(--surbee-fg-primary)' }}>
           {content}
         </strong>
       )

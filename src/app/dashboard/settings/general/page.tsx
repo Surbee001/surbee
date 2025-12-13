@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ThemeSelector } from '@/components/ui/theme-selector';
 import { Upload, Settings, User, Bell, Shield, CreditCard, HelpCircle, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
@@ -17,16 +18,38 @@ import {
 export default function GeneralSettingsPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [name, setName] = useState(user?.displayName || '');
+  const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
+
+  // Local state synced with preferences
+  const [name, setName] = useState('');
   const [surBeeCallName, setSurBeeCallName] = useState('');
-  const [profilePicture, setProfilePicture] = useState(user?.photoURL || '');
+  const [profilePicture, setProfilePicture] = useState('');
   const [personalPreferences, setPersonalPreferences] = useState('');
-  const [tone, setTone] = useState('professional');
+  const [tone, setTone] = useState<'professional' | 'casual' | 'friendly' | 'formal' | 'creative'>('professional');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [workFunction, setWorkFunction] = useState('Select your work function');
   const [showFade, setShowFade] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync local state with preferences on load
+  useEffect(() => {
+    if (!prefsLoading) {
+      setSurBeeCallName(preferences.displayName || '');
+      setTone(preferences.tone || 'professional');
+      setPersonalPreferences(preferences.personalPreferences || '');
+      setWorkFunction(preferences.workFunction || 'Select your work function');
+      setNotificationsEnabled(preferences.notificationsEnabled ?? true);
+    }
+  }, [prefsLoading, preferences]);
+
+  // Sync with user auth data
+  useEffect(() => {
+    if (user) {
+      setName(user.user_metadata?.full_name || user.email?.split('@')[0] || '');
+      setProfilePicture(user.user_metadata?.avatar_url || '');
+    }
+  }, [user]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -55,9 +78,17 @@ export default function GeneralSettingsPage() {
 
   const handleSave = async () => {
     try {
-      // TODO: Implement actual save API call
+      // Save to preferences context (persists to localStorage)
+      updatePreferences({
+        displayName: surBeeCallName,
+        tone: tone,
+        personalPreferences: personalPreferences,
+        workFunction: workFunction,
+        notificationsEnabled: notificationsEnabled,
+      });
+
       console.log('Saving settings:', { name, surBeeCallName, profilePicture, personalPreferences, tone, notificationsEnabled, workFunction });
-      toast.success('Settings saved successfully!');
+      toast.success('Settings saved! Surbee will now use your preferences.');
     } catch (error) {
       console.error('Error saving settings:', error);
       toast.error('Failed to save settings. Please try again.');

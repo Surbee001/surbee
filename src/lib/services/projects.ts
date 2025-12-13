@@ -345,7 +345,7 @@ export class ProjectsService {
   static async getPublishedProject(publishedUrl: string): Promise<{ data: Project | null; error: Error | null }> {
     try {
       // Use admin client to bypass RLS - published surveys should be publicly accessible
-      // First try by published_url
+      // First try by published_url with published status
       const { data: project, error } = await supabaseAdmin
         .from('projects')
         .select('*')
@@ -357,7 +357,7 @@ export class ProjectsService {
         return { data: project as Project, error: null };
       }
 
-      // If not found by published_url, try by project ID
+      // If not found by published_url, try by project ID with published status
       if (error?.code === 'PGRST116' || !project) {
         const { data: projectById, error: idError } = await supabaseAdmin
           .from('projects')
@@ -370,7 +370,22 @@ export class ProjectsService {
           return { data: projectById as Project, error: null };
         }
 
+        // If still not found, check if project exists but isn't published
+        // This provides better diagnostics
         if (idError?.code === 'PGRST116') {
+          const { data: unpublishedProject } = await supabaseAdmin
+            .from('projects')
+            .select('id, status, sandbox_bundle')
+            .or(`published_url.eq.${publishedUrl},id.eq.${publishedUrl}`)
+            .single();
+
+          if (unpublishedProject) {
+            // Project exists but isn't published - return specific error
+            const errorMsg = unpublishedProject.status === 'draft'
+              ? 'This survey has not been published yet'
+              : 'This survey is not currently available';
+            return { data: null, error: new Error(errorMsg) };
+          }
           return { data: null, error: null };
         }
         if (idError) {
