@@ -617,7 +617,6 @@ export default function LandNewReact2() {
             </div>
             <div className="nav-dropdown-menu">
               <a href="/about-us">About</a>
-              <a href="/careers">Careers</a>
             </div>
           </div>
 
@@ -1286,7 +1285,6 @@ export default function LandNewReact2() {
                         <div className="div-block-28"><div>Subscribe</div><div className="footerlink-line"></div></div>
                         <div className="footer--new-mention">NEW</div>
                       </a>
-                      <a href="/careers" className="footer--link w-inline-block"><div>Careers</div><div className="footerlink-line"></div></a>
                       <a href="/media-kit" className="footer--link w-inline-block"><div>Media Kit</div><div className="footerlink-line"></div></a>
                       <a href="https://www.linkedin.com/company/surbee/" target="_blank" className="footer--link w-inline-block"><div>LinkedIn</div><div className="footerlink-line"></div></a>
                       <a href="https://bsky.app/profile/surbee.bsky.social" target="_blank" className="footer--link w-inline-block"><div>BlueSky</div><div className="footerlink-line"></div></a>
