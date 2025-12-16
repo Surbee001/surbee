@@ -44,33 +44,50 @@ export default function SurveyViewPage() {
     { id: '3', question: 'If possible, please upload your portrait/picture here...', responses: 1, avgTime: '5:12' }
   ])
 
-  // Load survey from localStorage (same keys used by editor)
+  // Load survey - try localStorage first, then database API
   useEffect(() => {
-    try {
-      const keys = [
-        `surbee_survey_${projectId}`,
-        `surbee_latest_survey`,
-        'surbee_preview_survey'
-      ]
-      
-      for (const key of keys) {
-        const raw = localStorage.getItem(key)
-        if (raw) {
-          const parsed = JSON.parse(raw)
-          setSurveyData(parsed)
-          setLoading(false)
-          return
+    const loadSurvey = async () => {
+      try {
+        // First try localStorage
+        const keys = [
+          `surbee_survey_${projectId}`,
+          `surbee_latest_survey`,
+          'surbee_preview_survey'
+        ]
+        
+        for (const key of keys) {
+          const raw = localStorage.getItem(key)
+          if (raw) {
+            const parsed = JSON.parse(raw)
+            setSurveyData(parsed)
+            setLoading(false)
+            return
+          }
         }
+        
+        // If not in localStorage, try fetching from database
+        const response = await fetch(`/api/projects/${projectId}`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.project?.sandbox_bundle || data.project?.survey_schema) {
+            // Convert sandbox_bundle to survey data format if needed
+            setSurveyData(data.project.survey_schema || data.project)
+            setLoading(false)
+            return
+          }
+        }
+        
+        // If no survey found anywhere, show error
+        toast.error('Survey not found. Please create a survey first.')
+        setLoading(false)
+      } catch (error) {
+        console.error('Error loading survey:', error)
+        toast.error('Failed to load survey')
+        setLoading(false)
       }
-      
-      // If no survey found in localStorage, show error
-      toast.error('Survey not found. Please create a survey first.')
-      setLoading(false)
-    } catch (error) {
-      console.error('Error loading survey:', error)
-      toast.error('Failed to load survey')
-      setLoading(false)
     }
+    
+    loadSurvey()
   }, [projectId])
 
   const handleGoBack = () => {
@@ -103,7 +120,9 @@ export default function SurveyViewPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
-          <div className="text-6xl mb-4">📋</div>
+          <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="w-8 h-8 border-2 border-slate-600 rounded"></div>
+          </div>
           <h1 className="text-2xl font-bold text-white mb-2">
             No Survey Found
           </h1>
@@ -247,7 +266,9 @@ export default function SurveyViewPage() {
                       />
                     ) : (
                       <div className="p-12 text-center bg-[#1a1a1a] rounded-lg">
-                        <div className="text-6xl mb-4">📋</div>
+                        <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                          <div className="w-8 h-8 border-2 border-slate-600 rounded"></div>
+                        </div>
                         <h2 className="text-xl font-semibold text-white mb-2">
                           No Survey Content
                         </h2>

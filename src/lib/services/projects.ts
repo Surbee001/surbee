@@ -279,7 +279,8 @@ export class ProjectsService {
   static async publishProject(
     projectId: string,
     userId: string,
-    surveySchema?: any
+    surveySchema?: any,
+    sandboxBundle?: any
   ): Promise<{ data: Project | null; error: Error | null }> {
     try {
       // Use admin client to bypass RLS policies for server-side operations
@@ -312,6 +313,7 @@ export class ProjectsService {
             published_url: publishedUrl,
             published_at: new Date().toISOString(),
             survey_schema: surveySchema,
+            sandbox_bundle: sandboxBundle || null,
           })
           .select()
           .single();
@@ -320,16 +322,27 @@ export class ProjectsService {
         return { data: newProject as Project, error: null };
       }
 
-      // Project exists, update it
+      // Project exists, update it - preserve existing sandbox_bundle if not provided
+      const updateData: any = {
+        status: 'published',
+        published_url: publishedUrl,
+        published_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      
+      // Only update survey_schema if provided
+      if (surveySchema !== undefined) {
+        updateData.survey_schema = surveySchema;
+      }
+      
+      // Only update sandbox_bundle if provided, otherwise keep existing
+      if (sandboxBundle !== undefined) {
+        updateData.sandbox_bundle = sandboxBundle;
+      }
+      
       const { data: project, error } = await supabaseAdmin
         .from('projects')
-        .update({
-          status: 'published',
-          published_url: publishedUrl,
-          published_at: new Date().toISOString(),
-          survey_schema: surveySchema,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', projectId)
         .eq('user_id', userId)
         .select()

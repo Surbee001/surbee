@@ -15,6 +15,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     const sessionId = searchParams.get('sessionId')
+    const latest = searchParams.get('latest') === 'true'
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
@@ -65,6 +66,29 @@ export async function GET(request: NextRequest, context: RouteContext) {
       }
 
       return NextResponse.json({ session })
+    }
+
+    // If latest=true, get the most recent chat session for this project
+    if (latest) {
+      const { data: latestSession, error: latestError } = await supabaseAdmin
+        .from('chat_sessions')
+        .select('*')
+        .eq('project_id', projectId)
+        .eq('user_id', userId)
+        .order('last_message_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (latestError && latestError.code !== 'PGRST116') {
+        return NextResponse.json({ error: 'Failed to fetch latest session' }, { status: 500 })
+      }
+
+      if (latestSession) {
+        return NextResponse.json({ session: latestSession })
+      }
+
+      // No existing sessions, return empty response
+      return NextResponse.json({ session: null })
     }
 
     // Otherwise, get the active session or create new one

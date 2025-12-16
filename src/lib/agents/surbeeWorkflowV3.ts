@@ -1,21 +1,3 @@
-/**
- * Surbee Workflow V3 - Single Agent Mode (Like Cursor/Lovable)
- *
- * This is a simplified single-agent approach that handles everything in one pass:
- * - Interprets user requests
- * - Explores codebase as needed
- * - Uncovers missing context
- * - Makes the right changes
- * - Auto-fixes issues
- * - Provides clear summaries
- *
- * Benefits:
- * - Simpler architecture (one agent vs multi-agent pipeline)
- * - Faster response time (no multiple agent calls)
- * - Better context preservation (no information loss between agents)
- * - More flexible (can adapt plan mid-execution)
- * - Lower cost (one LLM call instead of 4-5)
- */
 
 import {
   generateText,

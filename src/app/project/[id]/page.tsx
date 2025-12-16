@@ -181,6 +181,208 @@ const buildChatSummary = (history: WorkflowContextChatMessage[], limit = 4): str
   return lines.length > 0 ? lines.join("\n") : null;
 };
 
+// Publish Dropdown Component
+function PublishDropdown({
+  projectId,
+  project,
+  publishedUrl,
+  isPublishing,
+  sandboxAvailable,
+  onPublish
+}: {
+  projectId: string;
+  project: any;
+  publishedUrl: string | null;
+  isPublishing: boolean;
+  sandboxAvailable: boolean;
+  onPublish: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const displayUrl = publishedUrl || `${projectId.substring(0, 8)}.surbee.app`;
+
+  const copyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(`https://${displayUrl}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy URL:', err);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        disabled={isPublishing || !sandboxAvailable}
+        className="w-full py-2.5 px-4 rounded-md text-sm font-medium transition-all"
+        style={{
+          backgroundColor: (!sandboxAvailable || isPublishing) ? (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') : 'white',
+          color: (!sandboxAvailable || isPublishing) ? 'var(--surbee-fg-secondary)' : '#000',
+          opacity: (isPublishing || !sandboxAvailable) ? 0.6 : 1,
+          cursor: (isPublishing || !sandboxAvailable) ? 'not-allowed' : 'pointer'
+        }}
+      >
+        {isPublishing ? 'Publishing...' : !sandboxAvailable ? 'Generate code first' : (project?.status === 'published' || publishedUrl) ? 'Update' : 'Publish'}
+      </button>
+
+      {isOpen && (
+        <div
+          className="fixed z-[1001] overflow-hidden rounded-xl text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[var(--radix-dropdown-menu-content-transform-origin)] flex max-h-[90vh] min-w-[300px] max-w-[350px] flex-col gap-3 border border-border bg-background p-0"
+          style={{
+            position: 'fixed',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            minWidth: 'max-content',
+            zIndex: 1001,
+            display: 'flex',
+            maxHeight: '90vh',
+            minWidth: '300px',
+            flexDirection: 'column',
+            gap: '0.75rem',
+            overflow: 'hidden',
+            borderRadius: 'calc(0.5rem * 1.5)',
+            borderWidth: '1px',
+            borderColor: 'hsl(60 3% 15%)',
+            backgroundColor: 'hsl(0 0% 11%)',
+            padding: '0px',
+            color: 'hsl(45 40% 98%)',
+            boxShadow: 'var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 4px 6px -1px rgb(0 0 0/0.1),0 2px 4px -2px rgb(0 0 0/0.1)',
+            maxWidth: '350px',
+            animationName: 'enter',
+            animationDuration: '0.15s'
+          }}
+        >
+          {/* Header */}
+          <div className="flex-shrink-0">
+            <div className="flex flex-col gap-2 p-4 pb-0">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <h3 className="mt-0 leading-none" style={{ fontSize: '1.125rem', fontWeight: 480, margin: '0px', lineHeight: 1 }}>
+                    Publish
+                  </h3>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground" style={{ margin: '0px', fontSize: '0.875rem', color: 'hsl(40 9% 75%)' }}>
+                Make your project live and track its performance.
+              </p>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden">
+            <div className="flex flex-col gap-2">
+              {/* URL Display */}
+              <div className="mx-4 flex items-center gap-2">
+                <div className="gap-2 transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none text-primary underline-offset-4 hover:underline py-2 mx-0 h-10 w-full whitespace-nowrap md:h-8 border border-input rounded-md px-2.5 shadow-sm text-sm font-normal flex items-center justify-between">
+                  <span className="flex min-w-0 flex-1 items-center text-base md:text-sm">
+                    <span className="min-w-0 flex-1 truncate text-left">
+                      <span className="font-normal text-muted-foreground">{displayUrl.split('.')[0]}</span>
+                      <span className="text-muted-foreground/70">.surbee.app</span>
+                    </span>
+                  </span>
+                  <button
+                    className="ml-2 flex-shrink-0 rounded p-0.5"
+                    aria-label="Copy URL"
+                    onClick={copyUrl}
+                  >
+                    <svg className="shrink-0 h-4 w-4 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M19.25 10c0-.69-.56-1.25-1.25-1.25h-6c-.69 0-1.25.56-1.25 1.25v8c0 .69.56 1.25 1.25 1.25h6c.69 0 1.25-.56 1.25-1.25zm-6-4c0-.69-.56-1.25-1.25-1.25H6c-.69 0-1.25.56-1.25 1.25v8c0 .69.56 1.25 1.25 1.25h3.25V10A2.75 2.75 0 0 1 12 7.25h1.25zm1.5 1.25H18A2.75 2.75 0 0 1 20.75 10v8A2.75 2.75 0 0 1 18 20.75h-6A2.75 2.75 0 0 1 9.25 18v-1.25H6A2.75 2.75 0 0 1 3.25 14V6A2.75 2.75 0 0 1 6 3.25h6A2.75 2.75 0 0 1 14.75 6z" />
+                    </svg>
+                  </button>
+                </div>
+                {copied && (
+                  <div className="text-xs text-green-400">Copied!</div>
+                )}
+              </div>
+
+              {/* Domain Management */}
+              <div className="flex items-center px-4">
+                <div className="flex w-full items-center gap-2">
+                  <button className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none bg-secondary text-secondary-foreground shadow-sm hover:bg-muted-hover rounded-md py-2 gap-1.5 h-9 px-3 text-sm md:h-7 md:px-2 md:text-xs">
+                    Edit domain
+                  </button>
+                  <button className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none bg-secondary text-secondary-foreground shadow-sm hover:bg-muted-hover rounded-md py-2 gap-1.5 h-9 px-3 text-sm md:h-7 md:px-2 md:text-xs">
+                    Add custom domain
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Website Info Section */}
+            <div className="w-full md:min-w-[350px]">
+              <div className="border-b-0">
+                <h3 className="flex">
+                  <button className="flex flex-1 items-center justify-between text-left text-sm font-medium transition-all [&[data-state=open]>svg]:rotate-90 px-4 py-2 hover:no-underline">
+                    <div className="text-sm">Website info</div>
+                    <svg className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200">
+                      <path d="M9.47 6.47a.75.75 0 0 1 1.06 0l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06L13.94 12 9.47 7.53a.75.75 0 0 1 0-1.06" />
+                    </svg>
+                  </button>
+                </h3>
+              </div>
+            </div>
+
+            {/* Access Control */}
+            <div className="md:px-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 md:flex-nowrap">
+                <div className="flex items-center gap-2 text-base md:gap-1 md:text-sm">
+                  <div className="flex w-7 items-center justify-center rounded-md bg-muted p-1 md:w-6">
+                    <svg className="shrink-0 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M20.25 12c0-.425-.035-.843-.097-1.25h-3.517l-.333 1.992 1.727 1.728.068.076q.03.04.055.085l.915 1.622A8.2 8.2 0 0 0 20.25 12M12 3.75a8.2 8.2 0 0 0-4.176 1.135l.577.865h1.895A.747.747 0 0 1 11.75 6v.5a.75.75 0 0 1-.065.305l-2 4.5A.75.75 0 0 1 9 11.75H7.041l-.22.66 1.104 1.84H10.5a.75.75 0 0 1 .6.3l1.5 2a.75.75 0 0 1 .1.72l-1.15 2.966q.225.013.45.014a8.23 8.23 0 0 0 6.087-2.684l-1.192-2.11-1.925-1.926a.75.75 0 0 1-.21-.653l.5-3 .034-.13A.75.75 0 0 1 16 9.25h3.78A8.25 8.25 0 0 0 12 3.75M3.75 12a8.25 8.25 0 0 0 6.28 8.01l1.12-2.893-1.025-1.367H7.5a.75.75 0 0 1-.644-.364l-1.5-2.5a.75.75 0 0 1-.068-.623l.5-1.5a.75.75 0 0 1 .712-.513h2.013l1.333-3H8a.75.75 0 0 1-.624-.334l-.77-1.155A8.23 8.23 0 0 0 3.75 12m18 0a9.7 9.7 0 0 1-2.167 6.129A9.73 9.73 0 0 1 12 21.75a10 10 0 0 1-1.624-.135C5.764 20.842 2.25 16.832 2.25 12c0-5.385 4.365-9.75 9.75-9.75 4.641 0 8.523 3.242 9.509 7.584.158.697.241 1.422.241 2.166" />
+                    </svg>
+                  </div>
+                  <span>Who can access?</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button className="flex items-center justify-between whitespace-nowrap border border-input bg-transparent text-sm shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span[data-radix-select-value]]:line-clamp-1 h-8 w-auto min-w-28 gap-2 rounded-md px-3 py-2 focus:ring-0 focus:ring-offset-0 md:h-7 md:gap-1.5 md:px-2">
+                    <span>Anyone</span>
+                    <svg className="h-4 w-4 shrink-0 opacity-50" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M11.526 15.582a.75.75 0 0 0 1.004-.052l5-5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06L13.94 12 9.47 7.53a.75.75 0 1 1 1.06-1.06l5 5z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex-shrink-0">
+            <div className="flex items-center justify-end p-4 pt-0">
+              <div className="grid w-full grid-cols-2 gap-2">
+                <button className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none bg-secondary text-secondary-foreground shadow-sm hover:bg-muted-hover h-7 rounded-md px-3 py-2 w-full gap-1">
+                  Review security
+                </button>
+                <button
+                  onClick={() => {
+                    onPublish();
+                    setIsOpen(false);
+                  }}
+                  disabled={isPublishing || !sandboxAvailable}
+                  className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none bg-affirmative-primary text-affirmative-primary-foreground hover:opacity-80 shadow-black/50 h-7 rounded-md px-3 py-2 gap-1.5 w-full"
+                >
+                  {isPublishing ? 'Publishing...' : (project?.status === 'published' || publishedUrl) ? 'Update' : 'Publish'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-[1000] bg-black/50"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
 // Helper to create a stable bundle key for forcing Sandpack remounts
 function createBundleKey(files: Record<string, any>, entry: string): string {
   if (!files || Object.keys(files).length === 0) return "empty";
@@ -213,22 +415,36 @@ function ProjectPreviewOnly({
     return createBundleKey(providerProps.files || {}, providerProps.activeFile || '');
   }, [providerProps.files, providerProps.activeFile]);
 
-  console.log('[ProjectPreviewOnly] Bundle key:', bundleKey);
+  console.log('[ProjectPreviewOnly] Bundle key:', bundleKey, 'Files:', Object.keys(providerProps.files || {}));
 
   return (
     <SandboxProvider key={bundleKey} {...providerProps}>
-      <div className="h-full w-full bg-[#0a0a0a]">
-        <SandpackPreview
-          className="h-full w-full"
-          showRefreshButton={false}
-          showNavigator={false}
-          showOpenInCodeSandbox={false}
-          style={{ backgroundColor: "#0a0a0a" }}
-        />
-      </div>
+      <SandpackPreviewWrapper />
     </SandboxProvider>
   );
 }
+
+// Wrapper component that can use useSandpack hook
+function SandpackPreviewWrapper() {
+  const { sandpack } = useSandpack();
+
+  useEffect(() => {
+    console.log('[SandpackPreviewWrapper] Sandpack status:', sandpack.status, 'error:', sandpack.error);
+  }, [sandpack.status, sandpack.error]);
+
+  return (
+    <div className="h-full w-full bg-[#0a0a0a]">
+      <SandpackPreview
+        className="h-full w-full"
+        showRefreshButton={false}
+        showNavigator={false}
+        showOpenInCodeSandbox={false}
+        style={{ backgroundColor: "#0a0a0a" }}
+      />
+    </div>
+  );
+}
+
 
 function ProjectSandboxView({
   showConsole,
@@ -439,9 +655,9 @@ function ProjectSandboxView({
 }
 
 const BASE_SANDBOX_DEPENDENCIES: Record<string, string> = {
-  react: "19.1.0",
-  "react-dom": "19.1.0",
-  "lucide-react": "^0.454.0",
+  react: "18.2.0", // Use stable version instead of latest
+  "react-dom": "18.2.0",
+  // Remove lucide-react for faster loading - use inline SVG instead
 };
 
 function deriveSandboxConfig(bundle: SandboxBundle | null): {
@@ -1132,11 +1348,11 @@ export default function ProjectPage() {
     options: {
       activeFile: sandboxConfig.activeFile,
       autorun: true,
-      recompileMode: "immediate",
-      recompileDelay: 300,
+      recompileMode: "delayed", // Changed from "immediate" to "delayed" for better performance
+      recompileDelay: 500, // Increased delay to reduce compilation frequency
       externalResources: [
-        "https://cdn.tailwindcss.com?plugins=forms,typography",
-        "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+        "https://cdn.tailwindcss.com?plugins=forms", // Removed typography plugin for faster loading
+        "https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap", // Only load regular weight
       ],
     },
   }), [sandboxConfig]);
@@ -1197,11 +1413,24 @@ export default function ProjectPage() {
   const [sessionLoaded, setSessionLoaded] = useState(false);
   useEffect(() => {
     const loadAndRestoreSession = async () => {
-      if (!sessionIdFromUrl || !user?.id || sessionLoaded || isSandboxPreview) return;
+      if (!user?.id || sessionLoaded || isSandboxPreview) return;
 
       try {
-        console.log('📥 Loading session messages for:', sessionIdFromUrl);
-        const session = await loadSession();
+        let session = null;
+
+        // If we have a session ID from URL, load that specific session
+        if (sessionIdFromUrl) {
+          console.log('📥 Loading session messages for:', sessionIdFromUrl);
+          session = await loadSession();
+        } else {
+          // If no session ID in URL, try to load the most recent chat session for this project
+          console.log('📥 Loading most recent chat session for project:', projectId);
+          const response = await fetch(`/api/projects/${projectId}/chat-session?userId=${user.id}&latest=true`);
+          if (response.ok) {
+            const data = await response.json();
+            session = data.session;
+          }
+        }
 
         if (session?.messages && session.messages.length > 0) {
           console.log('✅ Restoring', session.messages.length, 'messages from session');
@@ -1239,7 +1468,7 @@ export default function ProjectPage() {
     };
 
     loadAndRestoreSession();
-  }, [sessionIdFromUrl, user?.id, loadSession, setMessages, isSandboxPreview, sessionLoaded]);
+  }, [sessionIdFromUrl, user?.id, projectId, loadSession, setMessages, isSandboxPreview, sessionLoaded]);
 
   // Restore chat context from dashboard if coming from dashboard chat
   const { loadChatContext, clearChatContext } = useDashboardChat();
@@ -1624,6 +1853,38 @@ export default function ProjectPage() {
           if (data?.project) {
             // Project exists, use it
             setProject(data.project);
+            
+            // CRITICAL: Restore sandbox_bundle from database if available
+            // This ensures the survey content persists across page navigations
+            if (data.project.sandbox_bundle && !sandboxBundle) {
+              console.log('📦 Restoring sandbox_bundle from database');
+              const restoredBundle: SandboxBundle = {
+                files: data.project.sandbox_bundle.files || {},
+                entry: data.project.sandbox_bundle.entry || '/App.tsx',
+                dependencies: data.project.sandbox_bundle.dependencies || [],
+                devDependencies: data.project.sandbox_bundle.devDependencies || [],
+              };
+              setSandboxBundle(restoredBundle);
+              
+              // Also add to version history
+              const versionId = `restored-${Date.now()}`;
+              setBundleVersions(prev => {
+                // Don't add if already have versions
+                if (prev.length > 0) return prev;
+                return [{
+                  id: versionId,
+                  timestamp: Date.now(),
+                  bundle: restoredBundle,
+                  description: 'Restored from saved project',
+                }];
+              });
+              setCurrentVersionId(versionId);
+            }
+            
+            // Restore title if available
+            if (data.project.title && data.project.title !== 'Untitled Project') {
+              setAutoGeneratedTitle(data.project.title);
+            }
           }
           // If project doesn't exist, it will be created on first publish
         })
@@ -1889,7 +2150,7 @@ export default function ProjectPage() {
     if (!projectId || !user?.id) return;
 
     // Check if there's code in the sandbox
-    if (!sandboxAvailable) {
+    if (!sandboxAvailable || !sandboxBundle) {
       setPublishSuccess('Please generate code before publishing');
       setTimeout(() => setPublishSuccess(null), 3000);
       return;
@@ -1899,13 +2160,25 @@ export default function ProjectPage() {
     setPublishSuccess(null);
 
     try {
-      // Publish the project (creates it if it doesn't exist)
+      // First, ensure the sandbox bundle is saved to the project
+      await fetch(`/api/projects/${projectId}/preview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          sandboxBundle: sandboxBundle,
+        })
+      });
+
+      // Then publish the project (creates it if it doesn't exist)
+      // CRITICAL: Include sandboxBundle to ensure it's saved with the published project
       const response = await fetch(`/api/projects/${projectId}/publish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
           surveySchema: null, // Can add survey schema if needed
+          sandboxBundle: sandboxBundle, // Include the sandbox bundle for the shared survey
           publishToMarketplace
         })
       });
@@ -1935,7 +2208,7 @@ export default function ProjectPage() {
     } finally {
       setIsPublishing(false);
     }
-  }, [projectId, user?.id, publishToMarketplace, project, sandboxAvailable]);
+  }, [projectId, user?.id, publishToMarketplace, project, sandboxAvailable, sandboxBundle]);
 
   const copyPublishedLink = useCallback(async () => {
     if (!publishedUrl) return;
@@ -3028,20 +3301,15 @@ export default function ProjectPage() {
                     <ExternalLink className="w-4 h-4" style={{ color: 'var(--surbee-fg-secondary)' }} />
                   </a>
 
-                  {/* Publish Button */}
-                  <button
-                    onClick={handlePublish}
-                    disabled={isPublishing || !sandboxAvailable}
-                    className="w-full py-2.5 px-4 rounded-md text-sm font-medium transition-all"
-                    style={{
-                      backgroundColor: (!sandboxAvailable || isPublishing) ? (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') : 'white',
-                      color: (!sandboxAvailable || isPublishing) ? 'var(--surbee-fg-secondary)' : '#000',
-                      opacity: (isPublishing || !sandboxAvailable) ? 0.6 : 1,
-                      cursor: (isPublishing || !sandboxAvailable) ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    {isPublishing ? 'Publishing...' : !sandboxAvailable ? 'Generate code first' : (project?.status === 'published' || publishedUrl) ? 'Update' : 'Publish'}
-                  </button>
+                  {/* Publish Dropdown */}
+                  <PublishDropdown
+                    projectId={projectId}
+                    project={project}
+                    publishedUrl={publishedUrl}
+                    isPublishing={isPublishing}
+                    sandboxAvailable={sandboxAvailable}
+                    onPublish={handlePublish}
+                  />
                 </div>
               </div>
             )}

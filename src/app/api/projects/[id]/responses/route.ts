@@ -14,7 +14,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { id: projectId } = await context.params
     const body = await request.json()
-    const { responses, completed_at, device_data, timing_data } = body
+    const { responses, completed_at, device_data, timing_data, is_preview, user_id } = body
 
     if (!responses) {
       return NextResponse.json({ error: 'Responses data is required' }, { status: 400 })
@@ -41,6 +41,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
         completed_at: completed_at || new Date().toISOString(),
         device_data: device_data || null,
         timing_data: timing_data || null,
+        user_id: user_id || null, // Associate with user if logged in
+        is_preview: is_preview || false, // Mark as preview response
         created_at: new Date().toISOString(),
       })
       .select()

@@ -1,5 +1,7 @@
 import { AIGenerationOutput } from '@/lib/schemas/survey-schemas'
 
+const STORAGE_KEY = 'surbee_surveys_store'
+
 export interface SurveyMetadata {
   id: string
   title: string
@@ -11,6 +13,7 @@ export interface SurveyMetadata {
   updatedAt: Date
   creatorId: string
   responseCount: number
+  projectId?: string
   settings: {
     allowAnonymous: boolean
     requirePassword: boolean
@@ -26,6 +29,63 @@ export interface StoredSurvey extends SurveyMetadata {
 
 export class SurveyManager {
   private surveys: Map<string, StoredSurvey> = new Map()
+  private initialized: boolean = false
+  
+  constructor() {
+    this.loadFromStorage()
+  }
+
+  // Load surveys from localStorage
+  private loadFromStorage(): void {
+    if (typeof window === 'undefined') return
+    if (this.initialized) return
+    
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        // Convert dates back from strings
+        Object.entries(parsed).forEach(([id, survey]: [string, any]) => {
+          survey.createdAt = new Date(survey.createdAt)
+          survey.updatedAt = new Date(survey.updatedAt)
+          if (survey.settings?.expiresAt) {
+            survey.settings.expiresAt = new Date(survey.settings.expiresAt)
+          }
+          this.surveys.set(id, survey as StoredSurvey)
+        })
+        console.log(`📂 Loaded ${this.surveys.size} surveys from storage`)
+      }
+    } catch (error) {
+      console.error('Failed to load surveys from storage:', error)
+    }
+    this.initialized = true
+  }
+
+  // Save surveys to localStorage
+  private saveToStorage(): void {
+    if (typeof window === 'undefined') return
+    
+    try {
+      const obj: Record<string, StoredSurvey> = {}
+      this.surveys.forEach((survey, id) => {
+        obj[id] = survey
+      })
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(obj))
+      
+      // Also save the latest survey for quick access by view/form pages
+      const latest = Array.from(this.surveys.values())
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0]
+      if (latest) {
+        localStorage.setItem('surbee_latest_survey', JSON.stringify(latest.data))
+        // Also save by project ID if available
+        if (latest.projectId) {
+          localStorage.setItem(`surbee_survey_${latest.projectId}`, JSON.stringify(latest.data))
+        }
+      }
+    } catch (error) {
+      console.error('Failed to save surveys to storage:', error)
+    }
+  }
   
   // Generate unique IDs
   private generateId(): string {
@@ -47,7 +107,7 @@ export class SurveyManager {
   }
 
   // Save survey as draft
-  saveDraft(surveyData: AIGenerationOutput, creatorId: string = 'anonymous'): StoredSurvey {
+  saveDraft(surveyData: AIGenerationOutput, creatorId: string = 'anonymous', projectId?: string): StoredSurvey {
     const surveyId = this.generateId()
     const now = new Date()
     
@@ -59,6 +119,7 @@ export class SurveyManager {
       createdAt: now,
       updatedAt: now,
       creatorId,
+      projectId,
       responseCount: 0,
       settings: {
         allowAnonymous: true,
@@ -68,6 +129,7 @@ export class SurveyManager {
     }
 
     this.surveys.set(surveyId, survey)
+    this.saveToStorage()
     console.log(`💾 Survey saved as draft: ${surveyId}`)
     return survey
   }
@@ -85,6 +147,7 @@ export class SurveyManager {
     survey.updatedAt = new Date()
 
     this.surveys.set(surveyId, survey)
+    this.saveToStorage()
     console.log(`👁️ Preview URL generated: ${previewUrl}`)
     
     return { success: true, previewUrl }
@@ -110,6 +173,7 @@ export class SurveyManager {
     }
 
     this.surveys.set(surveyId, survey)
+    this.saveToStorage()
     console.log(`🚀 Survey published: ${publishedUrl}`)
     
     return { success: true, publishedUrl }
@@ -138,6 +202,7 @@ export class SurveyManager {
     survey.updatedAt = new Date()
 
     this.surveys.set(surveyId, survey)
+    this.saveToStorage()
     console.log(`📝 Survey updated: ${surveyId}`)
     
     return { success: true }
@@ -150,6 +215,7 @@ export class SurveyManager {
     }
 
     this.surveys.delete(surveyId)
+    this.saveToStorage()
     console.log(`🗑️ Survey deleted: ${surveyId}`)
     
     return { success: true }
@@ -187,6 +253,7 @@ export class SurveyManager {
     survey.responseCount++
     survey.updatedAt = new Date()
     this.surveys.set(surveyId, survey)
+    this.saveToStorage()
     
     console.log(`📊 Response recorded for survey: ${surveyId} (Total: ${survey.responseCount})`)
     return { success: true }
@@ -206,9 +273,39 @@ export class SurveyManager {
         title: `${originalSurvey.title} (Copy)`,
         id: this.generateId()
       }
-    }, creatorId)
+    }, creatorId, originalSurvey.projectId)
 
     return { success: true, newSurveyId: newSurvey.id }
+  }
+
+  // Set project ID for a survey
+  setProjectId(surveyId: string, projectId: string): { success: boolean; error?: string } {
+    const survey = this.surveys.get(surveyId)
+    if (!survey) {
+      return { success: false, error: 'Survey not found' }
+    }
+
+    survey.projectId = projectId
+    survey.updatedAt = new Date()
+    this.surveys.set(surveyId, survey)
+    this.saveToStorage()
+    
+    return { success: true }
+  }
+
+  // Get survey by project ID
+  getSurveyByProjectId(projectId: string): StoredSurvey | null {
+    for (const survey of this.surveys.values()) {
+      if (survey.projectId === projectId) {
+        return survey
+      }
+    }
+    return null
+  }
+
+  // Get all surveys
+  getAllSurveys(): StoredSurvey[] {
+    return Array.from(this.surveys.values())
   }
 }
 

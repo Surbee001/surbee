@@ -139,9 +139,9 @@ export default function SurveyPreviewPage() {
                 <p className="text-blue-600">{survey.updatedAt.toLocaleDateString()}</p>
               </div>
             </div>
-            <div className="mt-4 p-3 bg-blue-100 rounded-lg">
-              <p className="text-blue-800 text-sm">
-                📋 This is a preview - responses are not saved. Use this to test your survey before publishing.
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-800 text-sm font-medium">
+                Preview Mode - Responses are not saved. Use this to test your survey before publishing.
               </p>
             </div>
           </motion.div>

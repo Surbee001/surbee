@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface SandboxBundle {
   files: Record<string, string>;
@@ -22,6 +23,7 @@ interface PublishedSurvey {
 export default function PublishedSurveyPage() {
   const params = useParams()
   const publishedUrl = params.url as string
+  const { user } = useAuth()
   const [survey, setSurvey] = useState<PublishedSurvey | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -87,6 +89,8 @@ export default function PublishedSurveyPage() {
               body: JSON.stringify({
                 responses,
                 completed_at: new Date().toISOString(),
+                user_id: user?.id || null, // Associate with user if logged in
+                is_preview: false, // Published surveys are not previews
               }),
             })
           } catch (err) {
@@ -123,8 +127,22 @@ export default function PublishedSurveyPage() {
   // Only show error if actually failed
   if (error || !survey) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
-        <p>{error || 'Survey not found'}</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md mx-auto">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="w-8 h-8 border-2 border-slate-300 rounded"></div>
+          </div>
+          <h2 className="text-2xl font-semibold text-slate-800 mb-3">Survey Not Found</h2>
+          <p className="text-slate-600 mb-8 leading-relaxed">
+            {error || 'This survey is not available. It may not be published yet or the link may be incorrect.'}
+          </p>
+          <a
+            href="/"
+            className="inline-block px-6 py-3 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors font-medium"
+          >
+            Back to Home
+          </a>
+        </div>
       </div>
     )
   }

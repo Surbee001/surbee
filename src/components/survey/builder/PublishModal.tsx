@@ -14,13 +14,15 @@ interface PublishModalProps {
   onClose: () => void
   surveyData: AIGenerationOutput
   surveyId?: string
+  projectId?: string
 }
 
 export const PublishModal: React.FC<PublishModalProps> = ({
   isOpen,
   onClose,
   surveyData,
-  surveyId
+  surveyId,
+  projectId
 }) => {
   const [activeTab, setActiveTab] = useState<'preview' | 'publish'>('preview')
   const [publishSettings, setPublishSettings] = useState({
@@ -42,13 +44,22 @@ export const PublishModal: React.FC<PublishModalProps> = ({
       // Save as draft first if no surveyId
       let currentSurveyId = surveyId
       if (!currentSurveyId) {
-        const draft = surveyManager.saveDraft(surveyData)
+        const draft = surveyManager.saveDraft(surveyData, 'anonymous', projectId)
         currentSurveyId = draft.id
+      } else if (projectId) {
+        // Associate existing survey with project
+        surveyManager.setProjectId(currentSurveyId, projectId)
       }
 
       const result = surveyManager.generatePreview(currentSurveyId)
       if (result.success && result.previewUrl) {
         setPreviewUrl(result.previewUrl)
+        // Also save to localStorage for the view/form pages
+        if (projectId) {
+          localStorage.setItem(`surbee_survey_${projectId}`, JSON.stringify(surveyData))
+        }
+        localStorage.setItem('surbee_latest_survey', JSON.stringify(surveyData))
+        localStorage.setItem('surbee_preview_survey', JSON.stringify(surveyData))
         setSuccess('Preview URL generated successfully!')
       } else {
         throw new Error(result.error || 'Failed to generate preview')
@@ -66,8 +77,11 @@ export const PublishModal: React.FC<PublishModalProps> = ({
       // Save as draft first if no surveyId
       let currentSurveyId = surveyId
       if (!currentSurveyId) {
-        const draft = surveyManager.saveDraft(surveyData)
+        const draft = surveyManager.saveDraft(surveyData, 'anonymous', projectId)
         currentSurveyId = draft.id
+      } else if (projectId) {
+        // Associate existing survey with project
+        surveyManager.setProjectId(currentSurveyId, projectId)
       }
 
       const settings: Partial<SurveyMetadata['settings']> = {
@@ -81,6 +95,12 @@ export const PublishModal: React.FC<PublishModalProps> = ({
       const result = surveyManager.publishSurvey(currentSurveyId, settings)
       if (result.success && result.publishedUrl) {
         setPublishedUrl(result.publishedUrl)
+        // Also save to localStorage for the view/form pages
+        if (projectId) {
+          localStorage.setItem(`surbee_survey_${projectId}`, JSON.stringify(surveyData))
+        }
+        localStorage.setItem('surbee_latest_survey', JSON.stringify(surveyData))
+        localStorage.setItem('surbee_preview_survey', JSON.stringify(surveyData))
         setSuccess('Survey published successfully!')
       } else {
         throw new Error(result.error || 'Failed to publish survey')

@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @source "../node_modules/streamdown/dist/index.js";
@@ -346,9 +347,6 @@ body {
   font-style: italic;
   font-display: swap;
 }
-
-/* Inter Font - Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
 
 /* Inter font family definitions */
 :root {

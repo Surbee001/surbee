@@ -22,23 +22,39 @@ export default function ProjectSurveyWorkspace() {
   const [responses, setResponses] = useState<ResponseRow[]>([])
   const [loadingResponses, setLoadingResponses] = useState(false)
 
-  // Load survey from localStorage (same keys used by preview page)
+  // Load survey - try localStorage first, then database API
   useEffect(() => {
-    try {
-      const keys = [
-        `surbee_survey_${projectId}`,
-        `surbee_latest_survey`,
-        'surbee_preview_survey'
-      ]
-      for (const key of keys) {
-        const raw = localStorage.getItem(key)
-        if (raw) {
-          const parsed = JSON.parse(raw)
-          setSurveyData(parsed)
-          break
+    const loadSurvey = async () => {
+      try {
+        // First try localStorage
+        const keys = [
+          `surbee_survey_${projectId}`,
+          `surbee_latest_survey`,
+          'surbee_preview_survey'
+        ]
+        for (const key of keys) {
+          const raw = localStorage.getItem(key)
+          if (raw) {
+            const parsed = JSON.parse(raw)
+            setSurveyData(parsed)
+            return
+          }
         }
+        
+        // If not in localStorage, try fetching from database
+        const response = await fetch(`/api/projects/${projectId}`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.project?.sandbox_bundle || data.project?.survey_schema) {
+            setSurveyData(data.project.survey_schema || data.project)
+          }
+        }
+      } catch {
+        // Silently fail - form page handles empty state
       }
-    } catch {}
+    }
+    
+    loadSurvey()
   }, [projectId])
 
   // Fetch responses for the survey
