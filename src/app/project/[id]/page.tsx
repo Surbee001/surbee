@@ -199,12 +199,273 @@ function PublishDropdown({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isAccordionOpen, setIsAccordionOpen] = useState(false);
+  const { resolvedTheme } = useTheme();
+  const [isMounted, setIsMounted] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const { user } = useAuth();
 
-  const displayUrl = publishedUrl || `${projectId.substring(0, 8)}.surbee.app`;
+  // State for editable fields
+  const [surveyTitle, setSurveyTitle] = useState(project?.title || '');
+  const [iconUrl, setIconUrl] = useState<string>('');
+  const [description, setDescription] = useState('');
+  const [shareImageUrl, setShareImageUrl] = useState<string>('');
+  const [descriptionCharCount, setDescriptionCharCount] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  // Initialize with cleaned projectId (remove "project_" prefix if present)
+  const initialSlug = projectId.replace(/^project_/, '').substring(0, 8);
+  const [customSlug, setCustomSlug] = useState<string>(initialSlug);
+  const [isEditingUrl, setIsEditingUrl] = useState(false);
+  const iconFileInputRef = useRef<HTMLInputElement>(null);
+  const shareImageFileInputRef = useRef<HTMLInputElement>(null);
+  const titleDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const descriptionDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const urlDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => { setIsMounted(true); }, []);
+  const isDarkMode = isMounted && resolvedTheme === 'dark';
+
+  // Load share settings and project data on mount
+  useEffect(() => {
+    if (!projectId || !user) return;
+
+    const loadShareSettings = async () => {
+      try {
+        // Load share settings from project_share_settings via API
+        const response = await fetch(`/api/projects/${projectId}/share-settings`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data) {
+            setIconUrl(data.ogImage || '');
+            setDescription(data.ogDescription || '');
+            setShareImageUrl(data.ogImage || '');
+            setDescriptionCharCount((data.ogDescription || '').length);
+            
+            // Auto-generate slug if it doesn't exist
+            let slug = data.customSlug;
+            if (!slug) {
+              // Generate a unique slug from projectId
+              // Remove "project_" prefix if present, then take first 8 chars
+              const cleanId = projectId.replace(/^project_/, '');
+              slug = cleanId.substring(0, 8);
+              // Update state immediately so it shows right away
+              setCustomSlug(slug);
+              // Save the auto-generated slug
+              try {
+                const saveResponse = await fetch(`/api/projects/${projectId}/share-settings`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ customSlug: slug }),
+                });
+                if (!saveResponse.ok) {
+                  const errorData = await saveResponse.json().catch(() => ({ error: 'Unknown error' }));
+                  console.error('Failed to save auto-generated slug:', saveResponse.status, errorData);
+                } else {
+                  const responseData = await saveResponse.json();
+                  if (responseData.customSlug) {
+                    setCustomSlug(responseData.customSlug);
+                  }
+                }
+              } catch (error) {
+                console.error('Error saving auto-generated slug:', error);
+              }
+            } else {
+              // If slug exists in database, use it
+              setCustomSlug(slug);
+            }
+          }
+        } else {
+          // If API call fails, ensure we still have the auto-generated slug visible
+          // (it's already set as initial state, but ensure it's saved)
+          const cleanId = projectId.replace(/^project_/, '');
+          const autoSlug = cleanId.substring(0, 8);
+          try {
+            const saveResponse = await fetch(`/api/projects/${projectId}/share-settings`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ customSlug: autoSlug }),
+            });
+            if (!saveResponse.ok) {
+              const errorData = await saveResponse.json().catch(() => ({ error: 'Unknown error' }));
+              console.error('Failed to save auto-generated slug:', saveResponse.status, errorData);
+            }
+          } catch (error) {
+            console.error('Error saving auto-generated slug:', error);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading share settings:', error);
+        // On error, the initial state already has the auto-generated slug
+      }
+    };
+
+    loadShareSettings();
+  }, [projectId, user]);
+
+  // Update title when project changes
+  useEffect(() => {
+    if (project?.title) {
+      setSurveyTitle(project.title);
+    }
+  }, [project?.title]);
+
+  // Handle icon upload
+  const handleIconUpload = async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/surbee/blob/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setIconUrl(data.url);
+        await saveShareSettings({ ogImage: data.url });
+      } else {
+        console.error('Failed to upload icon');
+      }
+    } catch (error) {
+      console.error('Error uploading icon:', error);
+    }
+  };
+
+  // Handle share image upload
+  const handleShareImageUpload = async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/surbee/blob/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setShareImageUrl(data.url);
+        await saveShareSettings({ ogImage: data.url });
+      } else {
+        console.error('Failed to upload share image');
+      }
+    } catch (error) {
+      console.error('Error uploading share image:', error);
+    }
+  };
+
+  // Save share settings
+  const saveShareSettings = useCallback(async (updates: { ogTitle?: string; ogDescription?: string; ogImage?: string; customSlug?: string }) => {
+    if (!projectId || !user) return;
+
+    try {
+      setIsSaving(true);
+      const response = await fetch(`/api/projects/${projectId}/share-settings`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to save share settings:', response.status, errorData);
+        return;
+      }
+      
+      // Optionally update local state with response data
+      const data = await response.json();
+      if (data.customSlug && updates.customSlug) {
+        setCustomSlug(data.customSlug);
+      }
+    } catch (error) {
+      console.error('Error saving share settings:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [projectId, user]);
+
+  // Save project title
+  const saveProjectTitle = useCallback(async (title: string) => {
+    if (!projectId || !user) return;
+
+    try {
+      setIsSaving(true);
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save project title');
+      }
+    } catch (error) {
+      console.error('Error saving project title:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [projectId, user]);
+
+  // Handle title change with debounce
+  const handleTitleChange = useCallback((value: string) => {
+    setSurveyTitle(value);
+    // Clear existing timeout
+    if (titleDebounceRef.current) {
+      clearTimeout(titleDebounceRef.current);
+    }
+    // Debounce save
+    titleDebounceRef.current = setTimeout(() => {
+      if (value.trim() && value !== project?.title) {
+        saveProjectTitle(value);
+      }
+    }, 500);
+  }, [project?.title, saveProjectTitle]);
+
+  // Handle description change with character count
+  const handleDescriptionChange = useCallback((value: string) => {
+    setDescription(value);
+    setDescriptionCharCount(value.length);
+    // Clear existing timeout
+    if (descriptionDebounceRef.current) {
+      clearTimeout(descriptionDebounceRef.current);
+    }
+    // Debounce save
+    descriptionDebounceRef.current = setTimeout(() => {
+      saveShareSettings({ ogDescription: value });
+    }, 500);
+  }, [saveShareSettings]);
+
+  // Handle clicking outside to close dropdown
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const cleanId = projectId.replace(/^project_/, '');
+  const urlSlug = customSlug || cleanId.substring(0, 8);
+  const displayUrl = `surbee.dev/${urlSlug}`;
 
   const copyUrl = async () => {
     try {
-      await navigator.clipboard.writeText(`https://${displayUrl}`);
+      const cleanId = projectId.replace(/^project_/, '');
+      const slug = customSlug || cleanId.substring(0, 8);
+      const fullUrl = `https://surbee.dev/${slug}`;
+      await navigator.clipboard.writeText(fullUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -212,172 +473,2136 @@ function PublishDropdown({
     }
   };
 
+  // Handle URL slug change with debounce
+  const handleUrlSlugChange = useCallback((value: string) => {
+    // Sanitize: only allow lowercase letters, numbers, and hyphens
+    const sanitized = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    setCustomSlug(sanitized);
+    // Clear existing timeout
+    if (urlDebounceRef.current) {
+      clearTimeout(urlDebounceRef.current);
+    }
+    // Debounce save
+    urlDebounceRef.current = setTimeout(() => {
+      const cleanId = projectId.replace(/^project_/, '');
+      const defaultSlug = cleanId.substring(0, 8);
+      if (sanitized && sanitized !== defaultSlug) {
+        saveShareSettings({ customSlug: sanitized });
+      }
+    }, 500);
+  }, [projectId, saveShareSettings]);
+
   return (
-    <div className="relative">
+    <div className="relative inline-block" ref={dropdownRef}>
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         disabled={isPublishing || !sandboxAvailable}
-        className="w-full py-2.5 px-4 rounded-md text-sm font-medium transition-all"
+        className="w-full px-3 py-1.5 rounded-md text-sm font-medium transition-all"
         style={{
           backgroundColor: (!sandboxAvailable || isPublishing) ? (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') : 'white',
           color: (!sandboxAvailable || isPublishing) ? 'var(--surbee-fg-secondary)' : '#000',
           opacity: (isPublishing || !sandboxAvailable) ? 0.6 : 1,
-          cursor: (isPublishing || !sandboxAvailable) ? 'not-allowed' : 'pointer'
+          cursor: (isPublishing || !sandboxAvailable) ? 'not-allowed' : 'pointer',
+          fontFamily: 'FK Grotesk, sans-serif',
+          fontSize: '14px',
+          fontWeight: 500,
+          lineHeight: '1.375rem'
         }}
       >
         {isPublishing ? 'Publishing...' : !sandboxAvailable ? 'Generate code first' : (project?.status === 'published' || publishedUrl) ? 'Update' : 'Publish'}
       </button>
 
       {isOpen && (
-        <div
-          className="fixed z-[1001] overflow-hidden rounded-xl text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[var(--radix-dropdown-menu-content-transform-origin)] flex max-h-[90vh] min-w-[300px] max-w-[350px] flex-col gap-3 border border-border bg-background p-0"
-          style={{
-            position: 'fixed',
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            minWidth: 'max-content',
-            zIndex: 1001,
-            display: 'flex',
-            maxHeight: '90vh',
-            minWidth: '300px',
-            flexDirection: 'column',
-            gap: '0.75rem',
-            overflow: 'hidden',
-            borderRadius: 'calc(0.5rem * 1.5)',
-            borderWidth: '1px',
-            borderColor: 'hsl(60 3% 15%)',
-            backgroundColor: 'hsl(0 0% 11%)',
-            padding: '0px',
-            color: 'hsl(45 40% 98%)',
-            boxShadow: 'var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 4px 6px -1px rgb(0 0 0/0.1),0 2px 4px -2px rgb(0 0 0/0.1)',
-            maxWidth: '350px',
-            animationName: 'enter',
-            animationDuration: '0.15s'
-          }}
-        >
-          {/* Header */}
-          <div className="flex-shrink-0">
-            <div className="flex flex-col gap-2 p-4 pb-0">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5">
-                  <h3 className="mt-0 leading-none" style={{ fontSize: '1.125rem', fontWeight: 480, margin: '0px', lineHeight: 1 }}>
-                    Publish
-                  </h3>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground" style={{ margin: '0px', fontSize: '0.875rem', color: 'hsl(40 9% 75%)' }}>
-                Make your project live and track its performance.
-              </p>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden">
-            <div className="flex flex-col gap-2">
-              {/* URL Display */}
-              <div className="mx-4 flex items-center gap-2">
-                <div className="gap-2 transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none text-primary underline-offset-4 hover:underline py-2 mx-0 h-10 w-full whitespace-nowrap md:h-8 border border-input rounded-md px-2.5 shadow-sm text-sm font-normal flex items-center justify-between">
-                  <span className="flex min-w-0 flex-1 items-center text-base md:text-sm">
-                    <span className="min-w-0 flex-1 truncate text-left">
-                      <span className="font-normal text-muted-foreground">{displayUrl.split('.')[0]}</span>
-                      <span className="text-muted-foreground/70">.surbee.app</span>
-                    </span>
-                  </span>
-                  <button
-                    className="ml-2 flex-shrink-0 rounded p-0.5"
-                    aria-label="Copy URL"
-                    onClick={copyUrl}
-                  >
-                    <svg className="shrink-0 h-4 w-4 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M19.25 10c0-.69-.56-1.25-1.25-1.25h-6c-.69 0-1.25.56-1.25 1.25v8c0 .69.56 1.25 1.25 1.25h6c.69 0 1.25-.56 1.25-1.25zm-6-4c0-.69-.56-1.25-1.25-1.25H6c-.69 0-1.25.56-1.25 1.25v8c0 .69.56 1.25 1.25 1.25h3.25V10A2.75 2.75 0 0 1 12 7.25h1.25zm1.5 1.25H18A2.75 2.75 0 0 1 20.75 10v8A2.75 2.75 0 0 1 18 20.75h-6A2.75 2.75 0 0 1 9.25 18v-1.25H6A2.75 2.75 0 0 1 3.25 14V6A2.75 2.75 0 0 1 6 3.25h6A2.75 2.75 0 0 1 14.75 6z" />
-                    </svg>
-                  </button>
-                </div>
-                {copied && (
-                  <div className="text-xs text-green-400">Copied!</div>
-                )}
-              </div>
-
-              {/* Domain Management */}
-              <div className="flex items-center px-4">
-                <div className="flex w-full items-center gap-2">
-                  <button className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none bg-secondary text-secondary-foreground shadow-sm hover:bg-muted-hover rounded-md py-2 gap-1.5 h-9 px-3 text-sm md:h-7 md:px-2 md:text-xs">
-                    Edit domain
-                  </button>
-                  <button className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none bg-secondary text-secondary-foreground shadow-sm hover:bg-muted-hover rounded-md py-2 gap-1.5 h-9 px-3 text-sm md:h-7 md:px-2 md:text-xs">
-                    Add custom domain
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Website Info Section */}
-            <div className="w-full md:min-w-[350px]">
-              <div className="border-b-0">
-                <h3 className="flex">
-                  <button className="flex flex-1 items-center justify-between text-left text-sm font-medium transition-all [&[data-state=open]>svg]:rotate-90 px-4 py-2 hover:no-underline">
-                    <div className="text-sm">Website info</div>
-                    <svg className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200">
-                      <path d="M9.47 6.47a.75.75 0 0 1 1.06 0l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06L13.94 12 9.47 7.53a.75.75 0 0 1 0-1.06" />
-                    </svg>
-                  </button>
-                </h3>
-              </div>
-            </div>
-
-            {/* Access Control */}
-            <div className="md:px-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 md:flex-nowrap">
-                <div className="flex items-center gap-2 text-base md:gap-1 md:text-sm">
-                  <div className="flex w-7 items-center justify-center rounded-md bg-muted p-1 md:w-6">
-                    <svg className="shrink-0 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M20.25 12c0-.425-.035-.843-.097-1.25h-3.517l-.333 1.992 1.727 1.728.068.076q.03.04.055.085l.915 1.622A8.2 8.2 0 0 0 20.25 12M12 3.75a8.2 8.2 0 0 0-4.176 1.135l.577.865h1.895A.747.747 0 0 1 11.75 6v.5a.75.75 0 0 1-.065.305l-2 4.5A.75.75 0 0 1 9 11.75H7.041l-.22.66 1.104 1.84H10.5a.75.75 0 0 1 .6.3l1.5 2a.75.75 0 0 1 .1.72l-1.15 2.966q.225.013.45.014a8.23 8.23 0 0 0 6.087-2.684l-1.192-2.11-1.925-1.926a.75.75 0 0 1-.21-.653l.5-3 .034-.13A.75.75 0 0 1 16 9.25h3.78A8.25 8.25 0 0 0 12 3.75M3.75 12a8.25 8.25 0 0 0 6.28 8.01l1.12-2.893-1.025-1.367H7.5a.75.75 0 0 1-.644-.364l-1.5-2.5a.75.75 0 0 1-.068-.623l.5-1.5a.75.75 0 0 1 .712-.513h2.013l1.333-3H8a.75.75 0 0 1-.624-.334l-.77-1.155A8.23 8.23 0 0 0 3.75 12m18 0a9.7 9.7 0 0 1-2.167 6.129A9.73 9.73 0 0 1 12 21.75a10 10 0 0 1-1.624-.135C5.764 20.842 2.25 16.832 2.25 12c0-5.385 4.365-9.75 9.75-9.75 4.641 0 8.523 3.242 9.509 7.584.158.697.241 1.422.241 2.166" />
-                    </svg>
-                  </div>
-                  <span>Who can access?</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button className="flex items-center justify-between whitespace-nowrap border border-input bg-transparent text-sm shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span[data-radix-select-value]]:line-clamp-1 h-8 w-auto min-w-28 gap-2 rounded-md px-3 py-2 focus:ring-0 focus:ring-offset-0 md:h-7 md:gap-1.5 md:px-2">
-                    <span>Anyone</span>
-                    <svg className="h-4 w-4 shrink-0 opacity-50" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M11.526 15.582a.75.75 0 0 0 1.004-.052l5-5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06L13.94 12 9.47 7.53a.75.75 0 1 1 1.06-1.06l5 5z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="flex-shrink-0">
-            <div className="flex items-center justify-end p-4 pt-0">
-              <div className="grid w-full grid-cols-2 gap-2">
-                <button className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none bg-secondary text-secondary-foreground shadow-sm hover:bg-muted-hover h-7 rounded-md px-3 py-2 w-full gap-1">
-                  Review security
-                </button>
-                <button
-                  onClick={() => {
-                    onPublish();
-                    setIsOpen(false);
+        <>
+          <div
+            dir="ltr"
+            style={{
+              border: "0px solid rgb(229, 231, 235)",
+              boxSizing: "border-box",
+              borderColor: "hsl(60 3% 15%)",
+              textRendering: "optimizelegibility",
+              WebkitFontSmoothing: "antialiased",
+              scrollbarWidth: "thin",
+              scrollbarColor:
+                "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+              position: "absolute",
+              right: "0px",
+              top: "calc(100% + 4px)",
+              minWidth: "max-content",
+              willChange: "transform",
+              zIndex: 1001,
+              fontSynthesis: "none",
+            }}
+          >
+            <div
+              id="radix-_r_ar_"
+              className="overflow-hidden rounded-xl text-popover-foreground shadow-md animate-in fade-in-0 duration-150 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-150 z-[1001] flex max-h-[90vh] min-w-[300px] max-w-[300px] flex-col gap-3 border border-border bg-background p-0 md:max-w-[350px]"
+              aria-labelledby="radix-_r_aq_"
+              aria-orientation="vertical"
+              dir="ltr"
+              role="menu"
+              tabIndex={-1}
+              style={{
+                border: "0px solid rgb(229, 231, 235)",
+                boxSizing: "border-box",
+                textRendering: "optimizelegibility",
+                WebkitFontSmoothing: "antialiased",
+                scrollbarWidth: "thin",
+                scrollbarColor:
+                  "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                zIndex: 1001,
+                display: "flex",
+                maxHeight: "90vh",
+                minWidth: "300px",
+                transformOrigin: "100% 0px",
+                flexDirection: "column",
+                gap: "0.75rem",
+                overflow: "hidden",
+                borderRadius: "calc(0.5rem * 1.5)",
+                borderWidth: "1px",
+                borderColor: "hsl(60 3% 15%)",
+                backgroundColor: "hsl(0 0% 11%)",
+                padding: "0px",
+                color: "hsl(45 40% 98%)",
+                boxShadow:
+                  "var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 4px 6px -1px rgb(0 0 0/0.1),0 2px 4px -2px rgb(0 0 0/0.1)",
+                maxWidth: "350px",
+                animationName: "enter",
+                animationDuration: "0.15s",
+                outline: "none",
+                pointerEvents: "auto",
+                fontSynthesis: "none",
+              }}
+            >
+              <div
+                className="flex-shrink-0"
+                style={{
+                  border: "0px solid rgb(229, 231, 235)",
+                  boxSizing: "border-box",
+                  borderColor: "hsl(60 3% 15%)",
+                  textRendering: "optimizelegibility",
+                  WebkitFontSmoothing: "antialiased",
+                  scrollbarWidth: "thin",
+                  scrollbarColor:
+                    "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                  flexShrink: 0,
+                  fontSynthesis: "none",
+                }}
+              >
+                <div
+                  className="flex flex-col gap-2 p-4 pb-0"
+                  style={{
+                    border: "0px solid rgb(229, 231, 235)",
+                    boxSizing: "border-box",
+                    borderColor: "hsl(60 3% 15%)",
+                    textRendering: "optimizelegibility",
+                    WebkitFontSmoothing: "antialiased",
+                    scrollbarWidth: "thin",
+                    scrollbarColor:
+                      "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.5rem",
+                    padding: "1rem",
+                    paddingBottom: "0px",
+                    fontSynthesis: "none",
                   }}
-                  disabled={isPublishing || !sandboxAvailable}
-                  className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none bg-affirmative-primary text-affirmative-primary-foreground hover:opacity-80 shadow-black/50 h-7 rounded-md px-3 py-2 gap-1.5 w-full"
                 >
-                  {isPublishing ? 'Publishing...' : (project?.status === 'published' || publishedUrl) ? 'Update' : 'Publish'}
-                </button>
+                  <div
+                    className="flex items-center justify-between gap-2"
+                    style={{
+                      border: "0px solid rgb(229, 231, 235)",
+                      boxSizing: "border-box",
+                      borderColor: "hsl(60 3% 15%)",
+                      textRendering: "optimizelegibility",
+                      WebkitFontSmoothing: "antialiased",
+                      scrollbarWidth: "thin",
+                      scrollbarColor:
+                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "0.5rem",
+                      fontSynthesis: "none",
+                    }}
+                  >
+                    <div
+                      className="flex items-center gap-1.5"
+                      style={{
+                        border: "0px solid rgb(229, 231, 235)",
+                        boxSizing: "border-box",
+                        borderColor: "hsl(60 3% 15%)",
+                        textRendering: "optimizelegibility",
+                        WebkitFontSmoothing: "antialiased",
+                        scrollbarWidth: "thin",
+                        scrollbarColor:
+                          "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.375rem",
+                        fontSynthesis: "none",
+                      }}
+                    >
+                      <h3
+                        className="mt-0 leading-none"
+                        style={{
+                          border: "0px solid rgb(229, 231, 235)",
+                          boxSizing: "border-box",
+                          borderColor: "hsl(60 3% 15%)",
+                          textRendering: "optimizelegibility",
+                          WebkitFontSmoothing: "antialiased",
+                          scrollbarWidth: "thin",
+                          scrollbarColor:
+                            "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                          margin: "0px",
+                          fontSize: "1.125rem",
+                          fontWeight: 480,
+                          marginTop: "0px",
+                          lineHeight: 1,
+                          fontSynthesis: "none",
+                        }}
+                      >
+                        Publish
+                      </h3>
+                    </div>
+                  </div>
+                  <p
+                    className="text-sm text-muted-foreground"
+                    style={{
+                      border: "0px solid rgb(229, 231, 235)",
+                      boxSizing: "border-box",
+                      borderColor: "hsl(60 3% 15%)",
+                      textRendering: "optimizelegibility",
+                      WebkitFontSmoothing: "antialiased",
+                      scrollbarWidth: "thin",
+                      scrollbarColor:
+                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                      margin: "0px",
+                      fontSize: "0.875rem",
+                      color: "hsl(40 9% 75%)",
+                      fontSynthesis: "none",
+                    }}
+                  >
+                    Make your survey live and track its performance.
+                  </p>
+                </div>
+              </div>
+              <div
+                className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden"
+                style={{
+                  border: "0px solid rgb(229, 231, 235)",
+                  boxSizing: "border-box",
+                  borderColor: "hsl(60 3% 15%)",
+                  textRendering: "optimizelegibility",
+                  WebkitFontSmoothing: "antialiased",
+                  scrollbarWidth: "thin",
+                  scrollbarColor:
+                    "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                  display: "flex",
+                  minHeight: "0px",
+                  flex: "1 1 0%",
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  fontSynthesis: "none",
+                }}
+              >
+                <div
+                  className="flex flex-col gap-2"
+                  style={{
+                    border: "0px solid rgb(229, 231, 235)",
+                    boxSizing: "border-box",
+                    borderColor: "hsl(60 3% 15%)",
+                    textRendering: "optimizelegibility",
+                    WebkitFontSmoothing: "antialiased",
+                    scrollbarWidth: "thin",
+                    scrollbarColor:
+                      "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.5rem",
+                    fontSynthesis: "none",
+                  }}
+                >
+                  <div
+                    className="mx-4 flex items-center gap-2"
+                    style={{
+                      border: "0px solid rgb(229, 231, 235)",
+                      boxSizing: "border-box",
+                      borderColor: "hsl(60 3% 15%)",
+                      textRendering: "optimizelegibility",
+                      WebkitFontSmoothing: "antialiased",
+                      scrollbarWidth: "thin",
+                      scrollbarColor:
+                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                      marginLeft: "1rem",
+                      marginRight: "1rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      fontSynthesis: "none",
+                    }}
+                  >
+                    <div
+                      className="gap-2 transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none text-primary underline-offset-4 hover:underline py-2 mx-0 h-10 w-full whitespace-nowrap md:h-8 border border-input rounded-md px-2.5 shadow-sm text-sm font-normal flex items-center justify-between"
+                      style={{
+                        border: "0px solid rgb(229, 231, 235)",
+                        boxSizing: "border-box",
+                        textRendering: "optimizelegibility",
+                        WebkitFontSmoothing: "antialiased",
+                        scrollbarWidth: "thin",
+                        scrollbarColor:
+                          "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                        marginLeft: "0px",
+                        marginRight: "0px",
+                        display: "flex",
+                        width: "100%",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "0.5rem",
+                        whiteSpace: "nowrap",
+                        borderRadius: "calc(0.5rem - 2px)",
+                        borderWidth: "1px",
+                        borderColor: "hsl(60 1% 25%)",
+                        paddingLeft: "0.625rem",
+                        paddingRight: "0.625rem",
+                        paddingTop: "0.5rem",
+                        paddingBottom: "0.5rem",
+                        fontSize: "0.875rem",
+                        fontWeight: 400,
+                        color: "hsl(45 40% 98%)",
+                        textUnderlineOffset: "4px",
+                        boxShadow:
+                          "var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 1px 2px 0 rgb(0 0 0/0.05)",
+                        transitionProperty:
+                          "color, background-color, border-color, text-decoration-color, fill, stroke",
+                        transitionDuration: "0.1s",
+                        transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+                        animationDuration: "0.1s",
+                        animationTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+                        height: "2rem",
+                        fontSynthesis: "none",
+                      }}
+                    >
+                      <span
+                        className="flex min-w-0 flex-1 items-center text-base md:text-sm"
+                        style={{
+                          border: "0px solid rgb(229, 231, 235)",
+                          boxSizing: "border-box",
+                          borderColor: "hsl(60 3% 15%)",
+                          textRendering: "optimizelegibility",
+                          WebkitFontSmoothing: "antialiased",
+                          scrollbarWidth: "thin",
+                          scrollbarColor:
+                            "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                          display: "flex",
+                          minWidth: "0px",
+                          flex: "1 1 0%",
+                          alignItems: "center",
+                          fontSize: "0.875rem",
+                          fontSynthesis: "none",
+                        }}
+                      >
+                        <span
+                          className="min-w-0 flex-1 truncate text-left"
+                          style={{
+                            border: "0px solid rgb(229, 231, 235)",
+                            boxSizing: "border-box",
+                            borderColor: "hsl(60 3% 15%)",
+                            textRendering: "optimizelegibility",
+                            WebkitFontSmoothing: "antialiased",
+                            scrollbarWidth: "thin",
+                            scrollbarColor:
+                              "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                            minWidth: "0px",
+                            flex: "1 1 0%",
+                            overflow: "hidden",
+                            whiteSpace: "nowrap",
+                            textOverflow: "ellipsis",
+                            textAlign: "left",
+                            fontSynthesis: "none",
+                          }}
+                        >
+                          {isEditingUrl ? (
+                            <>
+                              <span
+                                className="font-normal text-muted-foreground"
+                                style={{
+                                  fontWeight: 400,
+                                  color: "hsl(40 9% 75%)",
+                                }}
+                              >
+                                surbee.dev/
+                              </span>
+                              <input
+                                type="text"
+                                value={customSlug}
+                                onChange={(e) => handleUrlSlugChange(e.target.value)}
+                                onBlur={() => setIsEditingUrl(false)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    setIsEditingUrl(false);
+                                  }
+                                }}
+                                autoFocus
+                                className="bg-transparent border-none outline-none flex-1 min-w-0"
+                                style={{
+                                  color: "hsl(45 40% 98%)",
+                                  fontFamily: "inherit",
+                                  fontSize: "0.875rem",
+                                }}
+                              />
+                            </>
+                          ) : (
+                            <a
+                              href={`https://surbee.dev/${urlSlug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
+                              className="flex items-center min-w-0 flex-1 cursor-pointer hover:opacity-80 transition-opacity"
+                              style={{
+                                textDecoration: "none",
+                                color: "inherit",
+                              }}
+                            >
+                              <span
+                                className="font-normal text-muted-foreground"
+                                style={{
+                                  border: "0px solid rgb(229, 231, 235)",
+                                  boxSizing: "border-box",
+                                  borderColor: "hsl(60 3% 15%)",
+                                  textRendering: "optimizelegibility",
+                                  WebkitFontSmoothing: "antialiased",
+                                  scrollbarWidth: "thin",
+                                  scrollbarColor:
+                                    "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                  fontWeight: 400,
+                                  color: "hsl(40 9% 75%)",
+                                  fontSynthesis: "none",
+                                }}
+                              >
+                                surbee.dev/
+                              </span>
+                              <span
+                                className="font-normal text-foreground"
+                                style={{
+                                  border: "0px solid rgb(229, 231, 235)",
+                                  boxSizing: "border-box",
+                                  borderColor: "hsl(60 3% 15%)",
+                                  textRendering: "optimizelegibility",
+                                  WebkitFontSmoothing: "antialiased",
+                                  scrollbarWidth: "thin",
+                                  scrollbarColor:
+                                    "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                  fontWeight: 400,
+                                  color: "hsl(45 40% 98%)",
+                                  fontSynthesis: "none",
+                                }}
+                              >
+                                {urlSlug}
+                              </span>
+                            </a>
+                          )}
+                        </span>
+                      </span>
+                      <button
+                        className="ml-2 flex-shrink-0 rounded p-0.5"
+                        aria-label="Copy URL"
+                        onClick={copyUrl}
+                        style={{
+                          border: "0px solid rgb(229, 231, 235)",
+                          boxSizing: "border-box",
+                          borderColor: "hsl(60 3% 15%)",
+                          textRendering: "optimizelegibility",
+                          WebkitFontSmoothing: "antialiased",
+                          scrollbarWidth: "thin",
+                          scrollbarColor:
+                            "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                          margin: "0px",
+                          fontFamily: "inherit",
+                          fontFeatureSettings: "inherit",
+                          fontVariationSettings: "inherit",
+                          fontSize: "100%",
+                          fontWeight: "inherit",
+                          lineHeight: "inherit",
+                          letterSpacing: "inherit",
+                          color: "inherit",
+                          textTransform: "none",
+                          appearance: "button",
+                          backgroundColor: "transparent",
+                          backgroundImage: "none",
+                          cursor: "pointer",
+                          marginLeft: "0.5rem",
+                          flexShrink: 0,
+                          borderRadius: "0.25rem",
+                          padding: "0.125rem",
+                          fontSynthesis: "none",
+                        }}
+                      >
+                        <svg
+                          className="shrink-0 h-4 w-4 text-muted-foreground"
+                          height="100%"
+                          width="100%"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                          style={{
+                            border: "0px solid rgb(229, 231, 235)",
+                            boxSizing: "border-box",
+                            borderColor: "hsl(60 3% 15%)",
+                            textRendering: "optimizelegibility",
+                            WebkitFontSmoothing: "antialiased",
+                            scrollbarWidth: "thin",
+                            scrollbarColor:
+                              "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                            display: "block",
+                            verticalAlign: "middle",
+                            height: "1rem",
+                            width: "1rem",
+                            flexShrink: 0,
+                            color: "hsl(40 9% 75%)",
+                            pointerEvents: "none",
+                            fontSynthesis: "none",
+                          }}
+                        >
+                          <path
+                            d="M19.25 10c0-.69-.56-1.25-1.25-1.25h-6c-.69 0-1.25.56-1.25 1.25v8c0 .69.56 1.25 1.25 1.25h6c.69 0 1.25-.56 1.25-1.25zm-6-4c0-.69-.56-1.25-1.25-1.25H6c-.69 0-1.25.56-1.25 1.25v8c0 .69.56 1.25 1.25 1.25h3.25V10A2.75 2.75 0 0 1 12 7.25h1.25zm1.5 1.25H18A2.75 2.75 0 0 1 20.75 10v8A2.75 2.75 0 0 1 18 20.75h-6A2.75 2.75 0 0 1 9.25 18v-1.25H6A2.75 2.75 0 0 1 3.25 14V6A2.75 2.75 0 0 1 6 3.25h6A2.75 2.75 0 0 1 14.75 6z"
+                            fill="currentColor"
+                            style={{
+                              border: "0px solid rgb(229, 231, 235)",
+                              boxSizing: "border-box",
+                              borderColor: "hsl(60 3% 15%)",
+                              textRendering: "optimizelegibility",
+                              WebkitFontSmoothing: "antialiased",
+                              scrollbarWidth: "thin",
+                              scrollbarColor:
+                                "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                              fontSynthesis: "none",
+                            }}
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    className="flex items-center px-4"
+                    style={{
+                      border: "0px solid rgb(229, 231, 235)",
+                      boxSizing: "border-box",
+                      borderColor: "hsl(60 3% 15%)",
+                      textRendering: "optimizelegibility",
+                      WebkitFontSmoothing: "antialiased",
+                      scrollbarWidth: "thin",
+                      scrollbarColor:
+                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                      display: "flex",
+                      alignItems: "center",
+                      paddingLeft: "1rem",
+                      paddingRight: "1rem",
+                      fontSynthesis: "none",
+                    }}
+                  >
+                    <div
+                      className="flex w-full items-center gap-2"
+                      style={{
+                        border: "0px solid rgb(229, 231, 235)",
+                        boxSizing: "border-box",
+                        borderColor: "hsl(60 3% 15%)",
+                        textRendering: "optimizelegibility",
+                        WebkitFontSmoothing: "antialiased",
+                        scrollbarWidth: "thin",
+                        scrollbarColor:
+                          "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                        display: "flex",
+                        width: "100%",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        fontSynthesis: "none",
+                      }}
+                    >
+                      <button
+                        onClick={() => setIsEditingUrl(true)}
+                        className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none bg-secondary text-secondary-foreground shadow-sm hover:bg-muted-hover rounded-md py-2 gap-1.5 h-9 px-3 text-sm md:h-7 md:px-2 md:text-xs"
+                        style={{
+                          border: "0px solid rgb(229, 231, 235)",
+                          boxSizing: "border-box",
+                          borderColor: "hsl(60 3% 15%)",
+                          textRendering: "optimizelegibility",
+                          WebkitFontSmoothing: "antialiased",
+                          scrollbarWidth: "thin",
+                          scrollbarColor:
+                            "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                          margin: "0px",
+                          padding: "0px",
+                          fontFamily: "inherit",
+                          fontFeatureSettings: "inherit",
+                          fontVariationSettings: "inherit",
+                          lineHeight: "inherit",
+                          letterSpacing: "inherit",
+                          textTransform: "none",
+                          appearance: "button",
+                          backgroundImage: "none",
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "0.375rem",
+                          whiteSpace: "nowrap",
+                          borderRadius: "calc(0.5rem - 2px)",
+                          backgroundColor: "hsl(60 3% 15%)",
+                          paddingTop: "0.5rem",
+                          paddingBottom: "0.5rem",
+                          fontWeight: 480,
+                          color: "hsl(45 40% 98%)",
+                          boxShadow:
+                            "var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 1px 2px 0 rgb(0 0 0/0.05)",
+                          transitionProperty:
+                            "color, background-color, border-color, text-decoration-color, fill, stroke",
+                          transitionDuration: "0.1s",
+                          transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+                          animationDuration: "0.1s",
+                          animationTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+                          height: "1.75rem",
+                          paddingLeft: "0.5rem",
+                          paddingRight: "0.5rem",
+                          fontSize: "0.75rem",
+                          fontSynthesis: "none",
+                        }}
+                      >
+                        Edit URL
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  className="w-full md:min-w-[350px]"
+                  style={{
+                    border: "0px solid rgb(229, 231, 235)",
+                    boxSizing: "border-box",
+                    borderColor: "hsl(60 3% 15%)",
+                    textRendering: "optimizelegibility",
+                    WebkitFontSmoothing: "antialiased",
+                    scrollbarWidth: "thin",
+                    scrollbarColor:
+                      "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                    width: "100%",
+                    minWidth: "350px",
+                    fontSynthesis: "none",
+                  }}
+                >
+                  <div
+                    className="border-b-0"
+                    style={{
+                      border: "0px solid rgb(229, 231, 235)",
+                      boxSizing: "border-box",
+                      borderColor: "hsl(60 3% 15%)",
+                      textRendering: "optimizelegibility",
+                      WebkitFontSmoothing: "antialiased",
+                      scrollbarWidth: "thin",
+                      scrollbarColor:
+                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                      borderBottomWidth: "0px",
+                      fontSynthesis: "none",
+                    }}
+                  >
+                    <h3
+                      className="flex"
+                      style={{
+                        border: "0px solid rgb(229, 231, 235)",
+                        boxSizing: "border-box",
+                        borderColor: "hsl(60 3% 15%)",
+                        textRendering: "optimizelegibility",
+                        WebkitFontSmoothing: "antialiased",
+                        scrollbarWidth: "thin",
+                        scrollbarColor:
+                          "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                        margin: "0px",
+                        fontSize: "1.125rem",
+                        fontWeight: 480,
+                        display: "flex",
+                        fontSynthesis: "none",
+                      }}
+                    >
+                      <button
+                        id="radix-_r_cc_"
+                        className={`flex flex-1 items-center justify-between text-left text-sm font-medium transition-all ${isAccordionOpen ? '[&>svg]:rotate-90' : ''} px-4 py-2 hover:no-underline`}
+                        type="button"
+                        aria-controls="radix-_r_cd_"
+                        aria-expanded={isAccordionOpen}
+                        onClick={() => setIsAccordionOpen(!isAccordionOpen)}
+                        style={{
+                          border: "0px solid rgb(229, 231, 235)",
+                          boxSizing: "border-box",
+                          borderColor: "hsl(60 3% 15%)",
+                          textRendering: "optimizelegibility",
+                          WebkitFontSmoothing: "antialiased",
+                          scrollbarWidth: "thin",
+                          scrollbarColor:
+                            "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                          margin: "0px",
+                          padding: "0px",
+                          fontFamily: "inherit",
+                          fontFeatureSettings: "inherit",
+                          fontVariationSettings: "inherit",
+                          lineHeight: "inherit",
+                          letterSpacing: "inherit",
+                          color: "inherit",
+                          textTransform: "none",
+                          appearance: "button",
+                          backgroundColor: "transparent",
+                          backgroundImage: "none",
+                          cursor: "pointer",
+                          display: "flex",
+                          flex: "1 1 0%",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          paddingLeft: "1rem",
+                          paddingRight: "1rem",
+                          paddingTop: "0.5rem",
+                          paddingBottom: "0.5rem",
+                          textAlign: "left",
+                          fontSize: "0.875rem",
+                          fontWeight: 480,
+                          transitionProperty: "all",
+                          transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+                          transitionDuration: "0.15s",
+                          fontSynthesis: "none",
+                        }}
+                      >
+                        <div
+                          className="text-sm"
+                          style={{
+                            border: "0px solid rgb(229, 231, 235)",
+                            boxSizing: "border-box",
+                            borderColor: "hsl(60 3% 15%)",
+                            textRendering: "optimizelegibility",
+                            WebkitFontSmoothing: "antialiased",
+                            scrollbarWidth: "thin",
+                            scrollbarColor:
+                              "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                            fontSize: "0.875rem",
+                            fontSynthesis: "none",
+                          }}
+                        >
+                          Survey info
+                        </div>
+                        <svg
+                          className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200"
+                          height="100%"
+                          width="100%"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                          style={{
+                            border: "0px solid rgb(229, 231, 235)",
+                            boxSizing: "border-box",
+                            borderColor: "hsl(60 3% 15%)",
+                            textRendering: "optimizelegibility",
+                            WebkitFontSmoothing: "antialiased",
+                            scrollbarWidth: "thin",
+                            scrollbarColor:
+                              "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                            display: "block",
+                            verticalAlign: "middle",
+                            height: "1.25rem",
+                            width: "1.25rem",
+                            flexShrink: 0,
+                            color: "hsl(40 9% 75%)",
+                            transitionProperty: "transform",
+                            transitionTimingFunction:
+                              "cubic-bezier(0.4, 0, 0.2, 1)",
+                            transitionDuration: "0.2s",
+                            animationDuration: "0.2s",
+                            fontSynthesis: "none",
+                          }}
+                        >
+                          <path
+                            d="M9.47 6.47a.75.75 0 0 1 1.06 0l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06L13.94 12 9.47 7.53a.75.75 0 0 1 0-1.06"
+                            fill="currentColor"
+                            style={{
+                              border: "0px solid rgb(229, 231, 235)",
+                              boxSizing: "border-box",
+                              borderColor: "hsl(60 3% 15%)",
+                              textRendering: "optimizelegibility",
+                              WebkitFontSmoothing: "antialiased",
+                              scrollbarWidth: "thin",
+                              scrollbarColor:
+                                "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                              fontSynthesis: "none",
+                            }}
+                          />
+                        </svg>
+                      </button>
+                    </h3>
+                    <div
+                      id="radix-_r_cd_"
+                      className="overflow-hidden"
+                      aria-labelledby="radix-_r_cc_"
+                      role="region"
+                      style={{
+                        display: isAccordionOpen ? 'block' : 'none',
+                        border: "0px solid rgb(229, 231, 235)",
+                          boxSizing: "border-box",
+                          borderColor: "hsl(60 3% 15%)",
+                          textRendering: "optimizelegibility",
+                          WebkitFontSmoothing: "antialiased",
+                          scrollbarWidth: "thin",
+                          scrollbarColor:
+                            "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                          overflow: "hidden",
+                          fontSynthesis: "none",
+                        }}
+                      >
+                        <div
+                          className="pt-0 px-4 pb-1"
+                          style={{
+                            border: "0px solid rgb(229, 231, 235)",
+                            boxSizing: "border-box",
+                            borderColor: "hsl(60 3% 15%)",
+                            textRendering: "optimizelegibility",
+                            WebkitFontSmoothing: "antialiased",
+                            scrollbarWidth: "thin",
+                            scrollbarColor:
+                              "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                            paddingLeft: "1rem",
+                            paddingRight: "1rem",
+                            paddingBottom: "0.25rem",
+                            paddingTop: "0px",
+                            fontSynthesis: "none",
+                          }}
+                        >
+                          <div
+                            className="space-y-2"
+                            style={{
+                              border: "0px solid rgb(229, 231, 235)",
+                              boxSizing: "border-box",
+                              borderColor: "hsl(60 3% 15%)",
+                              textRendering: "optimizelegibility",
+                              WebkitFontSmoothing: "antialiased",
+                              scrollbarWidth: "thin",
+                              scrollbarColor:
+                                "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                              fontSynthesis: "none",
+                            }}
+                          >
+                            <div
+                              className="space-y-1"
+                              style={{
+                                border: "0px solid rgb(229, 231, 235)",
+                                boxSizing: "border-box",
+                                borderColor: "hsl(60 3% 15%)",
+                                textRendering: "optimizelegibility",
+                                WebkitFontSmoothing: "antialiased",
+                                scrollbarWidth: "thin",
+                                scrollbarColor:
+                                  "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                fontSynthesis: "none",
+                              }}
+                            >
+                              <label
+                                className="font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70 inline-flex items-center gap-1 text-xs"
+                                htmlFor="title"
+                                style={{
+                                  border: "0px solid rgb(229, 231, 235)",
+                                  boxSizing: "border-box",
+                                  borderColor: "hsl(60 3% 15%)",
+                                  textRendering: "optimizelegibility",
+                                  WebkitFontSmoothing: "antialiased",
+                                  scrollbarWidth: "thin",
+                                  scrollbarColor:
+                                    "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.25rem",
+                                  fontSize: "0.75rem",
+                                  fontWeight: 480,
+                                  fontSynthesis: "none",
+                                }}
+                              >
+                                Icon & title
+                                <svg
+                                  className="shrink-0 h-4 w-4 text-muted-foreground"
+                                  height="100%"
+                                  width="100%"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  style={{
+                                    border: "0px solid rgb(229, 231, 235)",
+                                    boxSizing: "border-box",
+                                    borderColor: "hsl(60 3% 15%)",
+                                    textRendering: "optimizelegibility",
+                                    WebkitFontSmoothing: "antialiased",
+                                    scrollbarWidth: "thin",
+                                    scrollbarColor:
+                                      "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                    display: "block",
+                                    verticalAlign: "middle",
+                                    height: "1rem",
+                                    width: "1rem",
+                                    flexShrink: 0,
+                                    color: "hsl(40 9% 75%)",
+                                    fontSynthesis: "none",
+                                  }}
+                                >
+                                  <path
+                                    d="M20.25 12a8.25 8.25 0 1 0-16.5 0 8.25 8.25 0 0 0 16.5 0m-9 1c0-.84.333-1.644.927-2.237l.879-.88a.665.665 0 0 0-.47-1.133H11.5a.75.75 0 0 0-.746.673l-.008.154A.75.75 0 0 1 9.25 9.5a2.25 2.25 0 0 1 2.25-2.25h1.086a2.164 2.164 0 0 1 1.53 3.694l-.879.88A1.67 1.67 0 0 0 12.75 13a.75.75 0 0 1-1.5 0m10.5-1c0 5.385-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12 6.615 2.25 12 2.25s9.75 4.365 9.75 9.75"
+                                    fill="currentColor"
+                                    style={{
+                                      border: "0px solid rgb(229, 231, 235)",
+                                      boxSizing: "border-box",
+                                      borderColor: "hsl(60 3% 15%)",
+                                      textRendering: "optimizelegibility",
+                                      WebkitFontSmoothing: "antialiased",
+                                      scrollbarWidth: "thin",
+                                      scrollbarColor:
+                                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                      fontSynthesis: "none",
+                                    }}
+                                  />
+                                  <path
+                                    d="M13 16a1 1 0 1 1-2 0 1 1 0 0 1 2 0"
+                                    fill="currentColor"
+                                    style={{
+                                      border: "0px solid rgb(229, 231, 235)",
+                                      boxSizing: "border-box",
+                                      borderColor: "hsl(60 3% 15%)",
+                                      textRendering: "optimizelegibility",
+                                      WebkitFontSmoothing: "antialiased",
+                                      scrollbarWidth: "thin",
+                                      scrollbarColor:
+                                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                      fontSynthesis: "none",
+                                    }}
+                                  />
+                                </svg>
+                              </label>
+                              <div
+                                className="relative h-16 overflow-hidden rounded-md border border-input bg-secondary p-4 pb-0 shadow-sm transition-colors focus-within:ring-1 focus-within:ring-ring focus-within:ring-offset-0"
+                                style={{
+                                  border: "0px solid rgb(229, 231, 235)",
+                                  boxSizing: "border-box",
+                                  textRendering: "optimizelegibility",
+                                  WebkitFontSmoothing: "antialiased",
+                                  scrollbarWidth: "thin",
+                                  scrollbarColor:
+                                    "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                  position: "relative",
+                                  height: "4rem",
+                                  overflow: "hidden",
+                                  borderRadius: "calc(0.5rem - 2px)",
+                                  borderWidth: "1px",
+                                  borderColor: "hsl(60 1% 25%)",
+                                  backgroundColor: "hsl(60 3% 15%)",
+                                  padding: "1rem",
+                                  paddingBottom: "0px",
+                                  boxShadow:
+                                    "var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 1px 2px 0 rgb(0 0 0/0.05)",
+                                  transitionProperty:
+                                    "color, background-color, border-color, text-decoration-color, fill, stroke",
+                                  transitionTimingFunction:
+                                    "cubic-bezier(0.4, 0, 0.2, 1)",
+                                  transitionDuration: "0.15s",
+                                  marginTop: "calc(.25rem * calc(1 - 0))",
+                                  marginBottom: "calc(.25rem * 0)",
+                                  fontSynthesis: "none",
+                                }}
+                              >
+                                <div
+                                  className="absolute bottom-0 left-4 right-4 top-3 rounded-t-xl bg-background shadow-md"
+                                  style={{
+                                    border: "0px solid rgb(229, 231, 235)",
+                                    boxSizing: "border-box",
+                                    borderColor: "hsl(60 3% 15%)",
+                                    textRendering: "optimizelegibility",
+                                    WebkitFontSmoothing: "antialiased",
+                                    scrollbarWidth: "thin",
+                                    scrollbarColor:
+                                      "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                    position: "absolute",
+                                    bottom: "0px",
+                                    left: "1rem",
+                                    right: "1rem",
+                                    top: "0.75rem",
+                                    borderTopLeftRadius: "calc(0.5rem * 1.5)",
+                                    borderTopRightRadius: "calc(0.5rem * 1.5)",
+                                    backgroundColor: "hsl(0 0% 11%)",
+                                    boxShadow:
+                                      "var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 4px 6px -1px rgb(0 0 0/0.1),0 2px 4px -2px rgb(0 0 0/0.1)",
+                                    fontSynthesis: "none",
+                                  }}
+                                />
+                                <div
+                                  className="absolute bottom-0 left-4 right-4 top-3 z-10 flex items-center gap-2"
+                                  style={{
+                                    border: "0px solid rgb(229, 231, 235)",
+                                    boxSizing: "border-box",
+                                    borderColor: "hsl(60 3% 15%)",
+                                    textRendering: "optimizelegibility",
+                                    WebkitFontSmoothing: "antialiased",
+                                    scrollbarWidth: "thin",
+                                    scrollbarColor:
+                                      "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                    position: "absolute",
+                                    bottom: "0px",
+                                    left: "1rem",
+                                    right: "1rem",
+                                    top: "0.75rem",
+                                    zIndex: 10,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.5rem",
+                                    paddingLeft: "0.5rem",
+                                    fontSynthesis: "none",
+                                  }}
+                                >
+                                  <button
+                                    onClick={() => iconFileInputRef.current?.click()}
+                                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none hover:bg-accent/50 h-6 w-6 flex-shrink-0 cursor-pointer"
+                                    type="button"
+                                    style={{
+                                      border: "0px solid rgb(229, 231, 235)",
+                                      boxSizing: "border-box",
+                                      textRendering: "optimizelegibility",
+                                      WebkitFontSmoothing: "antialiased",
+                                      scrollbarWidth: "thin",
+                                      scrollbarColor:
+                                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                      margin: "0px",
+                                      padding: "0px",
+                                      fontFamily: "inherit",
+                                      fontFeatureSettings: "inherit",
+                                      fontVariationSettings: "inherit",
+                                      lineHeight: "inherit",
+                                      letterSpacing: "inherit",
+                                      color: "inherit",
+                                      textTransform: "none",
+                                      appearance: "button",
+                                      backgroundImage: "none",
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      height: "1.5rem",
+                                      width: "1.5rem",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      gap: "0.5rem",
+                                      whiteSpace: "nowrap",
+                                      borderRadius: "calc(0.5rem - 2px)",
+                                      fontSize: "0.875rem",
+                                      fontWeight: 480,
+                                      transitionProperty:
+                                        "color, background-color, border-color, text-decoration-color, fill, stroke",
+                                      transitionDuration: "0.1s",
+                                      transitionTimingFunction:
+                                        "cubic-bezier(0.4, 0, 0.2, 1)",
+                                      flexShrink: 0,
+                                      fontSynthesis: "none",
+                                    }}
+                                  >
+                                    <input
+                                      ref={iconFileInputRef}
+                                      className="hidden"
+                                      type="file"
+                                      accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/svg+xml"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handleIconUpload(file);
+                                      }}
+                                    />
+                                    {iconUrl ? (
+                                      <img
+                                        className="w-4 h-4 object-contain"
+                                        alt="Survey icon"
+                                        src={iconUrl}
+                                        style={{
+                                          display: "block",
+                                          verticalAlign: "middle",
+                                          maxWidth: "100%",
+                                          height: "1rem",
+                                          width: "1rem",
+                                          objectFit: "contain",
+                                        }}
+                                      />
+                                    ) : (
+                                      <svg
+                                        className="shrink-0 h-4 w-4 text-muted-foreground"
+                                        height="16"
+                                        width="16"
+                                        fill="currentColor"
+                                        viewBox="0 0 24 24"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                      >
+                                        <path
+                                          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"
+                                          fill="currentColor"
+                                        />
+                                      </svg>
+                                    )}
+                                  </button>
+                                  <input
+                                    id="title"
+                                    className="flex w-full rounded-md border border-input px-3 py-1 transition-colors duration-150 ease-in-out file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground hover:border-ring/20 focus-visible:border-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:border-input disabled:opacity-50 md:text-sm h-10 border-none bg-transparent text-sm shadow-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                                    value={surveyTitle}
+                                    onChange={(e) => handleTitleChange(e.target.value)}
+                                    placeholder="Survey name"
+                                    style={{
+                                      border: "0px solid rgb(229, 231, 235)",
+                                      boxSizing: "border-box",
+                                      textRendering: "optimizelegibility",
+                                      WebkitFontSmoothing: "antialiased",
+                                      scrollbarWidth: "thin",
+                                      scrollbarColor:
+                                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                      margin: "0px",
+                                      padding: "0px",
+                                      fontFamily: "inherit",
+                                      fontFeatureSettings: "inherit",
+                                      fontVariationSettings: "inherit",
+                                      fontWeight: "inherit",
+                                      lineHeight: "inherit",
+                                      letterSpacing: "inherit",
+                                      color: "inherit",
+                                      display: "flex",
+                                      height: "2.5rem",
+                                      width: "100%",
+                                      borderRadius: "calc(0.5rem - 2px)",
+                                      borderWidth: "1px",
+                                      borderStyle: "none",
+                                      borderColor: "hsl(60 1% 25%)",
+                                      backgroundColor: "transparent",
+                                      paddingRight: "0.75rem",
+                                      paddingTop: "0.25rem",
+                                      paddingBottom: "0.25rem",
+                                      paddingLeft: "0px",
+                                      boxShadow:
+                                        "var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 0 #0000",
+                                      transitionProperty:
+                                        "color, background-color, border-color, text-decoration-color, fill, stroke",
+                                      transitionDuration: "0.15s",
+                                      transitionTimingFunction:
+                                        "cubic-bezier(0.4, 0, 0.2, 1)",
+                                      animationDuration: "0.15s",
+                                      animationTimingFunction:
+                                        "cubic-bezier(0.4, 0, 0.2, 1)",
+                                      fontSize: "0.875rem",
+                                      fontSynthesis: "none",
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            <div
+                              className="space-y-1"
+                              style={{
+                                border: "0px solid rgb(229, 231, 235)",
+                                boxSizing: "border-box",
+                                borderColor: "hsl(60 3% 15%)",
+                                textRendering: "optimizelegibility",
+                                WebkitFontSmoothing: "antialiased",
+                                scrollbarWidth: "thin",
+                                scrollbarColor:
+                                  "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                marginTop: "calc(.5rem * calc(1 - 0))",
+                                marginBottom: "calc(.5rem * 0)",
+                                fontSynthesis: "none",
+                              }}
+                            >
+                              <label
+                                className="font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70 inline-flex items-center gap-1 text-xs"
+                                htmlFor="description"
+                                style={{
+                                  border: "0px solid rgb(229, 231, 235)",
+                                  boxSizing: "border-box",
+                                  borderColor: "hsl(60 3% 15%)",
+                                  textRendering: "optimizelegibility",
+                                  WebkitFontSmoothing: "antialiased",
+                                  scrollbarWidth: "thin",
+                                  scrollbarColor:
+                                    "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.25rem",
+                                  fontSize: "0.75rem",
+                                  fontWeight: 480,
+                                  fontSynthesis: "none",
+                                }}
+                              >
+                                Description
+                                <svg
+                                  className="shrink-0 h-4 w-4 text-muted-foreground"
+                                  height="100%"
+                                  width="100%"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  style={{
+                                    border: "0px solid rgb(229, 231, 235)",
+                                    boxSizing: "border-box",
+                                    borderColor: "hsl(60 3% 15%)",
+                                    textRendering: "optimizelegibility",
+                                    WebkitFontSmoothing: "antialiased",
+                                    scrollbarWidth: "thin",
+                                    scrollbarColor:
+                                      "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                    display: "block",
+                                    verticalAlign: "middle",
+                                    height: "1rem",
+                                    width: "1rem",
+                                    flexShrink: 0,
+                                    color: "hsl(40 9% 75%)",
+                                    fontSynthesis: "none",
+                                  }}
+                                >
+                                  <path
+                                    d="M20.25 12a8.25 8.25 0 1 0-16.5 0 8.25 8.25 0 0 0 16.5 0m-9 1c0-.84.333-1.644.927-2.237l.879-.88a.665.665 0 0 0-.47-1.133H11.5a.75.75 0 0 0-.746.673l-.008.154A.75.75 0 0 1 9.25 9.5a2.25 2.25 0 0 1 2.25-2.25h1.086a2.164 2.164 0 0 1 1.53 3.694l-.879.88A1.67 1.67 0 0 0 12.75 13a.75.75 0 0 1-1.5 0m10.5-1c0 5.385-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12 6.615 2.25 12 2.25s9.75 4.365 9.75 9.75"
+                                    fill="currentColor"
+                                    style={{
+                                      border: "0px solid rgb(229, 231, 235)",
+                                      boxSizing: "border-box",
+                                      borderColor: "hsl(60 3% 15%)",
+                                      textRendering: "optimizelegibility",
+                                      WebkitFontSmoothing: "antialiased",
+                                      scrollbarWidth: "thin",
+                                      scrollbarColor:
+                                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                      fontSynthesis: "none",
+                                    }}
+                                  />
+                                  <path
+                                    d="M13 16a1 1 0 1 1-2 0 1 1 0 0 1 2 0"
+                                    fill="currentColor"
+                                    style={{
+                                      border: "0px solid rgb(229, 231, 235)",
+                                      boxSizing: "border-box",
+                                      borderColor: "hsl(60 3% 15%)",
+                                      textRendering: "optimizelegibility",
+                                      WebkitFontSmoothing: "antialiased",
+                                      scrollbarWidth: "thin",
+                                      scrollbarColor:
+                                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                      fontSynthesis: "none",
+                                    }}
+                                  />
+                                </svg>
+                              </label>
+                              <div
+                                className="relative"
+                                style={{
+                                  border: "0px solid rgb(229, 231, 235)",
+                                  boxSizing: "border-box",
+                                  borderColor: "hsl(60 3% 15%)",
+                                  textRendering: "optimizelegibility",
+                                  WebkitFontSmoothing: "antialiased",
+                                  scrollbarWidth: "thin",
+                                  scrollbarColor:
+                                    "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                  position: "relative",
+                                  marginTop: "calc(.25rem * calc(1 - 0))",
+                                  marginBottom: "calc(.25rem * 0)",
+                                  fontSynthesis: "none",
+                                }}
+                              >
+                                <textarea
+                                  id="description"
+                                  className="flex min-h-[32px] w-full resize-none overflow-hidden rounded-md border border-input bg-transparent px-2.5 py-1.5 pb-4 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50"
+                                  value={description}
+                                  onChange={(e) => handleDescriptionChange(e.target.value)}
+                                  placeholder="Describe your survey"
+                                  maxLength={155}
+                                  style={{
+                                    border: "0px solid rgb(229, 231, 235)",
+                                    boxSizing: "border-box",
+                                    textRendering: "optimizelegibility",
+                                    WebkitFontSmoothing: "antialiased",
+                                    scrollbarWidth: "thin",
+                                    scrollbarColor:
+                                      "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                    margin: "0px",
+                                    padding: "0px",
+                                    fontFamily: "inherit",
+                                    fontFeatureSettings: "inherit",
+                                    fontVariationSettings: "inherit",
+                                    fontWeight: "inherit",
+                                    lineHeight: "inherit",
+                                    letterSpacing: "inherit",
+                                    color: "inherit",
+                                    display: "flex",
+                                    width: "100%",
+                                    resize: "none",
+                                    overflow: "hidden",
+                                    borderRadius: "calc(0.5rem - 2px)",
+                                    borderWidth: "1px",
+                                    borderColor: "hsl(60 1% 25%)",
+                                    backgroundColor: "transparent",
+                                    paddingLeft: "0.625rem",
+                                    paddingRight: "0.625rem",
+                                    paddingTop: "0.375rem",
+                                    paddingBottom: "1rem",
+                                    fontSize: "0.875rem",
+                                    boxShadow:
+                                      "var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 1px 2px 0 rgb(0 0 0/0.05)",
+                                    transitionProperty:
+                                      "color, background-color, border-color, text-decoration-color, fill, stroke",
+                                    transitionTimingFunction:
+                                      "cubic-bezier(0.4, 0, 0.2, 1)",
+                                    transitionDuration: "0.15s",
+                                    minHeight: "32px",
+                                    height: "64px",
+                                    fontSynthesis: "none",
+                                  }}
+                                />
+                                <div
+                                  className="pointer-events-none absolute bottom-0 right-1 text-xs text-muted-foreground/70"
+                                  style={{
+                                    border: "0px solid rgb(229, 231, 235)",
+                                    boxSizing: "border-box",
+                                    borderColor: "hsl(60 3% 15%)",
+                                    textRendering: "optimizelegibility",
+                                    WebkitFontSmoothing: "antialiased",
+                                    scrollbarWidth: "thin",
+                                    scrollbarColor:
+                                      "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                    pointerEvents: "none",
+                                    position: "absolute",
+                                    bottom: "0px",
+                                    right: "0.25rem",
+                                    fontSize: "0.75rem",
+                                    color: "hsl(40 9% 75%/.7)",
+                                    fontSynthesis: "none",
+                                  }}
+                                >
+                                  {descriptionCharCount} / 155
+                                </div>
+                              </div>
+                            </div>
+                            <div
+                              className="space-y-1"
+                              style={{
+                                border: "0px solid rgb(229, 231, 235)",
+                                boxSizing: "border-box",
+                                borderColor: "hsl(60 3% 15%)",
+                                textRendering: "optimizelegibility",
+                                WebkitFontSmoothing: "antialiased",
+                                scrollbarWidth: "thin",
+                                scrollbarColor:
+                                  "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                marginTop: "calc(.5rem * calc(1 - 0))",
+                                marginBottom: "calc(.5rem * 0)",
+                                fontSynthesis: "none",
+                              }}
+                            >
+                              <label
+                                className="font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70 inline-flex items-center gap-1 text-xs"
+                                htmlFor="social-image"
+                                style={{
+                                  border: "0px solid rgb(229, 231, 235)",
+                                  boxSizing: "border-box",
+                                  borderColor: "hsl(60 3% 15%)",
+                                  textRendering: "optimizelegibility",
+                                  WebkitFontSmoothing: "antialiased",
+                                  scrollbarWidth: "thin",
+                                  scrollbarColor:
+                                    "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.25rem",
+                                  fontSize: "0.75rem",
+                                  fontWeight: 480,
+                                  fontSynthesis: "none",
+                                }}
+                              >
+                                Share image
+                                <svg
+                                  className="shrink-0 h-4 w-4 text-muted-foreground"
+                                  height="100%"
+                                  width="100%"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  style={{
+                                    border: "0px solid rgb(229, 231, 235)",
+                                    boxSizing: "border-box",
+                                    borderColor: "hsl(60 3% 15%)",
+                                    textRendering: "optimizelegibility",
+                                    WebkitFontSmoothing: "antialiased",
+                                    scrollbarWidth: "thin",
+                                    scrollbarColor:
+                                      "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                    display: "block",
+                                    verticalAlign: "middle",
+                                    height: "1rem",
+                                    width: "1rem",
+                                    flexShrink: 0,
+                                    color: "hsl(40 9% 75%)",
+                                    fontSynthesis: "none",
+                                  }}
+                                >
+                                  <path
+                                    d="M20.25 12a8.25 8.25 0 1 0-16.5 0 8.25 8.25 0 0 0 16.5 0m-9 1c0-.84.333-1.644.927-2.237l.879-.88a.665.665 0 0 0-.47-1.133H11.5a.75.75 0 0 0-.746.673l-.008.154A.75.75 0 0 1 9.25 9.5a2.25 2.25 0 0 1 2.25-2.25h1.086a2.164 2.164 0 0 1 1.53 3.694l-.879.88A1.67 1.67 0 0 0 12.75 13a.75.75 0 0 1-1.5 0m10.5-1c0 5.385-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12 6.615 2.25 12 2.25s9.75 4.365 9.75 9.75"
+                                    fill="currentColor"
+                                    style={{
+                                      border: "0px solid rgb(229, 231, 235)",
+                                      boxSizing: "border-box",
+                                      borderColor: "hsl(60 3% 15%)",
+                                      textRendering: "optimizelegibility",
+                                      WebkitFontSmoothing: "antialiased",
+                                      scrollbarWidth: "thin",
+                                      scrollbarColor:
+                                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                      fontSynthesis: "none",
+                                    }}
+                                  />
+                                  <path
+                                    d="M13 16a1 1 0 1 1-2 0 1 1 0 0 1 2 0"
+                                    fill="currentColor"
+                                    style={{
+                                      border: "0px solid rgb(229, 231, 235)",
+                                      boxSizing: "border-box",
+                                      borderColor: "hsl(60 3% 15%)",
+                                      textRendering: "optimizelegibility",
+                                      WebkitFontSmoothing: "antialiased",
+                                      scrollbarWidth: "thin",
+                                      scrollbarColor:
+                                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                      fontSynthesis: "none",
+                                    }}
+                                  />
+                                </svg>
+                              </label>
+                              <div
+                                className="w-full max-w-full overflow-hidden"
+                                style={{
+                                  border: "0px solid rgb(229, 231, 235)",
+                                  boxSizing: "border-box",
+                                  borderColor: "hsl(60 3% 15%)",
+                                  textRendering: "optimizelegibility",
+                                  WebkitFontSmoothing: "antialiased",
+                                  scrollbarWidth: "thin",
+                                  scrollbarColor:
+                                    "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                  width: "100%",
+                                  maxWidth: "100%",
+                                  overflow: "hidden",
+                                  marginTop: "calc(.25rem * calc(1 - 0))",
+                                  marginBottom: "calc(.25rem * 0)",
+                                  fontSynthesis: "none",
+                                }}
+                              >
+                                <div
+                                  className="relative"
+                                  style={{
+                                    border: "0px solid rgb(229, 231, 235)",
+                                    boxSizing: "border-box",
+                                    borderColor: "hsl(60 3% 15%)",
+                                    textRendering: "optimizelegibility",
+                                    WebkitFontSmoothing: "antialiased",
+                                    scrollbarWidth: "thin",
+                                    scrollbarColor:
+                                      "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                    position: "relative",
+                                    fontSynthesis: "none",
+                                  }}
+                                >
+                                  <button
+                                    onClick={() => shareImageFileInputRef.current?.click()}
+                                    className="inline-flex items-center whitespace-nowrap text-sm font-medium transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none border border-input bg-muted hover:bg-accent hover:border-accent rounded-md px-3 py-2 relative disabled:opacity-100 h-32 w-full justify-center gap-2 border-dashed overflow-hidden"
+                                    type="button"
+                                    style={{
+                                      border: "0px solid rgb(229, 231, 235)",
+                                      boxSizing: "border-box",
+                                      textRendering: "optimizelegibility",
+                                      WebkitFontSmoothing: "antialiased",
+                                      scrollbarWidth: "thin",
+                                      scrollbarColor:
+                                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                      margin: "0px",
+                                      padding: "0px",
+                                      fontFamily: "inherit",
+                                      fontFeatureSettings: "inherit",
+                                      fontVariationSettings: "inherit",
+                                      lineHeight: "inherit",
+                                      letterSpacing: "inherit",
+                                      textTransform: "none",
+                                      appearance: "button",
+                                      backgroundImage: "none",
+                                      cursor: "pointer",
+                                      position: "relative",
+                                      display: "inline-flex",
+                                      height: "8rem",
+                                      width: "100%",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      gap: "0.5rem",
+                                      whiteSpace: "nowrap",
+                                      borderRadius: "calc(0.5rem - 2px)",
+                                      borderWidth: "1px",
+                                      borderStyle: "dashed",
+                                      borderColor: "hsl(60 1% 25%)",
+                                      backgroundColor: "hsl(60 3% 15%)",
+                                      paddingLeft: "0.75rem",
+                                      paddingRight: "0.75rem",
+                                      paddingTop: "0.5rem",
+                                      paddingBottom: "0.5rem",
+                                      fontSize: "0.875rem",
+                                      fontWeight: 480,
+                                      transitionProperty:
+                                        "color, background-color, border-color, text-decoration-color, fill, stroke",
+                                      transitionDuration: "0.1s",
+                                      transitionTimingFunction:
+                                        "cubic-bezier(0.4, 0, 0.2, 1)",
+                                      animationDuration: "0.1s",
+                                      animationTimingFunction:
+                                        "cubic-bezier(0.4, 0, 0.2, 1)",
+                                      fontSynthesis: "none",
+                                    }}
+                                  >
+                                    <input
+                                      ref={shareImageFileInputRef}
+                                      className="hidden"
+                                      type="file"
+                                      accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/svg+xml"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handleShareImageUpload(file);
+                                      }}
+                                      style={{
+                                        border: "0px solid rgb(229, 231, 235)",
+                                        boxSizing: "border-box",
+                                        borderColor: "hsl(60 3% 15%)",
+                                        textRendering: "optimizelegibility",
+                                        WebkitFontSmoothing: "antialiased",
+                                        scrollbarWidth: "thin",
+                                        scrollbarColor:
+                                          "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                        margin: "0px",
+                                        padding: "0px",
+                                        fontFamily: "inherit",
+                                        fontFeatureSettings: "inherit",
+                                        fontVariationSettings: "inherit",
+                                        fontSize: "100%",
+                                        fontWeight: "inherit",
+                                        lineHeight: "inherit",
+                                        letterSpacing: "inherit",
+                                        color: "inherit",
+                                        display: "none",
+                                        fontSynthesis: "none",
+                                      }}
+                                    />
+                                    <div
+                                      className="flex items-center gap-1 flex-col"
+                                      style={{
+                                        border: "0px solid rgb(229, 231, 235)",
+                                        boxSizing: "border-box",
+                                        borderColor: "hsl(60 3% 15%)",
+                                        textRendering: "optimizelegibility",
+                                        WebkitFontSmoothing: "antialiased",
+                                        scrollbarWidth: "thin",
+                                        scrollbarColor:
+                                          "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        gap: "0.25rem",
+                                        fontSynthesis: "none",
+                                      }}
+                                    >
+                                      <svg
+                                        className="shrink-0 h-5 w-5 text-muted-foreground"
+                                        height="100%"
+                                        width="100%"
+                                        fill="currentColor"
+                                        viewBox="0 0 24 24"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        style={{
+                                          border: "0px solid rgb(229, 231, 235)",
+                                          boxSizing: "border-box",
+                                          borderColor: "hsl(60 3% 15%)",
+                                          textRendering: "optimizelegibility",
+                                          WebkitFontSmoothing: "antialiased",
+                                          scrollbarWidth: "thin",
+                                          scrollbarColor:
+                                            "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                          display: "block",
+                                          verticalAlign: "middle",
+                                          height: "1.25rem",
+                                          width: "1.25rem",
+                                          flexShrink: 0,
+                                          color: "hsl(40 9% 75%)",
+                                          pointerEvents: "none",
+                                          fontSynthesis: "none",
+                                        }}
+                                      >
+                                        <path
+                                          d="M3.25 17v-2a.75.75 0 0 1 1.5 0v2A2.25 2.25 0 0 0 7 19.25h10A2.25 2.25 0 0 0 19.25 17v-2a.75.75 0 0 1 1.5 0v2A3.75 3.75 0 0 1 17 20.75H7A3.75 3.75 0 0 1 3.25 17m8-1V5.81L8.53 8.53a.75.75 0 1 1-1.06-1.06l4-4 .056-.052a.75.75 0 0 1 1.004.052l4 4a.75.75 0 1 1-1.06 1.06l-2.72-2.72V16a.75.75 0 0 1-1.5 0"
+                                          fill="currentColor"
+                                          style={{
+                                            border: "0px solid rgb(229, 231, 235)",
+                                            boxSizing: "border-box",
+                                            borderColor: "hsl(60 3% 15%)",
+                                            textRendering: "optimizelegibility",
+                                            WebkitFontSmoothing: "antialiased",
+                                            scrollbarWidth: "thin",
+                                            scrollbarColor:
+                                              "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                            fontSynthesis: "none",
+                                          }}
+                                        />
+                                      </svg>
+                                      <div
+                                        className="flex flex-col items-center gap-1"
+                                        style={{
+                                          border: "0px solid rgb(229, 231, 235)",
+                                          boxSizing: "border-box",
+                                          borderColor: "hsl(60 3% 15%)",
+                                          textRendering: "optimizelegibility",
+                                          WebkitFontSmoothing: "antialiased",
+                                          scrollbarWidth: "thin",
+                                          scrollbarColor:
+                                            "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                          display: "flex",
+                                          flexDirection: "column",
+                                          alignItems: "center",
+                                          gap: "0.25rem",
+                                          fontSynthesis: "none",
+                                        }}
+                                      >
+                                        <span
+                                          className="text-sm font-medium text-muted-foreground"
+                                          style={{
+                                            border: "0px solid rgb(229, 231, 235)",
+                                            boxSizing: "border-box",
+                                            borderColor: "hsl(60 3% 15%)",
+                                            textRendering: "optimizelegibility",
+                                            WebkitFontSmoothing: "antialiased",
+                                            scrollbarWidth: "thin",
+                                            scrollbarColor:
+                                              "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                            fontSize: "0.875rem",
+                                            fontWeight: 480,
+                                            color: "hsl(40 9% 75%)",
+                                            fontSynthesis: "none",
+                                          }}
+                                        >
+                                          Click to upload
+                                        </span>
+                                        <span
+                                          className="text-xs font-normal text-muted-foreground"
+                                          style={{
+                                            border: "0px solid rgb(229, 231, 235)",
+                                            boxSizing: "border-box",
+                                            borderColor: "hsl(60 3% 15%)",
+                                            textRendering: "optimizelegibility",
+                                            WebkitFontSmoothing: "antialiased",
+                                            scrollbarWidth: "thin",
+                                            scrollbarColor:
+                                              "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                                            fontSize: "0.75rem",
+                                            fontWeight: 400,
+                                            color: "hsl(40 9% 75%)",
+                                            fontSynthesis: "none",
+                                          }}
+                                        >
+                                          By default a screenshot of the app is used
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                  </div>
+                </div>
+                <div
+                  className="md:px-4"
+                  style={{
+                    border: "0px solid rgb(229, 231, 235)",
+                    boxSizing: "border-box",
+                    borderColor: "hsl(60 3% 15%)",
+                    textRendering: "optimizelegibility",
+                    WebkitFontSmoothing: "antialiased",
+                    scrollbarWidth: "thin",
+                    scrollbarColor:
+                      "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                    paddingLeft: "1rem",
+                    paddingRight: "1rem",
+                    fontSynthesis: "none",
+                  }}
+                >
+                  <div
+                    className="flex flex-wrap items-center justify-between gap-2 md:flex-nowrap"
+                    style={{
+                      border: "0px solid rgb(229, 231, 235)",
+                      boxSizing: "border-box",
+                      borderColor: "hsl(60 3% 15%)",
+                      textRendering: "optimizelegibility",
+                      WebkitFontSmoothing: "antialiased",
+                      scrollbarWidth: "thin",
+                      scrollbarColor:
+                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "0.5rem",
+                      flexWrap: "nowrap",
+                      fontSynthesis: "none",
+                    }}
+                  >
+                    <div
+                      className="flex items-center gap-2 text-base md:gap-1 md:text-sm"
+                      style={{
+                        border: "0px solid rgb(229, 231, 235)",
+                        boxSizing: "border-box",
+                        borderColor: "hsl(60 3% 15%)",
+                        textRendering: "optimizelegibility",
+                        WebkitFontSmoothing: "antialiased",
+                        scrollbarWidth: "thin",
+                        scrollbarColor:
+                          "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.25rem",
+                        fontSize: "0.875rem",
+                        fontSynthesis: "none",
+                      }}
+                    >
+                      <div
+                        className="flex w-7 items-center justify-center rounded-md bg-muted p-1 md:w-6"
+                        style={{
+                          border: "0px solid rgb(229, 231, 235)",
+                          boxSizing: "border-box",
+                          borderColor: "hsl(60 3% 15%)",
+                          textRendering: "optimizelegibility",
+                          WebkitFontSmoothing: "antialiased",
+                          scrollbarWidth: "thin",
+                          scrollbarColor:
+                            "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderRadius: "calc(0.5rem - 2px)",
+                          backgroundColor: "hsl(60 3% 15%)",
+                          padding: "0.25rem",
+                          width: "1.5rem",
+                          fontSynthesis: "none",
+                        }}
+                      >
+                        <svg
+                          className="shrink-0 h-4 w-4"
+                          height="100%"
+                          width="100%"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                          style={{
+                            border: "0px solid rgb(229, 231, 235)",
+                            boxSizing: "border-box",
+                            borderColor: "hsl(60 3% 15%)",
+                            textRendering: "optimizelegibility",
+                            WebkitFontSmoothing: "antialiased",
+                            scrollbarWidth: "thin",
+                            scrollbarColor:
+                              "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                            display: "block",
+                            verticalAlign: "middle",
+                            height: "1rem",
+                            width: "1rem",
+                            flexShrink: 0,
+                            fontSynthesis: "none",
+                          }}
+                        >
+                          <path
+                            d="M20.25 12c0-.425-.035-.843-.097-1.25h-3.517l-.333 1.992 1.727 1.728.068.076q.03.04.055.085l.915 1.622A8.2 8.2 0 0 0 20.25 12M12 3.75a8.2 8.2 0 0 0-4.176 1.135l.577.865h1.895A.747.747 0 0 1 11.75 6v.5a.75.75 0 0 1-.065.305l-2 4.5A.75.75 0 0 1 9 11.75H7.041l-.22.66 1.104 1.84H10.5a.75.75 0 0 1 .6.3l1.5 2a.75.75 0 0 1 .1.72l-1.15 2.966q.225.013.45.014a8.23 8.23 0 0 0 6.087-2.684l-1.192-2.11-1.925-1.926a.75.75 0 0 1-.21-.653l.5-3 .034-.13A.75.75 0 0 1 16 9.25h3.78A8.25 8.25 0 0 0 12 3.75M3.75 12a8.25 8.25 0 0 0 6.28 8.01l1.12-2.893-1.025-1.367H7.5a.75.75 0 0 1-.644-.364l-1.5-2.5a.75.75 0 0 1-.068-.623l.5-1.5a.75.75 0 0 1 .712-.513h2.013l1.333-3H8a.75.75 0 0 1-.624-.334l-.77-1.155A8.23 8.23 0 0 0 3.75 12m18 0a9.7 9.7 0 0 1-2.167 6.129A9.73 9.73 0 0 1 12 21.75a10 10 0 0 1-1.624-.135C5.764 20.842 2.25 16.832 2.25 12c0-5.385 4.365-9.75 9.75-9.75 4.641 0 8.523 3.242 9.509 7.584.158.697.241 1.422.241 2.166"
+                            fill="currentColor"
+                            style={{
+                              border: "0px solid rgb(229, 231, 235)",
+                              boxSizing: "border-box",
+                              borderColor: "hsl(60 3% 15%)",
+                              textRendering: "optimizelegibility",
+                              WebkitFontSmoothing: "antialiased",
+                              scrollbarWidth: "thin",
+                              scrollbarColor:
+                                "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                              fontSynthesis: "none",
+                            }}
+                          />
+                        </svg>
+                      </div>
+                      <span
+                        style={{
+                          border: "0px solid rgb(229, 231, 235)",
+                          boxSizing: "border-box",
+                          borderColor: "hsl(60 3% 15%)",
+                          textRendering: "optimizelegibility",
+                          WebkitFontSmoothing: "antialiased",
+                          scrollbarWidth: "thin",
+                          scrollbarColor:
+                            "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                          fontSynthesis: "none",
+                        }}
+                      >
+                        Who can access?
+                      </span>
+                    </div>
+                    <div
+                      className="flex items-center gap-2"
+                      style={{
+                        border: "0px solid rgb(229, 231, 235)",
+                        boxSizing: "border-box",
+                        borderColor: "hsl(60 3% 15%)",
+                        textRendering: "optimizelegibility",
+                        WebkitFontSmoothing: "antialiased",
+                        scrollbarWidth: "thin",
+                        scrollbarColor:
+                          "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        fontSynthesis: "none",
+                      }}
+                    >
+                      <button
+                        className="flex items-center justify-between whitespace-nowrap border border-input bg-transparent text-sm shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span[data-radix-select-value]]:line-clamp-1 h-8 w-auto min-w-28 gap-2 rounded-md px-3 py-2 focus:ring-0 focus:ring-offset-0 md:h-7 md:gap-1.5 md:px-2"
+                        type="button"
+                        aria-autocomplete="none"
+                        aria-controls="radix-_r_ce_"
+                        aria-expanded="false"
+                        dir="ltr"
+                        role="combobox"
+                        style={{
+                          border: "0px solid rgb(229, 231, 235)",
+                          boxSizing: "border-box",
+                          textRendering: "optimizelegibility",
+                          WebkitFontSmoothing: "antialiased",
+                          scrollbarWidth: "thin",
+                          scrollbarColor:
+                            "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                          margin: "0px",
+                          padding: "0px",
+                          fontFamily: "inherit",
+                          fontFeatureSettings: "inherit",
+                          fontVariationSettings: "inherit",
+                          fontWeight: "inherit",
+                          lineHeight: "inherit",
+                          letterSpacing: "inherit",
+                          color: "inherit",
+                          textTransform: "none",
+                          appearance: "button",
+                          backgroundImage: "none",
+                          cursor: "pointer",
+                          display: "flex",
+                          width: "auto",
+                          minWidth: "7rem",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          whiteSpace: "nowrap",
+                          borderRadius: "calc(0.5rem - 2px)",
+                          borderWidth: "1px",
+                          borderColor: "hsl(60 1% 25%)",
+                          backgroundColor: "transparent",
+                          paddingTop: "0.5rem",
+                          paddingBottom: "0.5rem",
+                          fontSize: "0.875rem",
+                          boxShadow:
+                            "var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 1px 2px 0 rgb(0 0 0/0.05)",
+                          height: "1.75rem",
+                          gap: "0.375rem",
+                          paddingLeft: "0.5rem",
+                          paddingRight: "0.5rem",
+                          fontSynthesis: "none",
+                        }}
+                      >
+                        <span
+                          style={{
+                            border: "0px solid rgb(229, 231, 235)",
+                            boxSizing: "border-box",
+                            borderColor: "hsl(60 3% 15%)",
+                            textRendering: "optimizelegibility",
+                            WebkitFontSmoothing: "antialiased",
+                            scrollbarWidth: "thin",
+                            scrollbarColor:
+                              "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                            pointerEvents: "none",
+                            fontSynthesis: "none",
+                          }}
+                        >
+                          Anyone
+                        </span>
+                        <svg
+                          className="h-4 w-4 shrink-0 opacity-50"
+                          height="100%"
+                          width="100%"
+                          aria-hidden="true"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                          style={{
+                            border: "0px solid rgb(229, 231, 235)",
+                            boxSizing: "border-box",
+                            borderColor: "hsl(60 3% 15%)",
+                            textRendering: "optimizelegibility",
+                            WebkitFontSmoothing: "antialiased",
+                            scrollbarWidth: "thin",
+                            scrollbarColor:
+                              "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                            display: "block",
+                            verticalAlign: "middle",
+                            height: "1rem",
+                            width: "1rem",
+                            flexShrink: 0,
+                            opacity: 0.5,
+                            fontSynthesis: "none",
+                          }}
+                        >
+                          <path
+                            d="M11.526 15.582a.75.75 0 0 0 1.004-.052l5-5a.75.75 0 1 0-1.06-1.06L12 13.94 7.53 9.47a.75.75 0 1 0-1.06 1.06l5 5z"
+                            fill="currentColor"
+                            style={{
+                              border: "0px solid rgb(229, 231, 235)",
+                              boxSizing: "border-box",
+                              borderColor: "hsl(60 3% 15%)",
+                              textRendering: "optimizelegibility",
+                              WebkitFontSmoothing: "antialiased",
+                              scrollbarWidth: "thin",
+                              scrollbarColor:
+                                "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                              fontSynthesis: "none",
+                            }}
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex-shrink-0"
+                style={{
+                  border: "0px solid rgb(229, 231, 235)",
+                  boxSizing: "border-box",
+                  borderColor: "hsl(60 3% 15%)",
+                  textRendering: "optimizelegibility",
+                  WebkitFontSmoothing: "antialiased",
+                  scrollbarWidth: "thin",
+                  scrollbarColor:
+                    "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                  flexShrink: 0,
+                  fontSynthesis: "none",
+                }}
+              >
+                <div
+                  className="flex items-center justify-end p-4 pt-0"
+                  style={{
+                    border: "0px solid rgb(229, 231, 235)",
+                    boxSizing: "border-box",
+                    borderColor: "hsl(60 3% 15%)",
+                    textRendering: "optimizelegibility",
+                    WebkitFontSmoothing: "antialiased",
+                    scrollbarWidth: "thin",
+                    scrollbarColor:
+                      "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "flex-end",
+                    padding: "1rem",
+                    paddingTop: "0px",
+                    fontSynthesis: "none",
+                  }}
+                >
+                  <div
+                    className="grid w-full grid-cols-2 gap-2"
+                    style={{
+                      border: "0px solid rgb(229, 231, 235)",
+                      boxSizing: "border-box",
+                      borderColor: "hsl(60 3% 15%)",
+                      textRendering: "optimizelegibility",
+                      WebkitFontSmoothing: "antialiased",
+                      scrollbarWidth: "thin",
+                      scrollbarColor:
+                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                      display: "grid",
+                      width: "100%",
+                      gridTemplateColumns: "repeat(2, minmax(0px, 1fr))",
+                      gap: "0.5rem",
+                      fontSynthesis: "none",
+                    }}
+                  >
+                    <button
+                      className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none bg-secondary text-secondary-foreground shadow-sm hover:bg-muted-hover h-7 rounded-md px-3 py-2 w-full gap-1"
+                      style={{
+                        border: "0px solid rgb(229, 231, 235)",
+                        boxSizing: "border-box",
+                        borderColor: "hsl(60 3% 15%)",
+                        textRendering: "optimizelegibility",
+                        WebkitFontSmoothing: "antialiased",
+                        scrollbarWidth: "thin",
+                        scrollbarColor:
+                          "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                        margin: "0px",
+                        padding: "0px",
+                        fontFamily: "inherit",
+                        fontFeatureSettings: "inherit",
+                        fontVariationSettings: "inherit",
+                        lineHeight: "inherit",
+                        letterSpacing: "inherit",
+                        textTransform: "none",
+                        appearance: "button",
+                        backgroundImage: "none",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        height: "1.75rem",
+                        width: "100%",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "0.25rem",
+                        whiteSpace: "nowrap",
+                        borderRadius: "calc(0.5rem - 2px)",
+                        backgroundColor: "hsl(60 3% 15%)",
+                        paddingLeft: "0.75rem",
+                        paddingRight: "0.75rem",
+                        paddingTop: "0.5rem",
+                        paddingBottom: "0.5rem",
+                        fontSize: "0.875rem",
+                        fontWeight: 480,
+                        color: "hsl(45 40% 98%)",
+                        boxShadow:
+                          "var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 1px 2px 0 rgb(0 0 0/0.05)",
+                        transitionProperty:
+                          "color, background-color, border-color, text-decoration-color, fill, stroke",
+                        transitionDuration: "0.1s",
+                        transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+                        animationDuration: "0.1s",
+                        animationTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+                        fontSynthesis: "none",
+                      }}
+                    >
+                      Review security
+                    </button>
+                    <button
+                      onClick={() => {
+                        onPublish();
+                        setIsOpen(false);
+                      }}
+                      disabled={isPublishing || !sandboxAvailable}
+                      className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none bg-affirmative-primary text-affirmative-primary-foreground hover:opacity-80 shadow-black/50 h-7 rounded-md px-3 py-2 gap-1.5 w-full"
+                      style={{
+                        border: "0px solid rgb(229, 231, 235)",
+                        boxSizing: "border-box",
+                        borderColor: "hsl(60 3% 15%)",
+                        textRendering: "optimizelegibility",
+                        WebkitFontSmoothing: "antialiased",
+                        scrollbarWidth: "thin",
+                        scrollbarColor:
+                          "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
+                        margin: "0px",
+                        padding: "0px",
+                        fontFamily: "inherit",
+                        fontFeatureSettings: "inherit",
+                        fontVariationSettings: "inherit",
+                        lineHeight: "inherit",
+                        letterSpacing: "inherit",
+                        textTransform: "none",
+                        appearance: "button",
+                        backgroundImage: "none",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        height: "1.75rem",
+                        width: "100%",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "0.375rem",
+                        whiteSpace: "nowrap",
+                        borderRadius: "calc(0.5rem - 2px)",
+                        backgroundColor: "hsl(225 88% 53%)",
+                        paddingLeft: "0.75rem",
+                        paddingRight: "0.75rem",
+                        paddingTop: "0.5rem",
+                        paddingBottom: "0.5rem",
+                        fontSize: "0.875rem",
+                        fontWeight: 480,
+                        color: "hsl(215 100% 97%)",
+                        transitionProperty:
+                          "color, background-color, border-color, text-decoration-color, fill, stroke",
+                        transitionDuration: "0.1s",
+                        transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+                        animationDuration: "0.1s",
+                        animationTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+                        fontSynthesis: "none",
+                      }}
+                    >
+                      {isPublishing ? 'Publishing...' : (project?.status === 'published' || publishedUrl) ? 'Update' : 'Publish'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+          <style
+            dangerouslySetInnerHTML={{
+              __html: `
+html {
+  border: 0px solid rgb(229, 231, 235);
+  box-sizing: border-box;
+  border-color: hsl(60 3% 15%);
+  text-rendering: optimizelegibility;
+  -webkit-font-smoothing: antialiased;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
+  line-height: 1.5;
+  text-size-adjust: 100%;
+  tab-size: 4;
+  font-family: var(--font-camera-plain),Camera Plain Variable,ui-sans-serif,system-ui,sans-serif;
+  font-feature-settings: normal;
+  font-variation-settings: normal;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: auto;
+  color-scheme: dark;
+  font-synthesis: none;
+}
 
-      {/* Backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-[1000] bg-black/50"
-          onClick={() => setIsOpen(false)}
-        />
+body {
+  border: 0px solid rgb(229, 231, 235);
+  box-sizing: border-box;
+  border-color: hsl(60 3% 15%);
+  text-rendering: optimizelegibility;
+  -webkit-font-smoothing: antialiased;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb,initial) var(--scrollbar-track,initial);
+  margin: 0px;
+  line-height: inherit;
+  background-color: hsl(0 0% 11%);
+  color: hsl(45 40% 98%);
+  font-size: 1rem;
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  font-family: CameraPlainVariable, "CameraPlainVariable Fallback";
+  overscroll-behavior: contain;
+  padding-left: 0px;
+  padding-top: 0px;
+  padding-right: 0px;
+  margin-left: 0px;
+  margin-top: 0px;
+  pointer-events: none;
+  font-synthesis: none;
+  overflow: hidden;
+  position: relative;
+  margin-right: 0px;
+}
+`,
+            }}
+          />
+          <div
+            className="fixed inset-0 z-[1000] bg-transparent"
+            onClick={() => setIsOpen(false)}
+          />
+        </>
       )}
     </div>
   );
@@ -1318,6 +3543,7 @@ export default function ProjectPage() {
   const [chatText, setChatText] = useState("");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [hasStartedChat, setHasStartedChat] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<{ [key: string]: string }>({});
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -1766,6 +3992,56 @@ export default function ProjectPage() {
 
               // Extract and save questions asynchronously
               extractAndSaveQuestions();
+
+              // Save project with sandbox bundle to database (as draft) so it appears in projects list
+              const saveProjectWithBundle = async () => {
+                if (!projectId || !user?.id) return;
+
+                try {
+                  console.log('[Project Save] Saving project with sandbox bundle');
+                  
+                  // First ensure project exists (create as draft if needed)
+                  const projectResponse = await fetch(`/api/projects/${projectId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      title: autoGeneratedTitle || 'Untitled Survey',
+                      status: 'draft', // Keep as draft until published
+                    }),
+                  });
+
+                  if (!projectResponse.ok) {
+                    console.error('[Project Save] Failed to ensure project exists');
+                    return;
+                  }
+
+                  // Save sandbox bundle to preview endpoint (this saves it to the project)
+                  const previewResponse = await fetch(`/api/projects/${projectId}/preview`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userId: user.id,
+                      sandboxBundle: bundle,
+                    }),
+                  });
+
+                  if (previewResponse.ok) {
+                    console.log('[Project Save] ✅ Project saved with sandbox bundle');
+                    // Update local project state if we have it
+                    const previewData = await previewResponse.json();
+                    if (previewData.project) {
+                      setProject(previewData.project);
+                    }
+                  } else {
+                    console.error('[Project Save] Failed to save sandbox bundle');
+                  }
+                } catch (error) {
+                  console.error('[Project Save] Error saving project:', error);
+                }
+              };
+
+              // Save project asynchronously
+              saveProjectWithBundle();
             } else {
               console.log('[Bundle Extraction] Bundle unchanged, skipping update');
             }
@@ -1806,7 +4082,6 @@ export default function ProjectPage() {
   const [pages, setPages] = useState<{ path: string; title: string }[]>([{ path: '/', title: '/' }]);
   const [isChatHidden, setIsChatHidden] = useState(false);
   const [currentView, setCurrentView] = useState<'viewer' | 'flow'>('viewer');
-  const [isEditMode, setIsEditMode] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   const [activeTopButton, setActiveTopButton] = useState<'upgrade' | 'publish' | null>(null);
@@ -1829,7 +4104,7 @@ export default function ProjectPage() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
 
-  // Load project from database (don't auto-create)
+  // Load project from database (create as draft if doesn't exist)
   useEffect(() => {
     if (!mockMode && projectId && user?.id && !project && !projectLoading) {
       setProjectLoading(true);
@@ -1838,12 +4113,37 @@ export default function ProjectPage() {
       fetch(`/api/projects/${projectId}?userId=${user.id}`)
         .then(res => {
           if (!res.ok) {
-            // Project doesn't exist yet (404) or other error
-            // Set a placeholder to prevent repeated fetches
+            // Project doesn't exist yet (404) - create it as a draft
             if (res.status === 404) {
-              console.log('Project not found, will be created on first publish');
-              setProject({ id: projectId } as any); // Placeholder to stop refetching
-              return null;
+              console.log('Project not found, creating as draft');
+              // Create project as draft via updateProject (which creates if doesn't exist)
+              return fetch(`/api/projects/${projectId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  title: 'Untitled Survey',
+                  status: 'draft',
+                }),
+              })
+                .then(createRes => {
+                  if (createRes.ok) {
+                    return createRes.json();
+                  }
+                  throw new Error('Failed to create project');
+                })
+                .then((createData) => {
+                  if (createData?.project) {
+                    setProject(createData.project);
+                    return createData;
+                  }
+                  setProject({ id: projectId } as any); // Fallback placeholder
+                  return null;
+                })
+                .catch((err) => {
+                  console.error('Failed to create project:', err);
+                  setProject({ id: projectId } as any); // Fallback placeholder
+                  return null;
+                });
             }
             throw new Error(`HTTP ${res.status}`);
           }
@@ -2211,18 +4511,29 @@ export default function ProjectPage() {
   }, [projectId, user?.id, publishToMarketplace, project, sandboxAvailable, sandboxBundle]);
 
   const copyPublishedLink = useCallback(async () => {
-    if (!publishedUrl) return;
-
-    const fullUrl = `${window.location.origin}/s/${publishedUrl}`;
+    if (!projectId) return;
 
     try {
-      await navigator.clipboard.writeText(fullUrl);
-      setPublishSuccess('Link copied to clipboard!');
-      setTimeout(() => setPublishSuccess(null), 2000);
+      // Get custom slug from share settings
+      const shareResponse = await fetch(`/api/projects/${projectId}/share-settings`);
+      if (shareResponse.ok) {
+        const shareData = await shareResponse.json();
+        const slug = shareData?.customSlug || projectId.substring(0, 8);
+        const fullUrl = `https://surbee.dev/${slug}`;
+        await navigator.clipboard.writeText(fullUrl);
+        setPublishSuccess('Link copied to clipboard!');
+        setTimeout(() => setPublishSuccess(null), 2000);
+      } else {
+        // Fallback to projectId if share settings fail
+        const fullUrl = `https://surbee.dev/${projectId.substring(0, 8)}`;
+        await navigator.clipboard.writeText(fullUrl);
+        setPublishSuccess('Link copied to clipboard!');
+        setTimeout(() => setPublishSuccess(null), 2000);
+      }
     } catch (error) {
       console.error('Failed to copy:', error);
     }
-  }, [publishedUrl]);
+  }, [projectId]);
 
   // Copy message content to clipboard
   const handleCopyMessage = useCallback(async (messageId: string, content: string) => {
@@ -2957,13 +5268,13 @@ export default function ProjectPage() {
                 isInputDisabled={status !== 'ready'}
                 placeholder="Ask for a follow-up"
                 className="chat-input-grey"
-                isEditMode={false}
-                onToggleEditMode={() => {}}
+                isEditMode={isEditMode}
+                onToggleEditMode={() => setIsEditMode(!isEditMode)}
                 showSettings={false}
                 selectedElement={null}
                 disableRotatingPlaceholders={true}
                 onClearSelection={() => {}}
-                showModelSelector={true}
+                showModelSelector={false}
                 selectedModel={selectedModel}
                 onModelChange={handleModelChange}
                 isBusy={status === 'submitted' || status === 'streaming'}
@@ -3215,104 +5526,14 @@ export default function ProjectPage() {
               Upgrade
             </button>
 
-            <button
-              data-publish-trigger
-              onClick={() => {
-                setIsPublishOpen((v) => !v);
-                setActiveTopButton(activeTopButton === 'publish' ? null : 'publish');
-              }}
-              disabled={!sandboxAvailable}
-              className="relative px-3 py-1.5 font-medium text-sm transition-all duration-150 rounded-[0.38rem]"
-              style={{
-                fontFamily: 'FK Grotesk, sans-serif',
-                fontSize: '14px',
-                fontWeight: 500,
-                lineHeight: '1.375rem',
-                backgroundColor: !sandboxAvailable
-                  ? (isDarkMode ? '#3a3a3a' : '#e5e7eb')
-                  : (isDarkMode ? '#ffffff' : '#000000'),
-                color: !sandboxAvailable
-                  ? (isDarkMode ? '#6b7280' : '#9ca3af')
-                  : (isDarkMode ? '#000000' : '#ffffff'),
-                cursor: !sandboxAvailable ? 'not-allowed' : 'pointer',
-                opacity: !sandboxAvailable ? 0.5 : 1
-              }}
-              onMouseEnter={(e) => {
-                if (sandboxAvailable) {
-                  e.currentTarget.style.opacity = '0.9';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (sandboxAvailable) {
-                  e.currentTarget.style.opacity = '1';
-                }
-              }}
-            >
-              {project?.status === 'published' || publishedUrl ? 'Update' : 'Publish'}
-            </button>
-            {isPublishOpen && (
-              <div
-                ref={publishMenuRef}
-                className="publish-dropdown absolute top-full right-0 mt-2 w-[280px] rounded-lg shadow-xl z-50 overflow-hidden"
-                style={{
-                  backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
-                  border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`
-                }}
-              >
-                <div className="p-4 space-y-3">
-                  {/* Success Message */}
-                  {publishSuccess && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-md text-sm" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#22c55e' }}>
-                      <CheckCircle2 className="w-4 h-4" />
-                      {publishSuccess}
-                    </div>
-                  )}
-
-                  {/* Published URL Section */}
-                  {(publishedUrl || project?.published_url) && (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium" style={{ color: 'var(--surbee-fg-secondary)' }}>Survey Link</span>
-                        <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#22c55e' }}>Live</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 px-3 py-2 rounded-md text-xs truncate" style={{ backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', color: 'var(--surbee-fg-secondary)' }}>
-                          {window.location.origin}/s/{publishedUrl || project?.published_url}
-                        </div>
-                        <button
-                          onClick={copyPublishedLink}
-                          className="p-2 rounded-md transition-colors hover:bg-white/10"
-                          title="Copy link"
-                        >
-                          <Copy className="w-4 h-4" style={{ color: 'var(--surbee-fg-secondary)' }} />
-                        </button>
-                      </div>
-                      <div style={{ borderTop: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, margin: '12px 0' }} />
-                    </>
-                  )}
-
-                  {/* Preview Link */}
-                  <a
-                    href={`/project/${projectId}/preview`}
-                    target="_blank"
-                    className="flex items-center justify-between px-3 py-2 rounded-md transition-colors hover:bg-white/5"
-                  >
-                    <span className="text-sm" style={{ color: 'var(--surbee-fg-primary)' }}>Preview survey</span>
-                    <ExternalLink className="w-4 h-4" style={{ color: 'var(--surbee-fg-secondary)' }} />
-                  </a>
-
-                  {/* Publish Dropdown */}
-                  <PublishDropdown
-                    projectId={projectId}
-                    project={project}
-                    publishedUrl={publishedUrl}
-                    isPublishing={isPublishing}
-                    sandboxAvailable={sandboxAvailable}
-                    onPublish={handlePublish}
-                  />
-                </div>
-              </div>
-            )}
+            <PublishDropdown
+              projectId={projectId}
+              project={project}
+              publishedUrl={publishedUrl}
+              isPublishing={isPublishing}
+              sandboxAvailable={sandboxAvailable}
+              onPublish={handlePublish}
+            />
           </div>
         </div>
 

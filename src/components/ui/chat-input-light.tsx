@@ -6,6 +6,44 @@ import ChatSettingsMenu from "@/components/ui/chat-settings-menu";
 import { ImageViewerModal } from "@/components/ui/image-viewer-modal";
 import ModelSelector, { AIModel } from "@/components/ui/model-selector";
 
+// Visual Editor Toggle Component
+interface VisualEditorToggleProps {
+  isActive?: boolean;
+  onClick?: () => void;
+  disabled?: boolean;
+}
+
+function VisualEditorToggle({ isActive = false, onClick, disabled = false }: VisualEditorToggleProps) {
+  return (
+    <button
+      id="visual-editor-toggle"
+      className={`items-center justify-center whitespace-nowrap text-sm transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 px-3 flex h-6 gap-1 rounded-full border py-0 pl-1.5 pr-2.5 font-normal ${
+        isActive
+          ? 'border-white bg-white text-black hover:border-white hover:bg-white hover:text-black'
+          : 'border-affirmative-primary bg-affirmative-primary text-affirmative-primary-foreground hover:border-affirmative-primary hover:bg-affirmative-primary hover:text-affirmative-primary-foreground md:hover:bg-affirmative-primary/90 md:hover:text-affirmative-primary-foreground'
+      }`}
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <svg
+        className="shrink-0 h-4 w-4"
+        height="100%"
+        width="100%"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M11.027 13.27c-.507-1.396.847-2.75 2.244-2.243l6.523 2.372c1.51.55 1.544 2.673.052 3.27l-2.17.868a.25.25 0 0 0-.139.14l-.868 2.169c-.597 1.492-2.72 1.458-3.27-.052zM3.25 17v-1a.75.75 0 0 1 1.5 0v1A2.25 2.25 0 0 0 7 19.25h1a.75.75 0 0 1 0 1.5H7A3.75 3.75 0 0 1 3.25 17m9.508-4.562a.25.25 0 0 0-.32.32l2.372 6.523a.25.25 0 0 0 .466.008l.869-2.17a1.75 1.75 0 0 1 .974-.974l2.17-.869a.25.25 0 0 0-.008-.466zM3.25 8V7A3.75 3.75 0 0 1 7 3.25h1a.75.75 0 0 1 0 1.5H7A2.25 2.25 0 0 0 4.75 7v1a.75.75 0 0 1-1.5 0m16 0V7A2.25 2.25 0 0 0 17 4.75h-1a.75.75 0 0 1 0-1.5h1A3.75 3.75 0 0 1 20.75 7v1a.75.75 0 0 1-1.5 0"
+          fill="currentColor"
+        />
+      </svg>
+      Visual edits
+    </button>
+  );
+}
+
 // FileUIPart format expected by AI SDK
 export interface FileUIPart {
   type: 'file';
@@ -656,29 +694,11 @@ export default function ChatInputLight({
                 />
               )}
               {onToggleEditMode && (
-                <button
-                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer border ${
-                    isEditMode
-                      ? (detectedTheme === 'white' ? 'border-gray-300 bg-black text-white' : 'border-zinc-700/40 bg-white text-black')
-                      : (detectedTheme === 'white' ? 'border-gray-300 text-gray-700 hover:text-black hover:bg-black/5' : 'border-zinc-700/40 text-gray-300 hover:text-white hover:bg-white/5')
-                  }`}
-                  type="button"
-                  disabled={isInputDisabled}
+                <VisualEditorToggle
+                  isActive={isEditMode}
                   onClick={onToggleEditMode}
-                  title={isEditMode ? 'Exit edit mode' : 'Enter edit mode'}
-                >
-                  {isEditMode ? (
-                    <>
-                      <Eye className="h-3 w-3" />
-                      <span>Preview</span>
-                    </>
-                  ) : (
-                    <>
-                      <Crosshair className="h-3 w-3" />
-                      <span>Edit</span>
-                    </>
-                  )}
-                </button>
+                  disabled={isInputDisabled}
+                />
               )}
             </div>
             <div className="flex flex-row items-center gap-2 flex-shrink-0">

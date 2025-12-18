@@ -300,14 +300,53 @@ export class ProjectsService {
       const random = Math.random().toString(36).substring(2, 8);
       const publishedUrl = `${projectId.substring(0, 8)}_${random}`;
 
+      // Project exists, update it - preserve existing sandbox_bundle if not provided
+      const updateData: any = {
+        status: 'published',
+        published_url: publishedUrl,
+        published_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      
+      // Update title if it's still the generic one or missing
+      if (existingProject && (existingProject.title === `Project ${projectId.substring(0, 8)}` || !existingProject.title)) {
+        try {
+          const { data: shareSettings } = await supabaseAdmin
+            .from('project_share_settings')
+            .select('og_title')
+            .eq('project_id', projectId)
+            .single();
+          if (shareSettings?.og_title) {
+            updateData.title = shareSettings.og_title;
+          }
+        } catch (e) {
+          // Ignore error
+        }
+      }
+
       if (!existingProject) {
         // Project doesn't exist, create it first
+        // Try to get a title from share settings or use default
+        let projectTitle = `Project ${projectId.substring(0, 8)}`;
+        try {
+          const { data: shareSettings } = await supabaseAdmin
+            .from('project_share_settings')
+            .select('og_title')
+            .eq('project_id', projectId)
+            .single();
+          if (shareSettings?.og_title) {
+            projectTitle = shareSettings.og_title;
+          }
+        } catch (e) {
+          // Ignore error, use default title
+        }
+
         const { data: newProject, error: createError } = await supabaseAdmin
           .from('projects')
           .insert({
             id: projectId,
             user_id: userId,
-            title: `Project ${projectId.substring(0, 8)}`,
+            title: projectTitle,
             description: 'Survey created with Surbee',
             status: 'published',
             published_url: publishedUrl,
@@ -321,14 +360,6 @@ export class ProjectsService {
         if (createError) return { data: null, error: createError as any };
         return { data: newProject as Project, error: null };
       }
-
-      // Project exists, update it - preserve existing sandbox_bundle if not provided
-      const updateData: any = {
-        status: 'published',
-        published_url: publishedUrl,
-        published_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
       
       // Only update survey_schema if provided
       if (surveySchema !== undefined) {
@@ -358,7 +389,27 @@ export class ProjectsService {
   static async getPublishedProject(publishedUrl: string): Promise<{ data: Project | null; error: Error | null }> {
     try {
       // Use admin client to bypass RLS - published surveys should be publicly accessible
-      // First try by published_url with published status
+      // First try by custom slug from project_share_settings
+      const { data: shareSettings } = await supabaseAdmin
+        .from('project_share_settings')
+        .select('project_id')
+        .eq('custom_slug', publishedUrl)
+        .single();
+
+      if (shareSettings?.project_id) {
+        const { data: project, error } = await supabaseAdmin
+          .from('projects')
+          .select('*')
+          .eq('id', shareSettings.project_id)
+          .eq('status', 'published')
+          .single();
+
+        if (project) {
+          return { data: project as Project, error: null };
+        }
+      }
+
+      // Try by published_url with published status
       const { data: project, error } = await supabaseAdmin
         .from('projects')
         .select('*')

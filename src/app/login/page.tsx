@@ -1,389 +1,165 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import Script from 'next/script';
-import { supabase } from '@/lib/supabase';
+import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [showEmailForm, setShowEmailForm] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  useEffect(() => {
-    document.documentElement.classList.remove('dark');
-    document.documentElement.classList.add('light');
-    document.documentElement.style.background = '#EEE9E5';
-    document.body.style.background = '#EEE9E5';
-    window.scrollTo(0, 0);
-  }, []);
-
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
+  const handleOAuthLogin = async (provider: 'google' | 'github') => {
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      setLoading(true)
+      setError('')
 
-      if (signInError) {
-        setError(signInError.message);
-      } else {
-        router.push('/dashboard');
-      }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      setLoading(true);
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
+      const { error: signInError } = await supabase.auth.signInWithOAuth({
+        provider,
         options: {
           redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
         },
-      });
-    } catch (error) {
-      console.error('Google login error:', error);
-      setLoading(false);
+      })
+
+      if (signInError) {
+        setError(signInError.message)
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred')
+    } finally {
+      setLoading(false)
     }
-  };
+  }
+
+  const handleEmailContinue = async (e: React.FormEvent) => {
+    e.preventDefault()
+    // For now, redirect to Google OAuth since email flow isn't fully implemented
+    await handleOAuthLogin('google')
+  }
 
   return (
-    <>
-      <div className="login-page">
-        <style dangerouslySetInnerHTML={{__html: `
-          @font-face {
-            font-family: 'Kalice-Trial-Bold';
-            src: url('/fonts/Kalice-Trial-Bold.otf') format('opentype');
-            font-weight: 700;
-            font-style: normal;
-          }
-          @font-face {
-            font-family: 'Kalice-Trial-Regular';
-            src: url('/fonts/Kalice-Trial-Regular.otf') format('opentype');
-            font-weight: 400;
-            font-style: normal;
-          }
-          html { font-size: calc(100vw/1440); background: #EEE9E5 !important; }
-          body { overflow-x:hidden; overflow: overlay; -webkit-font-smoothing: antialiased; background: #EEE9E5 !important; }
-          @media screen and (min-width: 1440px) { html {font-size: 1px;} }
-          @media screen and (min-width: 768px) and (max-width: 991px) { html {font-size: calc(100vw/768);} }
-          @media screen and (min-width: 480px) and (max-width: 767px) { html {font-size: calc(100vw/480);} }
-          @media screen and (max-width: 479px) { html {font-size: calc(100vw/375);} }
-          [class*="heading-"] { margin-top:0px; margin-bottom:0px; }
-          [class*="text-"] { margin-top:0px; margin-bottom:0px; }
-          :root { --typography-font-size-title-large: 14px; --typography-font-size-body-large: 14px; --typography-font-size-body-medium: 24px; --typography-font-size-body-standard: 16px; }
-          [class*="image-wrapper"] { width:100%; position:relative; overflow:hidden; }
-          [class*="overlay-"] { pointer-events:none; }
-          [class*="container-"] { margin-left:auto; margin-right:auto; width:100% }
-          .w-richtext > *:first-child { margin-top: 0; }
-          .w-richtext > *:last-child { margin-bottom: 0; }
-          @media screen and (max-width:991px) { [hidetablet="yes"] { display:none; } }
-        `}} />
-
-        <div className="section is--hero" style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#EEE9E5' }}>
-          <style dangerouslySetInnerHTML={{__html: `
-            .login-heading {
-              overflow: visible !important;
-              padding-bottom: 48px;
-              line-height: 1.1;
-              text-align: center;
-              font-family: Kalice-Trial-Regular, sans-serif;
-              margin: 0 0 24rem 0;
-            }
-            h1.login-heading {
-              font-size: 96rem;
-              font-weight: 400;
-              letter-spacing: -1.92rem;
-              color: black;
-            }
-            .login-subtext {
-              font-size: 14rem;
-              line-height: 1.6;
-              color: rgba(0,0,0,0.6);
-              text-align: center;
-              margin: 0 0 40rem 0;
-              font-family: 'Courier New', 'Menlo', 'Monaco', monospace;
-              letter-spacing: 0.5px;
-            }
-            .login-form-container {
-              position: relative;
-              z-index: 10;
-              max-width: 600rem;
-              width: 100%;
-              padding: 0 20rem;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-            }
-            .login-heading {
-              width: 100%;
-            }
-            .login-buttons-wrapper {
-              width: 100%;
-              max-width: 400rem;
-              display: flex;
-              flex-direction: column;
-              gap: 12rem;
-            }
-            .login-button {
-              position: relative;
-              padding: 12rem 20rem;
-              border-radius: 8px;
-              border: none;
-              font-size: 14rem;
-              font-weight: 600;
-              cursor: pointer;
-              transition: all 0.3s ease;
-              font-family: Kalice-Trial-Regular, sans-serif;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              gap: 12rem;
-              overflow: hidden;
-              width: 100%;
-            }
-            .login-button--google {
-              background: white;
-              color: #1f2937;
-              border: 1px solid #e5e7eb;
-            }
-            .login-button--email {
-              background: black;
-              color: white;
-            }
-            .hover--bg {
-              position: absolute;
-              inset: 0;
-              opacity: 0;
-              transition: opacity 0.3s ease;
-            }
-            .hover--bg.is--black {
-              background: rgba(0, 0, 0, 0.1);
-            }
-            .hover--bg.is--purple {
-              background: rgba(168, 85, 247, 0.15);
-            }
-            .login-button:hover .hover--bg {
-              opacity: 1;
-            }
-            .login-button-content {
-              position: relative;
-              z-index: 1;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              gap: 12rem;
-            }
-            .login-button:disabled {
-              opacity: 0.5;
-              cursor: not-allowed;
-            }
-            .login-input {
-              width: 100%;
-              padding: 12rem 16rem;
-              margin-bottom: 16rem;
-              border: 1px solid #e5e7eb;
-              border-radius: 8rem;
-              font-size: 14rem;
-              font-family: Kalice-Trial-Regular, sans-serif;
-            }
-            .login-input:focus {
-              outline: none;
-              border-color: black;
-              box-shadow: 0 0 0 3rem rgba(0,0,0,0.1);
-            }
-            .login-error {
-              background: #fee2e2;
-              border: 1px solid #fca5a5;
-              color: #991b1b;
-              padding: 12rem 16rem;
-              border-radius: 8rem;
-              font-size: 14rem;
-              margin-bottom: 16rem;
-            }
-            .login-label {
-              display: block;
-              font-size: 14rem;
-              font-weight: 600;
-              margin-bottom: 8rem;
-              color: black;
-              font-family: Kalice-Trial-Regular, sans-serif;
-            }
-            .login-terms {
-              text-align: center;
-              font-size: 12rem;
-              color: rgba(0,0,0,0.6);
-              margin-top: 24rem;
-              line-height: 1.6;
-              font-family: Sohne, sans-serif;
-            }
-            .login-terms a {
-              color: black;
-              text-decoration: underline;
-              transition: color 0.2s;
-            }
-            .login-terms a:hover {
-              color: rgba(0,0,0,0.8);
-            }
-            .login-back-button {
-              position: absolute;
-              top: 40rem;
-              left: 40rem;
-              z-index: 20;
-              background: black;
-              color: white;
-              padding: 8rem 16rem;
-              border-radius: 999rem;
-              border: none;
-              font-size: 14rem;
-              cursor: pointer;
-              font-family: Kalice-Trial-Regular, sans-serif;
-              transition: all 0.2s;
-            }
-            .login-back-button:hover {
-              background: #1f2937;
-            }
-          `}} />
-
-          {/* Decorative hero lines */}
-          <div hidetablet="yes" style={{ position: 'absolute', left: '10%', top: 0, width: '1px', height: '100%', background: 'linear-gradient(to bottom, rgba(0,0,0,0.1), transparent)' }} />
-          <div hidetablet="yes" style={{ position: 'absolute', left: '20%', top: 0, width: '1px', height: '100%', background: 'linear-gradient(to bottom, rgba(0,0,0,0.08), transparent)' }} />
-          <div hidetablet="yes" style={{ position: 'absolute', left: '30%', top: 0, width: '1px', height: '100%', background: 'linear-gradient(to bottom, rgba(0,0,0,0.06), transparent)' }} />
-          <div hidetablet="yes" style={{ position: 'absolute', right: '30%', top: 0, width: '1px', height: '100%', background: 'linear-gradient(to bottom, rgba(0,0,0,0.06), transparent)' }} />
-          <div hidetablet="yes" style={{ position: 'absolute', right: '20%', top: 0, width: '1px', height: '100%', background: 'linear-gradient(to bottom, rgba(0,0,0,0.08), transparent)' }} />
-          <div hidetablet="yes" style={{ position: 'absolute', right: '10%', top: 0, width: '1px', height: '100%', background: 'linear-gradient(to bottom, rgba(0,0,0,0.1), transparent)' }} />
-
-          <div className="login-form-container">
-            {showEmailForm && (
-              <button
-                className="login-back-button"
-                onClick={() => {
-                  setShowEmailForm(false);
-                  setEmail('');
-                  setPassword('');
-                  setError('');
-                }}
-              >
-                ← Back
-              </button>
-            )}
-
-            {!showEmailForm ? (
-              <>
-                <h1 className="login-heading">Sign in to Surbee</h1>
-                <p className="login-subtext">Create smarter surveys in minutes</p>
-
-                <div className="login-buttons-wrapper">
-                  <button
-                    onClick={handleGoogleLogin}
-                    disabled={loading}
-                    className="login-button login-button--google"
-                  >
-                    <div className="hover--bg is--black"></div>
-                    <div className="login-button-content">
-                      <svg width="18rem" height="18rem" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                      </svg>
-                      <span>Continue with Google</span>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => setShowEmailForm(true)}
-                    disabled={loading}
-                    className="login-button login-button--email"
-                  >
-                    <div className="hover--bg is--purple"></div>
-                    <div className="login-button-content">
-                      Continue with Email
-                    </div>
-                  </button>
-                </div>
-
-                <div className="login-terms">
-                  By signing in, you agree to our{' '}
-                  <Link href="/terms">Terms and Conditions</Link>
-                  {' '}and{' '}
-                  <Link href="/privacy">Privacy Policy</Link>
-                </div>
-              </>
-            ) : (
-              <>
-                <h1 className="login-heading" style={{ fontSize: '56rem' }}>Sign in with Email</h1>
-                <p className="login-subtext" style={{ margin: '0 0 32rem 0' }}>Enter your credentials</p>
-
-                <div style={{ width: '100%', maxWidth: '400rem' }}>
-                  <form onSubmit={handleEmailSubmit}>
-                  {error && (
-                    <div className="login-error">{error}</div>
-                  )}
-
-                  <div>
-                    <label className="login-label">Email</label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      required
-                      className="login-input"
-                      disabled={loading}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="login-label">Password</label>
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      required
-                      className="login-input"
-                      disabled={loading}
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="login-button login-button--email"
-                  >
-                    <div className="hover--bg is--purple"></div>
-                    <div className="login-button-content" style={{ color: 'white' }}>
-                      {loading ? 'Signing in...' : 'Sign In'}
-                    </div>
-                  </button>
-                  </form>
-                </div>
-
-                <div className="login-terms">
-                  By signing in, you agree to our{' '}
-                  <Link href="/terms">Terms and Conditions</Link>
-                  {' '}and{' '}
-                  <Link href="/privacy">Privacy Policy</Link>
-                </div>
-              </>
-            )}
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{
+        backgroundColor: '#F7F7F4',
+        fontFamily:
+          '"Cursor Gothic", -apple-system, "system-ui", "Segoe UI (Custom)", Roboto, "Helvetica Neue", "Open Sans (Custom)", system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
+      }}
+    >
+      <div className="w-full max-w-md rounded-2xl bg-black/95 text-slate-100 px-6 py-8 shadow-2xl border border-slate-800">
+        <header className="mb-8">
+          <div className="mb-6">
+            <img
+              className="h-8 w-auto"
+              alt="Surbee"
+              src="https://raw.githubusercontent.com/Surbee001/webimg/d31a230c841bc324c709964f3d9ab01daec67f8d/Surbee%20Logo%20Final.svg"
+            />
           </div>
+          <h1 className="text-2xl font-semibold text-white">
+            Welcome to Surbee
+          </h1>
+          <p className="mt-1 text-sm text-slate-400">
+            The new way to build software
+          </p>
+        </header>
+
+        <div className="flex flex-col gap-3 mb-6">
+          <button
+            onClick={() => handleOAuthLogin('google')}
+            disabled={loading}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#151515] text-slate-50 border border-[#262626] py-2.5 px-4 text-sm font-medium hover:bg-[#1d1d1d] transition-colors"
+          >
+            <svg
+              className="w-4 h-4"
+              height="15"
+              width="15"
+              fill="none"
+              viewBox="0 0 16 16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <g>
+                <path
+                  d="M15.83 8.18C15.83 7.65333 15.7833 7.15333 15.7033 6.66667H8.17V9.67333H12.4833C12.29 10.66 11.7233 11.4933 10.8833 12.06V14.06H13.4567C14.9633 12.6667 15.83 10.6133 15.83 8.18Z"
+                  fill="#4285F4"
+                />
+                <path
+                  d="M8.17 16C10.33 16 12.1367 15.28 13.4567 14.06L10.8833 12.06C10.1633 12.54 9.25 12.8333 8.17 12.8333C6.08334 12.8333 4.31667 11.4267 3.68334 9.52667H1.03V11.5867C2.34334 14.2 5.04334 16 8.17 16Z"
+                  fill="#34A853"
+                />
+                <path
+                  d="M3.68334 9.52667C3.51667 9.04667 3.43 8.53333 3.43 8C3.43 7.46667 3.52334 6.95334 3.68334 6.47334V4.41334H1.03C0.483335 5.49334 0.170002 6.70667 0.170002 8C0.170002 9.29333 0.483335 10.5067 1.03 11.5867L3.68334 9.52667Z"
+                  fill="#FBBC05"
+                />
+                <path
+                  d="M8.17 3.16667C9.35 3.16667 10.4033 3.57334 11.2367 4.36667L13.5167 2.08667C12.1367 0.793334 10.33 0 8.17 0C5.04334 0 2.34334 1.8 1.03 4.41334L3.68334 6.47334C4.31667 4.57334 6.08334 3.16667 8.17 3.16667Z"
+                  fill="#EA4335"
+                />
+              </g>
+            </svg>
+            <span>{loading ? 'Signing in…' : 'Continue with Google'}</span>
+          </button>
+
+          <button
+            onClick={() => handleOAuthLogin('github')}
+            disabled={loading}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#151515] text-slate-50 border border-[#262626] py-2.5 px-4 text-sm font-medium hover:bg-[#1d1d1d] transition-colors"
+          >
+            <svg
+              className="w-4 h-4"
+              height="16"
+              width="16"
+              fill="none"
+              viewBox="0 0 15 15"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                clipRule="evenodd"
+                d="M7.49933 0.25C3.49635 0.25 0.25 3.49593 0.25 7.50024C0.25 10.703 2.32715 13.4206 5.2081 14.3797C5.57084 14.446 5.70302 14.2222 5.70302 14.0299C5.70302 13.8576 5.69679 13.4019 5.69323 12.797C3.67661 13.235 3.25112 11.825 3.25112 11.825C2.92132 10.9874 2.44599 10.7644 2.44599 10.7644C1.78773 10.3149 2.49584 10.3238 2.49584 10.3238C3.22353 10.375 3.60629 11.0711 3.60629 11.0711C4.25298 12.1788 5.30335 11.8588 5.71638 11.6732C5.78225 11.205 5.96962 10.8854 6.17658 10.7043C4.56675 10.5209 2.87415 9.89918 2.87415 7.12104C2.87415 6.32925 3.15677 5.68257 3.62053 5.17563C3.54576 4.99226 3.29697 4.25521 3.69174 3.25691C3.69174 3.25691 4.30015 3.06196 5.68522 3.99973C6.26337 3.83906 6.8838 3.75895 7.50022 3.75583C8.1162 3.75895 8.73619 3.83906 9.31523 3.99973C10.6994 3.06196 11.3069 3.25691 11.3069 3.25691C11.7026 4.25521 11.4538 4.99226 11.3795 5.17563C11.8441 5.68257 12.1245 6.32925 12.1245 7.12104C12.1245 9.9063 10.4292 10.5192 8.81452 10.6985C9.07444 10.9224 9.30633 11.3648 9.30633 12.0413C9.30633 13.0102 9.29742 13.7922 9.29742 14.0299C9.29742 14.2239 9.42828 14.4496 9.79591 14.3788C12.6746 13.4179 14.75 10.7025 14.75 7.50024C14.75 3.49593 11.5036 0.25 7.49933 0.25Z"
+                fill="currentColor"
+                fillRule="evenodd"
+              />
+            </svg>
+            <span>{loading ? 'Signing in…' : 'Continue with GitHub'}</span>
+          </button>
+
+          <button
+            disabled
+            className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#151515] text-slate-500 border border-[#262626] py-2.5 px-4 text-sm font-medium opacity-60 cursor-not-allowed"
+          >
+            <span>Continue with Apple</span>
+          </button>
         </div>
+
+        <form onSubmit={handleEmailContinue} className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-200">
+              Email
+            </label>
+            <input
+              className="w-full rounded-md bg-black border border-[#262626] px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              placeholder="Your email address"
+              autoCapitalize="off"
+              autoFocus
+            />
+          </div>
+
+          <button
+            className="w-full inline-flex items-center justify-center rounded-md bg-slate-50 text-slate-900 text-sm font-medium py-2.5 px-4 transition-colors hover:bg-white"
+            type="submit"
+            disabled={loading}
+          >
+            <span>{loading ? 'Continuing…' : 'Continue'}</span>
+          </button>
+        </form>
+
+        <p className="text-xs text-slate-500 text-center mt-6">
+          Terms of Service and Privacy Policy
+        </p>
       </div>
-    </>
-  );
+    </div>
+  )
 }
