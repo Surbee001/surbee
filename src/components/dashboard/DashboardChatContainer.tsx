@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Copy, ThumbsUp, ThumbsDown, Search, ChevronRight, CheckCircle2, Download } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import ChatInputLight, { ReferenceItem } from "@/components/ui/chat-input-light";
 import { AIModel } from "@/components/ui/model-selector";
 import { Response } from "@/components/ai-elements/response";
@@ -287,8 +288,7 @@ export function DashboardChatContainer({
       // Update URL with chatId if not already present
       const currentChatId = searchParams.get('chatId');
       if (currentChatId !== chatSessionId) {
-        const newUrl = `${pathname}?chatId=${chatSessionId}`;
-        window.history.replaceState({}, '', newUrl);
+        router.replace(`${pathname}?chatId=${chatSessionId}`, { scroll: false });
       }
       
       // Generate title from first user message if not already generated
@@ -310,7 +310,7 @@ export function DashboardChatContainer({
         chatSessionSavedRef.current = true;
       }
     }
-  }, [hasStartedChat, chatSessionId, messages, pathname, searchParams, saveChatSession, generateTitle, generatedTitle]);
+  }, [hasStartedChat, chatSessionId, messages, pathname, searchParams, saveChatSession, generateTitle, generatedTitle, router]);
 
   // Reset saved flag when user sends new message
   useEffect(() => {
@@ -327,50 +327,61 @@ export function DashboardChatContainer({
   useEffect(() => {
     const urlChatId = searchParams.get('chatId');
     const prevChatId = prevChatIdRef.current;
-    
+
+    // Skip if chatId hasn't changed
+    if (prevChatId === urlChatId) {
+      return;
+    }
+
     // Update ref for next comparison
     prevChatIdRef.current = urlChatId;
-    
-    // Only reset if we navigated FROM a chat TO no chat (clicking Home)
-    // Don't reset if we never had a chatId (fresh page load or new chat)
-    if (prevChatId && !urlChatId) {
+
+    // Reset state when navigating to a different chat or no chat
+    if (prevChatId !== urlChatId) {
       setMessages([]);
       setChatSessionId(null);
       setHasStartedChat(false);
       setGeneratedTitle(null);
       titleGeneratedRef.current = false;
       chatSessionSavedRef.current = false;
+    }
+
+    // If no chatId, we're done (fresh home page)
+    if (!urlChatId) {
       return;
     }
-    
+
     const loadChatSession = async () => {
-      if (urlChatId && !hasStartedChat) {
-        try {
-          const response = await fetch(`/api/dashboard/chat-session?sessionId=${urlChatId}&userId=${userId}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data.session?.messages && data.session.messages.length > 0) {
-              // Restore messages
-              const restoredMessages = data.session.messages.map((m: any, idx: number) => ({
-                id: m.id || `restored-${idx}`,
-                role: m.role,
-                content: m.content,
-              }));
-              setMessages(restoredMessages);
-              setChatSessionId(urlChatId);
-              setHasStartedChat(true);
+      try {
+        const response = await fetch(`/api/dashboard/chat-session?sessionId=${urlChatId}&userId=${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.session?.messages && data.session.messages.length > 0) {
+            // Restore messages
+            const restoredMessages = data.session.messages.map((m: any, idx: number) => ({
+              id: m.id || `restored-${idx}`,
+              role: m.role,
+              content: m.content,
+            }));
+            setMessages(restoredMessages);
+            setChatSessionId(urlChatId);
+            setHasStartedChat(true);
+            // Set title if available
+            if (data.session.title) {
+              setGeneratedTitle(data.session.title);
+              titleGeneratedRef.current = true;
             }
           }
-        } catch (error) {
-          console.error('Failed to load chat session:', error);
         }
+      } catch (error) {
+        console.error('Failed to load chat session:', error);
       }
     };
-    
-    if (userId) {
+
+    if (userId && urlChatId) {
       loadChatSession();
     }
-  }, [searchParams, userId, hasStartedChat, setMessages]);
+  }, [searchParams, userId, setMessages]);
 
   // Handle adding a reference from SearchModal
   const handleAddReference = useCallback((item: SearchReferenceItem) => {
@@ -389,41 +400,89 @@ export function DashboardChatContainer({
   }, []);
 
   // Handle importing a survey
-  const handleImportSurvey = useCallback((url: string) => {
-    // Send a message to the AI to analyze and import the survey
-    const importMessage = `Please analyze this survey and help me recreate it in Surbee. Here's the URL: ${url}
+  const handleImportSurvey = useCallback(async (url: string) => {
+    try {
+      // Get user session for auth
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        console.error('No auth session found');
+        return;
+      }
+
+      // Call the survey import API
+      const response = await fetch('/api/survey/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ url }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        console.error('Import failed:', data.error);
+        // Fallback to the old method if import fails
+        const importMessage = `Please analyze this survey and help me recreate it in Surbee. Here's the URL: ${url}
 
 Analyze the survey structure, questions, and design. Then help me build a similar survey.`;
-    
-    // Generate chat session ID if needed
-    let sessionId = chatSessionId;
-    if (!sessionId) {
-      sessionId = generateChatSessionId();
-      setChatSessionId(sessionId);
-    }
 
-    setHasStartedChat(true);
-    setIsBuildMode(true);
-    setSelectedCreateType('Survey');
-    
-    sendMessage(
-      { text: importMessage },
-      {
-        body: {
-          userId,
-          model: selectedModel,
-          createMode: 'Survey',
-          searchWebEnabled: true, // Enable web search to fetch the survey
-          userPreferences: {
-            displayName: preferences.displayName,
-            tone: preferences.tone,
-            workFunction: preferences.workFunction,
-            personalPreferences: preferences.personalPreferences,
-          },
-        },
+        let sessionId = chatSessionId;
+        if (!sessionId) {
+          sessionId = generateChatSessionId();
+          setChatSessionId(sessionId);
+        }
+
+        setHasStartedChat(true);
+        setIsBuildMode(true);
+        setSelectedCreateType('Survey');
+
+        sendMessage(
+          { text: importMessage },
+          {
+            body: {
+              userId,
+              model: selectedModel,
+              createMode: 'Survey',
+              searchWebEnabled: true,
+              userPreferences: {
+                displayName: preferences.displayName,
+                tone: preferences.tone,
+                workFunction: preferences.workFunction,
+                personalPreferences: preferences.personalPreferences,
+              },
+            },
+          }
+        );
+        return;
       }
-    );
-  }, [chatSessionId, sendMessage, userId, selectedModel, preferences]);
+
+      // Success! Store the initial prompt for the project page
+      const projectId = data.project.id;
+
+      // Simple prompt - the scraped content is stored in the project
+      const promptMessage = `I've imported a survey from ${url}. Please help me recreate this survey with the same structure and questions.`;
+
+      try {
+        sessionStorage.setItem('surbee_initial_prompt', promptMessage);
+        sessionStorage.setItem('surbee_selected_model', selectedModel);
+        sessionStorage.setItem('surbee_imported_survey', JSON.stringify({
+          url,
+          projectId,
+          title: data.project.title,
+          extracted: data.extracted,
+        }));
+      } catch {}
+
+      // Redirect directly to the project page
+      router.push(`/project/${projectId}`);
+
+    } catch (error) {
+      console.error('Survey import error:', error);
+    }
+  }, [chatSessionId, sendMessage, userId, selectedModel, preferences, router]);
 
   const handleSendMessage = useCallback(
     async (message: string, files?: any[], refs?: ReferenceItem[]) => {

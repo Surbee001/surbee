@@ -61,7 +61,7 @@ const UserMenu = forwardRef<HTMLDivElement, UserMenuProps>(
 
           {/* Back to dashboard */}
           <button
-            onClick={() => { try { window.location.href = '/dashboard'; } catch {} onClose?.(); }}
+            onClick={() => { try { window.location.href = '/home'; } catch {} onClose?.(); }}
             className="w-full grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-1 px-2 rounded-md hover:bg-white/5 text-left text-sm"
           >
             <span>Back to dashboard</span>

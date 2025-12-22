@@ -1,13 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [email, setEmail] = useState('')
+  const [showEmailInput, setShowEmailInput] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
+  const [isHovered, setIsHovered] = useState<string | null>(null)
 
   const handleOAuthLogin = async (provider: 'google' | 'github') => {
     try {
@@ -31,135 +36,338 @@ export default function LoginPage() {
     }
   }
 
-  const handleEmailContinue = async (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    // For now, redirect to Google OAuth since email flow isn't fully implemented
-    await handleOAuthLogin('google')
+
+    if (!email.trim() || !email.includes('@')) {
+      setError('Please enter a valid email address')
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError('')
+
+      const { error: signInError } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
+        },
+      })
+
+      if (signInError) {
+        setError(signInError.message)
+      } else {
+        setEmailSent(true)
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4"
       style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
         backgroundColor: '#F7F7F4',
-        fontFamily:
-          '"Cursor Gothic", -apple-system, "system-ui", "Segoe UI (Custom)", Roboto, "Helvetica Neue", "Open Sans (Custom)", system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
-      <div className="w-full max-w-md rounded-2xl bg-black/95 text-slate-100 px-6 py-8 shadow-2xl border border-slate-800">
-        <header className="mb-8">
-          <div className="mb-6">
-            <img
-              className="h-8 w-auto"
-              alt="Surbee"
-              src="https://raw.githubusercontent.com/Surbee001/webimg/d31a230c841bc324c709964f3d9ab01daec67f8d/Surbee%20Logo%20Final.svg"
-            />
-          </div>
-          <h1 className="text-2xl font-semibold text-white">
-            Welcome to Surbee
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+        style={{
+          width: '100%',
+          maxWidth: '400px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '32px',
+        }}
+      >
+        {/* Title */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
+          style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+        >
+          <h1
+            style={{
+              fontFamily: "'Opening Hours Sans', 'Inter', sans-serif",
+              fontSize: '26px',
+              lineHeight: '1.2em',
+              letterSpacing: '-0.05em',
+              color: '#11100C',
+              margin: 0,
+              fontWeight: 400,
+            }}
+          >
+            {emailSent ? 'Check your email' : 'Welcome to Surbee'}
           </h1>
-          <p className="mt-1 text-sm text-slate-400">
-            The new way to build software
+          <p
+            style={{
+              fontSize: '15px',
+              lineHeight: '1.5',
+              color: '#646464',
+              margin: 0,
+            }}
+          >
+            {emailSent
+              ? `We sent a magic link to ${email}. Click the link to sign in.`
+              : 'Sign in to create and analyze surveys with AI.'
+            }
           </p>
-        </header>
+        </motion.div>
 
-        <div className="flex flex-col gap-3 mb-6">
-          <button
-            onClick={() => handleOAuthLogin('google')}
-            disabled={loading}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#151515] text-slate-50 border border-[#262626] py-2.5 px-4 text-sm font-medium hover:bg-[#1d1d1d] transition-colors"
-          >
-            <svg
-              className="w-4 h-4"
-              height="15"
-              width="15"
-              fill="none"
-              viewBox="0 0 16 16"
-              xmlns="http://www.w3.org/2000/svg"
+        <AnimatePresence mode="wait">
+          {emailSent ? (
+            <motion.div
+              key="email-sent"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
             >
-              <g>
-                <path
-                  d="M15.83 8.18C15.83 7.65333 15.7833 7.15333 15.7033 6.66667H8.17V9.67333H12.4833C12.29 10.66 11.7233 11.4933 10.8833 12.06V14.06H13.4567C14.9633 12.6667 15.83 10.6133 15.83 8.18Z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M8.17 16C10.33 16 12.1367 15.28 13.4567 14.06L10.8833 12.06C10.1633 12.54 9.25 12.8333 8.17 12.8333C6.08334 12.8333 4.31667 11.4267 3.68334 9.52667H1.03V11.5867C2.34334 14.2 5.04334 16 8.17 16Z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M3.68334 9.52667C3.51667 9.04667 3.43 8.53333 3.43 8C3.43 7.46667 3.52334 6.95334 3.68334 6.47334V4.41334H1.03C0.483335 5.49334 0.170002 6.70667 0.170002 8C0.170002 9.29333 0.483335 10.5067 1.03 11.5867L3.68334 9.52667Z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M8.17 3.16667C9.35 3.16667 10.4033 3.57334 11.2367 4.36667L13.5167 2.08667C12.1367 0.793334 10.33 0 8.17 0C5.04334 0 2.34334 1.8 1.03 4.41334L3.68334 6.47334C4.31667 4.57334 6.08334 3.16667 8.17 3.16667Z"
-                  fill="#EA4335"
-                />
-              </g>
-            </svg>
-            <span>{loading ? 'Signing in…' : 'Continue with Google'}</span>
-          </button>
-
-          <button
-            onClick={() => handleOAuthLogin('github')}
-            disabled={loading}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#151515] text-slate-50 border border-[#262626] py-2.5 px-4 text-sm font-medium hover:bg-[#1d1d1d] transition-colors"
-          >
-            <svg
-              className="w-4 h-4"
-              height="16"
-              width="16"
-              fill="none"
-              viewBox="0 0 15 15"
-              xmlns="http://www.w3.org/2000/svg"
+              <button
+                onClick={() => {
+                  setEmailSent(false)
+                  setEmail('')
+                  setShowEmailInput(false)
+                }}
+                style={{
+                  padding: '12px 20px',
+                  backgroundColor: 'transparent',
+                  color: '#11100C',
+                  border: '1px solid rgba(100, 100, 100, 0.2)',
+                  borderRadius: '50px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#F2C4FF'
+                  e.currentTarget.style.borderColor = '#F2C4FF'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                  e.currentTarget.style.borderColor = 'rgba(100, 100, 100, 0.2)'
+                }}
+              >
+                Use a different email
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="login-options"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.5, delay: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
             >
-              <path
-                clipRule="evenodd"
-                d="M7.49933 0.25C3.49635 0.25 0.25 3.49593 0.25 7.50024C0.25 10.703 2.32715 13.4206 5.2081 14.3797C5.57084 14.446 5.70302 14.2222 5.70302 14.0299C5.70302 13.8576 5.69679 13.4019 5.69323 12.797C3.67661 13.235 3.25112 11.825 3.25112 11.825C2.92132 10.9874 2.44599 10.7644 2.44599 10.7644C1.78773 10.3149 2.49584 10.3238 2.49584 10.3238C3.22353 10.375 3.60629 11.0711 3.60629 11.0711C4.25298 12.1788 5.30335 11.8588 5.71638 11.6732C5.78225 11.205 5.96962 10.8854 6.17658 10.7043C4.56675 10.5209 2.87415 9.89918 2.87415 7.12104C2.87415 6.32925 3.15677 5.68257 3.62053 5.17563C3.54576 4.99226 3.29697 4.25521 3.69174 3.25691C3.69174 3.25691 4.30015 3.06196 5.68522 3.99973C6.26337 3.83906 6.8838 3.75895 7.50022 3.75583C8.1162 3.75895 8.73619 3.83906 9.31523 3.99973C10.6994 3.06196 11.3069 3.25691 11.3069 3.25691C11.7026 4.25521 11.4538 4.99226 11.3795 5.17563C11.8441 5.68257 12.1245 6.32925 12.1245 7.12104C12.1245 9.9063 10.4292 10.5192 8.81452 10.6985C9.07444 10.9224 9.30633 11.3648 9.30633 12.0413C9.30633 13.0102 9.29742 13.7922 9.29742 14.0299C9.29742 14.2239 9.42828 14.4496 9.79591 14.3788C12.6746 13.4179 14.75 10.7025 14.75 7.50024C14.75 3.49593 11.5036 0.25 7.49933 0.25Z"
-                fill="currentColor"
-                fillRule="evenodd"
-              />
-            </svg>
-            <span>{loading ? 'Signing in…' : 'Continue with GitHub'}</span>
-          </button>
+              {/* Google Sign In */}
+              <button
+                onClick={() => handleOAuthLogin('google')}
+                disabled={loading}
+                onMouseEnter={() => setIsHovered('google')}
+                onMouseLeave={() => setIsHovered(null)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  padding: '12px 20px',
+                  backgroundColor: isHovered === 'google' ? '#F2C4FF' : '#000000',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '50px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.7 : 1,
+                  transition: 'background-color 0.25s ease',
+                  width: '100%',
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                  <path d="M15.83 8.18C15.83 7.65333 15.7833 7.15333 15.7033 6.66667H8.17V9.67333H12.4833C12.29 10.66 11.7233 11.4933 10.8833 12.06V14.06H13.4567C14.9633 12.6667 15.83 10.6133 15.83 8.18Z" fill="#4285F4"/>
+                  <path d="M8.17 16C10.33 16 12.1367 15.28 13.4567 14.06L10.8833 12.06C10.1633 12.54 9.25 12.8333 8.17 12.8333C6.08334 12.8333 4.31667 11.4267 3.68334 9.52667H1.03V11.5867C2.34334 14.2 5.04334 16 8.17 16Z" fill="#34A853"/>
+                  <path d="M3.68334 9.52667C3.51667 9.04667 3.43 8.53333 3.43 8C3.43 7.46667 3.52334 6.95334 3.68334 6.47334V4.41334H1.03C0.483335 5.49334 0.170002 6.70667 0.170002 8C0.170002 9.29333 0.483335 10.5067 1.03 11.5867L3.68334 9.52667Z" fill="#FBBC05"/>
+                  <path d="M8.17 3.16667C9.35 3.16667 10.4033 3.57334 11.2367 4.36667L13.5167 2.08667C12.1367 0.793334 10.33 0 8.17 0C5.04334 0 2.34334 1.8 1.03 4.41334L3.68334 6.47334C4.31667 4.57334 6.08334 3.16667 8.17 3.16667Z" fill="#EA4335"/>
+                </svg>
+                <span>{loading ? 'Signing in...' : 'Continue with Google'}</span>
+              </button>
 
-          <button
-            disabled
-            className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#151515] text-slate-500 border border-[#262626] py-2.5 px-4 text-sm font-medium opacity-60 cursor-not-allowed"
-          >
-            <span>Continue with Apple</span>
-          </button>
-        </div>
+              {/* Divider */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  margin: '8px 0',
+                }}
+              >
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(100, 100, 100, 0.2)' }} />
+                <span style={{ fontSize: '12px', color: '#646464', textTransform: 'uppercase', letterSpacing: '0.05em' }}>or</span>
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(100, 100, 100, 0.2)' }} />
+              </div>
 
-        <form onSubmit={handleEmailContinue} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-200">
-              Email
-            </label>
-            <input
-              className="w-full rounded-md bg-black border border-[#262626] px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              placeholder="Your email address"
-              autoCapitalize="off"
-              autoFocus
-            />
-          </div>
+              {/* Email Input */}
+              {showEmailInput ? (
+                <motion.form
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+                  onSubmit={handleEmailLogin}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+                >
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      setError('')
+                    }}
+                    placeholder="Enter your email"
+                    disabled={loading}
+                    required
+                    autoFocus
+                    style={{
+                      padding: '12px 16px',
+                      backgroundColor: '#FFFFFF',
+                      border: error ? '1px solid #ef4444' : '1px solid rgba(100, 100, 100, 0.2)',
+                      borderRadius: '50px',
+                      fontSize: '14px',
+                      color: '#11100C',
+                      outline: 'none',
+                      transition: 'border-color 0.2s ease',
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowEmailInput(false)
+                        setEmail('')
+                        setError('')
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '12px 20px',
+                        backgroundColor: 'transparent',
+                        color: '#646464',
+                        border: '1px solid rgba(100, 100, 100, 0.2)',
+                        borderRadius: '50px',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      onMouseEnter={() => setIsHovered('email-submit')}
+                      onMouseLeave={() => setIsHovered(null)}
+                      style={{
+                        flex: 1,
+                        padding: '12px 20px',
+                        backgroundColor: isHovered === 'email-submit' ? '#F2C4FF' : '#000000',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '50px',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.7 : 1,
+                        transition: 'background-color 0.25s ease',
+                      }}
+                    >
+                      {loading ? '...' : 'Continue'}
+                    </button>
+                  </div>
+                </motion.form>
+              ) : (
+                <motion.button
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+                  onClick={() => setShowEmailInput(true)}
+                  onMouseEnter={() => setIsHovered('email')}
+                  onMouseLeave={() => setIsHovered(null)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    padding: '12px 20px',
+                    backgroundColor: isHovered === 'email' ? '#F2C4FF' : 'transparent',
+                    color: isHovered === 'email' ? '#FFFFFF' : '#11100C',
+                    border: isHovered === 'email' ? '1px solid #F2C4FF' : '1px solid rgba(100, 100, 100, 0.2)',
+                    borderRadius: '50px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    transition: 'all 0.25s ease',
+                    width: '100%',
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                    <path d="M22 6L12 13L2 6" />
+                  </svg>
+                  <span>Continue with Email</span>
+                </motion.button>
+              )}
 
-          <button
-            className="w-full inline-flex items-center justify-center rounded-md bg-slate-50 text-slate-900 text-sm font-medium py-2.5 px-4 transition-colors hover:bg-white"
-            type="submit"
-            disabled={loading}
-          >
-            <span>{loading ? 'Continuing…' : 'Continue'}</span>
-          </button>
-        </form>
+              {/* Error message */}
+              {error && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    fontSize: '13px',
+                    color: '#ef4444',
+                    margin: 0,
+                    textAlign: 'center',
+                  }}
+                >
+                  {error}
+                </motion.p>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <p className="text-xs text-slate-500 text-center mt-6">
-          Terms of Service and Privacy Policy
-        </p>
-      </div>
+        {/* Terms */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.4 }}
+          style={{
+            fontSize: '12px',
+            color: '#646464',
+            textAlign: 'center',
+            margin: 0,
+          }}
+        >
+          By continuing, you agree to our{' '}
+          <a href="/terms" style={{ color: '#11100C', textDecoration: 'underline' }}>Terms of Service</a>
+          {' '}and{' '}
+          <a href="/privacy" style={{ color: '#11100C', textDecoration: 'underline' }}>Privacy Policy</a>
+        </motion.p>
+      </motion.div>
     </div>
   )
 }

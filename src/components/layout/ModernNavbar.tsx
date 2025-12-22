@@ -133,19 +133,19 @@ export default function ModernNavbar() {
               label: "All Projects",
               description: "View and manage all your surveys",
               icon: <LayoutGrid className="w-4 h-4" />,
-              href: "/dashboard/projects"
+              href: "/projects"
             },
             {
               label: "Create New",
               description: "Start building a new survey",
               icon: <Plus className="w-4 h-4" />,
-              href: "/dashboard/projects/new"
+              href: "/projects/new"
             },
             {
               label: "Templates",
               description: "Browse pre-built survey templates",
               icon: <BookOpen className="w-4 h-4" />,
-              href: "/dashboard/templates",
+              href: "/home/templates",
               badge: "New"
             }
           ]
@@ -176,19 +176,19 @@ export default function ModernNavbar() {
               label: "Marketplace",
               description: "Discover community templates",
               icon: <Users className="w-4 h-4" />,
-              href: "/dashboard/marketplace"
+              href: "/marketplace"
             },
             {
               label: "Share Your Work",
               description: "Publish your surveys to the community",
               icon: <Share2 className="w-4 h-4" />,
-              href: "/dashboard/share"
+              href: "/home/share"
             },
             {
               label: "Analytics",
               description: "Community insights and trends",
               icon: <BarChart3 className="w-4 h-4" />,
-              href: "/dashboard/community-analytics"
+              href: "/home/community-analytics"
             }
           ]
         }
@@ -248,8 +248,8 @@ export default function ModernNavbar() {
           {/* Main Navigation */}
           <div className="modern-navbar-nav">
             <button
-              onClick={() => handleNavigation('/dashboard')}
-              className={`modern-navbar-link ${pathname === '/dashboard' ? 'active' : ''}`}
+              onClick={() => handleNavigation('/home')}
+              className={`modern-navbar-link ${pathname === '/home' ? 'active' : ''}`}
             >
               Home
             </button>
@@ -390,7 +390,7 @@ export default function ModernNavbar() {
                       <button
                         onClick={() => {
                           setIsUserMenuOpen(false);
-                          handleNavigation('/dashboard/settings');
+                          handleNavigation('/home/settings');
                         }}
                         className="modern-navbar-user-setup"
                       >
@@ -403,7 +403,7 @@ export default function ModernNavbar() {
                       <button
                         onClick={() => {
                           setIsUserMenuOpen(false);
-                          handleNavigation('/dashboard/settings');
+                          handleNavigation('/home/settings');
                         }}
                         className="modern-navbar-user-item"
                       >

@@ -59,12 +59,12 @@ export function TemplateDetailView({
       <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-12 px-6 pb-20 pt-10 md:px-8">
         <header className="flex flex-col gap-6">
           <nav className="flex flex-wrap items-center gap-2 text-sm text-white/60">
-            <Link href="/dashboard/marketplace" className="flex items-center gap-2 hover:text-white">
+            <Link href="/marketplace" className="flex items-center gap-2 hover:text-white">
               <ArrowLeft className="h-4 w-4" />
               Community
             </Link>
             <span className="text-white/30">/</span>
-            <Link href="/dashboard/marketplace/templates" className="hover:text-white">
+            <Link href="/marketplace/templates" className="hover:text-white">
               Templates
             </Link>
             <span className="text-white/30">/</span>
@@ -215,7 +215,7 @@ export function TemplateDetailView({
             <h2 className="text-2xl font-semibold text-white">Related templates</h2>
             <button
               type="button"
-              onClick={() => router.push('/dashboard/marketplace/templates')}
+              onClick={() => router.push('/marketplace/templates')}
               className="text-sm text-white/60 transition hover:text-white"
             >
               Browse all templates

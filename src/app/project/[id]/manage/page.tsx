@@ -9,6 +9,7 @@ import { PreviewTab } from '@/components/project-manage/PreviewTab';
 import { InsightsTabRedesign } from '@/components/project-manage/InsightsTabRedesign';
 import { ShareTabRedesign } from '@/components/project-manage/ShareTabRedesign';
 import { CipherTab } from '@/components/project-manage/CipherTab';
+import { EvaluationTab } from '@/components/project-manage/EvaluationTab';
 import AppLayout from '@/components/layout/AppLayout';
 import { useTheme } from '@/hooks/useTheme';
 import { motion } from 'framer-motion';
@@ -545,7 +546,7 @@ body {
   );
 }
 
-export type TabType = 'preview' | 'insights' | 'cipher' | 'share';
+export type TabType = 'preview' | 'insights' | 'evaluation' | 'cipher' | 'share';
 
 export default function ProjectManagePage() {
   const params = useParams();
@@ -613,7 +614,7 @@ export default function ProjectManagePage() {
     setIsExiting(true);
     // Wait for animation to complete before navigating
     setTimeout(() => {
-      router.push('/dashboard/projects');
+      router.push('/projects');
     }, 300); // Match transition duration
   };
 
@@ -729,6 +730,37 @@ export default function ProjectManagePage() {
                     </button>
 
                     <button
+                      onClick={() => setActiveTab('evaluation')}
+                      style={{
+                        padding: '0',
+                        fontSize: '14px',
+                        fontWeight: activeTab === 'evaluation' ? '500' : '400',
+                        color: activeTab === 'evaluation'
+                          ? 'var(--surbee-fg-primary)'
+                          : 'var(--surbee-fg-tertiary)',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'color 200ms ease, opacity 200ms ease',
+                        opacity: activeTab === 'evaluation' ? 1 : 0.6,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (activeTab !== 'evaluation') {
+                          e.currentTarget.style.opacity = '0.9';
+                          e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (activeTab !== 'evaluation') {
+                          e.currentTarget.style.opacity = '0.6';
+                          e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
+                        }
+                      }}
+                    >
+                      Evaluation
+                    </button>
+
+                    <button
                       onClick={() => setActiveTab('cipher')}
                       style={{
                         padding: '0',
@@ -821,6 +853,12 @@ export default function ProjectManagePage() {
                     </div>
                   </AnalysisDotsManager>
                 </div>
+              ) : activeTab === 'evaluation' ? (
+                <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
+                  <div className="overflow-y-auto" style={{ height: '100%' }}>
+                    <EvaluationTab projectId={projectId} />
+                  </div>
+                </div>
               ) : activeTab === 'cipher' ? (
                 <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
                   <div className="overflow-y-auto" style={{ padding: '24px', height: '100%' }}>
@@ -834,8 +872,8 @@ export default function ProjectManagePage() {
                 </div>
               )}
 
-            {/* Ask Surbee Component - Inside container at bottom - Hidden for Preview and Cipher Tabs */}
-            {activeTab !== 'preview' && activeTab !== 'cipher' && (
+            {/* Ask Surbee Component - Inside container at bottom - Hidden for Preview, Evaluation, and Cipher Tabs */}
+            {activeTab !== 'preview' && activeTab !== 'evaluation' && activeTab !== 'cipher' && (
               <div className="ask-surbee-container">
                 <AskSurbeeComponent activeTab={activeTab} projectId={projectId} />
               </div>

@@ -728,7 +728,7 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
 
         .bento-card {
           background: var(--surbee-bg-secondary, #1E1E1F);
-          border-radius: 16px;
+          border-radius: 8px;
           padding: 24px;
           position: relative;
           overflow: hidden;
@@ -1519,7 +1519,7 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           gap: 24px;
           padding: 24px 32px;
           background: var(--surbee-bg-secondary, #1E1E1F);
-          border-radius: 16px;
+          border-radius: 8px;
           margin-bottom: 24px;
         }
 
@@ -1556,7 +1556,7 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
 
         .flow-table {
           background: var(--surbee-bg-secondary, #1E1E1F);
-          border-radius: 16px;
+          border-radius: 8px;
           overflow: hidden;
         }
 
@@ -1711,7 +1711,7 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
 
         .responses-list {
           background: var(--surbee-bg-secondary, #1E1E1F);
-          border-radius: 16px;
+          border-radius: 8px;
           overflow: hidden;
         }
 
@@ -2060,7 +2060,7 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           align-items: center;
           padding: 24px;
           background: var(--surbee-bg-secondary, #1E1E1F);
-          border-radius: 16px;
+          border-radius: 8px;
           transition: transform 0.2s ease;
         }
 

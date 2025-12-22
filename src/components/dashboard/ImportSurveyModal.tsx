@@ -6,7 +6,7 @@ import { X, Loader2, Link2 } from "lucide-react";
 interface ImportSurveyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport?: (url: string) => void;
+  onImport?: (url: string) => void | Promise<void>;
 }
 
 export function ImportSurveyModal({ isOpen, onClose, onImport }: ImportSurveyModalProps) {
@@ -14,10 +14,12 @@ export function ImportSurveyModal({ isOpen, onClose, onImport }: ImportSurveyMod
   const [isAnimating, setIsAnimating] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setShouldRender(true);
+      setError(null);
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setIsAnimating(true);
@@ -28,6 +30,8 @@ export function ImportSurveyModal({ isOpen, onClose, onImport }: ImportSurveyMod
       const timer = setTimeout(() => {
         setShouldRender(false);
         setUrl("");
+        setError(null);
+        setIsImporting(false);
       }, 150);
       return () => clearTimeout(timer);
     }
@@ -35,13 +39,18 @@ export function ImportSurveyModal({ isOpen, onClose, onImport }: ImportSurveyMod
 
   const handleGenerate = async () => {
     if (!url.trim()) return;
-    
+
     setIsImporting(true);
-    
+    setError(null);
+
     try {
-      onImport?.(url.trim());
-      onClose();
-    } finally {
+      // Call the import handler (it's now async and handles redirect)
+      await onImport?.(url.trim());
+      // Don't close modal immediately - let the redirect happen
+      // onClose will be called automatically when component unmounts
+    } catch (err: any) {
+      console.error('Import error:', err);
+      setError(err.message || 'Failed to import survey. Please try again.');
       setIsImporting(false);
     }
   };
@@ -62,7 +71,7 @@ export function ImportSurveyModal({ isOpen, onClose, onImport }: ImportSurveyMod
         opacity: isAnimating ? 1 : 0,
         transitionDuration: isAnimating ? '300ms' : '150ms',
       }}
-      onClick={onClose}
+      onClick={isImporting ? undefined : onClose}
     >
       <div
         className="relative flex flex-col w-full max-w-[500px] overflow-hidden transition-all"
@@ -80,9 +89,10 @@ export function ImportSurveyModal({ isOpen, onClose, onImport }: ImportSurveyMod
       >
         {/* Close button */}
         <button
-          className="absolute top-6 right-6 flex items-center justify-center w-9 h-9 rounded-full transition-colors"
+          className="absolute top-6 right-6 flex items-center justify-center w-9 h-9 rounded-full transition-colors disabled:opacity-50"
           style={{ backgroundColor: 'rgba(232, 232, 232, 0.06)' }}
           onClick={onClose}
+          disabled={isImporting}
         >
           <X size={20} style={{ color: 'var(--surbee-fg-primary)' }} />
         </button>
@@ -126,6 +136,11 @@ export function ImportSurveyModal({ isOpen, onClose, onImport }: ImportSurveyMod
           />
         </div>
 
+        {/* Error message */}
+        {error && (
+          <p className="text-sm text-red-400 mb-3 text-center">{error}</p>
+        )}
+
         {/* Generate Button */}
         <button
           onClick={handleGenerate}
@@ -139,10 +154,10 @@ export function ImportSurveyModal({ isOpen, onClose, onImport }: ImportSurveyMod
           {isImporting ? (
             <span className="flex items-center justify-center gap-2">
               <Loader2 size={16} className="animate-spin" />
-              Generating...
+              Importing survey...
             </span>
           ) : (
-            'Generate'
+            'Import'
           )}
         </button>
       </div>

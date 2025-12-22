@@ -3494,7 +3494,7 @@ export default function ProjectPage() {
     setIsUserMenuOpen(false);
     switch (action) {
       case 'settings':
-        handleNavigation('/dashboard/settings');
+        handleNavigation('/home/settings');
         break;
       case 'logout':
         // Handle logout
@@ -4774,7 +4774,7 @@ export default function ProjectPage() {
   //         <h1 className="text-2xl font-semibold mb-2 text-white">Project not found</h1>
   //         <p className="text-gray-400">The project you're looking for doesn't exist or you don't have access to it.</p>
   //         <button 
-  //           onClick={() => window.location.href = '/dashboard/projects'}
+  //           onClick={() => window.location.href = '/projects'}
   //           className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
   //         >
   //           Back to Projects
@@ -4936,7 +4936,7 @@ export default function ProjectPage() {
 
                 {/* Back to Dashboard */}
                 <button
-                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard'); }}
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home'); }}
                   className="user-menu-item"
                 >
                   <div className="flex items-center gap-2">
@@ -5521,7 +5521,7 @@ export default function ProjectPage() {
                   e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
                 }
               }}
-              onClick={() => router.push('/dashboard/pricing')}
+              onClick={() => router.push('/home/pricing')}
             >
               Upgrade
             </button>

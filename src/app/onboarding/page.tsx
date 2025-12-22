@@ -129,7 +129,7 @@ function OnboardingPage() {
         });
         
         // Redirect to dashboard
-        router.push('/dashboard');
+        router.push('/home');
       } catch (error) {
         console.error('Error completing onboarding:', error);
       } finally {

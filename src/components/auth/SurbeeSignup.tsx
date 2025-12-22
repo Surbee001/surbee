@@ -11,7 +11,7 @@ import Link from 'next/link';
 export default function SurbeeSignup() {
   const router = useRouter();
   const params = useSearchParams();
-  const redirectTo = params.get('redirect') || '/dashboard';
+  const redirectTo = params.get('redirect') || '/home';
   const { signUp, signInWithOAuth } = useAuth();
   
   const [email, setEmail] = useState('');

@@ -189,26 +189,65 @@ export default function DashboardSidebar() {
   };
 
   const handleProfileAction = (action: string) => {
-    setIsProfileOpen(false);
+    setIsUserMenuOpen(false);
     switch (action) {
       case 'settings':
-        handleNavigation('/dashboard/settings');
+        handleNavigation('/home/settings');
         break;
       case 'upgrade':
-        handleNavigation('/dashboard/upgrade-plan');
+        handleNavigation('/home/upgrade-plan');
         break;
       case 'learn':
         console.log('Open learn more');
         break;
       case 'logout':
         signOut().then(() => {
-          router.push('/');
+          router.push('/login');
         });
         break;
     }
   };
 
   const logoSrc = "/logo.svg";
+
+  // Subscription state
+  const [subscription, setSubscription] = useState<{ plan: string; status: string } | null>(null);
+
+  // Fetch subscription on mount
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      if (!user?.id) return;
+
+      try {
+        // Get session for auth token
+        const { createClientComponentClient } = await import('@supabase/auth-helpers-nextjs');
+        const supabase = createClientComponentClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.access_token) {
+          const res = await fetch('/api/user/subscription', {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setSubscription(data.subscription);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch subscription", e);
+      }
+    };
+
+    fetchSubscription();
+  }, [user?.id]);
+
+  // Get plan display name and class
+  const planDisplayName = subscription?.plan
+    ? subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)
+    : 'Free';
+  const isPaidPlan = subscription?.plan === 'pro' || subscription?.plan === 'max';
 
   return (
     <div className="dashboard-sidebar">
@@ -232,29 +271,29 @@ export default function DashboardSidebar() {
         </div>
 
         <nav className="sidebar-nav">
-          <div className="user-plan-text pro">Max</div>
+          <div className={`user-plan-text ${isPaidPlan ? 'pro' : ''}`}>{planDisplayName}</div>
           <SidebarItem
             label="Home"
-            isActive={pathname === '/dashboard'}
-            onClick={() => handleNavigation('/dashboard')}
+            isActive={pathname === '/home' || pathname.startsWith('/home?')}
+            onClick={() => router.push('/home')}
           />
           <SidebarItem
             label="Projects"
-            isActive={pathname.startsWith('/dashboard/projects')}
-            onClick={() => handleNavigation('/dashboard/projects')}
+            isActive={pathname.startsWith('/projects')}
+            onClick={() => handleNavigation('/projects')}
             icon="arrow"
           />
           {false && (
             <SidebarItem
               label="Knowledge Base"
-              isActive={pathname.startsWith('/dashboard/kb')}
-              onClick={() => handleNavigation('/dashboard/kb')}
+              isActive={pathname.startsWith('/home/kb')}
+              onClick={() => handleNavigation('/home/kb')}
             />
           )}
           <SidebarItem
             label="Community"
-            isActive={pathname.startsWith('/dashboard/marketplace')}
-            onClick={() => handleNavigation('/dashboard/marketplace')}
+            isActive={pathname.startsWith('/marketplace')}
+            onClick={() => handleNavigation('/marketplace')}
             icon="arrow"
           />
           
@@ -278,8 +317,8 @@ export default function DashboardSidebar() {
                     <div 
                       className="text-xs text-zinc-400 hover:text-zinc-100 cursor-pointer py-1.5 px-2 rounded-md hover:bg-white/5 transition-colors truncate"
                       onClick={() => {
-                        // Clear any chatId from URL and go to fresh dashboard
-                        router.push('/dashboard');
+                        // Clear any chatId from URL and go to fresh home
+                        router.push('/home');
                       }}
                     >
                       + New Chat
@@ -309,11 +348,11 @@ export default function DashboardSidebar() {
                           />
                         ) : (
                           <>
-                            <div 
+                            <div
                               className="flex-1 flex items-center gap-1.5 truncate"
                               onClick={() => {
                                 if (chat.type === 'dashboard' && chat.chatId) {
-                                  handleNavigation(`/dashboard?chatId=${chat.chatId}`);
+                                  handleNavigation(`/home?chatId=${chat.chatId}`);
                                 } else if (chat.projectId) {
                                   handleNavigation(`/project/${chat.projectId}`);
                                 }
@@ -448,7 +487,7 @@ export default function DashboardSidebar() {
 
                 {/* Set up profile button */}
                 <button
-                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard/settings'); }}
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/settings'); }}
                   className="user-menu-setup-profile"
                 >
                   Set up profile
@@ -456,7 +495,7 @@ export default function DashboardSidebar() {
 
                 {/* Settings */}
                 <button
-                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard/settings'); }}
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/settings'); }}
                   className="user-menu-item"
                 >
                   <div className="flex items-center gap-2">
@@ -497,7 +536,7 @@ export default function DashboardSidebar() {
 
                 {/* Upgrade Plan */}
                 <button
-                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard/pricing'); }}
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/pricing'); }}
                   className="user-menu-item"
                 >
                   <span>Upgrade plan</span>

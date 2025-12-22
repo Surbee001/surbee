@@ -199,7 +199,7 @@ export default function ConsoleSidebar() {
 
                 {/* Back to Main Dashboard */}
                 <button
-                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/dashboard'); }}
+                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home'); }}
                   className="user-menu-item"
                 >
                   <div className="flex items-center justify-between w-full">

@@ -1,21 +1,35 @@
-import { NextResponse } from 'next/server';
-import { isAuthenticated } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
 import { ProjectsService } from '@/lib/services/projects';
+import { createClient } from '@supabase/supabase-js';
 
-export async function GET() {
-  // Basic auth check - you might want to adjust this based on how your app handles sessions
-  // Using the existing isAuthenticated utility
-  const userOrResponse = await isAuthenticated();
-
-  // If it returned a response (error), return it
-  if (userOrResponse instanceof NextResponse) {
-    return userOrResponse;
+// Helper to get user from auth header (Bearer token)
+async function getUserFromRequest(req: NextRequest) {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return null;
   }
-  
-  const user = userOrResponse as any;
+
+  const token = authHeader.split(' ')[1];
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+
+  if (error || !user) {
+    return null;
+  }
+
+  return user;
+}
+
+export async function GET(req: NextRequest) {
+  const user = await getUserFromRequest(req);
 
   if (!user || !user.id) {
-     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { data, error } = await ProjectsService.getUserProjects(user.id);

@@ -66,7 +66,7 @@ export function EditorNavbar({ projectId, projectName = "Untitled Survey", onPub
           <button
             type="button"
             title="Back to Projects"
-            onClick={() => router.push('/dashboard/projects')}
+            onClick={() => router.push('/projects')}
             style={{
               WebkitFontSmoothing: "antialiased",
               fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',

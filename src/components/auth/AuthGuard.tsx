@@ -35,7 +35,7 @@ export function AuthGuard({ children, redirectTo = '/login' }: AuthGuardProps) {
   return <>{children}</>;
 }
 
-export function GuestGuard({ children, redirectTo = '/dashboard' }: AuthGuardProps) {
+export function GuestGuard({ children, redirectTo = '/home' }: AuthGuardProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
 

@@ -57,7 +57,7 @@ export function ProjectBreadcrumb({
     >
       {/* Project Link */}
       <button
-        onClick={() => router.push('/dashboard/projects')}
+        onClick={() => router.push('/projects')}
         style={{
           background: 'transparent',
           border: 'none',

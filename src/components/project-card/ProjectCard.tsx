@@ -12,6 +12,21 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 
+// Simple draft placeholder - just text
+const DraftPlaceholder: React.FC = () => (
+  <div
+    className="w-full h-full flex items-center justify-center"
+    style={{ backgroundColor: '#0a0a0a' }}
+  >
+    <span
+      className="text-sm font-medium"
+      style={{ color: 'rgba(255,255,255,0.25)' }}
+    >
+      Draft
+    </span>
+  </div>
+);
+
 interface ProjectCardProps {
   id: string;
   title: string;
@@ -168,6 +183,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                   className="w-full h-full object-cover"
                 />
               )
+            ) : status === 'draft' ? (
+              <DraftPlaceholder />
             ) : (
               <img
                 src="https://endlesstools.io/embeds/4.png"

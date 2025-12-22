@@ -12,7 +12,7 @@ import Link from 'next/link';
 export default function SurbeeLogin() {
   const router = useRouter();
   const params = useSearchParams();
-  const redirectTo = params.get('redirect') || '/dashboard';
+  const redirectTo = params.get('redirect') || '/home';
   const { signIn, signInWithOAuth, hasCompletedOnboarding } = useAuth();
   
   const [email, setEmail] = useState('');
