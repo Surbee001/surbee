@@ -68,7 +68,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
   const handleCardClick = () => {
     if (isRenaming) return;
-    router.push(`/dashboard/projects/${id}/manage`);
+    router.push(`/projects/${id}/manage`);
   };
 
   const handleEditClick = (e: React.MouseEvent) => {
@@ -209,7 +209,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         {/* Open in new tab */}
         <ContextMenuItem
           className="flex items-center gap-2 px-2 py-1.5 text-sm text-zinc-300 rounded-md cursor-pointer hover:bg-white/5 focus:bg-white/5"
-          onClick={() => window.open(`/dashboard/projects/${id}/manage`, '_blank')}
+          onClick={() => window.open(`/projects/${id}/manage`, '_blank')}
         >
           <ExternalLink className="h-4 w-4 text-zinc-500" />
           <span>Open in new tab</span>
@@ -255,7 +255,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           className="flex items-center gap-2 px-2 py-1.5 text-sm text-zinc-300 rounded-md cursor-pointer hover:bg-white/5 focus:bg-white/5"
           onClick={() => {
             onSettings?.(id);
-            router.push(`/dashboard/projects/${id}/manage?tab=settings`);
+            router.push(`/projects/${id}/manage?tab=settings`);
           }}
         >
           <Settings className="h-4 w-4 text-zinc-500" />

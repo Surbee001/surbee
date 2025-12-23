@@ -121,7 +121,7 @@ export function AnalyticsConsentModal({
                   We only track feature usage and interactions - never your survey content or personal data.
                   You can opt-out at any time in{' '}
                   <a
-                    href="/dashboard/settings/privacy"
+                    href="/home/settings/privacy"
                     className="font-semibold hover:opacity-80 transition-opacity"
                     style={{ color: 'var(--surbee-fg-primary)' }}
                   >

@@ -1,26 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  Shield,
-  AlertTriangle,
-  Eye,
-  Zap,
-  Activity,
-  TrendingUp,
-  TrendingDown,
-  CheckCircle,
-  Clock,
-  Bot,
-  ChevronDown,
-  Check,
-  Loader2,
-  BarChart2,
-  Lock,
-  Unlock,
-} from 'lucide-react';
-import { formatDistanceToNow, subDays } from 'date-fns';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import { formatDistanceToNow, subDays, format } from 'date-fns';
+import { AreaChart, Area, ResponsiveContainer, BarChart, Bar, XAxis, Tooltip } from 'recharts';
 
 interface CipherTabProps {
   projectId: string;
@@ -33,31 +17,16 @@ interface Alert {
   message: string;
   timestamp: Date;
   responseId?: string;
-  resolved: boolean;
 }
-
-const VIEWS = ['Overview', 'Alerts', 'Patterns'] as const;
-type ViewType = typeof VIEWS[number];
 
 export const CipherTab: React.FC<CipherTabProps> = ({ projectId }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [responses, setResponses] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [activeView, setActiveView] = useState<ViewType>('Overview');
-  const [isViewOpen, setIsViewOpen] = useState(false);
-  const viewDropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (viewDropdownRef.current && !viewDropdownRef.current.contains(event.target as Node)) {
-        setIsViewOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const [activeView, setActiveView] = useState<'overview' | 'alerts' | 'patterns'>('overview');
+  const [timePeriod, setTimePeriod] = useState<'week' | 'month' | 'quarter'>('month');
+  const [expandedAlert, setExpandedAlert] = useState<string | null>(null);
 
   // Fetch response data for analysis
   useEffect(() => {
@@ -79,7 +48,6 @@ export const CipherTab: React.FC<CipherTabProps> = ({ projectId }) => {
             message: r.flag_reasons?.join(', ') || `Suspicious activity detected (score: ${Math.round(r.fraud_score * 100)}%)`,
             timestamp: new Date(r.created_at),
             responseId: r.id,
-            resolved: false,
           }));
 
         setAlerts(generatedAlerts);
@@ -138,11 +106,27 @@ export const CipherTab: React.FC<CipherTabProps> = ({ projectId }) => {
       medFraud,
       avgFraudScore: Math.round(avgFraudScore * 100),
       suspiciouslyFast,
-      threatLevel: highFraud > 0 ? 'critical' : medFraud > 2 ? 'elevated' : flagged > 0 ? 'guarded' : 'low',
       dataIntegrity: total > 0 ? Math.round((clean / total) * 100) : 100,
       flaggedTrend,
+      thisWeekFlagged,
     };
   }, [responses]);
+
+  // Trend data for charts
+  const trendData = useMemo(() => {
+    const days = timePeriod === 'week' ? 7 : timePeriod === 'month' ? 30 : 90;
+    const data = Array.from({ length: Math.min(days, 14) }, (_, i) => {
+      const date = subDays(new Date(), Math.min(days, 14) - 1 - i);
+      const flaggedCount = responses.filter((r: any) =>
+        format(new Date(r.created_at), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd') && r.is_flagged
+      ).length;
+      return {
+        day: format(date, days <= 7 ? 'EEE' : 'MMM d'),
+        count: flaggedCount,
+      };
+    });
+    return data;
+  }, [responses, timePeriod]);
 
   // Pattern analysis
   const patterns = useMemo(() => {
@@ -157,43 +141,31 @@ export const CipherTab: React.FC<CipherTabProps> = ({ projectId }) => {
     return Object.entries(patternMap)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 6);
+      .slice(0, 8);
   }, [responses]);
-
-  const getThreatColor = (level: string) => {
-    switch (level) {
-      case 'critical': return '#ef4444';
-      case 'elevated': return '#f59e0b';
-      case 'guarded': return '#3b82f6';
-      case 'low': return '#22c55e';
-      default: return '#888';
-    }
-  };
-
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'critical': return '#ef4444';
-      case 'high': return '#f59e0b';
-      case 'medium': return '#3b82f6';
-      default: return 'rgba(232, 232, 232, 0.5)';
-    }
-  };
 
   if (loading) {
     return (
       <div className="cipher-loading">
-        <Loader2 size={24} className="animate-spin" />
-        <span>Initializing Cipher...</span>
+        <div className="loader" />
         <style jsx>{`
           .cipher-loading {
-            height: 100%;
+            position: absolute;
+            inset: 0;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 16px;
-            color: rgba(232, 232, 232, 0.6);
-            font-size: 14px;
+          }
+          .loader {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid var(--surbee-border-primary, rgba(255,255,255,0.1));
+            border-top-color: var(--surbee-fg-primary, #E8E8E8);
+            animation: spin 0.8s linear infinite;
+          }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
           }
         `}</style>
       </div>
@@ -201,411 +173,886 @@ export const CipherTab: React.FC<CipherTabProps> = ({ projectId }) => {
   }
 
   return (
-    <div className="cipher-page">
+    <div className="cipher-root">
+      {/* Header with Navigation */}
+      <header className="cipher-header">
+        <nav className="cipher-nav">
+          {(['overview', 'alerts', 'patterns'] as const).map((view) => (
+            <button
+              key={view}
+              className={`nav-btn ${activeView === view ? 'active' : ''}`}
+              onClick={() => setActiveView(view)}
+            >
+              {view.charAt(0).toUpperCase() + view.slice(1)}
+            </button>
+          ))}
+        </nav>
+
+        {activeView === 'overview' && (
+          <div className="time-selector">
+            {(['week', 'month', 'quarter'] as const).map((period) => (
+              <button
+                key={period}
+                className={`time-btn ${timePeriod === period ? 'active' : ''}`}
+                onClick={() => setTimePeriod(period)}
+              >
+                {period.charAt(0).toUpperCase() + period.slice(1)}
+              </button>
+            ))}
+          </div>
+        )}
+      </header>
+
+      {/* OVERVIEW VIEW */}
+      {activeView === 'overview' && (
+        <div className="view-content">
+          <div className="bento-grid">
+            {/* Main Stats Card */}
+            <div className="bento-card main-stats">
+              <div className="card-label">Data Integrity</div>
+              <div className="main-number">{metrics.dataIntegrity}<span className="main-unit">%</span></div>
+              <div className="change-indicator">
+                <span className={`change ${metrics.flaggedTrend >= 0 ? 'negative' : 'positive'}`}>
+                  {metrics.flaggedTrend >= 0 ? '+' : ''}{metrics.flaggedTrend}%
+                </span>
+                <span className="change-label">flagged vs last week</span>
+              </div>
+              <div className="mini-chart">
+                <ResponsiveContainer width="100%" height={60}>
+                  <AreaChart data={trendData} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="cipherGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#E8E8E8" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#E8E8E8" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <Area type="monotone" dataKey="count" stroke="#E8E8E8" strokeWidth={2} fill="url(#cipherGradient)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Verified */}
+            <div className="bento-card stat-card">
+              <div className="stat-content">
+                <div className="stat-number">{metrics.clean}</div>
+                <div className="stat-label">Verified</div>
+              </div>
+              <div className="stat-bar">
+                <div className="stat-bar-fill" style={{ width: `${metrics.dataIntegrity}%` }} />
+              </div>
+            </div>
+
+            {/* Flagged */}
+            <div className="bento-card stat-card">
+              <div className="stat-content">
+                <div className="stat-number">{metrics.flagged}</div>
+                <div className="stat-label">Flagged</div>
+              </div>
+            </div>
+
+            {/* Risk Score */}
+            <div className="bento-card stat-card">
+              <div className="stat-content">
+                <div className="stat-number">{metrics.avgFraudScore}</div>
+                <div className="stat-label">Avg. Risk Score</div>
+              </div>
+              <div className="quality-indicator">
+                <span className={`quality-dot ${metrics.avgFraudScore <= 20 ? 'excellent' : metrics.avgFraudScore <= 50 ? 'good' : 'needs-work'}`} />
+                {metrics.avgFraudScore <= 20 ? 'Low risk' : metrics.avgFraudScore <= 50 ? 'Moderate' : 'High risk'}
+              </div>
+            </div>
+
+            {/* Insight Feature Card */}
+            <div className="bento-card insight-feature">
+              <div className="insight-badge">Analysis</div>
+              <div className="insight-text">
+                {metrics.total === 0 ? (
+                  <>No response data available. Start collecting responses to enable analysis.</>
+                ) : metrics.flagged === 0 ? (
+                  <>All <strong>{metrics.total} responses</strong> verified. No suspicious patterns detected.</>
+                ) : (
+                  <><strong>{metrics.flagged} response{metrics.flagged > 1 ? 's' : ''}</strong> flagged for review. {patterns[0]?.name ? `Most common: ${patterns[0].name}.` : ''}</>
+                )}
+              </div>
+            </div>
+
+            {/* Trend Chart */}
+            <div className="bento-card chart-card">
+              <div className="chart-header">
+                <span className="chart-title">Flagged Responses</span>
+                <span className="chart-period">{timePeriod === 'week' ? 'Last 7 days' : timePeriod === 'month' ? 'Last 30 days' : 'Last 90 days'}</span>
+              </div>
+              <div className="chart-container">
+                <ResponsiveContainer width="100%" height={140}>
+                  <BarChart data={trendData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                    <XAxis
+                      dataKey="day"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: 'var(--surbee-fg-muted)', fontSize: 10 }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: 'var(--surbee-bg-elevated)',
+                        border: '1px solid var(--surbee-border-primary)',
+                        borderRadius: 8,
+                        fontSize: 12,
+                        padding: '8px 12px'
+                      }}
+                      formatter={(value: number) => [`${value} flagged`, '']}
+                    />
+                    <Bar dataKey="count" fill="var(--surbee-fg-primary)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Breakdown */}
+            <div className="bento-card breakdown-card">
+              <div className="card-title">Breakdown</div>
+              <div className="breakdown-list">
+                <div className="breakdown-item">
+                  <span className="breakdown-label">High Risk</span>
+                  <div className="breakdown-stats">
+                    <div className="breakdown-bar">
+                      <div className="breakdown-bar-fill" style={{ width: `${metrics.total > 0 ? (metrics.highFraud / metrics.total) * 100 : 0}%` }} />
+                    </div>
+                    <span className="breakdown-count">{metrics.highFraud}</span>
+                  </div>
+                </div>
+                <div className="breakdown-item">
+                  <span className="breakdown-label">Medium Risk</span>
+                  <div className="breakdown-stats">
+                    <div className="breakdown-bar">
+                      <div className="breakdown-bar-fill" style={{ width: `${metrics.total > 0 ? (metrics.medFraud / metrics.total) * 100 : 0}%` }} />
+                    </div>
+                    <span className="breakdown-count">{metrics.medFraud}</span>
+                  </div>
+                </div>
+                <div className="breakdown-item">
+                  <span className="breakdown-label">Speed Anomalies</span>
+                  <div className="breakdown-stats">
+                    <div className="breakdown-bar">
+                      <div className="breakdown-bar-fill" style={{ width: `${metrics.total > 0 ? (metrics.suspiciouslyFast / metrics.total) * 100 : 0}%` }} />
+                    </div>
+                    <span className="breakdown-count">{metrics.suspiciouslyFast}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent */}
+            <div className="bento-card recent-card">
+              <div className="card-title">Recent Flags</div>
+              <div className="recent-list">
+                {alerts.slice(0, 4).map((alert) => (
+                  <div key={alert.id} className="recent-item">
+                    <div className="recent-info">
+                      <span className="recent-time">{formatDistanceToNow(alert.timestamp, { addSuffix: true })}</span>
+                      <span className="recent-type">{alert.type}</span>
+                    </div>
+                    <div className="recent-score">
+                      <span className={`severity-badge ${alert.severity}`}>
+                        {alert.severity}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {alerts.length === 0 && (
+                  <div className="recent-empty">No flags yet</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ALERTS VIEW */}
+      {activeView === 'alerts' && (
+        <div className="view-content">
+          <div className="alerts-summary">
+            <div className="summary-stat">
+              <span className="summary-num">{alerts.length}</span>
+              <span className="summary-label">Total Alerts</span>
+            </div>
+            <div className="summary-divider" />
+            <div className="summary-stat">
+              <span className="summary-num">{alerts.filter(a => a.severity === 'critical').length}</span>
+              <span className="summary-label">Critical</span>
+            </div>
+            <div className="summary-divider" />
+            <div className="summary-stat">
+              <span className="summary-num">{alerts.filter(a => a.severity === 'high').length}</span>
+              <span className="summary-label">High</span>
+            </div>
+            <div className="summary-divider" />
+            <div className="summary-stat">
+              <span className="summary-num">{alerts.filter(a => a.severity === 'medium').length}</span>
+              <span className="summary-label">Medium</span>
+            </div>
+          </div>
+
+          <div className="alerts-table">
+            <div className="table-header">
+              <span className="col-time">Time</span>
+              <span className="col-type">Type</span>
+              <span className="col-message">Message</span>
+              <span className="col-severity">Severity</span>
+              <span className="col-expand"></span>
+            </div>
+
+            {alerts.length === 0 ? (
+              <div className="table-empty">
+                <div className="empty-circle" />
+                <span>No alerts detected</span>
+              </div>
+            ) : (
+              alerts.map((alert) => (
+                <React.Fragment key={alert.id}>
+                  <div
+                    className={`table-row ${expandedAlert === alert.id ? 'expanded' : ''}`}
+                    onClick={() => setExpandedAlert(expandedAlert === alert.id ? null : alert.id)}
+                  >
+                    <span className="col-time">{formatDistanceToNow(alert.timestamp, { addSuffix: true })}</span>
+                    <span className="col-type">{alert.type}</span>
+                    <span className="col-message">{alert.message}</span>
+                    <span className={`col-severity ${alert.severity}`}>{alert.severity}</span>
+                    <span className="col-expand">
+                      {expandedAlert === alert.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </span>
+                  </div>
+                  {expandedAlert === alert.id && (
+                    <div className="table-row-detail">
+                      <div className="detail-item">
+                        <span className="detail-label">Response ID</span>
+                        <span className="detail-value">{alert.responseId || 'N/A'}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">Detected</span>
+                        <span className="detail-value">{format(alert.timestamp, 'MMM d, yyyy HH:mm')}</span>
+                      </div>
+                    </div>
+                  )}
+                </React.Fragment>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* PATTERNS VIEW */}
+      {activeView === 'patterns' && (
+        <div className="view-content">
+          <div className="patterns-summary">
+            <div className="summary-stat">
+              <span className="summary-num">{patterns.length}</span>
+              <span className="summary-label">Patterns Detected</span>
+            </div>
+            <div className="summary-divider" />
+            <div className="summary-stat">
+              <span className="summary-num">{patterns.reduce((acc, p) => acc + p.count, 0)}</span>
+              <span className="summary-label">Total Occurrences</span>
+            </div>
+          </div>
+
+          <div className="patterns-table">
+            <div className="table-header">
+              <span className="col-rank">#</span>
+              <span className="col-pattern">Pattern</span>
+              <span className="col-count">Count</span>
+              <span className="col-bar">Distribution</span>
+            </div>
+
+            {patterns.length === 0 ? (
+              <div className="table-empty">
+                <div className="empty-circle" />
+                <span>No patterns detected</span>
+              </div>
+            ) : (
+              patterns.map((pattern, idx) => (
+                <div key={pattern.name} className="table-row">
+                  <span className="col-rank">{String(idx + 1).padStart(2, '0')}</span>
+                  <span className="col-pattern">{pattern.name}</span>
+                  <span className="col-count">{pattern.count}</span>
+                  <div className="col-bar">
+                    <div className="pattern-bar">
+                      <div
+                        className="pattern-bar-fill"
+                        style={{ width: `${(pattern.count / (patterns[0]?.count || 1)) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
       <style jsx>{`
-        .cipher-page {
-          display: flex;
-          flex-direction: column;
-          height: 100%;
-          padding: 24px;
+        .cipher-root {
+          --font-display: 'Kalice Regular', 'Kalice-Trial-Regular', Georgia, serif;
+          --font-body: var(--font-inter, 'Sohne', -apple-system, sans-serif);
+          --font-mono: 'Menlo', 'Monaco', 'Courier New', monospace;
+
+          font-family: var(--font-body);
           color: var(--surbee-fg-primary, #E8E8E8);
         }
 
         /* Header */
-        .page-header {
+        .cipher-header {
           display: flex;
-          align-items: center;
           justify-content: space-between;
-          margin-bottom: 24px;
-        }
-
-        .header-left {
-          display: flex;
           align-items: center;
+          margin-bottom: 32px;
+          flex-wrap: wrap;
           gap: 16px;
         }
 
-        .page-title {
-          font-size: 24px;
-          font-weight: 600;
-          margin: 0;
+        .cipher-nav {
           display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .title-icon {
-          width: 32px;
-          height: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(34, 197, 94, 0.15);
-          border-radius: 8px;
-          color: #22c55e;
-        }
-
-        /* Dropdown */
-        .dropdown-wrapper {
-          position: relative;
-        }
-
-        .dropdown-trigger {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 16px 6px 12px;
-          background: transparent;
-          border: 1px solid transparent;
-          border-radius: 9999px;
-          color: var(--surbee-fg-primary, #E8E8E8);
-          font-size: 14px;
-          cursor: pointer;
-          transition: background 0.2s ease;
-        }
-
-        .dropdown-trigger:hover {
-          background: rgba(255, 255, 255, 0.05);
-        }
-
-        .dropdown-trigger svg {
-          color: rgba(232, 232, 232, 0.6);
-        }
-
-        .dropdown-menu {
-          position: absolute;
-          top: 100%;
-          right: 0;
-          margin-top: 4px;
-          background: rgb(19, 19, 20);
-          border: 1px solid rgba(232, 232, 232, 0.08);
-          border-radius: 24px;
-          padding: 8px;
-          min-width: 160px;
-          z-index: 100;
-          box-shadow: rgba(0, 0, 0, 0.04) 0px 7px 16px;
-        }
-
-        .dropdown-item {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 8px 8px 8px 16px;
-          border-radius: 18px;
-          cursor: pointer;
-          font-size: 14px;
-          color: var(--surbee-fg-primary, #E8E8E8);
-          margin-bottom: 1px;
-        }
-
-        .dropdown-item:hover {
-          background: rgba(255, 255, 255, 0.05);
-        }
-
-        .dropdown-item svg {
-          color: rgba(232, 232, 232, 0.6);
-        }
-
-        /* Status Badge */
-        .status-badge {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
-          border-radius: 9999px;
-          font-size: 12px;
-          font-weight: 500;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .status-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-
-        /* Main Content */
-        .main-content {
-          display: flex;
-          flex: 1;
-          min-height: 0;
-          gap: 16px;
-        }
-
-        /* Left Panel - Stats */
-        .stats-panel {
-          width: 320px;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          flex-shrink: 0;
-        }
-
-        .stat-card {
-          padding: 20px;
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid rgba(232, 232, 232, 0.08);
+          gap: 4px;
+          padding: 4px;
+          background: var(--surbee-bg-secondary, #1E1E1F);
           border-radius: 12px;
         }
 
-        .stat-header {
+        .nav-btn {
+          padding: 10px 20px;
+          background: transparent;
+          border: none;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--surbee-fg-muted, #888);
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+          color: var(--surbee-fg-primary, #E8E8E8);
+        }
+
+        .nav-btn.active {
+          background: var(--surbee-bg-primary, #131314);
+          color: var(--surbee-fg-primary, #E8E8E8);
+        }
+
+        .time-selector {
+          display: flex;
+          gap: 4px;
+        }
+
+        .time-btn {
+          padding: 8px 14px;
+          background: transparent;
+          border: 1px solid var(--surbee-border-primary, rgba(255,255,255,0.1));
+          border-radius: 8px;
+          font-size: 12px;
+          color: var(--surbee-fg-muted, #888);
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .time-btn:hover {
+          border-color: var(--surbee-fg-muted, #888);
+        }
+
+        .time-btn.active {
+          background: var(--surbee-fg-primary, #E8E8E8);
+          border-color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--surbee-bg-primary, #131314);
+        }
+
+        /* Bento Grid */
+        .bento-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          grid-auto-rows: minmax(120px, auto);
+          gap: 16px;
+        }
+
+        @media (max-width: 1200px) {
+          .bento-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+          .bento-grid { grid-template-columns: 1fr; }
+        }
+
+        .bento-card {
+          background: var(--surbee-bg-secondary, #1E1E1F);
+          border-radius: 8px;
+          padding: 24px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        /* Main Stats Card */
+        .main-stats {
+          grid-column: span 2;
+          grid-row: span 2;
+        }
+
+        .card-label {
+          font-size: 12px;
+          font-weight: 500;
+          color: var(--surbee-fg-muted, #888);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 8px;
+        }
+
+        .main-number {
+          font-family: var(--font-display);
+          font-size: 96px;
+          font-weight: 400;
+          line-height: 1;
+          margin-bottom: 16px;
+          letter-spacing: -4px;
+        }
+
+        .main-unit {
+          font-size: 48px;
+          opacity: 0.5;
+        }
+
+        .change-indicator {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          margin-bottom: 12px;
+          gap: 8px;
+          margin-bottom: 24px;
+        }
+
+        .change {
+          font-family: var(--font-mono);
+          font-size: 13px;
+          font-weight: 500;
+          padding: 4px 10px;
+          border-radius: 6px;
+        }
+
+        .change.positive {
+          background: rgba(34, 197, 94, 0.15);
+          color: #22c55e;
+        }
+
+        .change.negative {
+          background: rgba(239, 68, 68, 0.15);
+          color: #ef4444;
+        }
+
+        .change-label {
+          font-size: 12px;
+          color: var(--surbee-fg-muted, #888);
+        }
+
+        .mini-chart {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 80px;
+        }
+
+        /* Stat Cards */
+        .stat-card {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .stat-content { flex: 1; }
+
+        .stat-number {
+          font-family: var(--font-mono);
+          font-size: 32px;
+          font-weight: 500;
+          line-height: 1;
         }
 
         .stat-label {
           font-size: 12px;
-          font-weight: 500;
-          color: rgba(232, 232, 232, 0.6);
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .stat-icon {
-          color: rgba(232, 232, 232, 0.4);
-        }
-
-        .stat-value {
-          font-size: 32px;
-          font-weight: 600;
-          line-height: 1;
-          margin-bottom: 8px;
-        }
-
-        .stat-meta {
-          font-size: 12px;
-          color: rgba(232, 232, 232, 0.5);
+          color: var(--surbee-fg-muted, #888);
+          margin-top: 4px;
         }
 
         .stat-bar {
           height: 4px;
-          background: rgba(255, 255, 255, 0.1);
+          background: var(--surbee-bg-tertiary, #252526);
           border-radius: 2px;
           overflow: hidden;
-          margin-top: 12px;
+          margin-top: auto;
         }
 
         .stat-bar-fill {
           height: 100%;
+          background: var(--surbee-fg-primary, #E8E8E8);
           border-radius: 2px;
           transition: width 0.5s ease;
         }
 
-        .trend {
-          display: inline-flex;
+        .quality-indicator {
+          display: flex;
           align-items: center;
-          gap: 4px;
+          gap: 6px;
           font-size: 11px;
-          padding: 2px 6px;
-          border-radius: 4px;
+          color: var(--surbee-fg-muted, #888);
+          margin-top: auto;
         }
 
-        .trend.positive {
-          background: rgba(34, 197, 94, 0.15);
-          color: #22c55e;
+        .quality-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: var(--surbee-fg-muted, #888);
         }
 
-        .trend.negative {
-          background: rgba(239, 68, 68, 0.15);
-          color: #ef4444;
+        .quality-dot.excellent { background: #22c55e; }
+        .quality-dot.good { background: #f59e0b; }
+        .quality-dot.needs-work { background: #ef4444; }
+
+        /* Insight Feature */
+        .insight-feature {
+          grid-column: span 2;
+          background: #091717;
         }
 
-        /* Right Panel - Details */
-        .details-panel {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          border: 1px solid rgba(232, 232, 232, 0.08);
-          border-radius: 12px;
-          overflow: hidden;
-        }
-
-        .details-header {
-          padding: 16px 20px;
-          border-bottom: 1px solid rgba(232, 232, 232, 0.08);
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .details-title {
-          font-size: 14px;
-          font-weight: 500;
-        }
-
-        .details-count {
-          font-size: 12px;
-          color: rgba(232, 232, 232, 0.5);
-        }
-
-        .details-content {
-          flex: 1;
-          overflow-y: auto;
-          padding: 16px;
-        }
-
-        /* Empty State */
-        .empty-state {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          height: 100%;
-          gap: 12px;
-          color: rgba(232, 232, 232, 0.5);
-          text-align: center;
-        }
-
-        .empty-icon {
-          width: 48px;
-          height: 48px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(34, 197, 94, 0.15);
-          border-radius: 12px;
-          color: #22c55e;
-        }
-
-        .empty-title {
-          font-size: 15px;
-          font-weight: 500;
-          color: var(--surbee-fg-primary, #E8E8E8);
-        }
-
-        .empty-desc {
-          font-size: 13px;
-          max-width: 280px;
-          line-height: 1.5;
-        }
-
-        /* Alert List */
-        .alert-list {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .alert-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-          padding: 14px 16px;
-          background: rgba(255, 255, 255, 0.02);
-          border-radius: 8px;
-          border-left: 3px solid transparent;
-        }
-
-        .alert-item.critical { border-left-color: #ef4444; }
-        .alert-item.high { border-left-color: #f59e0b; }
-        .alert-item.medium { border-left-color: #3b82f6; }
-        .alert-item.low { border-left-color: rgba(232, 232, 232, 0.3); }
-
-        .alert-type-icon {
-          width: 28px;
-          height: 28px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 6px;
-          flex-shrink: 0;
-        }
-
-        .alert-type-icon.critical {
-          background: rgba(239, 68, 68, 0.15);
-          color: #ef4444;
-        }
-
-        .alert-type-icon.high {
-          background: rgba(245, 158, 11, 0.15);
-          color: #f59e0b;
-        }
-
-        .alert-type-icon.medium {
-          background: rgba(59, 130, 246, 0.15);
-          color: #3b82f6;
-        }
-
-        .alert-body {
-          flex: 1;
-          min-width: 0;
-        }
-
-        .alert-message {
-          font-size: 13px;
-          line-height: 1.4;
-          margin-bottom: 6px;
-        }
-
-        .alert-meta {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          font-size: 11px;
-          color: rgba(232, 232, 232, 0.5);
-        }
-
-        .alert-meta-item {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-
-        .severity-tag {
+        .insight-badge {
+          font-family: var(--font-mono);
           font-size: 10px;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.5px;
-          padding: 2px 6px;
+          padding: 4px 8px;
+          background: rgba(255,255,255,0.15);
+          border-radius: 4px;
+          display: inline-block;
+          margin-bottom: 16px;
+        }
+
+        .insight-text {
+          font-size: 18px;
+          line-height: 1.5;
+        }
+
+        .insight-text strong { font-weight: 600; }
+
+        /* Chart Card */
+        .chart-card {
+          grid-column: span 2;
+        }
+
+        .chart-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+        }
+
+        .chart-title {
+          font-size: 14px;
+          font-weight: 600;
+        }
+
+        .chart-period {
+          font-family: var(--font-mono);
+          font-size: 10px;
+          color: var(--surbee-fg-muted, #888);
+          padding: 4px 8px;
+          background: var(--surbee-bg-tertiary, #252526);
           border-radius: 4px;
         }
 
-        /* Pattern List */
-        .pattern-list {
+        .chart-container { height: 140px; }
+
+        /* Breakdown Card */
+        .breakdown-card .card-title,
+        .recent-card .card-title {
+          font-size: 14px;
+          font-weight: 600;
+          margin-bottom: 16px;
+        }
+
+        .breakdown-list {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+
+        .breakdown-item {
           display: flex;
           flex-direction: column;
           gap: 8px;
         }
 
-        .pattern-item {
+        .breakdown-label {
+          font-size: 12px;
+          color: var(--surbee-fg-muted, #888);
+        }
+
+        .breakdown-stats {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 14px 16px;
-          background: rgba(255, 255, 255, 0.02);
+        }
+
+        .breakdown-bar {
+          flex: 1;
+          height: 4px;
+          background: var(--surbee-bg-tertiary, #252526);
+          border-radius: 2px;
+          overflow: hidden;
+        }
+
+        .breakdown-bar-fill {
+          height: 100%;
+          background: var(--surbee-fg-primary, #E8E8E8);
+          border-radius: 2px;
+        }
+
+        .breakdown-count {
+          font-family: var(--font-mono);
+          font-size: 12px;
+          min-width: 24px;
+          text-align: right;
+        }
+
+        /* Recent Card */
+        .recent-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .recent-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px;
+          background: var(--surbee-bg-tertiary, #252526);
           border-radius: 8px;
         }
 
-        .pattern-rank {
-          font-size: 12px;
-          font-weight: 600;
-          color: rgba(232, 232, 232, 0.4);
-          width: 20px;
-        }
-
-        .pattern-info {
-          flex: 1;
+        .recent-info {
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 2px;
         }
 
-        .pattern-name {
+        .recent-time {
+          font-size: 12px;
+        }
+
+        .recent-type {
+          font-size: 10px;
+          color: var(--surbee-fg-muted, #888);
+          text-transform: uppercase;
+        }
+
+        .severity-badge {
+          font-family: var(--font-mono);
+          font-size: 10px;
+          padding: 3px 8px;
+          border-radius: 4px;
+          text-transform: uppercase;
+        }
+
+        .severity-badge.critical {
+          background: rgba(239, 68, 68, 0.15);
+          color: #ef4444;
+        }
+
+        .severity-badge.high {
+          background: rgba(245, 158, 11, 0.15);
+          color: #f59e0b;
+        }
+
+        .severity-badge.medium {
+          background: rgba(156, 163, 175, 0.15);
+          color: var(--surbee-fg-muted, #888);
+        }
+
+        .recent-empty {
+          font-size: 13px;
+          color: var(--surbee-fg-muted, #888);
+          text-align: center;
+          padding: 20px;
+        }
+
+        /* Summary Bars */
+        .alerts-summary,
+        .patterns-summary {
+          display: flex;
+          align-items: center;
+          gap: 24px;
+          padding: 24px 32px;
+          background: var(--surbee-bg-secondary, #1E1E1F);
+          border-radius: 8px;
+          margin-bottom: 24px;
+        }
+
+        .summary-stat {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .summary-num {
+          font-family: var(--font-display);
+          font-size: 28px;
+        }
+
+        .summary-label {
+          font-family: var(--font-mono);
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--surbee-fg-muted, #888);
+        }
+
+        .summary-divider {
+          width: 1px;
+          height: 40px;
+          background: var(--surbee-border-primary, rgba(255,255,255,0.1));
+        }
+
+        /* Tables */
+        .alerts-table,
+        .patterns-table {
+          background: var(--surbee-bg-secondary, #1E1E1F);
+          border-radius: 8px;
+          overflow: hidden;
+        }
+
+        .table-header {
+          display: grid;
+          gap: 16px;
+          padding: 16px 24px;
+          background: var(--surbee-bg-tertiary, #252526);
+          font-family: var(--font-mono);
+          font-size: 10px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--surbee-fg-muted, #888);
+        }
+
+        .alerts-table .table-header {
+          grid-template-columns: 120px 80px 1fr 80px 40px;
+        }
+
+        .patterns-table .table-header {
+          grid-template-columns: 50px 1fr 80px 200px;
+        }
+
+        .table-empty {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          padding: 60px;
+          color: var(--surbee-fg-muted, #888);
+        }
+
+        .empty-circle {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          border: 2px dashed var(--surbee-border-primary, rgba(255,255,255,0.1));
+        }
+
+        .table-row {
+          display: grid;
+          gap: 16px;
+          padding: 16px 24px;
+          border-bottom: 1px solid var(--surbee-border-secondary, rgba(255,255,255,0.05));
+          transition: background 0.15s ease;
+          cursor: pointer;
+        }
+
+        .alerts-table .table-row {
+          grid-template-columns: 120px 80px 1fr 80px 40px;
+        }
+
+        .patterns-table .table-row {
+          grid-template-columns: 50px 1fr 80px 200px;
+          cursor: default;
+        }
+
+        .table-row:last-child {
+          border-bottom: none;
+        }
+
+        .table-row:hover {
+          background: var(--surbee-bg-tertiary, #252526);
+        }
+
+        .table-row.expanded {
+          background: var(--surbee-bg-tertiary, #252526);
+        }
+
+        .col-time {
+          font-size: 12px;
+          color: var(--surbee-fg-muted, #888);
+        }
+
+        .col-type {
+          font-family: var(--font-mono);
+          font-size: 11px;
+          text-transform: uppercase;
+        }
+
+        .col-message {
+          font-size: 13px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .col-severity {
+          font-family: var(--font-mono);
+          font-size: 10px;
+          text-transform: uppercase;
+        }
+
+        .col-severity.critical { color: #ef4444; }
+        .col-severity.high { color: #f59e0b; }
+        .col-severity.medium { color: var(--surbee-fg-muted, #888); }
+
+        .col-expand {
+          color: var(--surbee-fg-muted, #888);
+          display: flex;
+          align-items: center;
+        }
+
+        .col-rank {
+          font-family: var(--font-mono);
+          font-size: 12px;
+          color: var(--surbee-fg-muted, #888);
+        }
+
+        .col-pattern {
           font-size: 13px;
         }
 
+        .col-count {
+          font-family: var(--font-mono);
+          font-size: 13px;
+          text-align: right;
+        }
+
+        .col-bar {
+          display: flex;
+          align-items: center;
+        }
+
         .pattern-bar {
+          flex: 1;
           height: 4px;
-          background: rgba(255, 255, 255, 0.1);
+          background: var(--surbee-bg-tertiary, #252526);
           border-radius: 2px;
           overflow: hidden;
         }
@@ -614,381 +1061,33 @@ export const CipherTab: React.FC<CipherTabProps> = ({ projectId }) => {
           height: 100%;
           background: var(--surbee-fg-primary, #E8E8E8);
           border-radius: 2px;
-          transition: width 0.5s ease;
         }
 
-        .pattern-count {
-          font-size: 12px;
-          font-weight: 500;
-          color: rgba(232, 232, 232, 0.6);
-        }
-
-        /* Overview Grid */
-        .overview-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 12px;
-        }
-
-        .overview-card {
-          padding: 16px;
-          background: rgba(255, 255, 255, 0.02);
-          border-radius: 8px;
-        }
-
-        .overview-card-header {
+        .table-row-detail {
+          padding: 16px 24px;
+          background: var(--surbee-bg-tertiary, #252526);
+          border-bottom: 1px solid var(--surbee-border-secondary, rgba(255,255,255,0.05));
           display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-bottom: 12px;
-          font-size: 12px;
-          color: rgba(232, 232, 232, 0.6);
+          gap: 32px;
         }
 
-        .overview-card-value {
-          font-size: 24px;
-          font-weight: 600;
-          margin-bottom: 4px;
+        .detail-item {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
         }
 
-        .overview-card-label {
-          font-size: 12px;
-          color: rgba(232, 232, 232, 0.5);
-        }
-
-        /* AI Insight */
-        .ai-insight-card {
-          grid-column: span 2;
-          padding: 20px;
-          background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08));
-          border: 1px solid rgba(139, 92, 246, 0.15);
-          border-radius: 12px;
-        }
-
-        .ai-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
+        .detail-label {
+          font-family: var(--font-mono);
           font-size: 10px;
-          font-weight: 600;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
-          padding: 4px 8px;
-          background: rgba(139, 92, 246, 0.2);
-          border-radius: 4px;
-          color: #a78bfa;
-          margin-bottom: 12px;
+          color: var(--surbee-fg-muted, #888);
         }
 
-        .ai-insight-text {
-          font-size: 14px;
-          line-height: 1.6;
-          color: rgba(232, 232, 232, 0.8);
-        }
-
-        .ai-insight-text strong {
-          color: var(--surbee-fg-primary, #E8E8E8);
-          font-weight: 500;
+        .detail-value {
+          font-size: 13px;
         }
       `}</style>
-
-      {/* Header */}
-      <div className="page-header">
-        <div className="header-left">
-          <h1 className="page-title">
-            <div className="title-icon">
-              <Shield size={18} />
-            </div>
-            Cipher
-          </h1>
-          <div
-            className="status-badge"
-            style={{
-              background: `${getThreatColor(metrics.threatLevel)}15`,
-              color: getThreatColor(metrics.threatLevel),
-            }}
-          >
-            <div
-              className="status-dot"
-              style={{ background: getThreatColor(metrics.threatLevel) }}
-            />
-            {metrics.threatLevel.toUpperCase()}
-          </div>
-        </div>
-
-        <div className="dropdown-wrapper" ref={viewDropdownRef}>
-          <button
-            className="dropdown-trigger"
-            onClick={() => setIsViewOpen(!isViewOpen)}
-          >
-            <span>{activeView}</span>
-            <ChevronDown size={14} />
-          </button>
-          {isViewOpen && (
-            <div className="dropdown-menu">
-              {VIEWS.map((view) => (
-                <div
-                  key={view}
-                  className="dropdown-item"
-                  onClick={() => {
-                    setActiveView(view);
-                    setIsViewOpen(false);
-                  }}
-                >
-                  <span>{view}</span>
-                  {activeView === view && <Check size={16} />}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="main-content">
-        {/* Left Panel - Stats */}
-        <div className="stats-panel">
-          {/* Threat Level */}
-          <div className="stat-card">
-            <div className="stat-header">
-              <span className="stat-label">Threat Level</span>
-              <Shield size={16} className="stat-icon" />
-            </div>
-            <div className="stat-value" style={{ color: getThreatColor(metrics.threatLevel) }}>
-              {metrics.threatLevel.charAt(0).toUpperCase() + metrics.threatLevel.slice(1)}
-            </div>
-            <div className="stat-meta">
-              {metrics.flagged} of {metrics.total} responses flagged
-            </div>
-          </div>
-
-          {/* Data Integrity */}
-          <div className="stat-card">
-            <div className="stat-header">
-              <span className="stat-label">Data Integrity</span>
-              <Lock size={16} className="stat-icon" />
-            </div>
-            <div className="stat-value" style={{ color: metrics.dataIntegrity >= 90 ? '#22c55e' : metrics.dataIntegrity >= 70 ? '#f59e0b' : '#ef4444' }}>
-              {metrics.dataIntegrity}%
-            </div>
-            <div className="stat-meta">
-              {metrics.clean} verified responses
-            </div>
-            <div className="stat-bar">
-              <div
-                className="stat-bar-fill"
-                style={{
-                  width: `${metrics.dataIntegrity}%`,
-                  background: metrics.dataIntegrity >= 90 ? '#22c55e' : metrics.dataIntegrity >= 70 ? '#f59e0b' : '#ef4444'
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Risk Score */}
-          <div className="stat-card">
-            <div className="stat-header">
-              <span className="stat-label">Avg. Risk Score</span>
-              <Activity size={16} className="stat-icon" />
-            </div>
-            <div className="stat-value" style={{ color: metrics.avgFraudScore <= 20 ? '#22c55e' : metrics.avgFraudScore <= 50 ? '#f59e0b' : '#ef4444' }}>
-              {metrics.avgFraudScore}
-            </div>
-            <div className="stat-meta">
-              {metrics.avgFraudScore <= 20 ? 'Low risk' : metrics.avgFraudScore <= 50 ? 'Moderate risk' : 'High risk'}
-            </div>
-          </div>
-
-          {/* Weekly Trend */}
-          <div className="stat-card">
-            <div className="stat-header">
-              <span className="stat-label">Weekly Trend</span>
-              {metrics.flaggedTrend >= 0 ? (
-                <TrendingUp size={16} className="stat-icon" />
-              ) : (
-                <TrendingDown size={16} className="stat-icon" />
-              )}
-            </div>
-            <div className="stat-value">
-              <span className={`trend ${metrics.flaggedTrend >= 0 ? 'negative' : 'positive'}`}>
-                {metrics.flaggedTrend >= 0 ? '+' : ''}{metrics.flaggedTrend}%
-              </span>
-            </div>
-            <div className="stat-meta">
-              {metrics.flaggedTrend >= 0 ? 'Increase in threats' : 'Decrease in threats'}
-            </div>
-          </div>
-
-          {/* Speed Anomalies */}
-          <div className="stat-card">
-            <div className="stat-header">
-              <span className="stat-label">Speed Anomalies</span>
-              <Zap size={16} className="stat-icon" />
-            </div>
-            <div className="stat-value" style={{ color: metrics.suspiciouslyFast > 0 ? '#f59e0b' : '#22c55e' }}>
-              {metrics.suspiciouslyFast}
-            </div>
-            <div className="stat-meta">
-              Suspiciously fast completions
-            </div>
-          </div>
-        </div>
-
-        {/* Right Panel - Details */}
-        <div className="details-panel">
-          <div className="details-header">
-            <span className="details-title">
-              {activeView === 'Overview' && 'Security Overview'}
-              {activeView === 'Alerts' && 'Active Alerts'}
-              {activeView === 'Patterns' && 'Detected Patterns'}
-            </span>
-            <span className="details-count">
-              {activeView === 'Alerts' && `${alerts.length} alerts`}
-              {activeView === 'Patterns' && `${patterns.length} patterns`}
-            </span>
-          </div>
-
-          <div className="details-content">
-            {/* Overview View */}
-            {activeView === 'Overview' && (
-              <div className="overview-grid">
-                <div className="overview-card">
-                  <div className="overview-card-header">
-                    <Eye size={14} />
-                    Total Responses
-                  </div>
-                  <div className="overview-card-value">{metrics.total}</div>
-                  <div className="overview-card-label">Analyzed by Cipher</div>
-                </div>
-
-                <div className="overview-card">
-                  <div className="overview-card-header">
-                    <AlertTriangle size={14} />
-                    Flagged
-                  </div>
-                  <div className="overview-card-value" style={{ color: metrics.flagged > 0 ? '#f59e0b' : '#22c55e' }}>{metrics.flagged}</div>
-                  <div className="overview-card-label">Require review</div>
-                </div>
-
-                <div className="overview-card">
-                  <div className="overview-card-header">
-                    <Bot size={14} />
-                    High Risk
-                  </div>
-                  <div className="overview-card-value" style={{ color: metrics.highFraud > 0 ? '#ef4444' : '#22c55e' }}>{metrics.highFraud}</div>
-                  <div className="overview-card-label">Critical threats</div>
-                </div>
-
-                <div className="overview-card">
-                  <div className="overview-card-header">
-                    <CheckCircle size={14} />
-                    Verified
-                  </div>
-                  <div className="overview-card-value" style={{ color: '#22c55e' }}>{metrics.clean}</div>
-                  <div className="overview-card-label">Clean responses</div>
-                </div>
-
-                {/* AI Insight */}
-                <div className="ai-insight-card">
-                  <div className="ai-badge">
-                    <BarChart2 size={12} />
-                    AI Analysis
-                  </div>
-                  <div className="ai-insight-text">
-                    {metrics.total === 0 ? (
-                      <>No response data available for analysis. Start collecting responses to enable Cipher intelligence.</>
-                    ) : metrics.flagged === 0 ? (
-                      <>All <strong>{metrics.total} responses</strong> appear legitimate. Data integrity is excellent with no suspicious patterns detected.</>
-                    ) : metrics.highFraud > 0 ? (
-                      <>Detected <strong>{metrics.highFraud} critical threat{metrics.highFraud > 1 ? 's' : ''}</strong> requiring immediate attention. Review flagged responses in the Alerts view.</>
-                    ) : (
-                      <><strong>{metrics.flagged} response{metrics.flagged > 1 ? 's' : ''}</strong> flagged for review. Most common issue: {patterns[0]?.name || 'Pattern anomaly'}. Overall data quality remains {metrics.dataIntegrity >= 90 ? 'excellent' : 'good'}.</>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Alerts View */}
-            {activeView === 'Alerts' && (
-              alerts.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-icon">
-                    <CheckCircle size={24} />
-                  </div>
-                  <div className="empty-title">All Clear</div>
-                  <div className="empty-desc">
-                    No active alerts. Cipher is monitoring your responses for suspicious activity.
-                  </div>
-                </div>
-              ) : (
-                <div className="alert-list">
-                  {alerts.map((alert) => (
-                    <div key={alert.id} className={`alert-item ${alert.severity}`}>
-                      <div className={`alert-type-icon ${alert.severity}`}>
-                        {alert.type === 'fraud' && <Shield size={14} />}
-                        {alert.type === 'bot' && <Bot size={14} />}
-                        {alert.type === 'anomaly' && <Activity size={14} />}
-                      </div>
-                      <div className="alert-body">
-                        <div className="alert-message">{alert.message}</div>
-                        <div className="alert-meta">
-                          <span className="alert-meta-item">
-                            <Clock size={10} />
-                            {formatDistanceToNow(alert.timestamp, { addSuffix: true })}
-                          </span>
-                          <span
-                            className="severity-tag"
-                            style={{
-                              background: `${getSeverityColor(alert.severity)}20`,
-                              color: getSeverityColor(alert.severity)
-                            }}
-                          >
-                            {alert.severity}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )
-            )}
-
-            {/* Patterns View */}
-            {activeView === 'Patterns' && (
-              patterns.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-icon">
-                    <CheckCircle size={24} />
-                  </div>
-                  <div className="empty-title">No Patterns Detected</div>
-                  <div className="empty-desc">
-                    No suspicious patterns have been identified in your responses.
-                  </div>
-                </div>
-              ) : (
-                <div className="pattern-list">
-                  {patterns.map((pattern, idx) => (
-                    <div key={pattern.name} className="pattern-item">
-                      <span className="pattern-rank">{idx + 1}</span>
-                      <div className="pattern-info">
-                        <span className="pattern-name">{pattern.name}</span>
-                        <div className="pattern-bar">
-                          <div
-                            className="pattern-bar-fill"
-                            style={{ width: `${(pattern.count / (patterns[0]?.count || 1)) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                      <span className="pattern-count">{pattern.count}</span>
-                    </div>
-                  ))}
-                </div>
-              )
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

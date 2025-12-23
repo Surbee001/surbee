@@ -226,9 +226,9 @@ export function TemplateDetailView({
               <CommunityTemplateCard
                 key={relatedTemplate.id}
                 template={relatedTemplate}
-                onRemixTemplate={() => router.push(`/dashboard/marketplace/templates/${relatedTemplate.id}?action=remix`)}
+                onRemixTemplate={() => router.push(`/marketplace/templates/${relatedTemplate.id}?action=remix`)}
                 onSelectTemplate={(templateId) =>
-                  router.push(`/dashboard/marketplace/templates/${templateId}`)
+                  router.push(`/marketplace/templates/${templateId}`)
                 }
               />
             ))}

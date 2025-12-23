@@ -36,9 +36,11 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
   const modelDropdownRef = useRef<HTMLDivElement>(null);
   const toneDropdownRef = useRef<HTMLDivElement>(null);
   const runCountDropdownRef = useRef<HTMLDivElement>(null);
+  const filterDropdownRef = useRef<HTMLDivElement>(null);
 
   // Filter state
   const [activeFilter, setActiveFilter] = useState<'all' | 'successful' | 'failed'>('all');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>(EVALUATION_MODELS[0].id);
   const [isModelOpen, setIsModelOpen] = useState(false);
   const [selectedTone, setSelectedTone] = useState<string>(EVALUATION_TONES[0].id);
@@ -76,6 +78,9 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
       }
       if (runCountDropdownRef.current && !runCountDropdownRef.current.contains(event.target as Node)) {
         setIsRunCountOpen(false);
+      }
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
       }
     };
 
@@ -235,21 +240,15 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
   };
 
   const hasResults = answers.length > 0 || result !== null;
-  const filterButtons = [
+  const filterOptions = [
     { key: 'all', label: 'All' },
     { key: 'successful', label: 'Successful' },
     { key: 'failed', label: 'Failed' },
   ] as const;
 
-  // Calculate sliding indicator position
-  const getIndicatorStyle = () => {
-    const index = filterButtons.findIndex(b => b.key === activeFilter);
-    const widths = [41, 85, 55]; // Approximate widths
-    const positions = [2, 45, 132]; // Approximate positions
-    return {
-      width: `${widths[index]}px`,
-      transform: `translateX(${positions[index]}px)`,
-    };
+  const getFilterLabel = (key: string) => {
+    const option = filterOptions.find(f => f.key === key);
+    return option?.label || 'All';
   };
 
   return (
@@ -265,73 +264,22 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
 
         /* Header */
         .page-header {
-          padding-bottom: 16px;
-        }
-
-        .header-top {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          margin-bottom: 16px;
+          padding-bottom: 16px;
         }
 
-        .page-title {
-          font-size: 24px;
-          font-weight: 600;
-          color: var(--surbee-fg-primary, #E8E8E8);
-          margin: 0;
-        }
-
-        .header-actions {
+        .header-left {
           display: flex;
           align-items: center;
           gap: 12px;
         }
 
-        /* Filter Bar */
-        .filter-bar {
+        .header-right {
           display: flex;
           align-items: center;
           gap: 12px;
-        }
-
-        /* Segmented Control */
-        .segmented-control {
-          display: flex;
-          align-items: center;
-          position: relative;
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 6px;
-          padding: 2px;
-        }
-
-        .segment-indicator {
-          position: absolute;
-          top: 2px;
-          bottom: 2px;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 4px;
-          transition: width 300ms cubic-bezier(.19,1,.22,1), transform 300ms cubic-bezier(.19,1,.22,1);
-        }
-
-        .segment-btn {
-          position: relative;
-          padding: 6px 12px;
-          background: transparent;
-          border: none;
-          color: rgba(232, 232, 232, 0.7);
-          font-size: 13px;
-          cursor: pointer;
-          z-index: 1;
-          transition: color 0.15s ease;
-        }
-
-        .segment-btn[aria-checked="true"] {
-          color: var(--surbee-fg-primary, #E8E8E8);
-        }
-
-        .segment-btn:hover {
-          color: var(--surbee-fg-primary, #E8E8E8);
         }
 
         /* Dropdown Trigger - /home style */
@@ -826,74 +774,33 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
 
       {/* Header */}
       <div className="page-header">
-        <div className="header-top">
-          <h1 className="page-title">Evaluation</h1>
-          <div className="header-actions">
-            {/* Run Count Selector */}
-            <div className="dropdown-wrapper" ref={runCountDropdownRef}>
-              <button
-                className="dropdown-trigger"
-                onClick={() => setIsRunCountOpen(!isRunCountOpen)}
-              >
-                <span>{runCount}x</span>
-                <ChevronDown size={14} />
-              </button>
-              {isRunCountOpen && (
-                <div className="dropdown-menu dropdown-menu-right">
-                  {RUN_COUNTS.map((count) => (
-                    <div
-                      key={count}
-                      className="dropdown-item"
-                      onClick={() => {
-                        setRunCount(count);
-                        setIsRunCountOpen(false);
-                      }}
-                    >
-                      <span>{count} run{count > 1 ? 's' : ''}</span>
-                      {runCount === count && <Check size={16} />}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Run Button */}
+        <div className="header-left">
+          {/* Filter Select */}
+          <div className="dropdown-wrapper" ref={filterDropdownRef}>
             <button
-              className="run-btn"
-              onClick={runEvaluation}
-              disabled={isRunning || !user?.id}
+              className="dropdown-trigger"
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
             >
-              {isRunning ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  <span>Running...</span>
-                </>
-              ) : (
-                <>
-                  <Play size={14} />
-                  <span>Run</span>
-                </>
-              )}
+              <span>{getFilterLabel(activeFilter)}</span>
+              <ChevronDown size={14} />
             </button>
-          </div>
-        </div>
-
-        <div className="filter-bar">
-          {/* Segmented Control */}
-          <div className="segmented-control" role="group" aria-label="Evaluation status filter">
-            <div className="segment-indicator" style={getIndicatorStyle()} />
-            {filterButtons.map((btn) => (
-              <button
-                key={btn.key}
-                className="segment-btn"
-                type="button"
-                role="radio"
-                aria-checked={activeFilter === btn.key}
-                onClick={() => setActiveFilter(btn.key)}
-              >
-                <span className="relative">{btn.label}</span>
-              </button>
-            ))}
+            {isFilterOpen && (
+              <div className="dropdown-menu">
+                {filterOptions.map((option) => (
+                  <div
+                    key={option.key}
+                    className="dropdown-item"
+                    onClick={() => {
+                      setActiveFilter(option.key);
+                      setIsFilterOpen(false);
+                    }}
+                  >
+                    <span>{option.label}</span>
+                    {activeFilter === option.key && <Check size={16} />}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Model Select */}
@@ -951,6 +858,55 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
               </div>
             )}
           </div>
+        </div>
+
+        <div className="header-right">
+          {/* Run Count Selector */}
+          <div className="dropdown-wrapper" ref={runCountDropdownRef}>
+            <button
+              className="dropdown-trigger"
+              onClick={() => setIsRunCountOpen(!isRunCountOpen)}
+            >
+              <span>{runCount}x</span>
+              <ChevronDown size={14} />
+            </button>
+            {isRunCountOpen && (
+              <div className="dropdown-menu dropdown-menu-right">
+                {RUN_COUNTS.map((count) => (
+                  <div
+                    key={count}
+                    className="dropdown-item"
+                    onClick={() => {
+                      setRunCount(count);
+                      setIsRunCountOpen(false);
+                    }}
+                  >
+                    <span>{count} run{count > 1 ? 's' : ''}</span>
+                    {runCount === count && <Check size={16} />}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Run Button */}
+          <button
+            className="run-btn"
+            onClick={runEvaluation}
+            disabled={isRunning || !user?.id}
+          >
+            {isRunning ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                <span>Running...</span>
+              </>
+            ) : (
+              <>
+                <Play size={14} />
+                <span>Run</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 

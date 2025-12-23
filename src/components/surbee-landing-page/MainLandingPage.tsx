@@ -156,7 +156,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
                       {user.email}
                     </span>
                   </div>
-                  <Link href={isEarlyAccess ? "/earlyaccess" : "/dashboard"} className="px-3 py-1.5 bg-black text-white rounded-full hover:bg-black/80 transition-colors" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
+                  <Link href={isEarlyAccess ? "/earlyaccess" : "/home"} className="px-3 py-1.5 bg-black text-white rounded-full hover:bg-black/80 transition-colors" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
                     {isEarlyAccess ? "Get Early Access" : "Dashboard"}
                   </Link>
                 </div>
@@ -344,7 +344,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
               You don't need a research degree to write great surveys. Our AI helps you craft questions that actually make sense to real people. 
               No jargon, no confusion, just clear communication.
             </p>
-            <Link href={user ? "/dashboard" : "/login"} className="inline-block px-6 py-2 bg-white text-black rounded-full hover:bg-gray-100 transition-colors" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
+            <Link href={user ? "/home" : "/login"} className="inline-block px-6 py-2 bg-white text-black rounded-full hover:bg-gray-100 transition-colors" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
               Try Surbee Free
             </Link>
           </div>
@@ -467,7 +467,7 @@ export default function RunwayLandingPage({ isEarlyAccess = false }: { isEarlyAc
           </p>
 
           <div className="text-center mb-20">
-            <Link href={user ? "/dashboard" : "/login"} className="inline-block px-6 py-2 bg-white text-black rounded-full hover:bg-gray-100 transition-colors" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
+            <Link href={user ? "/home" : "/login"} className="inline-block px-6 py-2 bg-white text-black rounded-full hover:bg-gray-100 transition-colors" style={{ fontFamily: 'var(--font-epilogue), sans-serif' }}>
               Join Credit Network
             </Link>
           </div>

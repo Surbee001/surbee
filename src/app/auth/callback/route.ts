@@ -4,12 +4,12 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const nextParam = requestUrl.searchParams.get('next') ?? '/dashboard'
+  const nextParam = requestUrl.searchParams.get('next') ?? '/home'
 
   // Security: Validate redirect URL to prevent open redirect attacks
-  const allowedPaths = ['/dashboard', '/projects', '/settings', '/survey', '/s/', '/project']
+  const allowedPaths = ['/home', '/projects', '/settings', '/survey', '/s/', '/project', '/marketplace']
   const isValidRedirect = allowedPaths.some(path => nextParam.startsWith(path)) && !nextParam.includes('//')
-  const next = isValidRedirect ? nextParam : '/dashboard'
+  const next = isValidRedirect ? nextParam : '/home'
 
   if (code) {
     // Create response first - cookies will be set on this response
@@ -60,6 +60,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // No code provided, redirect to dashboard anyway
-  return NextResponse.redirect(new URL('/dashboard', request.url))
+  // No code provided, redirect to home anyway
+  return NextResponse.redirect(new URL('/home', request.url))
 }

@@ -11,8 +11,8 @@ interface CommunityCategoryCardProps {
 export function CommunityCategoryCard({ category }: CommunityCategoryCardProps) {
   const targetPath =
     category.contentType === 'surveys'
-      ? `/dashboard/marketplace/surveys?category=${category.slug}`
-      : `/dashboard/marketplace/templates?category=${category.slug}`;
+      ? `/marketplace/surveys?category=${category.slug}`
+      : `/marketplace/templates?category=${category.slug}`;
 
   return (
     <Link href={targetPath} className="group block h-full">

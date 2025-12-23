@@ -228,7 +228,7 @@ function CommunitySurveysContent() {
           <header className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
               <Link
-                href="/dashboard/marketplace"
+                href="/marketplace"
                 className="flex items-center gap-2 text-white/60 transition hover:text-white"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -412,7 +412,7 @@ export default function CommunitySurveysPage() {
             <header className="space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
                 <Link
-                  href="/dashboard/marketplace"
+                  href="/marketplace"
                   className="flex items-center gap-2 text-white/60 transition hover:text-white"
                 >
                   <ArrowLeft className="h-4 w-4" />

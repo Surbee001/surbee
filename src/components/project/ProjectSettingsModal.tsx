@@ -717,7 +717,7 @@ export function ProjectSettingsModal({
       });
 
       if (response.ok) {
-        window.location.href = "/dashboard/projects";
+        window.location.href = "/projects";
       } else {
         console.error("Failed to delete project");
       }

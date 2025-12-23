@@ -79,7 +79,7 @@ export default function LandingNavbar({ initialDark = false }: { initialDark?: b
             {loading ? (
               <div className={`px-4 py-2 rounded-full border ${isDark ? "border-white/50 text-white/80" : "border-black/60 text-black/80"}`}>Loading…</div>
             ) : user ? (
-              <Link href="/dashboard" className="px-3 py-1.5 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition font-medium" style={{ fontFamily: 'abcNormalLight, sans-serif' }}>
+              <Link href="/home" className="px-3 py-1.5 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition font-medium" style={{ fontFamily: 'abcNormalLight, sans-serif' }}>
                 Dashboard
               </Link>
             ) : (
