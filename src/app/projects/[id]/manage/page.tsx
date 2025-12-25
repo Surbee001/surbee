@@ -537,33 +537,67 @@ export default function ProjectManagePage() {
   const [hoveredElement, setHoveredElement] = useState<HTMLElement | null>(null);
 
   // Reference mode - highlight hoverable elements
+  const hoveredElementRef = React.useRef<HTMLElement | null>(null);
+
   React.useEffect(() => {
     if (!isReferenceMode || (activeTab !== 'data1' && activeTab !== 'evaluation')) {
       setHoveredElement(null);
+      hoveredElementRef.current = null;
       return;
     }
 
+    const findReferenceableParent = (el: HTMLElement): HTMLElement | null => {
+      let current: HTMLElement | null = el;
+      while (current && current !== document.body) {
+        // Check if it's inside the main content area
+        if (!containerRef.current?.contains(current)) {
+          return null;
+        }
+
+        // Look for elements with background color or border (likely cards/sections)
+        const style = window.getComputedStyle(current);
+        const hasBackground = style.backgroundColor !== 'rgba(0, 0, 0, 0)' &&
+                             style.backgroundColor !== 'transparent';
+        const hasBorder = style.borderWidth !== '0px';
+        const hasMinSize = current.offsetWidth > 100 && current.offsetHeight > 50;
+
+        // Also check for specific patterns in styles or data attributes
+        const isReferenceable = current.hasAttribute('data-referenceable') ||
+                               (hasBackground && hasMinSize) ||
+                               (hasBorder && hasMinSize);
+
+        if (isReferenceable) {
+          return current;
+        }
+        current = current.parentElement;
+      }
+      return null;
+    };
+
     const handleMouseMove = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // Find the closest referenceable container
-      const referenceable = target.closest('[data-referenceable], [class*="section"], [class*="card"], [class*="stat"]') as HTMLElement;
-      if (referenceable && containerRef.current?.contains(referenceable)) {
+      const referenceable = findReferenceableParent(target);
+
+      if (referenceable) {
         setHoveredElement(referenceable);
+        hoveredElementRef.current = referenceable;
       } else {
         setHoveredElement(null);
+        hoveredElementRef.current = null;
       }
     };
 
     const handleClick = (e: MouseEvent) => {
-      if (hoveredElement) {
+      const currentHovered = hoveredElementRef.current;
+      if (currentHovered) {
         e.preventDefault();
         e.stopPropagation();
 
         // Extract content from the element
-        const title = hoveredElement.getAttribute('data-title') ||
-                     hoveredElement.querySelector('h2, h3, h4')?.textContent ||
+        const title = currentHovered.getAttribute('data-title') ||
+                     currentHovered.querySelector('h2, h3, h4, span[style*="font-weight"]')?.textContent ||
                      'Selected content';
-        const content = hoveredElement.textContent?.slice(0, 500) || '';
+        const content = currentHovered.textContent?.slice(0, 500) || '';
 
         // Add reference
         const newRef = {
@@ -574,6 +608,7 @@ export default function ProjectManagePage() {
         setAgentReferences(prev => [...prev, newRef]);
         setIsReferenceMode(false);
         setHoveredElement(null);
+        hoveredElementRef.current = null;
       }
     };
 
@@ -584,7 +619,7 @@ export default function ProjectManagePage() {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('click', handleClick, true);
     };
-  }, [isReferenceMode, activeTab, hoveredElement]);
+  }, [isReferenceMode, activeTab]);
 
   // Remove a reference
   const removeAgentReference = (id: string) => {
@@ -1437,6 +1472,38 @@ export default function ProjectManagePage() {
                 borderTop: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
               }}
             >
+              {/* Reference Button - Above chatbox, Only on Data1 and Evaluation tabs */}
+              {(activeTab === 'data1' || activeTab === 'evaluation') && (
+                <div style={{ marginBottom: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsReferenceMode(!isReferenceMode)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '5px 10px',
+                      gap: '5px',
+                      backgroundColor: isReferenceMode ? 'rgba(59, 130, 246, 0.15)' : 'var(--surbee-bg-secondary, #f5f5f5)',
+                      border: isReferenceMode ? '1px solid rgb(59, 130, 246)' : '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
+                      borderRadius: '9999px',
+                      cursor: 'pointer',
+                      color: isReferenceMode ? 'rgb(59, 130, 246)' : 'var(--surbee-fg-secondary)',
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      transition: 'all 150ms ease',
+                    }}
+                    title="Click to select content from the page"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                    </svg>
+                    {isReferenceMode ? 'Selecting...' : 'Attach reference'}
+                  </button>
+                </div>
+              )}
+
               {/* Reference Pills */}
               {agentReferences.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
@@ -1498,36 +1565,6 @@ export default function ProjectManagePage() {
                     border: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
                   }}
                 >
-                  {/* Reference Button - Only on Data1 and Evaluation tabs */}
-                  {(activeTab === 'data1' || activeTab === 'evaluation') && (
-                    <button
-                      type="button"
-                      onClick={() => setIsReferenceMode(!isReferenceMode)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '4px 8px',
-                        gap: '4px',
-                        backgroundColor: isReferenceMode ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        color: isReferenceMode ? 'rgb(59, 130, 246)' : 'var(--surbee-fg-tertiary)',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        transition: 'all 150ms ease',
-                        flexShrink: 0,
-                      }}
-                      title="Click to select content from the page"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="11" cy="11" r="8" />
-                        <path d="m21 21-4.35-4.35" />
-                      </svg>
-                      {isReferenceMode ? 'Selecting...' : 'Reference'}
-                    </button>
-                  )}
                   <textarea
                     ref={agentTextareaRef}
                     value={agentInput}
