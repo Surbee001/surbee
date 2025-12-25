@@ -532,12 +532,71 @@ export default function ProjectManagePage() {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const agentTextareaRef = React.useRef<HTMLTextAreaElement>(null);
   const [agentInputHeight, setAgentInputHeight] = useState(24);
+  const [isReferenceMode, setIsReferenceMode] = useState(false);
+  const [agentReferences, setAgentReferences] = useState<Array<{ id: string; title: string; content: string }>>([]);
+  const [hoveredElement, setHoveredElement] = useState<HTMLElement | null>(null);
+
+  // Reference mode - highlight hoverable elements
+  React.useEffect(() => {
+    if (!isReferenceMode || (activeTab !== 'data1' && activeTab !== 'evaluation')) {
+      setHoveredElement(null);
+      return;
+    }
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // Find the closest referenceable container
+      const referenceable = target.closest('[data-referenceable], [class*="section"], [class*="card"], [class*="stat"]') as HTMLElement;
+      if (referenceable && containerRef.current?.contains(referenceable)) {
+        setHoveredElement(referenceable);
+      } else {
+        setHoveredElement(null);
+      }
+    };
+
+    const handleClick = (e: MouseEvent) => {
+      if (hoveredElement) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Extract content from the element
+        const title = hoveredElement.getAttribute('data-title') ||
+                     hoveredElement.querySelector('h2, h3, h4')?.textContent ||
+                     'Selected content';
+        const content = hoveredElement.textContent?.slice(0, 500) || '';
+
+        // Add reference
+        const newRef = {
+          id: `ref_${Date.now()}`,
+          title: title.trim().slice(0, 30),
+          content: content.trim(),
+        };
+        setAgentReferences(prev => [...prev, newRef]);
+        setIsReferenceMode(false);
+        setHoveredElement(null);
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('click', handleClick, true);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('click', handleClick, true);
+    };
+  }, [isReferenceMode, activeTab, hoveredElement]);
+
+  // Remove a reference
+  const removeAgentReference = (id: string) => {
+    setAgentReferences(prev => prev.filter(r => r.id !== id));
+  };
 
   // Clear agent chat
   const clearAgentChat = () => {
     setAgentMessages([]);
     setAgentInput('');
     setAgentInputHeight(24);
+    setAgentReferences([]);
     if (agentTextareaRef.current) {
       agentTextareaRef.current.style.height = 'auto';
     }
@@ -713,16 +772,24 @@ export default function ProjectManagePage() {
     e.preventDefault();
     if (!agentInput.trim() || isAgentLoading || !user) return;
 
+    // Build message with references
+    let fullMessage = agentInput;
+    if (agentReferences.length > 0) {
+      const refContext = agentReferences.map(r => `[${r.title}]: ${r.content}`).join('\n\n');
+      fullMessage = `${agentInput}\n\n---\nReferenced content:\n${refContext}`;
+    }
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
-      content: agentInput,
+      content: agentInput, // Show only the user's text in the UI
       timestamp: new Date(),
     };
 
     setAgentMessages(prev => [...prev, userMessage]);
-    const messageToSend = agentInput;
+    const messageToSend = fullMessage; // Send full message with refs to API
     setAgentInput('');
+    setAgentReferences([]); // Clear references after sending
 
     // Reset textarea height
     setAgentInputHeight(24);
@@ -1370,6 +1437,55 @@ export default function ProjectManagePage() {
                 borderTop: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
               }}
             >
+              {/* Reference Pills */}
+              {agentReferences.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                  {agentReferences.map(ref => (
+                    <div
+                      key={ref.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '4px 10px',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderRadius: '9999px',
+                        fontSize: '12px',
+                        color: 'rgb(59, 130, 246)',
+                      }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
+                      <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {ref.title}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeAgentReference(ref.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '14px',
+                          height: '14px',
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: 'rgb(59, 130, 246)',
+                          padding: 0,
+                        }}
+                      >
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <form onSubmit={handleAgentSubmit}>
                 <div
                   style={{
@@ -1382,6 +1498,36 @@ export default function ProjectManagePage() {
                     border: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
                   }}
                 >
+                  {/* Reference Button - Only on Data1 and Evaluation tabs */}
+                  {(activeTab === 'data1' || activeTab === 'evaluation') && (
+                    <button
+                      type="button"
+                      onClick={() => setIsReferenceMode(!isReferenceMode)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '4px 8px',
+                        gap: '4px',
+                        backgroundColor: isReferenceMode ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        color: isReferenceMode ? 'rgb(59, 130, 246)' : 'var(--surbee-fg-tertiary)',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        transition: 'all 150ms ease',
+                        flexShrink: 0,
+                      }}
+                      title="Click to select content from the page"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                      </svg>
+                      {isReferenceMode ? 'Selecting...' : 'Reference'}
+                    </button>
+                  )}
                   <textarea
                     ref={agentTextareaRef}
                     value={agentInput}
@@ -1449,6 +1595,68 @@ export default function ProjectManagePage() {
           </motion.div>
         )}
         </div>
+
+        {/* Reference Mode Highlight Overlay */}
+        {isReferenceMode && hoveredElement && (
+          <div
+            style={{
+              position: 'fixed',
+              top: hoveredElement.getBoundingClientRect().top - 2,
+              left: hoveredElement.getBoundingClientRect().left - 2,
+              width: hoveredElement.getBoundingClientRect().width + 4,
+              height: hoveredElement.getBoundingClientRect().height + 4,
+              border: '2px solid rgb(59, 130, 246)',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(59, 130, 246, 0.08)',
+              pointerEvents: 'none',
+              zIndex: 9999,
+            }}
+          />
+        )}
+
+        {/* Reference Mode Instructions Toast */}
+        {isReferenceMode && (
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '100px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              padding: '10px 20px',
+              backgroundColor: 'rgb(38, 38, 38)',
+              color: 'white',
+              borderRadius: '9999px',
+              fontSize: '13px',
+              fontWeight: '500',
+              zIndex: 10000,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            Click on any element to reference it
+            <button
+              onClick={() => setIsReferenceMode(false)}
+              style={{
+                marginLeft: '8px',
+                padding: '2px 8px',
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                border: 'none',
+                borderRadius: '4px',
+                color: 'white',
+                fontSize: '12px',
+                cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
 
         <style jsx global>{`
           .no-scrollbar::-webkit-scrollbar {
