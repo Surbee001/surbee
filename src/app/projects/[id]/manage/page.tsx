@@ -6,17 +6,16 @@ import { Button } from '@/components/ui/button';
 import { TypeformButton, TypeformButtonContainer } from '@/components/ui/typeform-button';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { PreviewTab } from '@/components/project-manage/PreviewTab';
-import { InsightsTabRedesign } from '@/components/project-manage/InsightsTabRedesign';
 import { UsageTab } from '@/components/project-manage/UsageTab';
 import { ShareTabRedesign } from '@/components/project-manage/ShareTabRedesign';
-import { CipherTab } from '@/components/project-manage/CipherTab';
 import { EvaluationTab } from '@/components/project-manage/EvaluationTab';
+import DataHeroSection from '@/components/project-manage/DataHeroSection';
+import DataStatisticsSection from '@/components/project-manage/DataStatisticsSection';
 import AppLayout from '@/components/layout/AppLayout';
 import { useTheme } from '@/hooks/useTheme';
 import { motion } from 'framer-motion';
 import { ProjectBreadcrumb } from '@/components/ui/project-breadcrumb';
 import { ComponentRegistryProvider } from '@/contexts/ComponentRegistry';
-import { AnalysisDotsManager } from '@/components/analysis-dots/AnalysisDotsManager';
 import { extractPageContext } from '@/lib/services/component-detection';
 import { useComponentRegistry } from '@/contexts/ComponentRegistry';
 import { useAuth } from '@/contexts/AuthContext';
@@ -512,7 +511,7 @@ function AskSurbeeComponent({ activeTab, projectId }: { activeTab: TabType; proj
   );
 }
 
-export type TabType = 'preview' | 'insights' | 'evaluation' | 'usage' | 'cipher' | 'share';
+export type TabType = 'preview' | 'data1' | 'evaluation' | 'usage' | 'share';
 
 export default function ProjectManagePage() {
   const params = useParams();
@@ -524,7 +523,36 @@ export default function ProjectManagePage() {
   const [isMounted, setIsMounted] = useState(false);
   // State to control exit animation
   const [isExiting, setIsExiting] = useState(false);
+  // Agent panel state
+  const [isAgentOpen, setIsAgentOpen] = useState(false);
+  const [agentInput, setAgentInput] = useState('');
+  const [agentMessages, setAgentMessages] = useState<ChatMessage[]>([]);
+  const [isAgentLoading, setIsAgentLoading] = useState(false);
+  const agentAbortRef = React.useRef<AbortController | null>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const agentTextareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const [agentInputHeight, setAgentInputHeight] = useState(24);
+
+  // Clear agent chat
+  const clearAgentChat = () => {
+    setAgentMessages([]);
+    setAgentInput('');
+    setAgentInputHeight(24);
+    if (agentTextareaRef.current) {
+      agentTextareaRef.current.style.height = 'auto';
+    }
+  };
+
+  // Auto-resize textarea and update border radius
+  const handleAgentInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setAgentInput(e.target.value);
+    // Auto-resize
+    const textarea = e.target;
+    textarea.style.height = 'auto';
+    const newHeight = Math.min(textarea.scrollHeight, 120);
+    textarea.style.height = newHeight + 'px';
+    setAgentInputHeight(newHeight);
+  };
 
   React.useEffect(() => {
     setIsMounted(true);
@@ -589,6 +617,139 @@ export default function ProjectManagePage() {
     setIsExiting(false);
   }, []);
 
+  // Agent chat functions
+  const handleAgentStop = () => {
+    if (agentAbortRef.current) {
+      agentAbortRef.current.abort();
+      agentAbortRef.current = null;
+    }
+    setIsAgentLoading(false);
+  };
+
+  const streamAgentResponse = async (question: string) => {
+    if (!user) return;
+
+    agentAbortRef.current = new AbortController();
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          messages: [
+            ...agentMessages.map(m => ({ role: m.role, content: m.content })),
+            { role: 'user', content: question },
+          ],
+        }),
+        signal: agentAbortRef.current.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      const aiMessageId = Date.now().toString();
+      let fullResponse = '';
+
+      setAgentMessages(prev => [...prev, {
+        id: aiMessageId,
+        role: 'assistant',
+        content: '',
+        timestamp: new Date(),
+      }]);
+
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const colonIndex = line.indexOf(':');
+          if (colonIndex === -1) continue;
+          const prefix = line.slice(0, colonIndex);
+          const data = line.slice(colonIndex + 1);
+
+          try {
+            if (prefix === '0') {
+              const text = JSON.parse(data);
+              if (typeof text === 'string') {
+                fullResponse += text;
+                setAgentMessages(prev => prev.map(m =>
+                  m.id === aiMessageId ? { ...m, content: fullResponse } : m
+                ));
+              }
+            }
+          } catch (e) {}
+        }
+      }
+
+      setAgentMessages(prev => prev.map(m =>
+        m.id === aiMessageId ? { ...m, content: fullResponse } : m
+      ));
+    } catch (error: any) {
+      if (error.name === 'AbortError') return;
+      setAgentMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: `Error: ${error.message}`,
+        timestamp: new Date(),
+      }]);
+    } finally {
+      agentAbortRef.current = null;
+    }
+  };
+
+  const handleAgentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!agentInput.trim() || isAgentLoading || !user) return;
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: agentInput,
+      timestamp: new Date(),
+    };
+
+    setAgentMessages(prev => [...prev, userMessage]);
+    const messageToSend = agentInput;
+    setAgentInput('');
+
+    // Reset textarea height
+    setAgentInputHeight(24);
+    if (agentTextareaRef.current) {
+      agentTextareaRef.current.style.height = 'auto';
+    }
+
+    setIsAgentLoading(true);
+
+    try {
+      await streamAgentResponse(messageToSend);
+    } finally {
+      setIsAgentLoading(false);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setAgentInput(suggestion);
+  };
+
+  const agentSuggestions = [
+    'Analyze survey responses',
+    'Find drop-off patterns',
+    'Summarize key insights',
+    'Detect fraud patterns',
+  ];
+
   return (
             <ComponentRegistryProvider>
               <div 
@@ -642,6 +803,49 @@ export default function ProjectManagePage() {
                 
                               {/* Tabs - On the Right */}
                               <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                                    {/* Agent Pill Button */}
+                                    <button
+                                      onClick={() => setIsAgentOpen(!isAgentOpen)}
+                                      style={{
+                                        padding: '6px 14px',
+                                        fontSize: '13px',
+                                        fontWeight: '500',
+                                        color: isAgentOpen ? 'var(--surbee-fg-primary)' : 'var(--surbee-fg-primary)',
+                                        backgroundColor: isAgentOpen ? 'var(--surbee-bg-secondary, #f5f5f5)' : 'transparent',
+                                        border: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.1))',
+                                        borderRadius: '9999px',
+                                        cursor: 'pointer',
+                                        transition: 'all 200ms ease',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        if (!isAgentOpen) {
+                                          e.currentTarget.style.backgroundColor = 'var(--surbee-bg-secondary, #f5f5f5)';
+                                        }
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        if (!isAgentOpen) {
+                                          e.currentTarget.style.backgroundColor = 'transparent';
+                                        }
+                                      }}
+                                    >
+                                      {/* Unique Agent Icon - Neural/AI sparkle */}
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="3"/>
+                                        <path d="M12 2v4"/>
+                                        <path d="M12 18v4"/>
+                                        <path d="M4.93 4.93l2.83 2.83"/>
+                                        <path d="M16.24 16.24l2.83 2.83"/>
+                                        <path d="M2 12h4"/>
+                                        <path d="M18 12h4"/>
+                                        <path d="M4.93 19.07l2.83-2.83"/>
+                                        <path d="M16.24 7.76l2.83-2.83"/>
+                                      </svg>
+                                      Agent
+                                    </button>
+
                                     <button
                                       onClick={() => setActiveTab('preview')}
                                       style={{
@@ -672,36 +876,36 @@ export default function ProjectManagePage() {
                                     >
                                       Preview
                                     </button>
-                
+
                                     <button
-                                      onClick={() => setActiveTab('insights')}
+                                      onClick={() => setActiveTab('data1')}
                                       style={{
                                         padding: '0',
                                         fontSize: '14px',
-                                        fontWeight: activeTab === 'insights' ? '500' : '400',
-                                        color: activeTab === 'insights'
+                                        fontWeight: activeTab === 'data1' ? '500' : '400',
+                                        color: activeTab === 'data1'
                                           ? 'var(--surbee-fg-primary)'
                                           : 'var(--surbee-fg-tertiary)',
                                         backgroundColor: 'transparent',
                                         border: 'none',
                                         cursor: 'pointer',
                                         transition: 'color 200ms ease, opacity 200ms ease',
-                                        opacity: activeTab === 'insights' ? 1 : 0.6,
+                                        opacity: activeTab === 'data1' ? 1 : 0.6,
                                       }}
                                       onMouseEnter={(e) => {
-                                        if (activeTab !== 'insights') {
+                                        if (activeTab !== 'data1') {
                                           e.currentTarget.style.opacity = '0.9';
                                           e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
                                         }
                                       }}
                                       onMouseLeave={(e) => {
-                                        if (activeTab !== 'insights') {
+                                        if (activeTab !== 'data1') {
                                           e.currentTarget.style.opacity = '0.6';
                                           e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
                                         }
                                       }}
                                     >
-                                      Insights
+                                      Data 1
                                     </button>
 
                                     <button
@@ -767,37 +971,6 @@ export default function ProjectManagePage() {
                                     </button>
 
                                     <button
-                                      onClick={() => setActiveTab('cipher')}
-                                      style={{
-                                        padding: '0',
-                                        fontSize: '14px',
-                                        fontWeight: activeTab === 'cipher' ? '500' : '400',
-                                        color: activeTab === 'cipher'
-                                          ? 'var(--surbee-fg-primary)'
-                                          : 'var(--surbee-fg-tertiary)',
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        transition: 'color 200ms ease, opacity 200ms ease',
-                                        opacity: activeTab === 'cipher' ? 1 : 0.6,
-                                      }}
-                                      onMouseEnter={(e) => {
-                                        if (activeTab !== 'cipher') {
-                                          e.currentTarget.style.opacity = '0.9';
-                                          e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
-                                        }
-                                      }}
-                                      onMouseLeave={(e) => {
-                                        if (activeTab !== 'cipher') {
-                                          e.currentTarget.style.opacity = '0.6';
-                                          e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
-                                        }
-                                      }}
-                                    >
-                                      Cipher
-                                    </button>
-
-                                    <button
                                       onClick={() => setActiveTab('share')}
                                       style={{
                                         padding: '0',
@@ -827,65 +1000,100 @@ export default function ProjectManagePage() {
                                     >
                                       Share
                                     </button>
+
+                                    {/* Settings Icon */}
+                                    <button
+                                      onClick={() => {
+                                        // TODO: Open settings modal or navigate to settings
+                                      }}
+                                      style={{
+                                        padding: '6px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        borderRadius: '50%',
+                                        cursor: 'pointer',
+                                        color: 'var(--surbee-fg-tertiary)',
+                                        transition: 'color 200ms ease, opacity 200ms ease, background-color 200ms ease',
+                                        opacity: 0.6,
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.opacity = '1';
+                                        e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.opacity = '0.6';
+                                        e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                      }}
+                                      title="Settings"
+                                    >
+                                      <svg
+                                        height="16"
+                                        width="16"
+                                        fill="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          clipRule="evenodd"
+                                          d="M11.568 3.5a1 1 0 0 0-.863.494l-.811 1.381A3.001 3.001 0 0 1 7.33 6.856l-1.596.013a1 1 0 0 0-.858.501l-.439.761a1 1 0 0 0-.004.992l.792 1.4a3 3 0 0 1 0 2.954l-.792 1.4a1 1 0 0 0 .004.992l.439.76a1 1 0 0 0 .858.502l1.596.013a3 3 0 0 1 2.564 1.48l.811 1.382a1 1 0 0 0 .863.494h.87a1 1 0 0 0 .862-.494l.812-1.381a3.001 3.001 0 0 1 2.563-1.481l1.596-.013a1 1 0 0 0 .86-.501l.438-.761a1 1 0 0 0 .004-.992l-.793-1.4a3 3 0 0 1 0-2.954l.793-1.4a1 1 0 0 0-.004-.992l-.439-.76a1 1 0 0 0-.858-.502l-1.597-.013a3 3 0 0 1-2.563-1.48L13.3 3.993a1 1 0 0 0-.862-.494h-.87ZM8.98 2.981A3.001 3.001 0 0 1 11.568 1.5h.87c1.064 0 2.049.564 2.588 1.481l.811 1.382a1 1 0 0 0 .855.494l1.596.013a3 3 0 0 1 2.575 1.502l.44.76a3 3 0 0 1 .011 2.975l-.792 1.4a1 1 0 0 0 0 .985l.792 1.401a3 3 0 0 1-.012 2.974l-.439.761a3.001 3.001 0 0 1-2.575 1.503l-1.597.012a1 1 0 0 0-.854.494l-.811 1.382a3.001 3.001 0 0 1-2.588 1.481h-.87a3.001 3.001 0 0 1-2.588-1.481l-.811-1.382a1 1 0 0 0-.855-.494l-1.596-.012a3.001 3.001 0 0 1-2.576-1.503l-.438-.76a3 3 0 0 1-.013-2.975l.793-1.4a1 1 0 0 0 0-.985l-.793-1.4a3 3 0 0 1 .013-2.975l.438-.761A3.001 3.001 0 0 1 5.718 4.87l1.596-.013a1 1 0 0 0 .855-.494l.81-1.382Z"
+                                          fillRule="evenodd"
+                                        />
+                                        <path
+                                          clipRule="evenodd"
+                                          d="M12.003 10.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3ZM8.502 12a3.5 3.5 0 1 1 7 .001 3.5 3.5 0 0 1-7-.001Z"
+                                          fillRule="evenodd"
+                                        />
+                                      </svg>
+                                    </button>
                               </nav>
                             </div>
                 
-                                        {/* Main Content Window */}
-                
-                                        <motion.div
-                
-                                          ref={containerRef}
-                
-                                          className="flex-1 flex flex-col overflow-hidden no-scrollbar rounded-xl shadow-sm"
-                
-                                          initial={{ y: -20, opacity: 1 }}
-                
-                                          animate={{ 
-                
-                                            y: isExiting ? -20 : 0,
-                
-                                            opacity: 1
-                
-                                          }}
-                
-                                          transition={{
-                
-                                            duration: 0.3,
-                
-                                            ease: [0.2, 0.8, 0.2, 1]
-                
-                                          }}
-                
-                                          style={{
-                
-                                            backgroundColor: 'var(--surbee-bg-primary)',
-                
-                                            scrollbarWidth: 'none',
-                
-                                            msOverflowStyle: 'none',
-                
-                                            width: '100%',
-                
-                                            willChange: 'transform',
-                
-                                            boxSizing: 'border-box',
-                
-                                            position: 'relative',
-                
-                                            zIndex: 10,
-                
-                                            border: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))'
-                
-                                          }}
-                
-                                        >          {/* Tab Content */}
-          {activeTab === 'insights' ? (
+                {/* Split Panel Container */}
+                <div
+                  style={{
+                    display: 'flex',
+                    flex: 1,
+                    gap: '8px',
+                    overflow: 'hidden',
+                    minHeight: 0,
+                  }}
+                >
+                  {/* Main Content Window */}
+                  <motion.div
+                    ref={containerRef}
+                    className="flex flex-col overflow-hidden no-scrollbar rounded-xl shadow-sm"
+                    initial={{ y: -20, opacity: 1 }}
+                    animate={{
+                      y: isExiting ? -20 : 0,
+                      opacity: 1
+                    }}
+                    transition={{
+                      duration: 0.3,
+                      ease: [0.2, 0.8, 0.2, 1]
+                    }}
+                    style={{
+                      backgroundColor: 'var(--surbee-bg-primary)',
+                      scrollbarWidth: 'none',
+                      msOverflowStyle: 'none',
+                      flex: 1,
+                      minWidth: 0,
+                      willChange: 'transform',
+                      boxSizing: 'border-box',
+                      position: 'relative',
+                      zIndex: 10,
+                      border: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
+                    }}
+                  >          {/* Tab Content */}
+          {activeTab === 'data1' ? (
             <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
-              <AnalysisDotsManager projectId={projectId}>
-                <div className="overflow-y-auto" style={{ padding: '24px', height: '100%' }}>
-                  <InsightsTabRedesign projectId={projectId} />
-                </div>
-              </AnalysisDotsManager>
+              <div className="overflow-y-auto" style={{ height: '100%' }}>
+                <DataHeroSection projectId={projectId} />
+                <DataStatisticsSection projectId={projectId} />
+              </div>
             </div>
           ) : activeTab === 'evaluation' ? (
             <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
@@ -897,12 +1105,6 @@ export default function ProjectManagePage() {
             <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
               <UsageTab projectId={projectId} />
             </div>
-          ) : activeTab === 'cipher' ? (
-            <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
-              <div className="overflow-y-auto" style={{ padding: '24px', height: '100%' }}>
-                <CipherTab projectId={projectId} />
-              </div>
-            </div>
           ) : (
             <div className="flex-1 overflow-auto" style={{ padding: '24px' }}>
               {activeTab === 'preview' && <PreviewTab projectId={projectId} sandboxBundle={sandboxBundle} activeChatSessionId={activeChatSessionId} />}
@@ -910,16 +1112,351 @@ export default function ProjectManagePage() {
             </div>
           )}
 
-          {/* Ask Surbee Component - Inside container at bottom - Hidden for Preview, Evaluation, and Cipher Tabs */}
-          {activeTab !== 'preview' && activeTab !== 'evaluation' && activeTab !== 'cipher' && (
+          {/* Ask Surbee Component - Inside container at bottom - Hidden for Preview, Data1, Evaluation, and Cipher Tabs */}
+          {activeTab !== 'preview' && activeTab !== 'data1' && activeTab !== 'evaluation' && activeTab !== 'cipher' && !isAgentOpen && (
             <div className="ask-surbee-container">
               <AskSurbeeComponent activeTab={activeTab} projectId={projectId} />
             </div>
           )}
         </motion.div>
+
+        {/* Agent Panel */}
+        {isAgentOpen && (
+          <motion.div
+            initial={{ x: 100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 100, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }}
+            className="flex flex-col overflow-hidden rounded-xl shadow-sm"
+            style={{
+              width: '380px',
+              flexShrink: 0,
+              backgroundColor: 'var(--surbee-bg-primary)',
+              border: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
+            }}
+          >
+            {/* Agent Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
+                borderBottom: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: 'var(--surbee-fg-primary)',
+                }}
+              >
+                Agent
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                {/* Clear Button */}
+                <button
+                  onClick={clearAgentChat}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px',
+                    padding: '4px 10px',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    cursor: agentMessages.length > 0 ? 'pointer' : 'default',
+                    color: 'var(--surbee-fg-tertiary)',
+                    borderRadius: '9999px',
+                    transition: 'all 150ms ease',
+                    opacity: agentMessages.length > 0 ? 1 : 0.4,
+                    fontSize: '12px',
+                    fontWeight: '500',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (agentMessages.length > 0) {
+                      e.currentTarget.style.backgroundColor = 'var(--surbee-bg-secondary, #f5f5f5)';
+                      e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
+                  }}
+                  title="Clear chat"
+                  disabled={agentMessages.length === 0}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                    <path d="M21 3v5h-5" />
+                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                    <path d="M8 16H3v5" />
+                  </svg>
+                  Clear
+                </button>
+                {/* Close Button */}
+                <button
+                  onClick={() => setIsAgentOpen(false)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '28px',
+                    height: '28px',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--surbee-fg-tertiary)',
+                    borderRadius: '50%',
+                    transition: 'all 150ms ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--surbee-bg-secondary, #f5f5f5)';
+                    e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
+                  }}
+                  title="Close"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Agent Messages */}
+            <div
+              className="flex-1 overflow-y-auto"
+              style={{
+                padding: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+              }}
+            >
+              {agentMessages.length === 0 ? (
+                /* Empty State with Suggestions */
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flex: 1,
+                    gap: '24px',
+                    paddingTop: '40px',
+                  }}
+                >
+                  <div
+                    style={{
+                      textAlign: 'center',
+                      color: 'var(--surbee-fg-tertiary)',
+                      fontSize: '14px',
+                    }}
+                  >
+                    Ask the agent anything about your survey
+                  </div>
+
+                  {/* Suggestion Pills */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '8px',
+                      justifyContent: 'center',
+                      maxWidth: '300px',
+                    }}
+                  >
+                    {agentSuggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        style={{
+                          padding: '8px 14px',
+                          fontSize: '13px',
+                          color: 'var(--surbee-fg-secondary)',
+                          backgroundColor: 'var(--surbee-bg-secondary, #f5f5f5)',
+                          border: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
+                          borderRadius: '9999px',
+                          cursor: 'pointer',
+                          transition: 'all 150ms ease',
+                          whiteSpace: 'nowrap',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--surbee-bg-tertiary, #e5e5e5)';
+                          e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--surbee-bg-secondary, #f5f5f5)';
+                          e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                        }}
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                /* Messages List */
+                agentMessages.map((message) => (
+                  <div key={message.id} style={{ marginBottom: '16px' }}>
+                    {message.role === 'user' ? (
+                      /* User message - dark bubble, right aligned */
+                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <div
+                          style={{
+                            padding: '10px 16px',
+                            backgroundColor: 'rgb(38, 38, 38)',
+                            color: '#ffffff',
+                            borderRadius: '18px',
+                            maxWidth: 'min(85%, 280px)',
+                            wordBreak: 'break-word',
+                          }}
+                        >
+                          <p style={{
+                            fontSize: '14px',
+                            lineHeight: '1.5',
+                            margin: 0,
+                            whiteSpace: 'pre-wrap',
+                          }}>
+                            {message.content}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      /* AI message - no bubble, just text */
+                      <div
+                        style={{
+                          color: 'var(--surbee-fg-primary)',
+                          fontSize: '14px',
+                          lineHeight: '1.6',
+                        }}
+                      >
+                        {message.content ? (
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: String(message.content)
+                                .replace(/^### (.*$)/gim, '<h3 style="font-size:15px;font-weight:600;margin:12px 0 8px 0;">$1</h3>')
+                                .replace(/^## (.*$)/gim, '<h2 style="font-size:16px;font-weight:600;margin:16px 0 8px 0;">$1</h2>')
+                                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                                .replace(/^- (.*$)/gim, '<li style="margin-left:16px;margin-bottom:4px;">$1</li>')
+                                .replace(/^\d+\. (.*$)/gim, '<li style="margin-left:16px;margin-bottom:4px;">$1</li>')
+                                .replace(/\n/g, '<br>')
+                            }}
+                          />
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ width: '6px', height: '6px', backgroundColor: 'var(--surbee-fg-tertiary)', borderRadius: '50%', animation: 'pulse 1s infinite' }} />
+                            <div style={{ width: '6px', height: '6px', backgroundColor: 'var(--surbee-fg-tertiary)', borderRadius: '50%', animation: 'pulse 1s infinite 0.2s' }} />
+                            <div style={{ width: '6px', height: '6px', backgroundColor: 'var(--surbee-fg-tertiary)', borderRadius: '50%', animation: 'pulse 1s infinite 0.4s' }} />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Agent Input */}
+            <div
+              style={{
+                padding: '12px 16px',
+                borderTop: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
+              }}
+            >
+              <form onSubmit={handleAgentSubmit}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    gap: '8px',
+                    padding: '12px 14px',
+                    backgroundColor: 'var(--surbee-bg-secondary, #f5f5f5)',
+                    borderRadius: agentInputHeight > 30 ? '15px' : '9999px',
+                    border: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
+                  }}
+                >
+                  <textarea
+                    ref={agentTextareaRef}
+                    value={agentInput}
+                    onChange={handleAgentInputChange}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleAgentSubmit(e as any);
+                      }
+                    }}
+                    placeholder="Ask anything..."
+                    disabled={isAgentLoading}
+                    rows={1}
+                    style={{
+                      flex: 1,
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      outline: 'none',
+                      fontSize: '14px',
+                      lineHeight: '1.5',
+                      color: 'var(--surbee-fg-primary)',
+                      resize: 'none',
+                      minHeight: '24px',
+                      maxHeight: '120px',
+                      overflowY: 'auto',
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                  <button
+                    type={isAgentLoading ? 'button' : 'submit'}
+                    onClick={isAgentLoading ? handleAgentStop : undefined}
+                    disabled={!isAgentLoading && !agentInput.trim()}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '28px',
+                      height: '28px',
+                      flexShrink: 0,
+                      backgroundColor: (isAgentLoading || agentInput.trim())
+                        ? 'var(--surbee-fg-primary)'
+                        : 'transparent',
+                      border: 'none',
+                      borderRadius: '50%',
+                      cursor: (isAgentLoading || agentInput.trim()) ? 'pointer' : 'default',
+                      color: (isAgentLoading || agentInput.trim()) ? 'white' : 'var(--surbee-fg-tertiary)',
+                      opacity: (isAgentLoading || agentInput.trim()) ? 1 : 0.5,
+                      transition: 'all 150ms ease',
+                    }}
+                  >
+                    {isAgentLoading ? (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="6" width="12" height="12" rx="1" />
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 19V5M5 12l7-7 7 7" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+          </motion.div>
+        )}
+        </div>
+
         <style jsx global>{`
           .no-scrollbar::-webkit-scrollbar {
             display: none;
+          }
+          @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
           }
         `}</style>
       </div>

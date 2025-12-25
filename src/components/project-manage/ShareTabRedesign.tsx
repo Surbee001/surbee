@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Copy, ExternalLink, Check, ChevronRight, Link2, QrCode, Code2, Share2, Download, Globe, Users, Eye } from 'lucide-react';
+import { Copy, ExternalLink, Check, ChevronRight, Link2, QrCode, Code2, Share2, Download, Globe, Eye } from 'lucide-react';
 import { api } from '@/lib/trpc/react';
 
 interface ShareTabRedesignProps {
@@ -29,8 +29,7 @@ export const ShareTabRedesign: React.FC<ShareTabRedesignProps> = ({ projectId, p
 
   const embedCode = `<iframe src="${surveyUrl}" width="100%" height="600" frameborder="0"></iframe>`;
 
-  // QR Code URL using API
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(surveyUrl)}&bgcolor=transparent&color=ffffff&format=png`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(surveyUrl)}&bgcolor=ffffff&color=000000&format=png`;
 
   useEffect(() => {
     if (shareSettings?.customSlug) {
@@ -84,116 +83,405 @@ export const ShareTabRedesign: React.FC<ShareTabRedesignProps> = ({ projectId, p
   };
 
   return (
-    <div className="share-root">
-      {/* Bento Grid */}
-      <div className="share-bento">
-        {/* Main Link Card - Large */}
-        <div className="bento-card link-hero">
-          <div className="hero-icon">
-            <Link2 size={24} />
+    <section
+      style={{
+        width: '100%',
+        padding: '40px 40px 60px',
+      }}
+    >
+      <div
+        style={{
+          maxWidth: '1400px',
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '24px',
+        }}
+      >
+        {/* Hero Section */}
+        <div
+          style={{
+            backgroundColor: 'var(--surbee-bg-secondary, #f5f5f5)',
+            borderRadius: '6px',
+            padding: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '24px',
+          }}
+        >
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'var(--surbee-bg-primary, #fff)',
+              borderRadius: '6px',
+              flexShrink: 0,
+            }}
+          >
+            <Link2 size={24} style={{ color: 'var(--surbee-fg-tertiary)' }} />
           </div>
-          <div className="hero-content">
-            <div className="hero-label">Survey Link</div>
-            <div className="hero-url">{surveyUrl}</div>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: '12px',
+                color: 'var(--surbee-fg-tertiary)',
+                marginBottom: '8px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
+              Survey Link
+            </div>
+            <div
+              style={{
+                fontSize: '14px',
+                color: 'var(--surbee-fg-primary)',
+                fontFamily: 'monospace',
+                wordBreak: 'break-all',
+              }}
+            >
+              {surveyUrl}
+            </div>
           </div>
-          <div className="hero-actions">
+
+          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
             <button
-              className={`hero-btn primary ${copied === 'link' ? 'copied' : ''}`}
               onClick={() => handleCopy(surveyUrl, 'link')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                backgroundColor: copied === 'link' ? '#22c55e' : 'var(--surbee-fg-primary)',
+                color: 'var(--surbee-bg-primary, #fff)',
+                border: 'none',
+                borderRadius: '9999px',
+                fontSize: '13px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
             >
               {copied === 'link' ? <Check size={16} /> : <Copy size={16} />}
               {copied === 'link' ? 'Copied' : 'Copy'}
             </button>
             <button
-              className="hero-btn secondary"
               onClick={() => window.open(surveyUrl, '_blank')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '12px',
+                backgroundColor: 'var(--surbee-bg-primary, #fff)',
+                color: 'var(--surbee-fg-primary)',
+                border: '1px solid var(--surbee-bg-tertiary, #e5e5e5)',
+                borderRadius: '9999px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
             >
               <ExternalLink size={16} />
             </button>
           </div>
         </div>
 
-        {/* Status Card */}
-        <div className="bento-card status-card">
-          <div className="status-indicator active" />
-          <div className="status-text">Live</div>
-          <div className="status-label">Accepting responses</div>
+        {/* Stats Row */}
+        <div style={{ display: 'flex', gap: '16px' }}>
+          <div
+            style={{
+              flex: 1,
+              backgroundColor: 'var(--surbee-bg-secondary, #f5f5f5)',
+              borderRadius: '6px',
+              padding: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+            }}
+          >
+            <div
+              style={{
+                width: '12px',
+                height: '12px',
+                borderRadius: '50%',
+                backgroundColor: '#22c55e',
+                boxShadow: '0 0 8px rgba(34, 197, 94, 0.5)',
+                marginBottom: '12px',
+              }}
+            />
+            <div style={{ fontSize: '20px', fontWeight: 500, color: 'var(--surbee-fg-primary)', marginBottom: '4px' }}>
+              Live
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--surbee-fg-tertiary)' }}>
+              Accepting responses
+            </div>
+          </div>
+
+          <div
+            style={{
+              flex: 1,
+              backgroundColor: 'var(--surbee-bg-secondary, #f5f5f5)',
+              borderRadius: '6px',
+              padding: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+            }}
+          >
+            <Eye size={20} style={{ color: 'var(--surbee-fg-tertiary)', marginBottom: '12px' }} />
+            <div style={{ fontSize: '20px', fontWeight: 500, color: 'var(--surbee-fg-primary)', marginBottom: '4px' }}>
+              --
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--surbee-fg-tertiary)' }}>
+              Views
+            </div>
+          </div>
         </div>
 
-        {/* Views Stat (placeholder) */}
-        <div className="bento-card stat-card">
-          <div className="stat-icon">
-            <Eye size={18} />
-          </div>
-          <div className="stat-number">--</div>
-          <div className="stat-label">Views</div>
-        </div>
+        {/* Two Column Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          {/* Custom URL Card */}
+          <div
+            style={{
+              backgroundColor: 'var(--surbee-bg-secondary, #f5f5f5)',
+              borderRadius: '6px',
+              padding: '20px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '16px',
+              }}
+            >
+              <Globe size={16} style={{ color: 'var(--surbee-fg-tertiary)' }} />
+              <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--surbee-fg-primary)' }}>
+                Custom URL
+              </span>
+            </div>
 
-        {/* Custom URL Card */}
-        <div className="bento-card custom-url-card">
-          <div className="card-header">
-            <Globe size={16} />
-            <span>Custom URL</span>
-          </div>
+            <div
+              style={{
+                backgroundColor: 'var(--surbee-bg-primary, #fff)',
+                borderRadius: '6px',
+                padding: '14px 16px',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <span style={{ fontSize: '12px', color: 'var(--surbee-fg-tertiary)', fontFamily: 'monospace' }}>
+                {baseUrl}
+              </span>
+              {isEditingSlug ? (
+                <input
+                  type="text"
+                  value={customSlug}
+                  onChange={(e) => setCustomSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                  placeholder="your-slug"
+                  autoFocus
+                  style={{
+                    flex: 1,
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: '12px',
+                    color: 'var(--surbee-fg-primary)',
+                    fontFamily: 'monospace',
+                    outline: 'none',
+                  }}
+                />
+              ) : (
+                <span style={{ fontSize: '12px', color: 'var(--surbee-fg-primary)', fontFamily: 'monospace' }}>
+                  {customSlug || projectId.slice(0, 8)}
+                </span>
+              )}
+            </div>
 
-          <div className="url-editor">
-            <span className="url-base">{baseUrl}</span>
             {isEditingSlug ? (
-              <input
-                type="text"
-                value={customSlug}
-                onChange={(e) => setCustomSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                placeholder="your-slug"
-                className="slug-input"
-                autoFocus
-              />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={handleSaveCustomSlug}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    backgroundColor: 'var(--surbee-fg-primary)',
+                    color: 'var(--surbee-bg-primary, #fff)',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setIsEditingSlug(false)}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    backgroundColor: 'var(--surbee-bg-primary, #fff)',
+                    color: 'var(--surbee-fg-tertiary)',
+                    border: '1px solid var(--surbee-bg-tertiary, #e5e5e5)',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
             ) : (
-              <span className="slug-text">{customSlug || projectId.slice(0, 8)}</span>
+              <button
+                onClick={() => setIsEditingSlug(true)}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  padding: '10px',
+                  backgroundColor: 'transparent',
+                  color: 'var(--surbee-fg-primary)',
+                  border: '1px solid var(--surbee-bg-tertiary, #e5e5e5)',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                }}
+              >
+                Customize <ChevronRight size={14} />
+              </button>
             )}
           </div>
 
-          {isEditingSlug ? (
-            <div className="edit-buttons">
-              <button className="btn-save" onClick={handleSaveCustomSlug}>Save</button>
-              <button className="btn-cancel" onClick={() => setIsEditingSlug(false)}>Cancel</button>
+          {/* QR Code Card */}
+          <div
+            style={{
+              backgroundColor: 'var(--surbee-bg-secondary, #f5f5f5)',
+              borderRadius: '6px',
+              padding: '20px',
+              display: 'flex',
+              gap: '20px',
+            }}
+          >
+            <div
+              style={{
+                width: '100px',
+                height: '100px',
+                backgroundColor: 'var(--surbee-bg-primary, #fff)',
+                borderRadius: '6px',
+                padding: '8px',
+                flexShrink: 0,
+              }}
+            >
+              <img src={qrCodeUrl} alt="QR Code" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
-          ) : (
-            <button className="btn-edit" onClick={() => setIsEditingSlug(true)}>
-              Customize
-              <ChevronRight size={14} />
-            </button>
-          )}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginBottom: '16px',
+                }}
+              >
+                <QrCode size={16} style={{ color: 'var(--surbee-fg-tertiary)' }} />
+                <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--surbee-fg-primary)' }}>
+                  QR Code
+                </span>
+              </div>
+              <div style={{ flex: 1 }} />
+              <button
+                onClick={handleDownloadQR}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '10px',
+                  backgroundColor: 'transparent',
+                  color: 'var(--surbee-fg-primary)',
+                  border: '1px solid var(--surbee-bg-tertiary, #e5e5e5)',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                }}
+              >
+                <Download size={14} />
+                Download
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* QR Code Card */}
-        <div className="bento-card qr-card">
-          <div className="qr-preview">
-            <img src={qrCodeUrl} alt="QR Code" />
+        {/* Embed Code Card */}
+        <div
+          style={{
+            backgroundColor: 'var(--surbee-bg-secondary, #f5f5f5)',
+            borderRadius: '6px',
+            padding: '20px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '16px',
+            }}
+          >
+            <Code2 size={16} style={{ color: 'var(--surbee-fg-tertiary)' }} />
+            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--surbee-fg-primary)' }}>
+              Embed Code
+            </span>
           </div>
-          <div className="qr-info">
-            <div className="card-header">
-              <QrCode size={16} />
-              <span>QR Code</span>
-            </div>
-            <button className="btn-download" onClick={handleDownloadQR}>
-              <Download size={14} />
-              Download
-            </button>
-          </div>
-        </div>
 
-        {/* Embed Card */}
-        <div className="bento-card embed-card">
-          <div className="card-header">
-            <Code2 size={16} />
-            <span>Embed Code</span>
+          <div
+            style={{
+              backgroundColor: 'var(--surbee-bg-primary, #fff)',
+              borderRadius: '6px',
+              padding: '14px',
+              marginBottom: '16px',
+            }}
+          >
+            <code
+              style={{
+                fontSize: '11px',
+                color: 'var(--surbee-fg-secondary)',
+                fontFamily: 'monospace',
+                wordBreak: 'break-all',
+                lineHeight: '1.5',
+              }}
+            >
+              {embedCode}
+            </code>
           </div>
-          <div className="embed-preview">
-            <code>{embedCode}</code>
-          </div>
+
           <button
-            className={`btn-copy ${copied === 'embed' ? 'copied' : ''}`}
             onClick={() => handleCopy(embedCode, 'embed')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '10px 16px',
+              backgroundColor: copied === 'embed' ? 'rgba(34, 197, 94, 0.1)' : 'transparent',
+              color: copied === 'embed' ? '#22c55e' : 'var(--surbee-fg-primary)',
+              border: `1px solid ${copied === 'embed' ? 'rgba(34, 197, 94, 0.3)' : 'var(--surbee-bg-tertiary, #e5e5e5)'}`,
+              borderRadius: '6px',
+              fontSize: '13px',
+              cursor: 'pointer',
+            }}
           >
             {copied === 'embed' ? <Check size={14} /> : <Copy size={14} />}
             {copied === 'embed' ? 'Copied' : 'Copy Code'}
@@ -201,507 +489,51 @@ export const ShareTabRedesign: React.FC<ShareTabRedesignProps> = ({ projectId, p
         </div>
 
         {/* Social Share Card */}
-        <div className="bento-card social-card">
-          <div className="card-header">
-            <Share2 size={16} />
-            <span>Share</span>
+        <div
+          style={{
+            backgroundColor: 'var(--surbee-bg-secondary, #f5f5f5)',
+            borderRadius: '6px',
+            padding: '20px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '16px',
+            }}
+          >
+            <Share2 size={16} style={{ color: 'var(--surbee-fg-tertiary)' }} />
+            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--surbee-fg-primary)' }}>
+              Share on Social
+            </span>
           </div>
-          <div className="social-buttons">
+
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {socialPlatforms.map((platform) => (
               <button
                 key={platform.id}
-                className="social-btn"
                 onClick={() => handleSocialShare(platform.id)}
+                style={{
+                  padding: '10px 16px',
+                  backgroundColor: 'var(--surbee-bg-primary, #fff)',
+                  color: 'var(--surbee-fg-primary)',
+                  border: '1px solid var(--surbee-bg-tertiary, #e5e5e5)',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
               >
                 {platform.label}
               </button>
             ))}
           </div>
         </div>
-
-        {/* Tips Card */}
-        <div className="bento-card tips-card">
-          <div className="tips-badge">Tips</div>
-          <div className="tips-content">
-            Share your survey on social media during <strong>peak hours</strong> (9-11 AM, 7-9 PM) for best response rates.
-          </div>
-        </div>
       </div>
-
-      <style jsx>{`
-        .share-root {
-          --font-display: 'Kalice Regular', 'Kalice-Trial-Regular', Georgia, serif;
-          --font-body: var(--font-inter, 'Sohne', -apple-system, sans-serif);
-          --font-mono: 'Menlo', 'Monaco', 'Courier New', monospace;
-          --accent: #091717;
-
-          font-family: var(--font-body);
-          color: var(--surbee-fg-primary, #E8E8E8);
-        }
-
-        /* Bento Grid */
-        .share-bento {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          grid-auto-rows: minmax(100px, auto);
-          gap: 16px;
-        }
-
-        @media (max-width: 1000px) {
-          .share-bento { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        @media (max-width: 600px) {
-          .share-bento { grid-template-columns: 1fr; }
-        }
-
-        .bento-card {
-          background: var(--surbee-bg-secondary, #1E1E1F);
-          border-radius: 16px;
-          padding: 24px;
-          display: flex;
-          flex-direction: column;
-          transition: transform 0.2s ease;
-        }
-
-        .bento-card:hover {
-          transform: translateY(-2px);
-        }
-
-        /* Link Hero Card */
-        .link-hero {
-          grid-column: span 3;
-          flex-direction: row;
-          align-items: center;
-          gap: 20px;
-        }
-
-        @media (max-width: 1000px) {
-          .link-hero { grid-column: span 2; }
-        }
-
-        @media (max-width: 600px) {
-          .link-hero {
-            grid-column: span 1;
-            flex-direction: column;
-            align-items: flex-start;
-          }
-        }
-
-        .hero-icon {
-          width: 48px;
-          height: 48px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--surbee-bg-tertiary, #252526);
-          border-radius: 12px;
-          color: var(--surbee-fg-muted, #888);
-          flex-shrink: 0;
-        }
-
-        .hero-content {
-          flex: 1;
-          min-width: 0;
-        }
-
-        .hero-label {
-          font-size: 12px;
-          color: var(--surbee-fg-muted, #888);
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          margin-bottom: 6px;
-        }
-
-        .hero-url {
-          font-family: var(--font-mono);
-          font-size: 14px;
-          word-break: break-all;
-          line-height: 1.4;
-        }
-
-        .hero-actions {
-          display: flex;
-          gap: 8px;
-          flex-shrink: 0;
-        }
-
-        .hero-btn {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 12px 20px;
-          border: none;
-          border-radius: 10px;
-          font-size: 13px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .hero-btn.primary {
-          background: var(--surbee-fg-primary, #E8E8E8);
-          color: var(--surbee-bg-primary, #131314);
-        }
-
-        .hero-btn.primary:hover {
-          opacity: 0.9;
-        }
-
-        .hero-btn.primary.copied {
-          background: #22c55e;
-          color: white;
-        }
-
-        .hero-btn.secondary {
-          background: var(--surbee-bg-tertiary, #252526);
-          color: var(--surbee-fg-primary, #E8E8E8);
-          padding: 12px;
-        }
-
-        .hero-btn.secondary:hover {
-          background: var(--surbee-bg-elevated, #1E1E1F);
-        }
-
-        /* Status Card */
-        .status-card {
-          align-items: center;
-          justify-content: center;
-          text-align: center;
-        }
-
-        .status-indicator {
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          margin-bottom: 12px;
-          animation: pulse 2s ease infinite;
-        }
-
-        .status-indicator.active {
-          background: #22c55e;
-          box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
-        }
-
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-
-        .status-text {
-          font-family: var(--font-display);
-          font-size: 24px;
-          margin-bottom: 4px;
-        }
-
-        .status-label {
-          font-size: 11px;
-          color: var(--surbee-fg-muted, #888);
-        }
-
-        /* Stat Card */
-        .stat-card {
-          align-items: center;
-          justify-content: center;
-          text-align: center;
-        }
-
-        .stat-icon {
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--surbee-bg-tertiary, #252526);
-          border-radius: 10px;
-          color: var(--surbee-fg-muted, #888);
-          margin-bottom: 12px;
-        }
-
-        .stat-number {
-          font-family: var(--font-mono);
-          font-size: 28px;
-          font-weight: 500;
-          margin-bottom: 4px;
-        }
-
-        .stat-label {
-          font-size: 11px;
-          color: var(--surbee-fg-muted, #888);
-          text-transform: uppercase;
-          letter-spacing: 0.3px;
-        }
-
-        /* Custom URL Card */
-        .custom-url-card {
-          grid-column: span 2;
-        }
-
-        @media (max-width: 600px) {
-          .custom-url-card { grid-column: span 1; }
-        }
-
-        .card-header {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 13px;
-          font-weight: 600;
-          margin-bottom: 16px;
-          color: var(--surbee-fg-muted, #888);
-        }
-
-        .url-editor {
-          display: flex;
-          align-items: center;
-          background: var(--surbee-bg-tertiary, #252526);
-          border-radius: 10px;
-          padding: 14px 16px;
-          margin-bottom: 16px;
-          overflow: hidden;
-        }
-
-        .url-base {
-          font-family: var(--font-mono);
-          font-size: 12px;
-          color: var(--surbee-fg-muted, #888);
-          flex-shrink: 0;
-        }
-
-        .slug-input {
-          flex: 1;
-          background: transparent;
-          border: none;
-          font-family: var(--font-mono);
-          font-size: 12px;
-          color: var(--surbee-fg-primary, #E8E8E8);
-          outline: none;
-          min-width: 0;
-        }
-
-        .slug-text {
-          font-family: var(--font-mono);
-          font-size: 12px;
-          color: var(--surbee-fg-primary, #E8E8E8);
-        }
-
-        .btn-edit {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          padding: 12px;
-          background: transparent;
-          border: 1px solid var(--surbee-border-primary, rgba(255,255,255,0.1));
-          border-radius: 10px;
-          font-size: 13px;
-          font-weight: 500;
-          color: var(--surbee-fg-primary, #E8E8E8);
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .btn-edit:hover {
-          background: var(--surbee-bg-tertiary, #252526);
-        }
-
-        .edit-buttons {
-          display: flex;
-          gap: 8px;
-        }
-
-        .btn-save, .btn-cancel {
-          flex: 1;
-          padding: 12px;
-          border: none;
-          border-radius: 10px;
-          font-size: 13px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.15s ease;
-        }
-
-        .btn-save {
-          background: var(--surbee-fg-primary, #E8E8E8);
-          color: var(--surbee-bg-primary, #131314);
-        }
-
-        .btn-cancel {
-          background: var(--surbee-bg-tertiary, #252526);
-          color: var(--surbee-fg-muted, #888);
-        }
-
-        /* QR Code Card */
-        .qr-card {
-          grid-column: span 2;
-          flex-direction: row;
-          align-items: center;
-          gap: 20px;
-        }
-
-        @media (max-width: 600px) {
-          .qr-card { grid-column: span 1; }
-        }
-
-        .qr-preview {
-          width: 100px;
-          height: 100px;
-          flex-shrink: 0;
-        }
-
-        .qr-preview img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-        }
-
-        .qr-info {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .btn-download {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          padding: 12px;
-          background: transparent;
-          border: 1px solid var(--surbee-border-primary, rgba(255,255,255,0.1));
-          border-radius: 10px;
-          font-size: 13px;
-          font-weight: 500;
-          color: var(--surbee-fg-primary, #E8E8E8);
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .btn-download:hover {
-          background: var(--surbee-bg-tertiary, #252526);
-        }
-
-        /* Embed Card */
-        .embed-card {
-          grid-column: span 2;
-        }
-
-        @media (max-width: 600px) {
-          .embed-card { grid-column: span 1; }
-        }
-
-        .embed-preview {
-          flex: 1;
-          background: var(--surbee-bg-tertiary, #252526);
-          border-radius: 10px;
-          padding: 14px;
-          margin-bottom: 16px;
-          overflow: hidden;
-        }
-
-        .embed-preview code {
-          font-family: var(--font-mono);
-          font-size: 10px;
-          color: var(--surbee-fg-muted, #888);
-          word-break: break-all;
-          line-height: 1.5;
-        }
-
-        .btn-copy {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          padding: 12px;
-          background: transparent;
-          border: 1px solid var(--surbee-border-primary, rgba(255,255,255,0.1));
-          border-radius: 10px;
-          font-size: 13px;
-          font-weight: 500;
-          color: var(--surbee-fg-primary, #E8E8E8);
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .btn-copy:hover {
-          background: var(--surbee-bg-tertiary, #252526);
-        }
-
-        .btn-copy.copied {
-          background: rgba(34, 197, 94, 0.15);
-          border-color: rgba(34, 197, 94, 0.3);
-          color: #22c55e;
-        }
-
-        /* Social Card */
-        .social-card {
-          grid-column: span 2;
-        }
-
-        @media (max-width: 600px) {
-          .social-card { grid-column: span 1; }
-        }
-
-        .social-buttons {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin-top: auto;
-        }
-
-        .social-btn {
-          padding: 10px 16px;
-          background: var(--surbee-bg-tertiary, #252526);
-          border: none;
-          border-radius: 8px;
-          font-size: 12px;
-          font-weight: 500;
-          color: var(--surbee-fg-primary, #E8E8E8);
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .social-btn:hover {
-          background: var(--surbee-bg-elevated, #1E1E1F);
-          transform: translateY(-1px);
-        }
-
-        /* Tips Card */
-        .tips-card {
-          grid-column: span 2;
-          background: var(--accent);
-          color: #0a0a0a;
-        }
-
-        @media (max-width: 600px) {
-          .tips-card { grid-column: span 1; }
-        }
-
-        .tips-badge {
-          font-family: var(--font-mono);
-          font-size: 10px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          padding: 4px 8px;
-          background: rgba(0,0,0,0.1);
-          border-radius: 4px;
-          display: inline-block;
-          margin-bottom: 12px;
-        }
-
-        .tips-content {
-          font-size: 14px;
-          line-height: 1.6;
-        }
-
-        .tips-content strong {
-          font-weight: 600;
-        }
-      `}</style>
-    </div>
+    </section>
   );
 };
 
