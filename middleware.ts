@@ -26,7 +26,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   // Content Security Policy - adjust as needed for your app
   response.headers.set(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.surbee.dev https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://api.deepseek.com https://vercel.live; frame-ancestors 'none';"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.surbee.dev https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://api.deepseek.com https://vercel.live; frame-src 'self' https://form.surbee.dev; frame-ancestors 'none';"
   );
 
   // Strict Transport Security (HTTPS only)
@@ -39,6 +39,32 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
 
 export const middleware = async (request: NextRequest) => {
   const { pathname } = request.nextUrl;
+  const hostname = request.headers.get('host') || '';
+
+  // Handle form.surbee.dev subdomain - serve published surveys
+  if (hostname.startsWith('form.') || hostname === 'form.surbee.dev' || hostname === 'form.localhost:3000') {
+    // Rewrite requests to the /s/[url] route
+    // form.surbee.dev/abc123 -> /s/abc123
+    if (pathname === '/' || pathname === '') {
+      // Root of form subdomain - could show a landing or 404
+      return NextResponse.rewrite(new URL('/s/index', request.url));
+    }
+
+    // Skip static assets and API routes
+    if (pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.includes('.')) {
+      return NextResponse.next();
+    }
+
+    // Rewrite to /s/[surveyId]
+    const surveyId = pathname.replace(/^\//, '');
+    if (surveyId) {
+      const response = NextResponse.rewrite(new URL(`/s/${surveyId}`, request.url));
+      // Allow iframe embedding for form subdomain
+      response.headers.delete('X-Frame-Options');
+      response.headers.set('Content-Security-Policy', "frame-ancestors *;");
+      return response;
+    }
+  }
 
   // Redirect root path to /login (landing page is hidden)
   if (pathname === '/') {

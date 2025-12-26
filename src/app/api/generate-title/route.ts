@@ -37,23 +37,24 @@ export async function POST(req: NextRequest) {
       selectedModel = openai('gpt-5-nano');
     }
 
-    const systemPrompt = `You generate concise 2-3 word titles for survey projects based on user prompts.
+    const systemPrompt = `You generate concise 3-4 word titles for survey projects based on user prompts.
 Rules:
 - ONLY output the title, nothing else
-- 2-3 words maximum
+- 3-4 words for better context
 - Capitalize each word
 - No punctuation
 - No quotes or extra formatting
 Examples:
-User: "create a customer satisfaction survey" -> Customer Satisfaction
-User: "I need an employee feedback form" -> Employee Feedback
-User: "make a product review questionnaire" -> Product Review`;
+User: "create a customer satisfaction survey" -> Customer Satisfaction Survey
+User: "I need an employee feedback form" -> Employee Feedback Form
+User: "make a product review questionnaire" -> Product Review Questionnaire
+User: "help me build a market research survey" -> Market Research Survey`;
 
     const result = await streamText({
       model: selectedModel,
       system: systemPrompt,
-      prompt: `Generate a 2-3 word title for this survey project: "${prompt}"`,
-      maxTokens: 10,
+      prompt: `Generate a 3-4 word title for this survey project: "${prompt}"`,
+      maxTokens: 15,
     });
 
     return result.toTextStreamResponse();

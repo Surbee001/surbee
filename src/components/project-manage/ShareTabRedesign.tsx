@@ -18,8 +18,8 @@ export const ShareTabRedesign: React.FC<ShareTabRedesignProps> = ({ projectId, p
   const updateSettings = api.project.updateShareSettings.useMutation();
 
   const baseUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-    ? `${window.location.origin}/s/`
-    : 'https://surbee.com/s/';
+    ? `http://form.localhost:3000/`
+    : 'https://form.surbee.dev/';
 
   const surveyUrl = shareSettings?.customSlug
     ? `${baseUrl}${shareSettings.customSlug}`

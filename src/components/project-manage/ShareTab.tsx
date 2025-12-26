@@ -17,10 +17,10 @@ export const ShareTab: React.FC<ShareTabProps> = ({ projectId, publishedUrl }) =
   const { data: shareSettings, isLoading } = api.project.getShareSettings.useQuery({ projectId });
   const updateSettings = api.project.updateShareSettings.useMutation();
 
-  // Use window.location.origin for local dev, surbee.com for production
+  // Use form subdomain for survey URLs
   const baseUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-    ? `${window.location.origin}/s/`
-    : 'https://surbee.com/s/';
+    ? `http://form.localhost:3000/`
+    : 'https://form.surbee.dev/';
 
   // Priority: customSlug > publishedUrl > projectId
   const surveyUrl = shareSettings?.customSlug

@@ -1185,6 +1185,25 @@ const todoWriteTool = tool({
 });
 
 // ============================================================================
+// Suggest Followups Tool - provides structured suggestions to the client
+// ============================================================================
+
+const suggestFollowupsTool = tool({
+  description: 'REQUIRED: Call this at the END of every response to provide exactly 3 follow-up suggestions. These appear as clickable pills for the user. Each suggestion should be a specific, actionable prompt that the user might want to try next. Make suggestions contextually relevant to what was just discussed or built.',
+  parameters: z.object({
+    suggestions: z.array(z.string().describe('A follow-up prompt the user might want to try'))
+      .length(3)
+      .describe('Exactly 3 follow-up suggestions, each 10-60 characters')
+  }),
+  execute: async ({ suggestions }) => {
+    // This tool just returns the suggestions - the client reads them from toolInvocations
+    return {
+      suggestions,
+    };
+  },
+});
+
+// ============================================================================
 // Tool Set Definition (for useChat pattern)
 // ============================================================================
 
@@ -1225,6 +1244,9 @@ const tools = {
 
   // Project Management
   todo_write: todoWriteTool,
+
+  // Follow-up Suggestions
+  suggest_followups: suggestFollowupsTool,
 } satisfies ToolSet;
 
 export type ChatTools = InferUITools<typeof tools>;
@@ -1766,6 +1788,34 @@ Always reply in the user's language.
 - Use **bold** to highlight, but not everywhere—pick your moments.
 - Favor natural language—just like a human designer/developer chatting. Do not use emojis.
 
+## Response Structure (IMPORTANT - Follow This Flow)
+
+When creating or modifying surveys, ALWAYS structure your response in this order:
+
+**1. INTRO (Before any code/tool calls):**
+Start with a brief, enthusiastic sentence about what you'll create. Set expectations.
+- Example: "I'll create a fun interactive gradient playground with animated backgrounds, floating elements, and a beautiful card showcase! Let me build this for you."
+- Keep it to 1-2 sentences max. Be specific about what features you'll include.
+
+**2. BUILD (Tool calls, code generation):**
+Now do your tool calls and code generation. The user will see "Reasoning" and "Edited [filename]" indicators during this phase.
+
+**3. SUMMARY (After code is complete):**
+Explain what you've created with enthusiasm. Describe the key features and how they work.
+- Example: "I've created a fun interactive gradient playground for you! The app features animated gradient backgrounds that smoothly transition when you click the 'New Gradient' button, floating bubbles that drift up the screen, and beautiful glassmorphic cards that react when you hover over them. Everything is powered by smooth animations using Motion (Framer Motion)."
+- Be descriptive about what the user will experience.
+
+**4. SUGGESTIONS (REQUIRED - Call suggest_followups tool):**
+At the END of every response, you MUST call the \`suggest_followups\` tool with exactly 3 follow-up suggestions.
+- These appear as clickable pills in the UI that the user can click to quickly send that message.
+- Each suggestion should be 10-60 characters, specific and actionable.
+- Make suggestions contextually relevant to what was just discussed or built.
+- Example suggestions for a survey build:
+  - "Add a progress bar"
+  - "Make the colors more vibrant"
+  - "Add skip logic for optional questions"
+- DO NOT write suggestions as bullet points in your text response - ONLY use the suggest_followups tool.
+
 ## Your Available Tools
 
 You have powerful tools at your disposal. ALWAYS use the right tool for the job:
@@ -1832,6 +1882,12 @@ You have powerful tools at your disposal. ALWAYS use the right tool for the job:
 **Advanced:**
 - \`imagegen_generate_image\`: Generate images with AI.
 - \`surbe_fetch_website\`: Fetch and read website content.
+
+**Follow-up Suggestions:**
+- \`suggest_followups\`: **REQUIRED at END of every response.** Call with exactly 3 contextual follow-up suggestions.
+  - These become clickable pills in the UI for quick user actions.
+  - Keep each suggestion 10-60 characters and actionable.
+  - Examples: "Add a progress bar", "Make colors more vibrant", "Add skip logic"
 
 ## Critical Execution Rules
 

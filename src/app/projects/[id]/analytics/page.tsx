@@ -636,7 +636,12 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open(`/s/${(safeData.project as any).published_url}`, '_blank')}
+                  onClick={() => {
+                    const baseUrl = window.location.hostname === 'localhost'
+                      ? 'http://form.localhost:3000/'
+                      : 'https://form.surbee.dev/';
+                    window.open(`${baseUrl}${(safeData.project as any).published_url}`, '_blank');
+                  }}
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
                   View Live Survey

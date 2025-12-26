@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo, startTransition, useDeferredValue } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronUp, ChevronLeft, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy, Hammer, Code, Terminal, AlertTriangle, Settings as SettingsIcon, Sun, Moon, Laptop, CheckCircle2 } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy, Hammer, Code, Terminal, AlertTriangle, Settings as SettingsIcon, Sun, Moon, Laptop, CheckCircle2 } from "lucide-react";
 import UserNameBadge from "@/components/UserNameBadge";
 import UserMenu from "@/components/ui/user-menu";
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -458,13 +458,13 @@ function PublishDropdown({
 
   const cleanId = projectId.replace(/^project_/, '');
   const urlSlug = customSlug || cleanId.substring(0, 8);
-  const displayUrl = `surbee.dev/${urlSlug}`;
+  const displayUrl = `form.surbee.dev/${urlSlug}`;
 
   const copyUrl = async () => {
     try {
       const cleanId = projectId.replace(/^project_/, '');
       const slug = customSlug || cleanId.substring(0, 8);
-      const fullUrl = `https://surbee.dev/${slug}`;
+      const fullUrl = `https://form.surbee.dev/${slug}`;
       await navigator.clipboard.writeText(fullUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -2955,11 +2955,114 @@ function deriveSandboxConfig(bundle: SandboxBundle | null): {
   console.log('[deriveSandboxConfig] Total CSS imports:', cssImports);
 
   // Always recreate index.tsx to ensure import path matches current entry
+  // Includes visual edit helper for cross-origin iframe communication
   files["/index.tsx"] = {
     code: `import React from "react";
 import { createRoot } from "react-dom/client";
 import SurveyExperience from "${importSpecifier}";
 ${cssImports.map(css => `import "${css}";`).join('\n')}
+
+// Visual Edit Helper - communicates with parent window via postMessage
+(function initVisualEditHelper() {
+  let isEditMode = false;
+  let highlightOverlay: HTMLDivElement | null = null;
+
+  const createHighlight = () => {
+    if (!highlightOverlay) {
+      highlightOverlay = document.createElement('div');
+      highlightOverlay.id = 'visual-edit-highlight';
+      highlightOverlay.style.cssText = \`
+        position: fixed;
+        pointer-events: none;
+        border: 2px solid #3b82f6;
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 4px;
+        z-index: 999999;
+        transition: all 0.1s ease;
+        display: none;
+      \`;
+      document.body.appendChild(highlightOverlay);
+    }
+    return highlightOverlay;
+  };
+
+  const findEditableParent = (el: HTMLElement): HTMLElement | null => {
+    let current: HTMLElement | null = el;
+    while (current && current !== document.body) {
+      const style = window.getComputedStyle(current);
+      const hasBackground = style.backgroundColor !== 'rgba(0, 0, 0, 0)' && style.backgroundColor !== 'transparent';
+      const hasBorder = style.border !== 'none' && style.borderWidth !== '0px';
+      const hasMinSize = current.offsetWidth > 50 && current.offsetHeight > 30;
+      const isInteractive = ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT', 'IMG', 'H1', 'H2', 'H3', 'P', 'SPAN', 'DIV', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER', 'NAV', 'FORM'].includes(current.tagName);
+      if ((hasBackground || hasBorder || isInteractive) && hasMinSize) {
+        return current;
+      }
+      current = current.parentElement;
+    }
+    return null;
+  };
+
+  const getSelector = (el: HTMLElement): string => {
+    if (el.id) return \`#\${el.id}\`;
+    if (el.className && typeof el.className === 'string') {
+      const classes = el.className.split(' ').filter(c => c && !c.startsWith('hover') && c.length < 30).slice(0, 2).join('.');
+      if (classes) return \`\${el.tagName.toLowerCase()}.\${classes}\`;
+    }
+    return el.tagName.toLowerCase();
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isEditMode) return;
+    const target = e.target as HTMLElement;
+    const editable = findEditableParent(target);
+    if (editable) {
+      const highlight = createHighlight();
+      const rect = editable.getBoundingClientRect();
+      highlight.style.top = \`\${rect.top}px\`;
+      highlight.style.left = \`\${rect.left}px\`;
+      highlight.style.width = \`\${rect.width}px\`;
+      highlight.style.height = \`\${rect.height}px\`;
+      highlight.style.display = 'block';
+    } else if (highlightOverlay) {
+      highlightOverlay.style.display = 'none';
+    }
+  };
+
+  const handleClick = (e: MouseEvent) => {
+    if (!isEditMode) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const target = e.target as HTMLElement;
+    const editable = findEditableParent(target);
+    if (editable) {
+      const selector = getSelector(editable);
+      const outerHTML = editable.outerHTML.slice(0, 2000);
+      const textContent = (editable.textContent || '').slice(0, 200);
+      window.parent.postMessage({
+        type: 'visual-edit-select',
+        element: { selector, outerHTML, textContent }
+      }, '*');
+    }
+  };
+
+  // Listen for messages from parent window
+  window.addEventListener('message', (e) => {
+    if (e.data?.type === 'visual-edit-mode') {
+      isEditMode = e.data.enabled;
+      if (!isEditMode && highlightOverlay) {
+        highlightOverlay.style.display = 'none';
+      }
+      if (isEditMode) {
+        document.body.style.cursor = 'crosshair';
+      } else {
+        document.body.style.cursor = '';
+      }
+    }
+  });
+
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('click', handleClick, true);
+})();
 
 const container = document.getElementById("root");
 
@@ -3544,6 +3647,8 @@ export default function ProjectPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [hasStartedChat, setHasStartedChat] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [visualEditElement, setVisualEditElement] = useState<{ selector: string; outerHTML: string; text: string } | null>(null);
+  const [hoveredElement, setHoveredElement] = useState<HTMLElement | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<{ [key: string]: string }>({});
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -3670,6 +3775,11 @@ export default function ProjectPage() {
           setMessages(restoredMessages);
           setHasStartedChat(true);
 
+          // Restore title from session if available
+          if (session.title && session.title !== 'Untitled Survey' && session.title !== 'Untitled Project') {
+            setAutoGeneratedTitle(session.title);
+          }
+
           // Also try to restore sandbox bundle from the last assistant message
           const lastAssistant = session.messages.filter((m: any) => m.role === 'assistant').pop();
           if (lastAssistant?.toolInvocations) {
@@ -3748,92 +3858,46 @@ export default function ProjectPage() {
         ...msg // Include any other properties
       }));
 
-      // Save to database
-      saveChatMessages(messagesToSave as any).catch(err => {
+      // Save to database with the auto-generated title if available
+      saveChatMessages(messagesToSave as any, autoGeneratedTitle || undefined).catch(err => {
         console.error('Failed to save chat messages:', err);
       });
     }
-  }, [messages, user?.id, saveChatMessages, isSandboxPreview]);
+  }, [messages, user?.id, saveChatMessages, isSandboxPreview, autoGeneratedTitle]);
 
-  // Capture and save preview screenshot after sandbox bundle is created
+  // Save sandbox bundle and trigger screenshot capture via API
   useEffect(() => {
     if (!sandboxBundle || !projectId || !user?.id || isSandboxPreview) return;
 
-    // Generate preview from survey questions
-    const capturePreview = async () => {
+    const saveAndCapturePreview = async () => {
       try {
-        // Wait a bit for questions to be saved
+        // Wait for questions to be saved first
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Fetch questions for this project to generate preview
-        const questionsRes = await fetch(`/api/projects/${projectId}/questions?userId=${user.id}`);
-        const questionsData = await questionsRes.json();
+        console.log('📸 Saving sandbox bundle and triggering screenshot capture...');
 
-        // Import the screenshot utility dynamically
-        const { generateSurveyPreview, captureSandboxScreenshot } = await import('@/lib/capture-sandbox-screenshot');
-
-        let screenshotDataUrl: string;
-
-        // If we have questions, generate a proper preview from them
-        if (questionsData.questions && questionsData.questions.length > 0) {
-          console.log('📸 Generating preview from survey questions:', questionsData.questions.length);
-          screenshotDataUrl = await generateSurveyPreview(
-            questionsData.questions.map((q: any) => ({
-              question_text: q.question_text,
-              question_type: q.question_type,
-              options: q.options,
-            })),
-            {
-              width: 400,
-              height: 300,
-              quality: 0.5,
-              format: 'jpeg'
-            }
-          );
-        } else {
-          // Fallback: generate a placeholder preview
-          console.log('📸 No questions found, generating placeholder preview');
-          const previewFrame = document.querySelector('[data-sp-preview-iframe]') as HTMLIFrameElement;
-          if (previewFrame) {
-            screenshotDataUrl = await captureSandboxScreenshot(previewFrame, {
-              width: 400,
-              height: 300,
-              quality: 0.5,
-              format: 'jpeg'
-            });
-          } else {
-            // Final fallback - just generate a basic placeholder
-            screenshotDataUrl = await captureSandboxScreenshot({} as HTMLIFrameElement, {
-              width: 400,
-              height: 300,
-              quality: 0.5,
-              format: 'jpeg'
-            });
-          }
-        }
-
-        // Save to database
+        // Save sandbox bundle - the preview API will trigger the screenshot API
+        // which uses Microlink to capture the actual published survey
         const response = await fetch(`/api/projects/${projectId}/preview`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: user.id,
-            previewImage: screenshotDataUrl,
             sandboxBundle: sandboxBundle,
           }),
         });
 
         if (response.ok) {
-          console.log('✅ Preview screenshot saved successfully');
+          console.log('✅ Sandbox saved, screenshot capture triggered in background');
         } else {
-          console.error('Failed to save preview screenshot:', await response.text());
+          console.error('Failed to save project:', await response.text());
         }
       } catch (error) {
-        console.error('Error capturing/saving preview:', error);
+        console.error('Error saving project:', error);
       }
     };
 
-    capturePreview();
+    saveAndCapturePreview();
   }, [sandboxBundle, projectId, user?.id, isSandboxPreview]);
 
   // Extract sandbox bundle from tool results
@@ -4057,19 +4121,38 @@ export default function ProjectPage() {
   // Track thinking duration
   const [thinkingStartTime, setThinkingStartTime] = useState<number | null>(null);
   const [thinkingDuration, setThinkingDuration] = useState<number>(0);
+  const [thinkingFinished, setThinkingFinished] = useState(false);
 
-  // Track when thinking starts/ends
+  // Track when thinking starts/ends - based on when reasoning finishes, not when generation finishes
   useEffect(() => {
+    // Check if thinking is done by looking at the last assistant message
+    const lastMessage = messages[messages.length - 1];
+    const hasNonReasoningParts = lastMessage?.role === 'assistant' && lastMessage?.parts?.some(
+      (p: any) => p.type === 'text' || p.type?.startsWith('tool-')
+    );
+
     if (status === 'streaming' || status === 'submitted') {
-      if (!thinkingStartTime) {
+      // Start timer when streaming begins
+      if (!thinkingStartTime && !thinkingFinished) {
         setThinkingStartTime(Date.now());
+        setThinkingFinished(false);
       }
-    } else if (status === 'ready' && thinkingStartTime) {
-      const duration = Math.round((Date.now() - thinkingStartTime) / 1000);
-      setThinkingDuration(duration);
+      // Stop timer when thinking (reasoning) finishes but generation continues
+      if (thinkingStartTime && hasNonReasoningParts && !thinkingFinished) {
+        const duration = Math.round((Date.now() - thinkingStartTime) / 1000);
+        setThinkingDuration(duration);
+        setThinkingFinished(true);
+      }
+    } else if (status === 'ready') {
+      // Generation complete - finalize if not already done
+      if (thinkingStartTime && !thinkingFinished) {
+        const duration = Math.round((Date.now() - thinkingStartTime) / 1000);
+        setThinkingDuration(duration);
+      }
       setThinkingStartTime(null);
+      setThinkingFinished(false);
     }
-  }, [status, thinkingStartTime]);
+  }, [status, thinkingStartTime, thinkingFinished, messages]);
 
   // Thinking chain state
   const [sidebarView, setSidebarView] = useState<SidebarView>('chat');
@@ -4181,8 +4264,8 @@ export default function ProjectPage() {
               setCurrentVersionId(versionId);
             }
             
-            // Restore title if available
-            if (data.project.title && data.project.title !== 'Untitled Project') {
+            // Restore title if available (check for both default titles)
+            if (data.project.title && data.project.title !== 'Untitled Project' && data.project.title !== 'Untitled Survey') {
               setAutoGeneratedTitle(data.project.title);
             }
           }
@@ -4419,6 +4502,25 @@ export default function ProjectPage() {
       }
     };
 
+    // Build the message with visual edit element context if present
+    let finalMessage = message;
+    if (visualEditElement) {
+      finalMessage = `${message}
+
+---
+Selected element to modify:
+- Selector: ${visualEditElement.selector}
+- Text content: ${visualEditElement.text || '(no text)'}
+- HTML snippet:
+\`\`\`html
+${visualEditElement.outerHTML}
+\`\`\`
+
+Please make changes specifically to this element.`;
+      // Clear the selection after sending
+      setVisualEditElement(null);
+    }
+
     if (files && files.length > 0) {
       console.log('📷 Sending message with', files.length, 'files (FileUIPart format)');
       console.log('📷 Files structure:', files.map(f => ({
@@ -4429,11 +4531,11 @@ export default function ProjectPage() {
         urlLength: f.url?.length
       })));
       // Send files using the AI SDK format: { text, files }
-      sendMessage({ text: message, files }, sendOptions);
+      sendMessage({ text: finalMessage, files }, sendOptions);
     } else {
-      sendMessage({ text: message }, sendOptions);
+      sendMessage({ text: finalMessage }, sendOptions);
     }
-  }, [status, autoGeneratedTitle]); // sendMessage and selectedModel intentionally excluded - using refs/direct access
+  }, [status, autoGeneratedTitle, visualEditElement]); // sendMessage and selectedModel intentionally excluded - using refs/direct access
 
   const handleSandboxFixRequest = useCallback((errorMessage: string) => {
     const prompt = `The sandbox preview reported an error:\n\n${errorMessage}\n\nPlease diagnose the issue and provide an updated solution.`;
@@ -4519,13 +4621,13 @@ export default function ProjectPage() {
       if (shareResponse.ok) {
         const shareData = await shareResponse.json();
         const slug = shareData?.customSlug || projectId.substring(0, 8);
-        const fullUrl = `https://surbee.dev/${slug}`;
+        const fullUrl = `https://form.surbee.dev/${slug}`;
         await navigator.clipboard.writeText(fullUrl);
         setPublishSuccess('Link copied to clipboard!');
         setTimeout(() => setPublishSuccess(null), 2000);
       } else {
         // Fallback to projectId if share settings fail
-        const fullUrl = `https://surbee.dev/${projectId.substring(0, 8)}`;
+        const fullUrl = `https://form.surbee.dev/${projectId.substring(0, 8)}`;
         await navigator.clipboard.writeText(fullUrl);
         setPublishSuccess('Link copied to clipboard!');
         setTimeout(() => setPublishSuccess(null), 2000);
@@ -4545,6 +4647,13 @@ export default function ProjectPage() {
       console.error('Failed to copy:', error);
     }
   }, []);
+
+  // Handle suggestion pill click - send as new message
+  const handleSuggestionClick = useCallback((suggestion: string) => {
+    if (status !== 'ready') return;
+    // Send the suggestion as a new user message
+    sendMessage({ content: suggestion });
+  }, [status, sendMessage]);
 
   // Handle feedback (thumbs up/down)
   const handleFeedback = useCallback(async (messageId: string, feedbackType: 'up' | 'down', messageContent: string) => {
@@ -4578,6 +4687,7 @@ export default function ProjectPage() {
     // Reset thinking duration for new attempt
     setThinkingDuration(0);
     setThinkingStartTime(null);
+    setThinkingFinished(false);
     // Call reload which regenerates the last response
     reload();
   }, [reload]);
@@ -4672,6 +4782,148 @@ export default function ProjectPage() {
       chatAreaRef.current.scrollTop = chatAreaRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Visual Edit mode - uses postMessage to communicate with cross-origin sandbox iframe
+  useEffect(() => {
+    // Find the Sandpack preview iframe
+    const iframe = document.querySelector('.sp-preview-iframe') as HTMLIFrameElement;
+
+    // Send edit mode state to iframe via postMessage
+    if (iframe?.contentWindow) {
+      iframe.contentWindow.postMessage({ type: 'visual-edit-mode', enabled: isEditMode }, '*');
+    }
+
+    if (!isEditMode) {
+      setHoveredElement(null);
+      return;
+    }
+
+    // Listen for element selection from iframe
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'visual-edit-select' && e.data.element) {
+        const { selector, outerHTML, textContent } = e.data.element;
+        setVisualEditElement({ selector, outerHTML, textContent });
+        // Auto-disable edit mode after selection
+        setIsEditMode(false);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [isEditMode]);
+
+  // Legacy visual edit code - kept for backwards compatibility with same-origin iframes
+  useEffect(() => {
+    if (!isEditMode) return;
+
+    // Find the Sandpack preview iframe via DOM query
+    const iframe = document.querySelector('.sp-preview-iframe') as HTMLIFrameElement;
+    if (!iframe) return;
+
+    // Try to access iframe document - may fail due to cross-origin restrictions
+    let iframeDoc: Document | null = null;
+    try {
+      iframeDoc = iframe.contentDocument || iframe.contentWindow?.document || null;
+    } catch (e) {
+      // Cross-origin access blocked - postMessage handler above will be used instead
+      return;
+    }
+    if (!iframeDoc) return;
+
+    let highlightOverlay: HTMLDivElement | null = null;
+
+    const createHighlight = () => {
+      if (!highlightOverlay) {
+        highlightOverlay = iframeDoc!.createElement('div');
+        highlightOverlay.id = 'visual-edit-highlight';
+        highlightOverlay.style.cssText = `
+          position: fixed;
+          pointer-events: none;
+          border: 2px solid #3b82f6;
+          background: rgba(59, 130, 246, 0.1);
+          border-radius: 4px;
+          z-index: 999999;
+          transition: all 0.1s ease;
+        `;
+        iframeDoc!.body.appendChild(highlightOverlay);
+      }
+      return highlightOverlay;
+    };
+
+    const findEditableParent = (el: HTMLElement): HTMLElement | null => {
+      let current: HTMLElement | null = el;
+      while (current && current !== iframeDoc!.body) {
+        const style = window.getComputedStyle(current);
+        const hasBackground = style.backgroundColor !== 'rgba(0, 0, 0, 0)' && style.backgroundColor !== 'transparent';
+        const hasBorder = style.border !== 'none' && style.borderWidth !== '0px';
+        const hasMinSize = current.offsetWidth > 50 && current.offsetHeight > 30;
+        const isInteractive = ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT', 'IMG', 'H1', 'H2', 'H3', 'P', 'SPAN', 'DIV'].includes(current.tagName);
+
+        if ((hasBackground || hasBorder || isInteractive) && hasMinSize) {
+          return current;
+        }
+        current = current.parentElement;
+      }
+      return null;
+    };
+
+    const getSelector = (el: HTMLElement): string => {
+      if (el.id) return `#${el.id}`;
+      if (el.className && typeof el.className === 'string') {
+        const classes = el.className.split(' ').filter(c => c && !c.startsWith('hover')).slice(0, 2).join('.');
+        if (classes) return `${el.tagName.toLowerCase()}.${classes}`;
+      }
+      return el.tagName.toLowerCase();
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const editable = findEditableParent(target);
+
+      if (editable) {
+        const highlight = createHighlight();
+        const rect = editable.getBoundingClientRect();
+        highlight.style.top = `${rect.top}px`;
+        highlight.style.left = `${rect.left}px`;
+        highlight.style.width = `${rect.width}px`;
+        highlight.style.height = `${rect.height}px`;
+        highlight.style.display = 'block';
+      } else if (highlightOverlay) {
+        highlightOverlay.style.display = 'none';
+      }
+    };
+
+    const handleClick = (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const target = e.target as HTMLElement;
+      const editable = findEditableParent(target);
+
+      if (editable) {
+        const selector = getSelector(editable);
+        const outerHTML = editable.outerHTML.slice(0, 500);
+        const text = editable.textContent?.trim().slice(0, 200) || '';
+
+        setVisualEditElement({ selector, outerHTML, text });
+        setIsEditMode(false);
+      }
+    };
+
+    iframeDoc.addEventListener('mousemove', handleMouseMove);
+    iframeDoc.addEventListener('click', handleClick, true);
+
+    return () => {
+      iframeDoc.removeEventListener('mousemove', handleMouseMove);
+      iframeDoc.removeEventListener('click', handleClick, true);
+      if (highlightOverlay && highlightOverlay.parentNode) {
+        highlightOverlay.parentNode.removeChild(highlightOverlay);
+      }
+    };
+  }, [isEditMode]);
 
   const addHistoryEntry = (prompt: string, changes: string[]) => {
     const newEntry: HistoryEntry = {
@@ -5050,70 +5302,82 @@ export default function ProjectPage() {
               </div>
             ) : (
               /* Chat Messages View */
-              <div className="flex-1 overflow-y-auto px-4 py-6" ref={chatAreaRef}>
+              <div className="flex-1 overflow-y-auto pl-4 pr-2 py-6" ref={chatAreaRef}>
                 <div className="space-y-4">
                   {messages?.map((msg, idx) => (
                     <div key={msg.id} className="space-y-2">
                       {msg.role === 'user' ? (
-                        <div className="flex justify-end">
-                          <div className="max-w-[80%] space-y-2">
-                            {/* Show images above the bubble - handle both legacy 'image' parts and new 'file' parts */}
-                            {(() => {
-                              // Get legacy image parts
-                              const imageParts = msg.parts?.filter(p => p.type === 'image') || [];
-                              // Get file parts that are images (AI SDK FileUIPart format)
-                              const fileParts = msg.parts?.filter(p =>
-                                p.type === 'file' && (p as any).mediaType?.startsWith('image/')
-                              ) || [];
-                              const allImageParts = [...imageParts, ...fileParts];
+                        <div className="flex flex-col items-end gap-2">
+                          {/* Show images above the bubble */}
+                          {(() => {
+                            const imageParts = msg.parts?.filter(p => p.type === 'image') || [];
+                            const fileParts = msg.parts?.filter(p =>
+                              p.type === 'file' && (p as any).mediaType?.startsWith('image/')
+                            ) || [];
+                            const allImageParts = [...imageParts, ...fileParts];
 
-                              if (allImageParts.length > 0) {
-                                const imageSize = allImageParts.length === 1 ? 'small' : allImageParts.length === 2 ? 'xsmall' : 'tiny';
-                                const sizeClasses = {
-                                  small: 'h-24 w-24',
-                                  xsmall: 'h-20 w-20',
-                                  tiny: 'h-16 w-16'
-                                };
+                            if (allImageParts.length > 0) {
+                              return (
+                                <div className="flex flex-wrap gap-2 justify-end">
+                                  {allImageParts.map((part, imgIdx) => {
+                                    let imageUrl: string;
+                                    if (part.type === 'image') {
+                                      imageUrl = typeof part.image === 'string'
+                                        ? part.image
+                                        : part.image instanceof URL
+                                          ? part.image.toString()
+                                          : URL.createObjectURL(new Blob([part.image as any]));
+                                    } else {
+                                      imageUrl = (part as any).url || '';
+                                    }
+                                    return (
+                                      <div key={imgIdx} className="h-24 w-24 rounded-lg overflow-hidden flex-shrink-0">
+                                        <img src={imageUrl} alt={`Attachment ${imgIdx + 1}`} className="w-full h-full object-cover" />
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
 
-                                return (
-                                  <div className="flex flex-wrap gap-2 justify-end">
-                                    {allImageParts.map((part, imgIdx) => {
-                                      // Handle legacy image parts
-                                      let imageUrl: string;
-                                      if (part.type === 'image') {
-                                        imageUrl = typeof part.image === 'string'
-                                          ? part.image
-                                          : part.image instanceof URL
-                                            ? part.image.toString()
-                                            : URL.createObjectURL(new Blob([part.image as any]));
-                                      } else {
-                                        // Handle FileUIPart format
-                                        imageUrl = (part as any).url || '';
-                                      }
-
-                                      return (
-                                        <div
-                                          key={imgIdx}
-                                          className={`${sizeClasses[imageSize]} rounded-md overflow-hidden flex-shrink-0`}
-                                        >
-                                          <img
-                                            src={imageUrl}
-                                            alt={`Attachment ${imgIdx + 1}`}
-                                            className="w-full h-full object-cover"
-                                          />
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                );
-                              }
-                              return null;
-                            })()}
-
-                            <div className="rounded-2xl px-6 py-3" style={{ backgroundColor: 'rgb(38, 38, 38)', color: '#ffffff' }}>
-                              <p className="whitespace-pre-wrap" style={{ fontSize: '16px' }}>
+                          {/* User prompt bubble with avatar */}
+                          <div className="flex items-end gap-2.5">
+                            {/* Bubble */}
+                            <div
+                              className="flex flex-col max-w-[80%] rounded-[20px] px-4 py-3"
+                              style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+                            >
+                              <div
+                                className="text-[14px] leading-[1.5] text-foreground whitespace-pre-wrap"
+                                style={{ wordBreak: 'break-word' }}
+                              >
                                 {msg.parts.find(p => p.type === 'text')?.text || ''}
-                              </p>
+                              </div>
+                            </div>
+                            {/* Avatar */}
+                            <div className="flex-shrink-0">
+                              <div
+                                className="rounded-full overflow-hidden"
+                                style={{ width: '28px', height: '28px' }}
+                              >
+                                {user?.avatar_url ? (
+                                  <img
+                                    src={user.avatar_url}
+                                    alt={user.name || 'User'}
+                                    style={{ width: '28px', height: '28px' }}
+                                    className="object-cover"
+                                  />
+                                ) : (
+                                  <div
+                                    className="w-full h-full flex items-center justify-center text-[11px] font-medium text-muted-foreground"
+                                    style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
+                                  >
+                                    {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -5249,6 +5513,76 @@ export default function ProjectPage() {
                               </button>
                             </div>
                           )}
+
+                          {/* Version/Restore Point card - show if this message created a version */}
+                          {msg.role === 'assistant' && (() => {
+                            const versionIndex = bundleVersions.findIndex(v => v.messageId === msg.id);
+                            if (versionIndex === -1) return null;
+
+                            const version = bundleVersions[versionIndex];
+                            const versionNumber = versionIndex + 1;
+                            const isCurrentVersion = version.id === currentVersionId;
+
+                            // Get a short 4-5 word summary from the message
+                            const textPart = msg.parts.find(p => p.type === 'text');
+                            const messageText = textPart?.text || '';
+                            // Extract first few words as title
+                            const words = messageText.replace(/[#*\-\n]+/g, ' ').trim().split(/\s+/).slice(0, 5);
+                            const title = words.length > 0 ? words.join(' ') : `Version ${versionNumber}`;
+
+                            return (
+                              <div className="flex items-start gap-1 mt-4 w-full max-w-xs">
+                                <button
+                                  onClick={() => !isCurrentVersion && handleRestoreVersion(version.id)}
+                                  className={`flex w-full gap-2 rounded-xl p-3 text-sm font-medium items-start border border-white/10 bg-white/5 transition-all duration-150 ${
+                                    isCurrentVersion ? 'cursor-default' : 'hover:border-white/20 hover:bg-white/10 cursor-pointer'
+                                  }`}
+                                >
+                                  <div className="flex w-full flex-col gap-1 overflow-hidden text-left">
+                                    <span className="truncate text-foreground">
+                                      {title}
+                                    </span>
+                                    <span className="truncate font-normal text-xs text-muted-foreground">
+                                      {isCurrentVersion ? 'Previewing latest version' : `Version ${versionNumber}`}
+                                    </span>
+                                  </div>
+                                  {!isCurrentVersion && (
+                                    <RotateCcw className="w-5 h-5 shrink-0 text-muted-foreground" />
+                                  )}
+                                </button>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Suggestion pills - show AI-provided suggestions on last assistant message */}
+                          {idx === messages.length - 1 && status === 'ready' && msg.role === 'assistant' && (() => {
+                            // Get suggestions from the suggest_followups tool invocation
+                            const suggestTool = (msg as any).toolInvocations?.find(
+                              (t: any) => t.toolName === 'suggest_followups' && t.state === 'result'
+                            );
+                            const suggestions: string[] = suggestTool?.result?.suggestions || [];
+
+                            if (suggestions.length === 0) return null;
+
+                            return (
+                              <motion.div
+                                className="flex flex-wrap gap-2 pt-3 mt-3"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 0.3, delay: 0.2 }}
+                              >
+                                {suggestions.map((suggestion, i) => (
+                                  <button
+                                    key={i}
+                                    onClick={() => handleSuggestionClick(suggestion)}
+                                    className="px-3.5 py-2 text-[13px] text-muted-foreground bg-white/5 hover:bg-white/10 rounded-full transition-colors duration-150 hover:text-foreground"
+                                  >
+                                    {suggestion.length > 50 ? suggestion.slice(0, 50) + '...' : suggestion}
+                                  </button>
+                                ))}
+                              </motion.div>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
@@ -5261,12 +5595,36 @@ export default function ProjectPage() {
         {/* Chat Input */}
         <div className="pl-4 pr-2 pb-3">
           <div className="relative ml-0 mr-0">
+            {/* Selected Element Indicator - matches agent reference pill style */}
+            {visualEditElement && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                <div
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs"
+                  style={{
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    color: 'rgb(59, 130, 246)',
+                  }}
+                >
+                  <Eye className="w-3 h-3" />
+                  <span className="max-w-[150px] truncate">
+                    {visualEditElement.selector}
+                  </span>
+                  <button
+                    onClick={() => setVisualEditElement(null)}
+                    className="flex items-center justify-center w-3.5 h-3.5 hover:bg-blue-500/20 rounded-full transition-colors"
+                    title="Clear selection"
+                  >
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              </div>
+            )}
             {/* Chat input container to anchor controls to the box itself */}
             <div className="relative">
               <ChatInputLight
                 onSendMessage={(message, files) => handleSubmit(message, files)}
                 isInputDisabled={status !== 'ready'}
-                placeholder="Ask for a follow-up"
+                placeholder={visualEditElement ? "Describe changes for this element..." : "Ask for a follow-up"}
                 className="chat-input-grey"
                 isEditMode={isEditMode}
                 onToggleEditMode={() => setIsEditMode(!isEditMode)}
@@ -5581,6 +5939,27 @@ export default function ProjectPage() {
           </div>
         </div>
       </div>
+
+      {/* Visual Edit Mode Toast */}
+      {isEditMode && sandboxAvailable && (
+        <div
+          className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg"
+          style={{
+            backgroundColor: isDarkMode ? '#1f1f1f' : 'white',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            color: '#3b82f6',
+          }}
+        >
+          <Eye className="w-4 h-4" />
+          <span className="text-sm font-medium">Click on any element in the preview to select it</span>
+          <button
+            onClick={() => setIsEditMode(false)}
+            className="ml-2 hover:bg-blue-500/20 rounded-full p-1 transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Image Modal */}
       {selectedImage && (
