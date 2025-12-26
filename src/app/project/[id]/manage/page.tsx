@@ -10,6 +10,8 @@ import { InsightsTabRedesign } from '@/components/project-manage/InsightsTabRede
 import { ShareTabRedesign } from '@/components/project-manage/ShareTabRedesign';
 import { CipherTab } from '@/components/project-manage/CipherTab';
 import { EvaluationTab } from '@/components/project-manage/EvaluationTab';
+import DataHeroSection from '@/components/project-manage/DataHeroSection';
+import UsageTab from '@/components/project-manage/UsageTab';
 import AppLayout from '@/components/layout/AppLayout';
 import { useTheme } from '@/hooks/useTheme';
 import { motion } from 'framer-motion';
@@ -699,6 +701,37 @@ export default function ProjectManagePage() {
                     </button>
 
                     <button
+                      onClick={() => setActiveTab('data1')}
+                      style={{
+                        padding: '0',
+                        fontSize: '14px',
+                        fontWeight: activeTab === 'data1' ? '500' : '400',
+                        color: activeTab === 'data1'
+                          ? 'var(--surbee-fg-primary)'
+                          : 'var(--surbee-fg-tertiary)',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'color 200ms ease, opacity 200ms ease',
+                        opacity: activeTab === 'data1' ? 1 : 0.6,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (activeTab !== 'data1') {
+                          e.currentTarget.style.opacity = '0.9';
+                          e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (activeTab !== 'data1') {
+                          e.currentTarget.style.opacity = '0.6';
+                          e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
+                        }
+                      }}
+                    >
+                      Data 1
+                    </button>
+
+                    <button
                       onClick={() => setActiveTab('insights')}
                       style={{
                         padding: '0',
@@ -845,7 +878,13 @@ export default function ProjectManagePage() {
             }}
           >
               {/* Tab Content */}
-              {activeTab === 'insights' ? (
+              {activeTab === 'data1' ? (
+                <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
+                  <div className="overflow-y-auto" style={{ height: '100%' }}>
+                    <DataHeroSection projectId={projectId} />
+                  </div>
+                </div>
+              ) : activeTab === 'insights' ? (
                 <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
                   <AnalysisDotsManager projectId={projectId}>
                     <div className="overflow-y-auto" style={{ padding: '24px', height: '100%' }}>
@@ -872,8 +911,8 @@ export default function ProjectManagePage() {
                 </div>
               )}
 
-            {/* Ask Surbee Component - Inside container at bottom - Hidden for Preview, Evaluation, and Cipher Tabs */}
-            {activeTab !== 'preview' && activeTab !== 'evaluation' && activeTab !== 'cipher' && (
+            {/* Ask Surbee Component - Inside container at bottom - Hidden for Preview, Insights, Evaluation, and Cipher Tabs */}
+            {activeTab !== 'preview' && activeTab !== 'insights' && activeTab !== 'evaluation' && activeTab !== 'cipher' && (
               <div className="ask-surbee-container">
                 <AskSurbeeComponent activeTab={activeTab} projectId={projectId} />
               </div>
