@@ -511,7 +511,7 @@ function AskSurbeeComponent({ activeTab, projectId }: { activeTab: TabType; proj
   );
 }
 
-export type TabType = 'preview' | 'data1' | 'evaluation' | 'usage' | 'share';
+export type TabType = 'preview' | 'insights' | 'evaluation' | 'usage' | 'share';
 
 export default function ProjectManagePage() {
   const params = useParams();
@@ -540,7 +540,7 @@ export default function ProjectManagePage() {
   const hoveredElementRef = React.useRef<HTMLElement | null>(null);
 
   React.useEffect(() => {
-    if (!isReferenceMode || (activeTab !== 'data1' && activeTab !== 'evaluation')) {
+    if (!isReferenceMode || (activeTab !== 'insights' && activeTab !== 'evaluation')) {
       setHoveredElement(null);
       hoveredElementRef.current = null;
       return;
@@ -980,34 +980,34 @@ export default function ProjectManagePage() {
                                     </button>
 
                                     <button
-                                      onClick={() => setActiveTab('data1')}
+                                      onClick={() => setActiveTab('insights')}
                                       style={{
                                         padding: '0',
                                         fontSize: '14px',
-                                        fontWeight: activeTab === 'data1' ? '500' : '400',
-                                        color: activeTab === 'data1'
+                                        fontWeight: activeTab === 'insights' ? '500' : '400',
+                                        color: activeTab === 'insights'
                                           ? 'var(--surbee-fg-primary)'
                                           : 'var(--surbee-fg-tertiary)',
                                         backgroundColor: 'transparent',
                                         border: 'none',
                                         cursor: 'pointer',
                                         transition: 'color 200ms ease, opacity 200ms ease',
-                                        opacity: activeTab === 'data1' ? 1 : 0.6,
+                                        opacity: activeTab === 'insights' ? 1 : 0.6,
                                       }}
                                       onMouseEnter={(e) => {
-                                        if (activeTab !== 'data1') {
+                                        if (activeTab !== 'insights') {
                                           e.currentTarget.style.opacity = '0.9';
                                           e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
                                         }
                                       }}
                                       onMouseLeave={(e) => {
-                                        if (activeTab !== 'data1') {
+                                        if (activeTab !== 'insights') {
                                           e.currentTarget.style.opacity = '0.6';
                                           e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
                                         }
                                       }}
                                     >
-                                      Data 1
+                                      Insights
                                     </button>
 
                                     <button
@@ -1190,7 +1190,7 @@ export default function ProjectManagePage() {
                       border: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
                     }}
                   >          {/* Tab Content */}
-          {activeTab === 'data1' ? (
+          {activeTab === 'insights' ? (
             <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
               <div className="overflow-y-auto" style={{ height: '100%' }}>
                 <DataHeroSection projectId={projectId} />
@@ -1214,8 +1214,8 @@ export default function ProjectManagePage() {
             </div>
           )}
 
-          {/* Ask Surbee Component - Inside container at bottom - Hidden for Preview, Data1, Evaluation, and Cipher Tabs */}
-          {activeTab !== 'preview' && activeTab !== 'data1' && activeTab !== 'evaluation' && activeTab !== 'cipher' && !isAgentOpen && (
+          {/* Ask Surbee Component - Inside container at bottom - Hidden for Preview, Insights, Evaluation, and Cipher Tabs */}
+          {activeTab !== 'preview' && activeTab !== 'insights' && activeTab !== 'evaluation' && activeTab !== 'cipher' && !isAgentOpen && (
             <div className="ask-surbee-container">
               <AskSurbeeComponent activeTab={activeTab} projectId={projectId} />
             </div>
@@ -1472,8 +1472,8 @@ export default function ProjectManagePage() {
                 borderTop: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
               }}
             >
-              {/* Reference Button - Above chatbox, Only on Data1 and Evaluation tabs */}
-              {(activeTab === 'data1' || activeTab === 'evaluation') && (
+              {/* Reference Button - Above chatbox, Only on Insights and Evaluation tabs */}
+              {(activeTab === 'insights' || activeTab === 'evaluation') && (
                 <div style={{ marginBottom: '8px' }}>
                   <button
                     type="button"
