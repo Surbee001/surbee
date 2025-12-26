@@ -56,14 +56,14 @@ interface FilterDropdownProps {
   placeholder?: string;
 }
 
-const FilterDropdown: React.FC<FilterDropdownProps> = ({ 
-  options, 
-  value, 
-  onChange, 
-  placeholder = "Select..." 
+const FilterDropdown: React.FC<FilterDropdownProps> = ({
+  options,
+  value,
+  onChange,
+  placeholder = "Select..."
 }) => {
   const selectedOption = options.find(opt => opt.value === value);
-  
+
   // Calculate width based on longest text
   const longestText = Math.max(
     ...options.map(opt => opt.label.length),
@@ -74,36 +74,40 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center justify-between gap-2 px-3 py-2 text-sm font-medium border rounded-lg transition-colors cursor-pointer"
-                style={{
-                  color: 'var(--surbee-fg-primary)',
-                  backgroundColor: 'transparent',
-                  borderColor: 'var(--surbee-sidebar-border)',
-                  fontFamily: 'var(--font-inter), sans-serif',
-                  width: `${dynamicWidth}px`
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}>
+        <button
+          className="flex items-center gap-1.5 h-9 py-1.5 px-4 text-sm font-normal transition-all duration-200 cursor-pointer rounded-full bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.08)]"
+          style={{
+            color: 'var(--surbee-fg-primary)',
+            fontFamily: 'var(--font-inter), sans-serif',
+          }}
+        >
           <span>{selectedOption?.label || placeholder}</span>
-          <ChevronDown size={16} style={{ color: 'var(--surbee-fg-secondary)' }} />
+          <ChevronDown size={16} style={{ color: 'rgba(232, 232, 232, 0.4)' }} />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="rounded-2xl border" style={{ borderColor: 'var(--surbee-sidebar-border)', backgroundColor: 'var(--surbee-sidebar-bg)', width: `${dynamicWidth}px` }}>
+      <DropdownMenuContent
+        align="start"
+        sideOffset={4}
+        style={{
+          borderRadius: '24px',
+          padding: '8px',
+          border: '1px solid rgba(232, 232, 232, 0.08)',
+          backgroundColor: 'rgb(19, 19, 20)',
+          boxShadow: 'rgba(0, 0, 0, 0.04) 0px 7px 16px',
+          minWidth: `${dynamicWidth}px`,
+        }}
+      >
         {options.map((option) => (
           <DropdownMenuItem
             key={option.value}
             onClick={() => onChange(option.value)}
-            className="rounded-lg cursor-pointer"
-            style={{ color: 'var(--surbee-fg-primary)' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
+            className="cursor-pointer"
+            style={{
+              borderRadius: '18px',
+              padding: '10px 14px',
+              color: 'var(--surbee-fg-primary)',
+              fontSize: '14px',
+              marginBottom: '1px',
             }}
           >
             {option.label}
@@ -592,10 +596,11 @@ export default function ProjectsPage() {
 
           {/* Loading state filter section */}
           <div className="flex flex-row items-center justify-between mb-2">
-            <div className="flex items-center border border-solid transition-colors text-global-text h-10 rounded-lg px-4 gap-1 border-grey-400 focus-within:border-global-text hover:border-grey-500 hover:focus-within:border-global-text w-[240px] opacity-50">
+            <div className="flex items-center h-9 rounded-full px-4 gap-2 w-[260px] bg-[rgba(255,255,255,0.05)] opacity-50">
+                <Search size={16} style={{ color: 'rgba(232, 232, 232, 0.4)', flexShrink: 0 }} />
                 <input
-                  className="h-full w-full border-none bg-transparent outline-none read-only:select-all disabled:cursor-not-allowed text-global-text placeholder:text-grey-500 read-only:truncate text-body2"
-                  placeholder="Filter by project name"
+                  className="h-full w-full border-none bg-transparent outline-none text-sm"
+                  placeholder="Search"
                   disabled
                   style={{
                     color: 'var(--surbee-fg-primary)',
@@ -697,11 +702,12 @@ export default function ProjectsPage() {
 
           {/* New Filter and Sort Section */}
           <div className="flex flex-row items-center justify-between mb-2">
-            {/* Filter Input */}
-            <div className="flex items-center border border-solid transition-colors text-global-text h-10 rounded-lg px-4 gap-1 border-grey-400 focus-within:border-global-text hover:border-grey-500 hover:focus-within:border-global-text w-[240px] cursor-pointer">
+            {/* Search Input */}
+            <div className="flex items-center h-9 rounded-full px-4 gap-2 w-[260px] transition-all duration-200 bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.08)]">
+                <Search size={16} style={{ color: 'rgba(232, 232, 232, 0.4)', flexShrink: 0 }} />
                 <input
-                  className="h-full w-full border-none bg-transparent outline-none read-only:select-all disabled:cursor-not-allowed text-global-text placeholder:text-grey-500 read-only:truncate text-body2"
-                  placeholder="Filter by project name"
+                  className="h-full w-full border-none bg-transparent outline-none text-sm"
+                  placeholder="Search"
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   style={{

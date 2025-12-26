@@ -197,89 +197,110 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       </ContextMenuTrigger>
 
       <ContextMenuContent
-        className="w-[200px] rounded-lg border border-zinc-800 bg-[#1b1b1b]/95 backdrop-blur-xl p-1 shadow-xl"
+        style={{
+          borderRadius: '24px',
+          padding: '8px',
+          border: '1px solid rgba(232, 232, 232, 0.08)',
+          backgroundColor: 'rgb(19, 19, 20)',
+          boxShadow: 'rgba(0, 0, 0, 0.04) 0px 7px 16px',
+          minWidth: '200px',
+        }}
       >
-        {/* Project title header */}
-        <div className="px-2 py-1.5 text-zinc-500 truncate text-xs font-medium">
-          {title}
-        </div>
-
-        <ContextMenuSeparator className="bg-white/10" />
-
         {/* Open in new tab */}
         <ContextMenuItem
-          className="flex items-center gap-2 px-2 py-1.5 text-sm text-zinc-300 rounded-md cursor-pointer hover:bg-white/5 focus:bg-white/5"
+          className="cursor-pointer"
+          style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)', fontSize: '14px', marginBottom: '1px' }}
           onClick={() => window.open(`/projects/${id}/manage`, '_blank')}
         >
-          <ExternalLink className="h-4 w-4 text-zinc-500" />
-          <span>Open in new tab</span>
+          <div className="flex items-center gap-3">
+            <ExternalLink className="h-4 w-4" style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
+            <span>Open in new tab</span>
+          </div>
         </ContextMenuItem>
 
         {/* Rename */}
         <ContextMenuItem
-          className="flex items-center gap-2 px-2 py-1.5 text-sm text-zinc-300 rounded-md cursor-pointer hover:bg-white/5 focus:bg-white/5"
+          className="cursor-pointer"
+          style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)', fontSize: '14px', marginBottom: '1px' }}
           onClick={() => setIsRenaming(true)}
         >
-          <Pencil className="h-4 w-4 text-zinc-500" />
-          <span>Rename</span>
+          <div className="flex items-center gap-3">
+            <Pencil className="h-4 w-4" style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
+            <span>Rename</span>
+          </div>
         </ContextMenuItem>
 
         {/* Duplicate */}
         <ContextMenuItem
-          className="flex items-center gap-2 px-2 py-1.5 text-sm text-zinc-300 rounded-md cursor-pointer hover:bg-white/5 focus:bg-white/5"
+          className="cursor-pointer"
+          style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)', fontSize: '14px', marginBottom: '1px' }}
           onClick={() => onDuplicate?.(id)}
         >
-          <Copy className="h-4 w-4 text-zinc-500" />
-          <span>Duplicate</span>
+          <div className="flex items-center gap-3">
+            <Copy className="h-4 w-4" style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
+            <span>Duplicate</span>
+          </div>
         </ContextMenuItem>
 
-        <ContextMenuSeparator className="bg-white/10" />
+        <ContextMenuSeparator style={{ backgroundColor: 'rgba(232, 232, 232, 0.08)', margin: '4px 0' }} />
 
         {/* Share */}
         {status === 'published' && publishedUrl && (
           <ContextMenuItem
-            className="flex items-center gap-2 px-2 py-1.5 text-sm text-zinc-300 rounded-md cursor-pointer hover:bg-white/5 focus:bg-white/5"
+            className="cursor-pointer"
+            style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)', fontSize: '14px', marginBottom: '1px' }}
             onClick={() => {
-              const surveyUrl = `${window.location.origin}/s/${publishedUrl}`;
+              const surveyUrl = `https://form.surbee.dev/${publishedUrl}`;
               navigator.clipboard.writeText(surveyUrl);
               onShare?.(id);
             }}
           >
-            <Share2 className="h-4 w-4 text-zinc-500" />
-            <span>Copy survey link</span>
+            <div className="flex items-center gap-3">
+              <Share2 className="h-4 w-4" style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
+              <span>Copy survey link</span>
+            </div>
           </ContextMenuItem>
         )}
 
         {/* Settings */}
         <ContextMenuItem
-          className="flex items-center gap-2 px-2 py-1.5 text-sm text-zinc-300 rounded-md cursor-pointer hover:bg-white/5 focus:bg-white/5"
+          className="cursor-pointer"
+          style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)', fontSize: '14px', marginBottom: '1px' }}
           onClick={() => {
             onSettings?.(id);
             router.push(`/projects/${id}/manage?tab=settings`);
           }}
         >
-          <Settings className="h-4 w-4 text-zinc-500" />
-          <span>Settings</span>
+          <div className="flex items-center gap-3">
+            <Settings className="h-4 w-4" style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
+            <span>Settings</span>
+          </div>
         </ContextMenuItem>
 
-        <ContextMenuSeparator className="bg-white/10" />
+        <ContextMenuSeparator style={{ backgroundColor: 'rgba(232, 232, 232, 0.08)', margin: '4px 0' }} />
 
         {/* Archive */}
         <ContextMenuItem
-          className="flex items-center gap-2 px-2 py-1.5 text-sm text-zinc-300 rounded-md cursor-pointer hover:bg-white/5 focus:bg-white/5"
+          className="cursor-pointer"
+          style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)', fontSize: '14px', marginBottom: '1px' }}
           onClick={() => onArchive?.(id)}
         >
-          <Archive className="h-4 w-4 text-zinc-500" />
-          <span>{status === 'archived' ? 'Unarchive' : 'Archive'}</span>
+          <div className="flex items-center gap-3">
+            <Archive className="h-4 w-4" style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
+            <span>{status === 'archived' ? 'Unarchive' : 'Archive'}</span>
+          </div>
         </ContextMenuItem>
 
         {/* Delete */}
         <ContextMenuItem
-          className="flex items-center gap-2 px-2 py-1.5 text-sm text-red-400 rounded-md cursor-pointer hover:bg-red-500/10 focus:bg-red-500/10"
+          className="cursor-pointer"
+          style={{ borderRadius: '18px', padding: '10px 14px', color: '#ef4444', fontSize: '14px' }}
           onClick={() => onDelete?.(id)}
         >
-          <Trash2 className="h-4 w-4 text-red-400" />
-          <span>Delete</span>
+          <div className="flex items-center gap-3">
+            <Trash2 className="h-4 w-4" />
+            <span>Delete</span>
+          </div>
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
