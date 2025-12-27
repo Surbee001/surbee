@@ -1,9 +1,10 @@
 "use client"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ChevronRight } from "lucide-react"
 
 import { ShiningText } from "./shining-text"
+import { TextShimmer } from "./text-shimmer"
 import type React from "react"
 
 interface ThinkingStep {
@@ -20,8 +21,21 @@ interface ThinkingDisplayProps {
 }
 
 export function ThinkingDisplay({ steps, duration = 0, isThinking = false, className }: ThinkingDisplayProps) {
-  // Start collapsed by default, expand only when user clicks
   const [isOpen, setIsOpen] = useState(false);
+  const [wasThinking, setWasThinking] = useState(false);
+
+  // Auto-open when reasoning starts, auto-close when it ends
+  useEffect(() => {
+    if (isThinking && !wasThinking) {
+      // Reasoning just started - open the dropdown
+      setIsOpen(true);
+      setWasThinking(true);
+    } else if (!isThinking && wasThinking) {
+      // Reasoning just ended - close the dropdown
+      setIsOpen(false);
+      setWasThinking(false);
+    }
+  }, [isThinking, wasThinking]);
 
   // Always show if we have steps OR if thinking is active
   const shouldShow = isThinking || steps.length > 0;
@@ -30,13 +44,16 @@ export function ThinkingDisplay({ steps, duration = 0, isThinking = false, class
     return null;
   }
 
+  // Combine all step content into paragraphs
+  const combinedContent = steps.map(s => s.content).join('\n\n');
+
   return (
-    <div className={cn("relative my-1 min-h-6", className)}>
+    <div className={cn("relative my-1.5 min-h-6", className)}>
       <div className="relative flex origin-top-left flex-col gap-0 overflow-x-clip">
         {/* Clickable header */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground/80 transition-colors cursor-pointer"
+          className="flex w-fit items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground/80 transition-colors cursor-pointer"
         >
           <ChevronRight
             className={cn(
@@ -45,32 +62,21 @@ export function ThinkingDisplay({ steps, duration = 0, isThinking = false, class
             )}
           />
           {isThinking ? (
-            <ShiningText text="Thinking" className="text-sm" />
+            <ShiningText text="Reasoning" className="text-[13px]" />
           ) : (
-            <span className="text-muted-foreground/70">{`Thought for ${duration}s`}</span>
+            <span className="text-muted-foreground/70">Reasoning</span>
           )}
         </button>
 
-        {/* Collapsible content */}
+        {/* Collapsible content - simple paragraphs */}
         <div
           className={cn(
             "max-w-[calc(0.8*var(--thread-content-max-width,40rem))] transition-all duration-200 ease-in-out overflow-hidden pl-5",
             isOpen ? "opacity-100 max-h-[2000px] mt-2" : "opacity-0 max-h-0 mt-0",
           )}
         >
-          <div className="relative z-0">
-            <div className="relative flex h-full flex-col" style={{ margin: "4px 0px" }}>
-              {steps.map((step, index) => (
-                <ThinkingStep
-                  key={step.id}
-                  content={step.content}
-                  status={step.status}
-                  isLast={index === steps.length - 1}
-                  zIndex={index}
-                  isThinking={isThinking}
-                />
-              ))}
-            </div>
+          <div className="text-[13px] leading-relaxed text-muted-foreground/60 space-y-4">
+            {formatReasoningContent(combinedContent, isThinking)}
           </div>
         </div>
       </div>
@@ -78,70 +84,91 @@ export function ThinkingDisplay({ steps, duration = 0, isThinking = false, class
   )
 }
 
-interface ThinkingStepProps {
-  content: string
-  status: "thinking" | "complete"
-  isLast: boolean
-  zIndex: number
-  isThinking: boolean
-}
+// Format reasoning content - keep natural structure, just style it nicely
+function formatReasoningContent(text: string, isThinking: boolean = false): React.ReactNode {
+  // Split by double newlines to get natural paragraphs
+  const blocks = text.split(/\n\n+/).filter(b => b.trim());
 
-// Simple markdown bold formatter
-function formatMarkdownBold(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  
-  return parts.map((part, index) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      // Remove ** and make bold (same color as reasoning text)
-      const boldText = part.slice(2, -2);
-      return <strong key={index} className="font-semibold">{boldText}</strong>;
+  return blocks.map((block, idx) => {
+    // Check if this block has line breaks (could be a list or multi-line)
+    const lines = block.split('\n').filter(l => l.trim());
+
+    // For the last block when thinking, apply shimmer effect
+    const isLastBlock = idx === blocks.length - 1;
+    const shouldShimmer = isThinking && isLastBlock;
+
+    if (lines.length > 1) {
+      // Multiple lines - render each line separately
+      return (
+        <div key={idx} className="space-y-1">
+          {lines.map((line, lineIdx) => {
+            const isLastLine = lineIdx === lines.length - 1;
+            const lineContent = line.trim();
+
+            if (shouldShimmer && isLastLine && lineContent) {
+              return (
+                <TextShimmer key={lineIdx} as="p" className="text-[13px] text-muted-foreground/50" duration={1.5} spread={1.5}>
+                  {lineContent}
+                </TextShimmer>
+              );
+            }
+
+            return (
+              <p key={lineIdx} className="text-muted-foreground/50">
+                {formatInlineContent(lineContent)}
+              </p>
+            );
+          })}
+        </div>
+      );
     }
-    return <span key={index}>{part}</span>;
+
+    // Single line paragraph
+    const trimmedBlock = block.trim();
+
+    if (shouldShimmer && trimmedBlock) {
+      return (
+        <TextShimmer key={idx} as="p" className="text-[13px] text-muted-foreground/50" duration={1.5} spread={1.5}>
+          {trimmedBlock}
+        </TextShimmer>
+      );
+    }
+
+    return (
+      <p key={idx} className="text-muted-foreground/50">
+        {formatInlineContent(trimmedBlock)}
+      </p>
+    );
   });
 }
 
-function ThinkingStep({ content, status, isLast, zIndex }: ThinkingStepProps) {
-  const isComplete = status === "complete"
+// Format inline content (code and bold)
+function formatInlineContent(text: string): React.ReactNode {
+  // Handle code blocks (backticks) and bold
+  const parts = text.split(/(`[^`]+`)/g);
 
-  return (
-    <div
-      className="text-muted-foreground start-0 end-0 top-0 flex origin-left animate-in fade-in duration-500"
-      style={{
-        zIndex,
-        position: "static",
-      }}
-    >
-      <div className="relative flex w-full items-start gap-2 overflow-clip">
-        <div className="flex h-full w-4 shrink-0 flex-col items-center">
-          <div className="flex h-5 shrink-0 items-center justify-center">
-            {isComplete ? (
-              <svg
-                className="h-[15px] w-[15px] text-primary"
-                height="20"
-                width="20"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M12.498 6.90887C12.7094 6.60867 13.1245 6.53642 13.4248 6.74774C13.7249 6.95913 13.7971 7.37424 13.5859 7.6745L9.62695 13.2995C9.51084 13.4644 9.32628 13.5681 9.125 13.5807C8.94863 13.5918 8.77583 13.5319 8.64453 13.4167L8.59082 13.364L6.50781 11.072L6.42773 10.9645C6.26956 10.6986 6.31486 10.3488 6.55273 10.1325C6.79045 9.91663 7.14198 9.9053 7.3916 10.0876L7.49219 10.1774L9.0166 11.8542L12.498 6.90887Z" />
-                <path
-                  clipRule="evenodd"
-                  d="M10.3333 2.08496C14.7046 2.08496 18.2483 5.62867 18.2483 10C18.2483 14.3713 14.7046 17.915 10.3333 17.915C5.96192 17.915 2.41821 14.3713 2.41821 10C2.41821 5.62867 5.96192 2.08496 10.3333 2.08496ZM10.3333 3.41504C6.69646 3.41504 3.74829 6.3632 3.74829 10C3.74829 13.6368 6.69646 16.585 10.3333 16.585C13.97 16.585 16.9182 13.6368 16.9182 10C16.9182 6.3632 13.97 3.41504 10.3333 3.41504Z"
-                  fillRule="evenodd"
-                />
-              </svg>
-            ) : (
-              <div className="bg-muted-foreground/40 h-[6px] w-[6px] rounded-full animate-pulse" />
-            )}
-          </div>
-          {!isLast && <div className="bg-border h-full w-[1px] rounded-full" />}
-        </div>
-        <div className="w-full" style={{ marginBottom: isLast ? "0px" : "12px" }}>
-          <div className="text-sm w-full break-words whitespace-pre-wrap">
-            <span className="text-muted-foreground">{formatMarkdownBold(content)}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+  return parts.map((part, index) => {
+    // Handle inline code with blue styling
+    if (part.startsWith('`') && part.endsWith('`')) {
+      const codeText = part.slice(1, -1);
+      return (
+        <code
+          key={index}
+          className="rounded bg-blue-500/15 px-1.5 py-0.5 text-[12px] font-mono text-blue-400"
+        >
+          {codeText}
+        </code>
+      );
+    }
+
+    // Handle bold text within non-code parts
+    const boldParts = part.split(/(\*\*[^*]+\*\*)/g);
+    return boldParts.map((boldPart, boldIndex) => {
+      if (boldPart.startsWith('**') && boldPart.endsWith('**')) {
+        const boldText = boldPart.slice(2, -2);
+        return <strong key={`${index}-${boldIndex}`} className="font-medium text-muted-foreground/70">{boldText}</strong>;
+      }
+      return <span key={`${index}-${boldIndex}`}>{boldPart}</span>;
+    });
+  });
 }

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo, startTransition, useDeferredValue } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy, Hammer, Code, Terminal, AlertTriangle, Settings as SettingsIcon, Sun, Moon, Laptop, CheckCircle2 } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy, Hammer, Code, Terminal, AlertTriangle, Settings as SettingsIcon, Sun, Moon, Laptop, CheckCircle2, Coins } from "lucide-react";
 import UserNameBadge from "@/components/UserNameBadge";
 import UserMenu from "@/components/ui/user-menu";
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -18,6 +18,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealtime } from '@/contexts/RealtimeContext';
 import { useTheme } from '@/hooks/useTheme';
+import { useCredits } from '@/hooks/useCredits';
 import { useChatSession } from '@/hooks/useChatSession';
 import { useDashboardChat } from '@/hooks/useDashboardChat';
 import { ThinkingDisplay } from '../../../../components/ThinkingUi/components/thinking-display';
@@ -498,7 +499,7 @@ function PublishDropdown({
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         disabled={isPublishing || !sandboxAvailable}
-        className="w-full px-3 py-1.5 rounded-md text-sm font-medium transition-all"
+        className="w-full px-3 py-1.5 rounded-full text-sm font-medium transition-all"
         style={{
           backgroundColor: (!sandboxAvailable || isPublishing) ? (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') : 'white',
           color: (!sandboxAvailable || isPublishing) ? 'var(--surbee-fg-secondary)' : '#000',
@@ -510,7 +511,7 @@ function PublishDropdown({
           lineHeight: '1.375rem'
         }}
       >
-        {isPublishing ? 'Publishing...' : !sandboxAvailable ? 'Generate code first' : (project?.status === 'published' || publishedUrl) ? 'Update' : 'Publish'}
+        {isPublishing ? 'Publishing...' : (project?.status === 'published' || publishedUrl) ? 'Update' : 'Publish'}
       </button>
 
       {isOpen && (
@@ -3580,7 +3581,18 @@ export default function ProjectPage() {
   const { subscribeToProject } = useRealtime();
   const router = useRouter();
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const { credits, loading: creditsLoading, percentUsed } = useCredits();
   const [isMounted, setIsMounted] = useState(false);
+
+  // Calculate days until credits reset
+  const daysUntilReset = useMemo(() => {
+    if (!credits?.creditsResetAt) return null;
+    const resetDate = new Date(credits.creditsResetAt);
+    const now = new Date();
+    const diffTime = resetDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  }, [credits?.creditsResetAt]);
 
   // Prevent hydration errors by only checking theme on client
   useEffect(() => {
@@ -5186,6 +5198,86 @@ Please make changes specifically to this element.`;
                   <div className="user-menu-email">{user?.email || ''}</div>
                 </div>
 
+                {/* Credits Section */}
+                <div className="flex flex-col gap-2 px-3 py-3" style={{ color: 'rgb(153, 153, 153)' }}>
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-xs font-medium flex items-center gap-1.5" style={{ color: 'var(--surbee-fg-muted)' }}>
+                      <Coins className="w-3 h-3" />
+                      Credits
+                    </h5>
+                    <span className="text-xs">
+                      {creditsLoading ? (
+                        <span style={{ color: 'var(--surbee-fg-secondary)' }}>Loading...</span>
+                      ) : credits ? (
+                        <>
+                          <span style={{ color: 'var(--surbee-fg-muted)' }}>{credits.creditsRemaining.toLocaleString()}</span>
+                          <span style={{ color: 'var(--surbee-fg-secondary)' }}> / {credits.monthlyCredits.toLocaleString()}</span>
+                        </>
+                      ) : (
+                        <span style={{ color: 'var(--surbee-fg-secondary)' }}>--</span>
+                      )}
+                    </span>
+                  </div>
+                  <div
+                    className="relative h-2 w-full overflow-hidden rounded-full"
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.08)' }}
+                    aria-valuemax={100}
+                    aria-valuemin={0}
+                    aria-valuenow={percentUsed}
+                    aria-valuetext={`${percentUsed}%`}
+                    role="progressbar"
+                  >
+                    <div className="h-full w-full">
+                      <div
+                        className="h-full w-full flex-1 transition-all rounded-full"
+                        style={{
+                          backgroundColor: percentUsed > 80 ? '#ef4444' : percentUsed > 50 ? '#eab308' : '#a855f7',
+                          width: `${100 - percentUsed}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs leading-4" style={{ color: 'var(--surbee-fg-secondary)' }}>
+                    {credits?.plan === 'enterprise' ? (
+                      'Unlimited credits on Enterprise plan.'
+                    ) : daysUntilReset !== null ? (
+                      <>
+                        {daysUntilReset === 0 ? 'Credits reset today.' : `${daysUntilReset} day${daysUntilReset === 1 ? '' : 's'} until credits reset.`}
+                        {credits?.plan !== 'max' && (
+                          <>
+                            {' '}
+                            <button
+                              className="hover:underline cursor-pointer"
+                              type="button"
+                              onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/pricing'); }}
+                              style={{ color: 'var(--surbee-fg-muted)' }}
+                            >
+                              Upgrade
+                            </button>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        Credits reset monthly.
+                        {credits?.plan !== 'max' && (
+                          <>
+                            {' '}
+                            <button
+                              className="hover:underline cursor-pointer"
+                              type="button"
+                              onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/pricing'); }}
+                              style={{ color: 'var(--surbee-fg-muted)' }}
+                            >
+                              Upgrade
+                            </button>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </p>
+                </div>
+
                 {/* Back to Dashboard */}
                 <button
                   onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home'); }}
@@ -5302,7 +5394,7 @@ Please make changes specifically to this element.`;
               </div>
             ) : (
               /* Chat Messages View */
-              <div className="flex-1 overflow-y-auto pl-4 pr-2 py-6" ref={chatAreaRef}>
+              <div className="flex-1 overflow-y-auto pl-4 pr-2 py-6 thin-scrollbar" ref={chatAreaRef}>
                 <div className="space-y-4">
                   {messages?.map((msg, idx) => (
                     <div key={msg.id} className="space-y-2">
@@ -5342,42 +5434,16 @@ Please make changes specifically to this element.`;
                             return null;
                           })()}
 
-                          {/* User prompt bubble with avatar */}
-                          <div className="flex items-end gap-2.5">
-                            {/* Bubble */}
+                          {/* User prompt bubble */}
+                          <div
+                            className="flex flex-col max-w-[80%] rounded-[20px] px-4 py-3"
+                            style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+                          >
                             <div
-                              className="flex flex-col max-w-[80%] rounded-[20px] px-4 py-3"
-                              style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+                              className="text-[14px] leading-[1.5] text-foreground whitespace-pre-wrap"
+                              style={{ wordBreak: 'break-word' }}
                             >
-                              <div
-                                className="text-[14px] leading-[1.5] text-foreground whitespace-pre-wrap"
-                                style={{ wordBreak: 'break-word' }}
-                              >
-                                {msg.parts.find(p => p.type === 'text')?.text || ''}
-                              </div>
-                            </div>
-                            {/* Avatar */}
-                            <div className="flex-shrink-0">
-                              <div
-                                className="rounded-full overflow-hidden"
-                                style={{ width: '28px', height: '28px' }}
-                              >
-                                {user?.avatar_url ? (
-                                  <img
-                                    src={user.avatar_url}
-                                    alt={user.name || 'User'}
-                                    style={{ width: '28px', height: '28px' }}
-                                    className="object-cover"
-                                  />
-                                ) : (
-                                  <div
-                                    className="w-full h-full flex items-center justify-center text-[11px] font-medium text-muted-foreground"
-                                    style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
-                                  >
-                                    {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
-                                  </div>
-                                )}
-                              </div>
+                              {msg.parts.find(p => p.type === 'text')?.text || ''}
                             </div>
                           </div>
                         </div>
@@ -5703,7 +5769,6 @@ Please make changes specifically to this element.`;
           {/* Center Section - Device Controls */}
           <div className="hidden md:flex flex-1 items-center justify-center">
             <div className="relative flex h-8 min-w-[340px] max-w-[560px] items-center justify-between gap-2 rounded-full px-1 text-sm page-dropdown" style={{
-              border: isDarkMode ? '1px solid #3a3a3a' : '1px solid rgba(0, 0, 0, 0.1)',
               backgroundColor: isDarkMode ? '#1f1f1f' : 'var(--surbee-sidebar-bg)'
             }}>
               {/* Device View Buttons - Hidden on mobile */}
@@ -5856,7 +5921,7 @@ Please make changes specifically to this element.`;
           {/* Right Section - Upgrade & Publish Buttons */}
           <div className="relative flex items-center gap-2">
             <button
-              className="relative px-3 py-1.5 font-medium text-sm transition-all duration-150 cursor-pointer rounded-[0.38rem]"
+              className="relative px-3 py-1.5 font-medium text-sm transition-all duration-150 cursor-pointer rounded-full"
               style={{
                 fontFamily: 'FK Grotesk, sans-serif',
                 fontSize: '14px',

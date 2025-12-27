@@ -187,21 +187,38 @@ const SHOW_REASONING = true;
 function buildConversationHistory(
   chatHistory: WorkflowContextChatEntry[] = []
 ): Array<{ role: 'user' | 'assistant'; content: MessageContent }> {
-  return chatHistory.slice(-6).map((entry) => {
-    // If content is a string, limit its length
-    if (typeof entry.content === 'string') {
+  return chatHistory
+    .slice(-6)
+    .filter((entry) => {
+      // Filter out entries with empty content
+      if (typeof entry.content === 'string') {
+        return entry.content.trim() !== '';
+      }
+      // For multi-part content, check if there's any actual content
+      if (Array.isArray(entry.content)) {
+        return entry.content.length > 0;
+      }
+      // Keep assistant messages (they may have tool calls)
+      if (entry.role === 'assistant') {
+        return true;
+      }
+      return entry.content != null;
+    })
+    .map((entry) => {
+      // If content is a string, limit its length
+      if (typeof entry.content === 'string') {
+        return {
+          role: entry.role,
+          content: entry.content.slice(0, 4000),
+        };
+      }
+
+      // If content is multi-part, pass through (images are already processed)
       return {
         role: entry.role,
-        content: entry.content.slice(0, 4000),
+        content: entry.content,
       };
-    }
-
-    // If content is multi-part, pass through (images are already processed)
-    return {
-      role: entry.role,
-      content: entry.content,
-    };
-  });
+    });
 }
 
 /**
@@ -1190,7 +1207,7 @@ const todoWriteTool = tool({
 
 const suggestFollowupsTool = tool({
   description: 'REQUIRED: Call this at the END of every response to provide exactly 3 follow-up suggestions. These appear as clickable pills for the user. Each suggestion should be a specific, actionable prompt that the user might want to try next. Make suggestions contextually relevant to what was just discussed or built.',
-  parameters: z.object({
+  inputSchema: z.object({
     suggestions: z.array(z.string().describe('A follow-up prompt the user might want to try'))
       .length(3)
       .describe('Exactly 3 follow-up suggestions, each 10-60 characters')
@@ -1371,13 +1388,42 @@ function convertMessagesWithImages(messages: ChatMessage[]): any[] {
 // New Streaming Workflow (useChat pattern)
 // ============================================================================
 
-export function streamWorkflowV3({ messages, model = 'gpt-5', projectId, userId }: { messages: ChatMessage[], model?: string, projectId?: string, userId?: string }) {
+export function streamWorkflowV3({ messages: rawMessages, model = 'gpt-5', projectId, userId }: { messages: ChatMessage[], model?: string, projectId?: string, userId?: string }) {
   console.log('🚀 Starting Surbee Workflow V3 (useChat Mode)...');
   console.log('🤖 Received model parameter:', model);
   console.log('🆔 Project Context:', { projectId, userId });
   console.log('🔍 Model type:', typeof model);
   console.log('🔍 Model === "claude-haiku"?', model === 'claude-haiku');
   console.log('🔍 Model === "gpt-5"?', model === 'gpt-5');
+
+  // CRITICAL: Filter out messages with empty or null content before processing
+  // This prevents "messages.0: all messages must have non-empty content" error
+  const messages = rawMessages.filter((msg) => {
+    // Always keep assistant messages (they may have tool calls without text)
+    if (msg.role === 'assistant') return true;
+
+    // Check if message has any parts
+    if (!msg.parts || msg.parts.length === 0) {
+      console.log('⚠️ Filtering out message with no parts:', msg.role);
+      return false;
+    }
+
+    // Check if any part has actual content
+    const hasContent = msg.parts.some((part: any) => {
+      if (part.type === 'text') return part.text && part.text.trim() !== '';
+      if (part.type === 'image') return !!part.image;
+      if (part.type === 'file') return !!part.url || !!part.data;
+      return true; // Keep other part types
+    });
+
+    if (!hasContent) {
+      console.log('⚠️ Filtering out message with empty content:', msg.role);
+    }
+
+    return hasContent;
+  });
+
+  console.log(`📥 Messages after filtering: ${messages.length} (from ${rawMessages.length})`);
 
   // Debug: Check if messages contain images (both legacy 'image' and new 'file' parts)
   const totalImages = messages.reduce((count, msg) => {
@@ -2086,8 +2132,25 @@ Project name for this session: ${projectName} (always use this project name when
       return false;
     },
     system: systemPrompt,
-    // Use custom converter that handles images properly
-    messages: totalImages > 0 ? convertMessagesWithImages(messages) : convertToModelMessages(messages),
+    // Use custom converter that handles images properly, then filter out any empty messages
+    messages: (totalImages > 0 ? convertMessagesWithImages(messages) : convertToModelMessages(messages))
+      .filter((msg: any) => {
+        // Filter out messages with empty/null/undefined content
+        if (msg.role === 'assistant') {
+          // Assistant messages with tool calls are valid even with empty text content
+          if (msg.toolCalls && msg.toolCalls.length > 0) return true;
+          // Otherwise, keep if has content
+          if (!msg.content) return false;
+          if (typeof msg.content === 'string' && msg.content.trim() === '') return false;
+        }
+        if (msg.role === 'user') {
+          // User messages must have content
+          if (!msg.content) return false;
+          if (typeof msg.content === 'string' && msg.content.trim() === '') return false;
+          if (Array.isArray(msg.content) && msg.content.length === 0) return false;
+        }
+        return true;
+      }),
     tools: {
       ...tools,
       save_survey_questions: saveSurveyQuestionsTool

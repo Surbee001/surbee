@@ -49,42 +49,61 @@ export async function POST(req: NextRequest) {
 
     if (body.messages) {
       // New format: direct messages array from useChat
-      messages = body.messages.map((msg: any) => {
-        // Handle string content (text messages)
-        if (typeof msg.content === 'string') {
+      messages = body.messages
+        .map((msg: any) => {
+          // Handle string content (text messages)
+          if (typeof msg.content === 'string') {
+            return {
+              role: msg.role,
+              parts: [{ type: 'text', text: msg.content }]
+            };
+          }
+
+          // Handle array content (multi-part messages with text/image/file)
+          if (Array.isArray(msg.content)) {
+            const parts = msg.content.map((part: any) => {
+              // Pass through all part types including 'file' parts
+              return part;
+            });
+            return {
+              role: msg.role,
+              parts
+            };
+          }
+
+          // Handle parts array (already in our format - from AI SDK useChat)
+          if (msg.parts) {
+            // Parts already include file parts when using sendMessage({ text, files })
+            return {
+              role: msg.role,
+              parts: msg.parts
+            };
+          }
+
+          // Fallback: create text part from content
           return {
             role: msg.role,
-            parts: [{ type: 'text', text: msg.content }]
+            parts: [{ type: 'text', text: String(msg.content || '') }]
           };
-        }
+        })
+        // Filter out messages with empty content
+        .filter((msg: any) => {
+          // Check if message has any meaningful content
+          if (!msg.parts || msg.parts.length === 0) return false;
 
-        // Handle array content (multi-part messages with text/image/file)
-        if (Array.isArray(msg.content)) {
-          const parts = msg.content.map((part: any) => {
-            // Pass through all part types including 'file' parts
-            return part;
+          // Check if any part has actual content
+          const hasContent = msg.parts.some((part: any) => {
+            if (part.type === 'text') return part.text && part.text.trim() !== '';
+            if (part.type === 'image') return !!part.image;
+            if (part.type === 'file') return !!part.url || !!part.data;
+            return true; // Keep other part types
           });
-          return {
-            role: msg.role,
-            parts
-          };
-        }
 
-        // Handle parts array (already in our format - from AI SDK useChat)
-        if (msg.parts) {
-          // Parts already include file parts when using sendMessage({ text, files })
-          return {
-            role: msg.role,
-            parts: msg.parts
-          };
-        }
+          // Always keep assistant messages (they may have tool calls)
+          if (msg.role === 'assistant') return true;
 
-        // Fallback: create text part from content
-        return {
-          role: msg.role,
-          parts: [{ type: 'text', text: String(msg.content || '') }]
-        };
-      });
+          return hasContent;
+        });
     } else if (body.input) {
       // Legacy format: { input, images, context } from project page
       // Convert to messages format
