@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Copy, ThumbsUp, ThumbsDown, Search, ChevronRight, CheckCircle2, Download } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import ChatInputLight, { ReferenceItem } from "@/components/ui/chat-input-light";
+import { useCredits } from "@/hooks/useCredits";
+import ChatInputLight, { ReferenceItem, ChatInputLightRef } from "@/components/ui/chat-input-light";
 import { AIModel } from "@/components/ui/model-selector";
 import { Response } from "@/components/ai-elements/response";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
@@ -24,6 +25,13 @@ import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { ChartLoadingSpinner } from "@/components/ui/chart-loading-animation";
+import { ThinkingDisplay } from "../../../components/ThinkingUi/components/thinking-display";
+
+interface ThinkingStep {
+  id: string;
+  content: string;
+  status: "thinking" | "complete";
+}
 
 interface Message {
   id: string;
@@ -34,22 +42,26 @@ interface Message {
 interface DashboardChatContainerProps {
   userId: string;
   greeting: string;
+  initialChatId?: string;
 }
 
 // Generate unique chat session ID
 const generateChatSessionId = () => {
-  return `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `${Date.now().toString(36)}${Math.random().toString(36).substr(2, 9)}`;
 };
 
 export function DashboardChatContainer({
   userId,
   greeting,
+  initialChatId,
 }: DashboardChatContainerProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { preferences } = useUserPreferences();
-  const [hasStartedChat, setHasStartedChat] = useState(false);
+  const { credits } = useCredits();
+  const userPlan = credits?.plan || 'free';
+  const [hasStartedChat, setHasStartedChat] = useState(!!initialChatId);
   const [selectedModel, setSelectedModel] = useState<AIModel>("claude-haiku");
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [feedbackGiven, setFeedbackGiven] = useState<Record<string, "up" | "down">>({});
@@ -66,11 +78,108 @@ export function DashboardChatContainer({
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [references, setReferences] = useState<ReferenceItem[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
+  const [hasAttachedFiles, setHasAttachedFiles] = useState(false);
+  const chatInputRef = useRef<ChatInputLightRef>(null);
+
+  // Design system color themes
+  const DESIGN_THEMES = useMemo(() => [
+    {
+      id: 'default',
+      name: 'Clean Slate',
+      colors: ['#FFFFFF', '#1A1A1A', '#F5F5F5', '#3B82F6'],
+      description: 'Minimal black and white with blue accents'
+    },
+    {
+      id: 'midnight',
+      name: 'Midnight',
+      colors: ['#0F172A', '#E2E8F0', '#1E293B', '#6366F1'],
+      description: 'Deep navy with indigo highlights'
+    },
+    {
+      id: 'forest',
+      name: 'Evergreen',
+      colors: ['#064E3B', '#ECFDF5', '#065F46', '#34D399'],
+      description: 'Rich forest greens with mint accents'
+    },
+    {
+      id: 'sunset',
+      name: 'Golden Hour',
+      colors: ['#FEF3C7', '#78350F', '#FFFBEB', '#F59E0B'],
+      description: 'Warm amber and golden tones'
+    },
+    {
+      id: 'neon',
+      name: 'Electric',
+      colors: ['#18181B', '#FAFAFA', '#27272A', '#22D3EE'],
+      description: 'Dark mode with cyan electric accents'
+    },
+    {
+      id: 'rose',
+      name: 'Blush',
+      colors: ['#FFF1F2', '#881337', '#FFE4E6', '#F43F5E'],
+      description: 'Soft rose and deep crimson'
+    },
+    {
+      id: 'ocean',
+      name: 'Deep Sea',
+      colors: ['#0C4A6E', '#E0F2FE', '#075985', '#0EA5E9'],
+      description: 'Ocean blues from deep to sky'
+    },
+    {
+      id: 'lavender',
+      name: 'Dreamscape',
+      colors: ['#F5F3FF', '#4C1D95', '#EDE9FE', '#A78BFA'],
+      description: 'Soft lavender with violet depth'
+    },
+    {
+      id: 'coral',
+      name: 'Reef',
+      colors: ['#FFF7ED', '#9A3412', '#FFEDD5', '#FB923C'],
+      description: 'Coral orange with warm undertones'
+    },
+    {
+      id: 'slate',
+      name: 'Monolith',
+      colors: ['#1E293B', '#F1F5F9', '#334155', '#94A3B8'],
+      description: 'Slate grays with subtle contrast'
+    },
+  ], []);
+
+  // State for Sources dropdown sub-view navigation
+  const [sourcesDropdownView, setSourcesDropdownView] = useState<'main' | 'themes'>('main');
+
+  // Design theme state
+  const [selectedDesignTheme, setSelectedDesignTheme] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'default';
+    try {
+      return sessionStorage.getItem('surbee_design_theme') || 'default';
+    } catch {
+      return 'default';
+    }
+  });
+
+  const handleDesignThemeChange = useCallback((themeId: string) => {
+    setSelectedDesignTheme(themeId);
+    try {
+      sessionStorage.setItem('surbee_design_theme', themeId);
+    } catch (e) {
+      console.error('Failed to save design theme:', e);
+    }
+    setSourcesDropdownView('main');
+    setIsSourcesOpen(false);
+  }, []);
+
+  const currentDesignThemeData = useMemo(() => {
+    return DESIGN_THEMES.find(t => t.id === selectedDesignTheme) || DESIGN_THEMES[0];
+  }, [selectedDesignTheme, DESIGN_THEMES]);
+
   // Chat session ID management
   const [chatSessionId, setChatSessionId] = useState<string | null>(() => {
-    // Check URL for existing chat session
+    // Use initialChatId if provided (from /home/chat/[id] route)
+    if (initialChatId) {
+      return initialChatId;
+    }
+    // Fallback: Check URL query param for existing chat session (legacy support)
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get('chatId') || null;
@@ -115,16 +224,25 @@ export function DashboardChatContainer({
   // Track if a chart is currently being generated
   const [isGeneratingChart, setIsGeneratingChart] = useState(false);
 
-  // Transform raw messages to our Message type
+  // Track thinking state
+  const [thinkingStartTime, setThinkingStartTime] = useState<number | null>(null);
+  const [thinkingDuration, setThinkingDuration] = useState<number>(0);
+  const [thinkingFinished, setThinkingFinished] = useState(false);
+  const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
+  const [isThinking, setIsThinking] = useState(false);
+
+  // Transform raw messages to our Message type and extract reasoning
   const messages: Message[] = useMemo(() => {
     let chartToolCallActive = false;
-    
+    let currentThinkingSteps: ThinkingStep[] = [];
+    let currentIsThinking = false;
+
     const transformed = rawMessages.map((m, msgIdx) => {
       // Extract content from various formats
       let content = '';
       let hasChartToolCall = false;
       const isLastMessage = msgIdx === rawMessages.length - 1;
-      
+
       // If content is a string, use it directly
       if (typeof m.content === 'string') {
         content = m.content;
@@ -132,9 +250,14 @@ export function DashboardChatContainer({
       // If there are parts, extract text and tool results from them
       else if (m.parts && Array.isArray(m.parts)) {
         const textParts: string[] = [];
-        
-        m.parts.forEach((p: any) => {
-          if (p.type === 'text') {
+        const reasoningParts: { text: string }[] = [];
+
+        m.parts.forEach((p: any, partIdx: number) => {
+          // Extract reasoning parts
+          if (p.type === 'reasoning') {
+            reasoningParts.push({ text: p.text || '' });
+          }
+          else if (p.type === 'text') {
             textParts.push(p.text);
           }
           // AI SDK v5 UI Message format: tool parts have type like 'tool-generate_chart'
@@ -183,10 +306,27 @@ export function DashboardChatContainer({
             }
           }
         });
-        
+
         content = textParts.join('\n');
+
+        // Track reasoning for the last assistant message
+        if (isLastMessage && m.role === 'assistant') {
+          const hasNonReasoningParts = textParts.length > 0 || m.parts.some((p: any) =>
+            p.type === 'text' || (typeof p.type === 'string' && p.type.startsWith('tool-'))
+          );
+
+          currentIsThinking = (status === 'streaming' || status === 'submitted') && !hasNonReasoningParts;
+
+          if (reasoningParts.length > 0) {
+            currentThinkingSteps = reasoningParts.map((part, idx) => ({
+              id: `${m.id}-reasoning-${idx}`,
+              content: part.text,
+              status: (currentIsThinking && idx === reasoningParts.length - 1) ? 'thinking' : 'complete'
+            }));
+          }
+        }
       }
-      
+
       return {
         id: m.id,
         role: m.role as "user" | "assistant",
@@ -195,13 +335,40 @@ export function DashboardChatContainer({
       };
     });
 
+    // Update thinking state
+    setThinkingSteps(currentThinkingSteps);
+    setIsThinking(currentIsThinking);
+
     // Update chart generation state - show loading when Charts mode is active and streaming
     const isChartMode = selectedCreateType === 'Charts';
     const shouldShowChartLoading = (chartToolCallActive || (isChartMode && status === 'streaming')) && status !== 'ready';
     setIsGeneratingChart(shouldShowChartLoading);
-    
+
     return transformed;
   }, [rawMessages, status, selectedCreateType]);
+
+  // Track thinking duration
+  useEffect(() => {
+    if (status === 'streaming' || status === 'submitted') {
+      if (!thinkingStartTime && !thinkingFinished) {
+        setThinkingStartTime(Date.now());
+        setThinkingFinished(false);
+      }
+      // Stop timer when thinking ends (text starts appearing)
+      if (thinkingStartTime && !isThinking && thinkingSteps.length > 0 && !thinkingFinished) {
+        const duration = Math.round((Date.now() - thinkingStartTime) / 1000);
+        setThinkingDuration(duration);
+        setThinkingFinished(true);
+      }
+    } else if (status === 'ready') {
+      if (thinkingStartTime && !thinkingFinished) {
+        const duration = Math.round((Date.now() - thinkingStartTime) / 1000);
+        setThinkingDuration(duration);
+      }
+      setThinkingStartTime(null);
+      setThinkingFinished(false);
+    }
+  }, [status, thinkingStartTime, thinkingFinished, isThinking, thinkingSteps.length]);
 
   // Check if AI is currently processing (submitted or streaming)
   const isLoading = status === 'streaming' || status === 'submitted';
@@ -285,32 +452,37 @@ export function DashboardChatContainer({
   // Update URL with chat session ID and save to database
   useEffect(() => {
     if (hasStartedChat && chatSessionId && messages.length > 0) {
-      // Update URL with chatId if not already present
-      const currentChatId = searchParams.get('chatId');
-      if (currentChatId !== chatSessionId) {
-        router.replace(`${pathname}?chatId=${chatSessionId}`, { scroll: false });
+      // Update URL to /home/chat/[id] if we're on /home (not already on a chat page)
+      // Use replaceState to avoid full page navigation and preserve component state
+      const isOnHomePage = pathname === '/home';
+      const currentUrl = typeof window !== 'undefined' ? window.location.pathname : '';
+      const expectedUrl = `/home/chat/${chatSessionId}`;
+
+      if (isOnHomePage || (currentUrl !== expectedUrl && !currentUrl.startsWith('/home/chat/'))) {
+        // Update URL without navigation to preserve chat state
+        window.history.replaceState({}, '', expectedUrl);
       }
-      
+
       // Generate title from first user message if not already generated
       const firstUserMessage = messages.find(m => m.role === 'user');
       if (firstUserMessage?.content && !titleGeneratedRef.current && !generatedTitle) {
         titleGeneratedRef.current = true;
         generateTitle(firstUserMessage.content).then(title => {
           setGeneratedTitle(title);
-          // Save with generated title
-          saveChatSession(chatSessionId, messages, title);
-          chatSessionSavedRef.current = true;
+          // Don't save here - wait for assistant response to include it
         });
       }
-      
-      // Save chat session (debounced - only save after assistant responds)
+
+      // Save chat session when assistant finishes responding (not while streaming)
       const lastMessage = messages[messages.length - 1];
-      if (lastMessage?.role === 'assistant' && lastMessage.content && !chatSessionSavedRef.current && generatedTitle) {
-        saveChatSession(chatSessionId, messages, generatedTitle);
+      const titleToUse = generatedTitle || 'New Chat';
+      const isStreamingComplete = status === 'ready';
+      if (lastMessage?.role === 'assistant' && lastMessage.content && !chatSessionSavedRef.current && isStreamingComplete) {
+        saveChatSession(chatSessionId, messages, titleToUse);
         chatSessionSavedRef.current = true;
       }
     }
-  }, [hasStartedChat, chatSessionId, messages, pathname, searchParams, saveChatSession, generateTitle, generatedTitle, router]);
+  }, [hasStartedChat, chatSessionId, messages, pathname, saveChatSession, generateTitle, generatedTitle, router, status]);
 
   // Reset saved flag when user sends new message
   useEffect(() => {
@@ -323,37 +495,41 @@ export function DashboardChatContainer({
   // Track previous chatId to detect navigation changes
   const prevChatIdRef = useRef<string | null>(null);
 
-  // Load existing chat session from URL or reset to fresh state
+  // Load existing chat session from route param or URL query (legacy)
   useEffect(() => {
-    const urlChatId = searchParams.get('chatId');
+    // Use initialChatId (from route) or fall back to query param (legacy)
+    const effectiveChatId = initialChatId || searchParams.get('chatId');
     const prevChatId = prevChatIdRef.current;
 
     // Skip if chatId hasn't changed
-    if (prevChatId === urlChatId) {
+    if (prevChatId === effectiveChatId) {
+      return;
+    }
+
+    // Skip if we already have this session active with messages (don't reset active chats)
+    if (effectiveChatId && chatSessionId === effectiveChatId && messages.length > 0) {
+      prevChatIdRef.current = effectiveChatId;
       return;
     }
 
     // Update ref for next comparison
-    prevChatIdRef.current = urlChatId;
+    prevChatIdRef.current = effectiveChatId || null;
 
-    // Reset state when navigating to a different chat or no chat
-    if (prevChatId !== urlChatId) {
+    // If no chatId, reset to fresh state
+    if (!effectiveChatId) {
       setMessages([]);
       setChatSessionId(null);
       setHasStartedChat(false);
       setGeneratedTitle(null);
       titleGeneratedRef.current = false;
       chatSessionSavedRef.current = false;
-    }
-
-    // If no chatId, we're done (fresh home page)
-    if (!urlChatId) {
       return;
     }
 
+    // Load existing chat session from database
     const loadChatSession = async () => {
       try {
-        const response = await fetch(`/api/dashboard/chat-session?sessionId=${urlChatId}&userId=${userId}`);
+        const response = await fetch(`/api/dashboard/chat-session?sessionId=${effectiveChatId}&userId=${userId}`);
         if (response.ok) {
           const data = await response.json();
           if (data.session?.messages && data.session.messages.length > 0) {
@@ -364,24 +540,35 @@ export function DashboardChatContainer({
               content: m.content,
             }));
             setMessages(restoredMessages);
-            setChatSessionId(urlChatId);
+            setChatSessionId(effectiveChatId);
             setHasStartedChat(true);
             // Set title if available
             if (data.session.title) {
               setGeneratedTitle(data.session.title);
               titleGeneratedRef.current = true;
             }
+          } else {
+            // Session exists but no messages - set up for new chat
+            setChatSessionId(effectiveChatId);
+            setHasStartedChat(true);
           }
+        } else {
+          // Session doesn't exist in DB - this is a new chat, just set up the ID
+          setChatSessionId(effectiveChatId);
+          setHasStartedChat(true);
         }
       } catch (error) {
         console.error('Failed to load chat session:', error);
+        // On error, still set up the session ID
+        setChatSessionId(effectiveChatId);
+        setHasStartedChat(true);
       }
     };
 
-    if (userId && urlChatId) {
+    if (userId && effectiveChatId) {
       loadChatSession();
     }
-  }, [searchParams, userId, setMessages]);
+  }, [initialChatId, searchParams, userId, setMessages, chatSessionId, messages.length]);
 
   // Handle adding a reference from SearchModal
   const handleAddReference = useCallback((item: SearchReferenceItem) => {
@@ -447,6 +634,12 @@ Analyze the survey structure, questions, and design. Then help me build a simila
               model: selectedModel,
               createMode: 'Survey',
               searchWebEnabled: true,
+              designTheme: currentDesignThemeData.id !== 'default' ? {
+                id: currentDesignThemeData.id,
+                name: currentDesignThemeData.name,
+                colors: currentDesignThemeData.colors,
+                description: currentDesignThemeData.description
+              } : null,
               userPreferences: {
                 displayName: preferences.displayName,
                 tone: preferences.tone,
@@ -533,6 +726,12 @@ Analyze the survey structure, questions, and design. Then help me build a simila
             createMode: selectedCreateType,
             searchWebEnabled,
             references: activeRefs,
+            designTheme: currentDesignThemeData.id !== 'default' ? {
+              id: currentDesignThemeData.id,
+              name: currentDesignThemeData.name,
+              colors: currentDesignThemeData.colors,
+              description: currentDesignThemeData.description
+            } : null,
             userPreferences: {
               displayName: preferences.displayName,
               tone: preferences.tone,
@@ -543,7 +742,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
         }
       );
     },
-    [selectedModel, isBuildMode, router, chatSessionId, sendMessage, userId, preferences, selectedCreateType, searchWebEnabled, references]
+    [selectedModel, isBuildMode, router, chatSessionId, sendMessage, userId, preferences, selectedCreateType, searchWebEnabled, references, currentDesignThemeData]
   );
 
   const handleModelChange = useCallback((model: AIModel) => {
@@ -564,48 +763,6 @@ Analyze the survey structure, questions, and design. Then help me build a simila
 
   return (
     <div className="w-full h-full flex flex-col relative">
-      {/* Greeting - positioned above the chatbox, fades out when chat starts */}
-      <AnimatePresence mode="wait">
-        {!hasStartedChat && (
-          <motion.div
-            className="absolute left-0 right-0 flex justify-center pointer-events-none"
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            style={{ bottom: 'calc(50% + 110px)' }}
-          >
-            <h1
-              style={{
-                fontFamily: "Kalice-Trial-Regular, sans-serif",
-                fontSize: "42px",
-                color: "var(--surbee-fg-primary)",
-                lineHeight: "1.1",
-                textAlign: "center",
-                display: "flex",
-                flexWrap: "wrap",
-                justifyContent: "center",
-                gap: "0 0.3em",
-              }}
-            >
-              {greeting.split(" ").map((word, idx) => (
-                <motion.span
-                  key={idx}
-                  initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
-                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                  transition={{
-                    duration: 0.5,
-                    delay: idx * 0.1,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                >
-                  {word}
-                </motion.span>
-              ))}
-            </h1>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Messages Area - appears when chat starts */}
       <AnimatePresence>
         {hasStartedChat && !isBuildMode && (
@@ -629,14 +786,13 @@ Analyze the survey structure, questions, and design. Then help me build a simila
               {messages.map((msg, idx) => (
                 <div key={msg.id} className="space-y-2">
                   {msg.role === "user" ? (
-                    <div className="flex justify-end">
+                    <div className="w-full">
                       <div
-                        className="px-4 py-2.5 inline-block"
+                        className="px-4 py-2.5"
                         style={{
                           backgroundColor: "rgb(38, 38, 38)",
                           color: "#ffffff",
                           borderRadius: "18px",
-                          maxWidth: "min(75%, 600px)",
                           wordBreak: "break-word",
                         }}
                       >
@@ -649,13 +805,13 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      <div className="max-w-none ai-response-markdown text-sm leading-relaxed text-[var(--surbee-fg-primary)]">
+                    <div className="w-full space-y-3">
+                      <div className="w-full ai-response-markdown leading-relaxed text-[var(--surbee-fg-primary)]">
                         {effectfulMessages[msg.id] ? (
                           <TextGenerateEffect
                             words={msg.content}
-                            className="text-[var(--surbee-fg-primary)]"
-                            textClassName="text-base leading-relaxed text-[var(--surbee-fg-primary)] break-words whitespace-pre-wrap"
+                            className="text-[var(--surbee-fg-primary)] ai-response-markdown"
+                            textClassName="leading-relaxed text-[var(--surbee-fg-primary)] break-words whitespace-pre-wrap"
                             duration={0.45}
                           />
                         ) : (
@@ -700,22 +856,17 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                 </div>
               ))}
 
-              {/* Loading indicator */}
+              {/* Loading indicator with ThinkingDisplay */}
               {isLoading && (
                 <div className="flex flex-col items-start gap-3">
                   {isGeneratingChart ? (
                     <ChartLoadingSpinner size="md" />
                   ) : (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <div className="flex gap-1">
-                        <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                      </div>
-                      <span className="text-sm">
-                        {selectedCreateType === 'Charts' ? 'Analyzing data...' : 'Thinking...'}
-                      </span>
-                    </div>
+                    <ThinkingDisplay
+                      steps={thinkingSteps}
+                      duration={thinkingDuration}
+                      isThinking={isThinking || (isLoading && thinkingSteps.length === 0)}
+                    />
                   )}
                 </div>
               )}
@@ -754,42 +905,104 @@ Analyze the survey structure, questions, and design. Then help me build a simila
             width: '100%',
             maxWidth: hasStartedChat ? '820px' : '672px',
             transition: 'max-width 0.5s cubic-bezier(0.32, 0.72, 0, 1)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
           }}
         >
-          <ChatInputLight
-            onSendMessage={handleSendMessage}
-            isInputDisabled={isLoading}
-            placeholder={isBuildMode ? "What survey do you want to create today?" : "Ask about your surveys..."}
-            showModelSelector={false}
-            selectedModel={selectedModel}
-            onModelChange={handleModelChange}
-            isBusy={isLoading}
-            onStop={() => setIsLoading(false)}
-            showBuildToggle={false}
-            isBuildMode={isBuildMode}
-            onToggleBuildMode={() => setIsBuildMode(!isBuildMode)}
-            disableRotatingPlaceholders={hasStartedChat && !isBuildMode}
-            hideAttachButton={true}
-            compact={hasStartedChat}
-            references={references}
-            onRemoveReference={handleRemoveReference}
-          />
-          
-          {/* Hidden file input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            multiple
-            accept="image/*,.pdf,.doc,.docx,.txt"
-            onChange={(e) => {
-              if (e.target.files && e.target.files.length > 0) {
-                // TODO: Handle file upload
-                console.log('Files selected:', Array.from(e.target.files).map(f => f.name));
-              }
-              e.target.value = '';
-            }}
-          />
+          {/* Greeting container with free plan pill - linked together */}
+          <AnimatePresence mode="wait">
+            {!hasStartedChat && (
+              <motion.div
+                className="w-full flex flex-col items-center mb-6"
+                initial={{ opacity: 1 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {/* Free plan upgrade pill - only shows for free users */}
+                {userPlan === 'free' && (
+                  <motion.div
+                    className="flex justify-center mb-8"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <div
+                      className="flex items-center gap-2 px-4 py-1.5 rounded-full text-sm"
+                      style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        color: 'rgba(232, 232, 232, 0.7)',
+                      }}
+                    >
+                      <span>Free plan</span>
+                      <span style={{ color: 'rgba(232, 232, 232, 0.4)' }}>·</span>
+                      <button
+                        onClick={() => router.push('/home/pricing')}
+                        className="cursor-pointer transition-all duration-200 hover:underline hover:opacity-80"
+                        style={{ color: '#0285ff' }}
+                      >
+                        Upgrade
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Greeting text */}
+                <h1
+                  className="pointer-events-none"
+                  style={{
+                    fontFamily: "Kalice-Trial-Regular, sans-serif",
+                    fontSize: "42px",
+                    color: "var(--surbee-fg-primary)",
+                    lineHeight: "1.1",
+                    textAlign: "center",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    justifyContent: "center",
+                    gap: "0 0.3em",
+                  }}
+                >
+                  {greeting.split(" ").map((word, idx) => (
+                    <motion.span
+                      key={idx}
+                      initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      transition={{
+                        duration: 0.5,
+                        delay: idx * 0.1,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                    >
+                      {word}
+                    </motion.span>
+                  ))}
+                </h1>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="w-full">
+            <ChatInputLight
+              ref={chatInputRef}
+              onSendMessage={handleSendMessage}
+              isInputDisabled={isLoading}
+              onHasFilesChange={setHasAttachedFiles}
+              placeholder={isBuildMode ? "What survey do you want to create today?" : (hasStartedChat ? "Ask a follow up..." : "Ask about your surveys...")}
+              showModelSelector={false}
+              selectedModel={selectedModel}
+              onModelChange={handleModelChange}
+              isBusy={isLoading}
+              onStop={() => setIsLoading(false)}
+              showBuildToggle={false}
+              isBuildMode={isBuildMode}
+              onToggleBuildMode={() => setIsBuildMode(!isBuildMode)}
+              disableRotatingPlaceholders={hasStartedChat && !isBuildMode}
+              hideAttachButton={true}
+              compact={hasStartedChat}
+              references={references}
+              onRemoveReference={handleRemoveReference}
+            />
+          </div>
 
           {/* Action buttons below chatbox */}
           <div className="flex flex-wrap gap-1 sm:gap-2 items-center mt-2 w-full">
@@ -806,7 +1019,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                         : 'bg-transparent hover:bg-[rgba(255,255,255,0.05)]'
                     }`}
                     type="button"
-                    style={{ color: selectedCreateType ? '#0285ff' : 'var(--surbee-fg-primary)' }}
+                    style={{ color: selectedCreateType ? '#0285ff' : 'var(--surbee-fg-primary)', fontFamily: "'Opening Hours Sans', sans-serif" }}
                     onClick={() => {
                       if (!selectedCreateType) setIsCreateOpen(true);
                     }}
@@ -862,6 +1075,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                 </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
+                side="bottom"
                 style={{
                   borderRadius: '24px',
                   padding: '8px',
@@ -869,6 +1083,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                   backgroundColor: 'rgb(19, 19, 20)',
                   boxShadow: 'rgba(0, 0, 0, 0.04) 0px 7px 16px',
                   width: '280px',
+                  fontFamily: "'Opening Hours Sans', sans-serif",
                 }}
               >
                 {/* Survey option */}
@@ -915,12 +1130,15 @@ Analyze the survey structure, questions, and design. Then help me build a simila
             </div>
 
             {/* Sources button with dropdown */}
-            <DropdownMenu open={isSourcesOpen} onOpenChange={setIsSourcesOpen}>
+            <DropdownMenu open={isSourcesOpen} onOpenChange={(open) => {
+              setIsSourcesOpen(open);
+              if (!open) setSourcesDropdownView('main'); // Reset view when closing
+            }}>
               <DropdownMenuTrigger asChild>
                 <button
                   className="flex h-9 items-center rounded-full pr-3.5 pl-3 font-normal text-sm transition-all duration-200 cursor-pointer bg-transparent hover:bg-[rgba(255,255,255,0.05)]"
                   type="button"
-                  style={{ color: 'var(--surbee-fg-primary)' }}
+                  style={{ color: 'var(--surbee-fg-primary)', fontFamily: "'Opening Hours Sans', sans-serif" }}
                 >
                   <div className="flex items-center gap-2">
                     <svg height="16" width="16" viewBox="0 0 16 16" style={{ color: 'rgba(232, 232, 232, 0.4)' }}>
@@ -932,6 +1150,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
+                side="bottom"
                 style={{
                   borderRadius: '24px',
                   padding: '8px',
@@ -939,88 +1158,180 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                   backgroundColor: 'rgb(19, 19, 20)',
                   boxShadow: 'rgba(0, 0, 0, 0.04) 0px 7px 16px',
                   width: '280px',
+                  fontFamily: "'Opening Hours Sans', sans-serif",
                 }}
               >
-                {/* Reference surveys or chats */}
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)', marginBottom: '1px' }}
-                  onSelect={() => {
-                    setIsSearchModalOpen(true);
-                    setIsSourcesOpen(false);
-                  }}
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'rgba(232, 232, 232, 0.6)' }}>
-                      <path d="M1.719 6.484a5.35 5.35 0 0 0 5.344 5.344 5.3 5.3 0 0 0 3.107-1.004l3.294 3.301a.8.8 0 0 0 .57.228c.455 0 .77-.342.77-.79a.77.77 0 0 0-.221-.55L11.308 9.72a5.28 5.28 0 0 0 1.098-3.235 5.35 5.35 0 0 0-5.344-5.343A5.35 5.35 0 0 0 1.72 6.484m1.145 0a4.2 4.2 0 0 1 4.199-4.198 4.2 4.2 0 0 1 4.198 4.198 4.2 4.2 0 0 1-4.198 4.199 4.2 4.2 0 0 1-4.2-4.199" />
-                    </svg>
-                    <span className="text-sm">Reference surveys or chats</span>
-                  </div>
-                </DropdownMenuItem>
-
-                {/* Import Survey */}
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)', marginBottom: '1px' }}
-                  onSelect={() => {
-                    setIsImportModalOpen(true);
-                    setIsSourcesOpen(false);
-                  }}
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <Download size={16} style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
-                    <span className="text-sm">Import survey</span>
-                    <span 
-                      className="ml-auto text-[10px] px-1.5 py-0.5 rounded-md"
-                      style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)', color: 'rgb(74, 222, 128)' }}
+                {sourcesDropdownView === 'main' ? (
+                  <>
+                    {/* Reference surveys or chats */}
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)', marginBottom: '1px' }}
+                      onSelect={() => {
+                        setIsSearchModalOpen(true);
+                        setIsSourcesOpen(false);
+                      }}
                     >
-                      NEW
-                    </span>
-                  </div>
-                </DropdownMenuItem>
+                      <div className="flex items-center gap-3 w-full">
+                        <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'rgba(232, 232, 232, 0.6)' }}>
+                          <path d="M1.719 6.484a5.35 5.35 0 0 0 5.344 5.344 5.3 5.3 0 0 0 3.107-1.004l3.294 3.301a.8.8 0 0 0 .57.228c.455 0 .77-.342.77-.79a.77.77 0 0 0-.221-.55L11.308 9.72a5.28 5.28 0 0 0 1.098-3.235 5.35 5.35 0 0 0-5.344-5.343A5.35 5.35 0 0 0 1.72 6.484m1.145 0a4.2 4.2 0 0 1 4.199-4.198 4.2 4.2 0 0 1 4.198 4.198 4.2 4.2 0 0 1-4.198 4.199 4.2 4.2 0 0 1-4.2-4.199" />
+                        </svg>
+                        <span className="text-sm">Reference surveys or chats</span>
+                      </div>
+                    </DropdownMenuItem>
 
-                {/* Upload files */}
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)', marginBottom: '1px' }}
-                  onSelect={() => {
-                    fileInputRef.current?.click();
-                    setIsSourcesOpen(false);
-                  }}
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'rgba(232, 232, 232, 0.6)' }}>
-                      <path d="M12.405 8.789 8.17 13.024c-1.43 1.436-3.352 1.294-4.579.052-1.234-1.227-1.377-3.135.052-4.571l5.608-5.6c.86-.861 2.125-.98 2.948-.165.816.83.696 2.087-.157 2.948l-5.436 5.435c-.366.382-.815.27-1.07.015-.254-.261-.359-.695.008-1.077l3.86-3.846c.225-.232.24-.561.023-.778-.217-.21-.546-.194-.77.03L4.78 9.343c-.763.763-.734 1.93-.06 2.603.733.734 1.84.719 2.61-.052l5.467-5.466c1.399-1.399 1.339-3.24.12-4.459-1.19-1.19-3.06-1.28-4.46.12L2.813 7.742C.965 9.59 1.107 12.23 2.776 13.899c1.668 1.661 4.309 1.803 6.157-.037l4.272-4.273c.217-.217.217-.613-.007-.815-.217-.232-.569-.202-.793.015" />
-                    </svg>
-                    <span className="text-sm">Upload files</span>
-                  </div>
-                </DropdownMenuItem>
+                    {/* Import Survey */}
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)', marginBottom: '1px' }}
+                      onSelect={() => {
+                        setIsImportModalOpen(true);
+                        setIsSourcesOpen(false);
+                      }}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <Download size={16} style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
+                        <span className="text-sm">Import survey</span>
+                        <span
+                          className="ml-auto text-[10px] px-1.5 py-0.5 rounded-md"
+                          style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)', color: 'rgb(74, 222, 128)' }}
+                        >
+                          NEW
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
 
-                <DropdownMenuSeparator style={{ borderColor: 'rgba(232, 232, 232, 0.08)', margin: '4px 0' }} />
+                    {/* Upload files */}
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)', marginBottom: '1px' }}
+                      onSelect={() => {
+                        chatInputRef.current?.triggerFileInput();
+                        setIsSourcesOpen(false);
+                      }}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'rgba(232, 232, 232, 0.6)' }}>
+                          <path d="M12.405 8.789 8.17 13.024c-1.43 1.436-3.352 1.294-4.579.052-1.234-1.227-1.377-3.135.052-4.571l5.608-5.6c.86-.861 2.125-.98 2.948-.165.816.83.696 2.087-.157 2.948l-5.436 5.435c-.366.382-.815.27-1.07.015-.254-.261-.359-.695.008-1.077l3.86-3.846c.225-.232.24-.561.023-.778-.217-.21-.546-.194-.77.03L4.78 9.343c-.763.763-.734 1.93-.06 2.603.733.734 1.84.719 2.61-.052l5.467-5.466c1.399-1.399 1.339-3.24.12-4.459-1.19-1.19-3.06-1.28-4.46.12L2.813 7.742C.965 9.59 1.107 12.23 2.776 13.899c1.668 1.661 4.309 1.803 6.157-.037l4.272-4.273c.217-.217.217-.613-.007-.815-.217-.232-.569-.202-.793.015" />
+                        </svg>
+                        <span className="text-sm">Upload files</span>
+                      </div>
+                    </DropdownMenuItem>
 
-                {/* Search web toggle */}
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)' }}
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    setSearchWebEnabled(!searchWebEnabled);
-                  }}
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <Search size={16} style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
-                    <span className="text-sm">Search web</span>
+                    <DropdownMenuSeparator style={{ borderColor: 'rgba(232, 232, 232, 0.08)', margin: '4px 0' }} />
+
+                    {/* Search web toggle */}
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)' }}
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setSearchWebEnabled(!searchWebEnabled);
+                      }}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <Search size={16} style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
+                        <span className="text-sm">Search web</span>
+                        <div
+                          className="ml-auto w-8 h-5 rounded-full relative transition-colors duration-200"
+                          style={{ backgroundColor: searchWebEnabled ? '#0285ff' : 'rgba(232, 232, 232, 0.2)' }}
+                        >
+                          <div
+                            className="absolute w-4 h-4 bg-white rounded-full top-0.5 transition-all duration-200"
+                            style={{ left: searchWebEnabled ? '14px' : '2px' }}
+                          />
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+
+                    {/* Color Themes - navigates to themes view */}
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      style={{ borderRadius: '100px', padding: '10px 14px', color: 'var(--surbee-fg-primary)' }}
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setSourcesDropdownView('themes');
+                      }}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        {/* Color preview grid showing current theme */}
+                        <div className="relative grid grid-cols-2 shrink-0 overflow-hidden w-4 h-4 rounded-sm">
+                          {currentDesignThemeData.colors.slice(0, 4).map((color, i) => (
+                            <div key={i} className="w-2 h-2" style={{ backgroundColor: color }} />
+                          ))}
+                          <div
+                            className="absolute inset-0 border pointer-events-none rounded-sm"
+                            style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+                          />
+                        </div>
+                        <span className="text-sm">Color Theme</span>
+                        <ChevronRight size={14} className="ml-auto" style={{ color: 'rgba(232, 232, 232, 0.4)' }} />
+                      </div>
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    {/* Back button header */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSourcesDropdownView('main');
+                      }}
+                      className="w-full px-3 py-2 flex items-center gap-2 hover:bg-[rgba(255,255,255,0.05)] rounded-full transition-colors mb-1"
+                    >
+                      <svg height="14" width="14" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'rgba(232, 232, 232, 0.6)' }}>
+                        <path d="M10.5 3.5L5.5 8l5 4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <span className="text-sm font-medium" style={{ color: 'var(--surbee-fg-primary)' }}>
+                        Color Theme
+                      </span>
+                    </button>
+
+                    <DropdownMenuSeparator style={{ borderColor: 'rgba(232, 232, 232, 0.08)', margin: '4px 0' }} />
+
+                    {/* Color themes list */}
                     <div
-                      className="ml-auto w-8 h-5 rounded-full relative transition-colors duration-200"
-                      style={{ backgroundColor: searchWebEnabled ? '#0285ff' : 'rgba(232, 232, 232, 0.2)' }}
+                      className="overflow-y-auto"
+                      style={{
+                        maxHeight: '180px',
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: 'rgba(255,255,255,0.2) transparent',
+                      }}
                     >
-                      <div
-                        className="absolute w-4 h-4 bg-white rounded-full top-0.5 transition-all duration-200"
-                        style={{ left: searchWebEnabled ? '14px' : '2px' }}
-                      />
+                      {DESIGN_THEMES.map((theme) => (
+                        <DropdownMenuItem
+                          key={theme.id}
+                          className="cursor-pointer"
+                          style={{
+                            borderRadius: '100px',
+                            padding: '8px 14px',
+                            color: 'var(--surbee-fg-primary)',
+                            backgroundColor: selectedDesignTheme === theme.id ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
+                          }}
+                          onSelect={() => handleDesignThemeChange(theme.id)}
+                        >
+                          <div className="flex items-center gap-2.5 w-full">
+                            {/* Color preview grid */}
+                            <div className="relative grid grid-cols-2 shrink-0 overflow-hidden w-4 h-4 rounded-sm">
+                              {theme.colors.slice(0, 4).map((color, i) => (
+                                <div key={i} className="w-2 h-2" style={{ backgroundColor: color }} />
+                              ))}
+                              <div
+                                className="absolute inset-0 border pointer-events-none rounded-sm"
+                                style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+                              />
+                            </div>
+                            <span className="text-sm truncate max-w-[150px]">{theme.name}</span>
+                            {selectedDesignTheme === theme.id && (
+                              <CheckCircle2 size={14} className="ml-auto" style={{ color: '#0285ff' }} />
+                            )}
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
                     </div>
-                  </div>
-                </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -1041,7 +1352,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                         : 'bg-transparent hover:bg-[rgba(255,255,255,0.05)]'
                     }`}
                     type="button"
-                    style={{ color: isModelExplicitlySelected ? '#0285ff' : 'var(--surbee-fg-primary)' }}
+                    style={{ color: isModelExplicitlySelected ? '#0285ff' : 'var(--surbee-fg-primary)', fontFamily: "'Opening Hours Sans', sans-serif" }}
                     onClick={(e) => {
                       if (!isModelExplicitlySelected) setIsModelOpen(true);
                     }}
@@ -1055,7 +1366,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                       <div className="whitespace-nowrap">
                         <div className="flex flex-row items-center gap-1.5">
                           <span className="flex flex-row items-center truncate" style={{ color: isModelExplicitlySelected ? '#0285ff' : 'inherit' }}>
-                            {!isModelExplicitlySelected ? 'Default' : selectedModel === 'claude-haiku' ? 'Claude Haiku 4.5' : selectedModel === 'gpt-5' ? 'GPT-5' : selectedModel === 'mistral' ? 'Lema 0.1' : selectedModel}
+                            {!isModelExplicitlySelected ? 'Model' : selectedModel === 'claude-haiku' ? 'Claude Haiku 4.5' : selectedModel === 'gpt-5' ? 'GPT-5' : selectedModel === 'mistral' ? 'Lema 0.1' : selectedModel}
                           </span>
                           <div
                             className="flex-shrink-0 p-0.5 -mr-1 cursor-pointer hover:opacity-70 transition-all duration-300 ease-out"
@@ -1089,6 +1400,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
 
               <DropdownMenuContent
                 align="end"
+                side="bottom"
                 style={{
                   borderRadius: '24px',
                   padding: '8px',
@@ -1098,9 +1410,10 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                   width: '300px',
                   maxHeight: '315px',
                   overflowY: 'auto',
+                  fontFamily: "'Opening Hours Sans', sans-serif",
                 }}
               >
-                {/* Default option */}
+                {/* Best option (auto-selected default) */}
                 <DropdownMenuItem
                   className="cursor-pointer"
                   style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-fg-primary)', marginBottom: '1px' }}
@@ -1113,7 +1426,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                       </svg>
                     </div>
                     <div className="flex flex-col w-full">
-                      <p className="text-sm">Default</p>
+                      <p className="text-sm">Best</p>
                     </div>
                     {!isModelExplicitlySelected && (
                       <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'rgba(232, 232, 232, 0.6)' }}>
@@ -1127,7 +1440,16 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                 <DropdownMenuItem
                   className="cursor-pointer"
                   style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-fg-primary)', marginBottom: '1px' }}
-                  onSelect={() => { handleModelChange('gpt-5'); setIsModelExplicitlySelected(true); setIsModelOpen(false); }}
+                  onSelect={() => {
+                    if (userPlan === 'free') {
+                      router.push('/home/pricing');
+                      setIsModelOpen(false);
+                    } else {
+                      handleModelChange('gpt-5');
+                      setIsModelExplicitlySelected(true);
+                      setIsModelOpen(false);
+                    }
+                  }}
                 >
                   <div className="flex items-start gap-3 w-full">
                     <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
@@ -1136,7 +1458,14 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                       </svg>
                     </div>
                     <div className="flex flex-col w-full">
-                      <p className="text-sm mb-0.5">GPT-5</p>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-sm">GPT-5</p>
+                        {userPlan === 'free' && (
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa' }}>
+                            Pro
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm" style={{ color: 'rgba(232, 232, 232, 0.5)' }}>Flagship GPT model for complex tasks</p>
                     </div>
                   </div>
@@ -1165,7 +1494,16 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                 <DropdownMenuItem
                   className="cursor-pointer"
                   style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-fg-primary)', marginBottom: '0' }}
-                  onSelect={() => { handleModelChange('mistral'); setIsModelExplicitlySelected(true); setIsModelOpen(false); }}
+                  onSelect={() => {
+                    if (userPlan === 'free' || userPlan === 'pro') {
+                      router.push('/home/pricing');
+                      setIsModelOpen(false);
+                    } else {
+                      handleModelChange('mistral');
+                      setIsModelExplicitlySelected(true);
+                      setIsModelOpen(false);
+                    }
+                  }}
                 >
                   <div className="flex items-start gap-3 w-full">
                     <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
@@ -1174,7 +1512,14 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                       </svg>
                     </div>
                     <div className="flex flex-col w-full">
-                      <p className="text-sm mb-0.5">Lema 0.1</p>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-sm">Lema 0.1</p>
+                        {(userPlan === 'free' || userPlan === 'pro') && (
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(251, 146, 60, 0.15)', color: '#fb923c' }}>
+                            Max
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm" style={{ color: 'rgba(232, 232, 232, 0.5)' }}>Surbee's survey-optimized model</p>
                     </div>
                   </div>

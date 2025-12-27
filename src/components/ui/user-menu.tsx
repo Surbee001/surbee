@@ -1,9 +1,10 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Settings, HelpCircle, LogOut, ArrowLeft } from "lucide-react";
+import { Check, Settings, HelpCircle, LogOut, ArrowLeft, User } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 import { useRouter } from 'next/navigation';
 
 interface UserMenuProps {
@@ -15,8 +16,16 @@ interface UserMenuProps {
 
 const UserMenu = forwardRef<HTMLDivElement, UserMenuProps>(
   ({ className = "", email = "you@example.com", planLabel = "Free plan", onClose }, ref) => {
-    const { signOut } = useAuth();
+    const { signOut, user } = useAuth();
+    const { userPreferences } = useUserPreferences();
     const router = useRouter();
+
+    // Check if profile is set up (has name or profile picture)
+    const isProfileComplete = useMemo(() => {
+      const hasName = userPreferences?.displayName && userPreferences.displayName.trim() !== '';
+      const hasPicture = user?.user_metadata?.picture || user?.user_metadata?.avatar_url;
+      return hasName || hasPicture;
+    }, [userPreferences?.displayName, user?.user_metadata?.picture, user?.user_metadata?.avatar_url]);
 
     const handleLogout = async () => {
       try {
@@ -71,8 +80,22 @@ const UserMenu = forwardRef<HTMLDivElement, UserMenuProps>(
           {/* Divider */}
           <div className="h-px bg-white/10 mx-1 my-1" />
 
+          {/* Set up profile - only show if profile not complete */}
+          {!isProfileComplete && (
+            <button
+              onClick={() => { router.push('/home/settings/general'); onClose?.(); }}
+              className="w-full grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-1.5 px-2 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-left text-sm text-blue-400 mb-1"
+            >
+              <span>Set up profile</span>
+              <User className="h-4 w-4" />
+            </button>
+          )}
+
           {/* Settings */}
-          <button className="w-full grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-1 px-2 rounded-md hover:bg-white/5 text-left text-sm">
+          <button
+            onClick={() => { router.push('/home/settings'); onClose?.(); }}
+            className="w-full grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-1 px-2 rounded-md hover:bg-white/5 text-left text-sm"
+          >
             <span>Settings</span>
           </button>
 

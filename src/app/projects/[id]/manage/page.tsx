@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { TypeformButton, TypeformButtonContainer } from '@/components/ui/typeform-button';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { PreviewTab } from '@/components/project-manage/PreviewTab';
-import { UsageTab } from '@/components/project-manage/UsageTab';
 import { ShareTabRedesign } from '@/components/project-manage/ShareTabRedesign';
 import { EvaluationTab } from '@/components/project-manage/EvaluationTab';
 import DataHeroSection from '@/components/project-manage/DataHeroSection';
@@ -19,6 +18,7 @@ import { ComponentRegistryProvider } from '@/contexts/ComponentRegistry';
 import { extractPageContext } from '@/lib/services/component-detection';
 import { useComponentRegistry } from '@/contexts/ComponentRegistry';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 import './styles.css';
 import './share-styles.css';
 
@@ -41,6 +41,7 @@ interface ChatMessage {
 // Ask Surbee Component
 function AskSurbeeComponent({ activeTab, projectId }: { activeTab: TabType; projectId: string }) {
   const { user } = useAuth();
+  const { userPreferences } = useUserPreferences();
   const [showChat, setShowChat] = React.useState(false);
   const [inputValue, setInputValue] = React.useState('');
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
@@ -76,6 +77,7 @@ function AskSurbeeComponent({ activeTab, projectId }: { activeTab: TabType; proj
             ...messages.map(m => ({ role: m.role, content: m.content })),
             { role: 'user', content: question },
           ],
+          userPreferences: userPreferences,
         }),
         signal: abortControllerRef.current.signal,
       });
@@ -511,7 +513,7 @@ function AskSurbeeComponent({ activeTab, projectId }: { activeTab: TabType; proj
   );
 }
 
-export type TabType = 'preview' | 'insights' | 'evaluation' | 'usage' | 'share';
+export type TabType = 'preview' | 'insights' | 'evaluation' | 'share';
 
 export default function ProjectManagePage() {
   const params = useParams();
@@ -902,7 +904,7 @@ export default function ProjectManagePage() {
                                   <path d="M19 12H5M12 19l-7-7 7-7"/>
                                 </svg>
                               </button>
-                
+
                               {/* Tabs - On the Right */}
                               <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                                     {/* Agent Pill Button */}
@@ -947,6 +949,16 @@ export default function ProjectManagePage() {
                                       </svg>
                                       Agent
                                     </button>
+
+                                    {/* Divider */}
+                                    <div
+                                      style={{
+                                        width: '1px',
+                                        height: '16px',
+                                        backgroundColor: 'var(--surbee-fg-tertiary, currentColor)',
+                                        opacity: 0.3,
+                                      }}
+                                    />
 
                                     <button
                                       onClick={() => setActiveTab('preview')}
@@ -1042,37 +1054,6 @@ export default function ProjectManagePage() {
                                     </button>
 
                                     <button
-                                      onClick={() => setActiveTab('usage')}
-                                      style={{
-                                        padding: '0',
-                                        fontSize: '14px',
-                                        fontWeight: activeTab === 'usage' ? '500' : '400',
-                                        color: activeTab === 'usage'
-                                          ? 'var(--surbee-fg-primary)'
-                                          : 'var(--surbee-fg-tertiary)',
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        transition: 'color 200ms ease, opacity 200ms ease',
-                                        opacity: activeTab === 'usage' ? 1 : 0.6,
-                                      }}
-                                      onMouseEnter={(e) => {
-                                        if (activeTab !== 'usage') {
-                                          e.currentTarget.style.opacity = '0.9';
-                                          e.currentTarget.style.color = 'var(--surbee-fg-secondary)';
-                                        }
-                                      }}
-                                      onMouseLeave={(e) => {
-                                        if (activeTab !== 'usage') {
-                                          e.currentTarget.style.opacity = '0.6';
-                                          e.currentTarget.style.color = 'var(--surbee-fg-tertiary)';
-                                        }
-                                      }}
-                                    >
-                                      Data
-                                    </button>
-
-                                    <button
                                       onClick={() => setActiveTab('share')}
                                       style={{
                                         padding: '0',
@@ -1102,6 +1083,17 @@ export default function ProjectManagePage() {
                                     >
                                       Share
                                     </button>
+
+                                    {/* Divider */}
+                                    <div
+                                      style={{
+                                        width: '1px',
+                                        height: '16px',
+                                        backgroundColor: 'var(--surbee-fg-tertiary, currentColor)',
+                                        opacity: 0.3,
+                                        marginLeft: 'auto',
+                                      }}
+                                    />
 
                                     {/* Settings Icon */}
                                     <button
@@ -1150,6 +1142,37 @@ export default function ProjectManagePage() {
                                           fillRule="evenodd"
                                         />
                                       </svg>
+                                    </button>
+
+                                    {/* Continue Editing Button */}
+                                    <button
+                                      onClick={() => router.push(`/project/${projectId}`)}
+                                      style={{
+                                        padding: '6px 14px',
+                                        fontSize: '13px',
+                                        fontWeight: '500',
+                                        color: 'white',
+                                        backgroundColor: '#171717',
+                                        border: 'none',
+                                        borderRadius: '9999px',
+                                        cursor: 'pointer',
+                                        transition: 'all 200ms ease',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#262626';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#171717';
+                                      }}
+                                    >
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                      </svg>
+                                      Continue Editing
                                     </button>
                               </nav>
                             </div>
@@ -1202,10 +1225,6 @@ export default function ProjectManagePage() {
               <div className="overflow-y-auto" style={{ height: '100%' }}>
                 <EvaluationTab projectId={projectId} />
               </div>
-            </div>
-          ) : activeTab === 'usage' ? (
-            <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
-              <UsageTab projectId={projectId} />
             </div>
           ) : (
             <div className="flex-1 overflow-auto" style={{ padding: '24px' }}>

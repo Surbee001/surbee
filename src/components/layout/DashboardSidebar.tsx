@@ -4,8 +4,10 @@ import React, { useMemo, useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 import { useTheme } from '@/hooks/useTheme';
-import { HelpCircle, Check, ChevronUp, ChevronDown, Gift, X, Copy, ArrowRight, ExternalLink, Settings as SettingsIcon, Sun, Moon, Laptop, MessageSquare, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { HelpCircle, Check, ChevronUp, ChevronDown, Gift, X, Copy, ArrowRight, ExternalLink, Settings as SettingsIcon, Sun, Moon, Laptop, MessageSquare, MoreHorizontal, Pencil, Trash2, Coins, Inbox, PanelLeftClose, PanelLeft } from "lucide-react";
+import { useCredits } from '@/hooks/useCredits';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +23,26 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+
+// Helper function to format relative time
+function formatRelativeTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+
+  if (diffSecs < 60) return 'Just now';
+  if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+  if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+  if (diffWeeks < 4) return `${diffWeeks} week${diffWeeks === 1 ? '' : 's'} ago`;
+  return `${diffMonths} month${diffMonths === 1 ? '' : 's'} ago`;
+}
 
 const SidebarItem = ({ 
   label, 
@@ -52,11 +74,21 @@ const SidebarItem = ({
   </div>
 );
 
-export default function DashboardSidebar() {
+interface DashboardSidebarProps {
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+}
+
+export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse }: DashboardSidebarProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isChatsOpen, setIsChatsOpen] = useState(false);
+  const [isInboxOpen, setIsInboxOpen] = useState(false);
+  const [inboxTab, setInboxTab] = useState<'inbox' | 'whats-new'>('whats-new');
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [recentChats, setRecentChats] = useState<any[]>([]);
   const [feedbackText, setFeedbackText] = useState('');
   const [renamingChatId, setRenamingChatId] = useState<string | null>(null);
@@ -68,7 +100,26 @@ export default function DashboardSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { signOut, user, userProfile } = useAuth();
+  const { userPreferences } = useUserPreferences();
   const { theme, setTheme } = useTheme();
+  const { credits, loading: creditsLoading, percentUsed } = useCredits();
+
+  // Check if profile is set up (has name or profile picture)
+  const isProfileComplete = useMemo(() => {
+    const hasName = userPreferences?.displayName && userPreferences.displayName.trim() !== '';
+    const hasPicture = user?.user_metadata?.picture || user?.user_metadata?.avatar_url;
+    return hasName || hasPicture;
+  }, [userPreferences?.displayName, user?.user_metadata?.picture, user?.user_metadata?.avatar_url]);
+
+  // Calculate days until credits reset
+  const daysUntilReset = useMemo(() => {
+    if (!credits?.creditsResetAt) return null;
+    const resetDate = new Date(credits.creditsResetAt);
+    const now = new Date();
+    const diffTime = resetDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  }, [credits?.creditsResetAt]);
 
 
   // Focus rename input when renaming
@@ -78,6 +129,70 @@ export default function DashboardSidebar() {
       renameInputRef.current.select();
     }
   }, [renamingChatId]);
+
+  // Fetch announcements and notifications when inbox opens
+  useEffect(() => {
+    if (isInboxOpen) {
+      // Fetch announcements
+      fetch('/api/announcements')
+        .then(res => res.json())
+        .then(data => {
+          if (data.announcements) {
+            setAnnouncements(data.announcements);
+          }
+        })
+        .catch(err => console.error('Failed to fetch announcements:', err));
+
+      // Fetch notifications if user is logged in
+      if (user?.id) {
+        fetch(`/api/notifications?userId=${user.id}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.notifications) {
+              setNotifications(data.notifications);
+              setUnreadCount(data.unreadCount || 0);
+            }
+          })
+          .catch(err => console.error('Failed to fetch notifications:', err));
+      }
+    }
+  }, [isInboxOpen, user?.id]);
+
+  const handleDismissNotification = async (notificationId: string) => {
+    if (!user?.id) return;
+    try {
+      await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationId, userId: user.id, action: 'dismiss' }),
+      });
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('Failed to dismiss notification:', err);
+    }
+  };
+
+  const handleNotificationAction = async (notification: any) => {
+    if (!user?.id) return;
+    // Mark as read
+    try {
+      await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationId: notification.id, userId: user.id, action: 'mark_read' }),
+      });
+      setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
+    }
+    // Navigate if there's a link
+    if (notification.link_url) {
+      setIsInboxOpen(false);
+      router.push(notification.link_url);
+    }
+  };
 
   const handleRenameChat = async (chatId: string, chatType: string) => {
     if (!renameValue.trim()) {
@@ -195,7 +310,7 @@ export default function DashboardSidebar() {
         handleNavigation('/home/settings');
         break;
       case 'upgrade':
-        handleNavigation('/home/upgrade-plan');
+        handleNavigation('/home/pricing');
         break;
       case 'learn':
         console.log('Open learn more');
@@ -220,8 +335,7 @@ export default function DashboardSidebar() {
 
       try {
         // Get session for auth token
-        const { createClientComponentClient } = await import('@supabase/auth-helpers-nextjs');
-        const supabase = createClientComponentClient();
+        const { supabase } = await import('@/lib/supabase');
         const { data: { session } } = await supabase.auth.getSession();
 
         if (session?.access_token) {
@@ -250,23 +364,59 @@ export default function DashboardSidebar() {
   const isPaidPlan = subscription?.plan === 'pro' || subscription?.plan === 'max';
 
   return (
-    <div className="dashboard-sidebar">
+    <div className={`dashboard-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-container">
-        {/* Top Left: Surbee Logo (replaces profile toggle) */}
+        {/* Top: Logo and Toggle */}
         <div className="profile-section">
-          <div className="flex items-center justify-center w-full">
-            <img
-              src={logoSrc}
-              alt="Surbee"
-              className="dark:invert"
-              style={{
-                height: 40,
-                width: 'auto',
-                borderRadius: 8,
-                objectFit: 'contain',
-                transition: 'filter 0.2s ease'
-              }}
-            />
+          <div className="flex items-center justify-between w-full">
+            {!isCollapsed && (
+              <img
+                src={logoSrc}
+                alt="Surbee"
+                className="dark:invert"
+                style={{
+                  height: 28,
+                  width: 'auto',
+                  borderRadius: 6,
+                  objectFit: 'contain',
+                  transition: 'filter 0.2s ease'
+                }}
+              />
+            )}
+            {onToggleCollapse && (
+              <button
+                onClick={onToggleCollapse}
+                className="sidebar-toggle-btn"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 40,
+                  height: 40,
+                  borderRadius: '0.38rem',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--surbee-fg-muted)',
+                  transition: 'background-color 0.15s ease-linear, color 0.15s ease-linear',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+                  e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'var(--surbee-fg-muted)';
+                }}
+                aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {isCollapsed ? (
+                  <PanelLeft className="w-5 h-5" />
+                ) : (
+                  <PanelLeftClose className="w-5 h-5" />
+                )}
+              </button>
+            )}
           </div>
         </div>
 
@@ -352,7 +502,7 @@ export default function DashboardSidebar() {
                               className="flex-1 flex items-center gap-1.5 truncate"
                               onClick={() => {
                                 if (chat.type === 'dashboard' && chat.chatId) {
-                                  handleNavigation(`/home?chatId=${chat.chatId}`);
+                                  handleNavigation(`/home/chat/${chat.chatId}`);
                                 } else if (chat.projectId) {
                                   handleNavigation(`/project/${chat.projectId}`);
                                 }
@@ -444,24 +594,53 @@ export default function DashboardSidebar() {
 
         {/* Bottom account/settings trigger */}
         <div className="sidebar-bottom">
-          <div className="sidebar-item" onClick={() => setIsUserMenuOpen((v) => !v)}>
-            <span className="sidebar-item-label">
-              <span className="flex items-center gap-2">
-                <div className="profile-circle" style={{ width: 28, height: 28, overflow: 'hidden' }}>
-                  {user?.user_metadata?.picture ? (
-                    <img
-                      src={user.user_metadata.picture}
-                      alt={displayName}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    initialLetter
-                  )}
-                </div>
-                <span style={{ fontWeight: 600 }}>{displayName}</span>
-              </span>
-              {isUserMenuOpen ? <ChevronUp className="h-3 w-3" style={{ opacity: 0.6 }} /> : <ChevronDown className="h-3 w-3" style={{ opacity: 0.6 }} />}
-            </span>
+          <div className="flex items-center justify-between w-full">
+            {/* Profile Picture Button */}
+            <div
+              className="sidebar-bottom-btn"
+              onClick={() => setIsUserMenuOpen((v) => !v)}
+            >
+              <div
+                className="profile-circle"
+                style={{ width: 28, height: 28, overflow: 'hidden' }}
+              >
+                {user?.user_metadata?.picture ? (
+                  <img
+                    src={user.user_metadata.picture}
+                    alt={displayName}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  initialLetter
+                )}
+              </div>
+            </div>
+
+            {/* Inbox/Notification Button */}
+            <div
+              className="sidebar-bottom-btn"
+              onClick={() => setIsInboxOpen((v) => !v)}
+            >
+              <div className="relative flex items-center justify-center">
+                <Inbox className="w-5 h-5" style={{ color: 'var(--surbee-fg-primary)' }} />
+                {/* Notification badge - only show if there are unread notifications */}
+                {unreadCount > 0 && (
+                  <span
+                    className="absolute flex items-center justify-center text-[10px] font-medium text-white"
+                    style={{
+                      top: -6,
+                      right: -6,
+                      width: 14,
+                      height: 14,
+                      borderRadius: '50%',
+                      backgroundColor: '#ef4444',
+                    }}
+                  >
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Overlay to close on outside click; high z-index */}
@@ -485,13 +664,95 @@ export default function DashboardSidebar() {
                   <div className="user-menu-email">{user?.email || 'you@example.com'}</div>
                 </div>
 
-                {/* Set up profile button */}
-                <button
-                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/settings'); }}
-                  className="user-menu-setup-profile"
-                >
-                  Set up profile
-                </button>
+                {/* Credits Section */}
+                <div className="flex flex-col gap-2 px-3 py-3" style={{ color: 'rgb(153, 153, 153)' }}>
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-xs font-medium flex items-center gap-1.5" style={{ color: 'var(--surbee-fg-muted)' }}>
+                      <Coins className="w-3 h-3" />
+                      Credits
+                    </h5>
+                    <span className="text-xs">
+                      {creditsLoading ? (
+                        <span style={{ color: 'var(--surbee-fg-secondary)' }}>Loading...</span>
+                      ) : credits ? (
+                        <>
+                          <span style={{ color: 'var(--surbee-fg-muted)' }}>{credits.creditsRemaining.toLocaleString()}</span>
+                          <span style={{ color: 'var(--surbee-fg-secondary)' }}> / {credits.monthlyCredits.toLocaleString()}</span>
+                        </>
+                      ) : (
+                        <span style={{ color: 'var(--surbee-fg-secondary)' }}>--</span>
+                      )}
+                    </span>
+                  </div>
+                  <div
+                    className="relative h-2 w-full overflow-hidden rounded-full"
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.08)' }}
+                    aria-valuemax={100}
+                    aria-valuemin={0}
+                    aria-valuenow={percentUsed}
+                    aria-valuetext={`${percentUsed}%`}
+                    role="progressbar"
+                  >
+                    <div className="h-full w-full">
+                      <div
+                        className="h-full w-full flex-1 transition-all rounded-full"
+                        style={{
+                          backgroundColor: percentUsed > 80 ? '#ef4444' : percentUsed > 50 ? '#eab308' : '#a855f7',
+                          width: `${100 - percentUsed}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs leading-4" style={{ color: 'var(--surbee-fg-secondary)' }}>
+                    {credits?.plan === 'enterprise' ? (
+                      'Unlimited credits on Enterprise plan.'
+                    ) : daysUntilReset !== null ? (
+                      <>
+                        {daysUntilReset === 0 ? 'Credits reset today.' : `${daysUntilReset} day${daysUntilReset === 1 ? '' : 's'} until credits reset.`}
+                        {credits?.plan !== 'max' && (
+                          <>
+                            {' '}
+                            <button
+                              className="hover:underline cursor-pointer"
+                              type="button"
+                              onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/pricing'); }}
+                              style={{ color: 'var(--surbee-fg-muted)' }}
+                            >
+                              Upgrade
+                            </button>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        Credits reset monthly.
+                        {credits?.plan !== 'max' && (
+                          <>
+                            {' '}
+                            <button
+                              className="hover:underline cursor-pointer"
+                              type="button"
+                              onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/pricing'); }}
+                              style={{ color: 'var(--surbee-fg-muted)' }}
+                            >
+                              Upgrade
+                            </button>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </p>
+                </div>
+
+                {/* Set up profile button - only show if profile not complete */}
+                {!isProfileComplete && (
+                  <button
+                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/settings/general'); }}
+                    className="user-menu-setup-profile"
+                  >
+                    Set up profile
+                  </button>
+                )}
 
                 {/* Settings */}
                 <button
@@ -534,13 +795,15 @@ export default function DashboardSidebar() {
                   </div>
                 </div>
 
-                {/* Upgrade Plan */}
-                <button
-                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/pricing'); }}
-                  className="user-menu-item"
-                >
-                  <span>Upgrade plan</span>
-                </button>
+                {/* Upgrade Plan - hide for max/enterprise users */}
+                {credits?.plan !== 'max' && credits?.plan !== 'enterprise' && (
+                  <button
+                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/pricing'); }}
+                    className="user-menu-item"
+                  >
+                    <span>Upgrade plan</span>
+                  </button>
+                )}
 
                 {/* Changelog */}
                 <button
@@ -756,6 +1019,196 @@ export default function DashboardSidebar() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Inbox Popup */}
+      <AnimatePresence>
+        {isInboxOpen && (
+          <>
+            <div
+              className="inbox-popup-overlay"
+              onClick={() => setIsInboxOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+              className="inbox-popup"
+            >
+              <div className="inbox-popup-inner">
+                {/* Tab Container */}
+                <div className="inbox-popup-tabs">
+                  <div className="inbox-popup-tabs-container">
+                    {/* Sliding Indicator */}
+                    <div
+                      className="inbox-popup-tabs-indicator"
+                      style={{
+                        left: inboxTab === 'inbox' ? 'calc(0% + 4px)' : 'calc(50% + 4px)',
+                        width: 'calc(50% - 8px)',
+                      }}
+                    />
+                    <div className="inbox-popup-tabs-buttons">
+                      <button
+                        className={`inbox-popup-tab ${inboxTab === 'inbox' ? 'active' : ''}`}
+                        onClick={() => setInboxTab('inbox')}
+                      >
+                        Inbox{unreadCount > 0 ? ` (${unreadCount})` : ''}
+                      </button>
+                      <button
+                        className={`inbox-popup-tab ${inboxTab === 'whats-new' ? 'active' : ''}`}
+                        onClick={() => setInboxTab('whats-new')}
+                      >
+                        What&apos;s new
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Content Area */}
+                <div className="inbox-popup-content">
+                  {/* Inbox Tab */}
+                  <div
+                    className={`inbox-popup-scroll ${inboxTab === 'inbox' ? '' : 'hidden'}`}
+                  >
+                    <div className="inbox-popup-list">
+                      {notifications.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                          <Inbox className="w-10 h-10 mb-3 opacity-30" style={{ color: 'hsl(40 9% 75%)' }} />
+                          <p className="text-sm" style={{ color: 'hsl(40 9% 75%)' }}>No notifications yet</p>
+                        </div>
+                      ) : (
+                        notifications.map((notification) => (
+                          <div key={notification.id} className="inbox-notification-item">
+                            <div className="inbox-notification-row">
+                              <span className="inbox-notification-avatar">
+                                <img
+                                  src="/logo.svg"
+                                  alt="Surbee"
+                                  className="dark:invert"
+                                />
+                              </span>
+                              <div className="inbox-notification-content">
+                                <div className="inbox-notification-header">
+                                  {!notification.is_read && <span className="inbox-notification-unread" />}
+                                  <h3 className="inbox-notification-title">
+                                    {notification.title}
+                                  </h3>
+                                </div>
+                                {notification.description && (
+                                  <p className="inbox-notification-desc">
+                                    {notification.description}
+                                  </p>
+                                )}
+                                <p className="inbox-notification-time">
+                                  {formatRelativeTime(notification.created_at)}
+                                </p>
+                                <div className="inbox-notification-actions">
+                                  <button
+                                    className="inbox-action-btn secondary"
+                                    onClick={() => handleDismissNotification(notification.id)}
+                                  >
+                                    Dismiss
+                                  </button>
+                                  {notification.link_url && (
+                                    <button
+                                      className="inbox-action-btn primary"
+                                      onClick={() => handleNotificationAction(notification)}
+                                    >
+                                      {notification.type === 'welcome' ? 'Get Started' : 'View'}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* What's New Tab */}
+                  <div
+                    className={`inbox-popup-scroll ${inboxTab === 'whats-new' ? '' : 'hidden'}`}
+                  >
+                    <div className="inbox-popup-news">
+                      {announcements.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                          <Gift className="w-10 h-10 mb-3 opacity-30" style={{ color: 'hsl(40 9% 75%)' }} />
+                          <p className="text-sm" style={{ color: 'hsl(40 9% 75%)' }}>No announcements yet</p>
+                        </div>
+                      ) : (
+                        announcements.map((announcement, index) => (
+                          announcement.is_featured || index === 0 ? (
+                            // Featured News Item
+                            <a
+                              key={announcement.id}
+                              className="inbox-news-item featured"
+                              href={announcement.link_url || '/changelog'}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setIsInboxOpen(false);
+                                router.push(announcement.link_url || '/changelog');
+                              }}
+                            >
+                              <div className="inbox-news-item-inner">
+                                <div className="inbox-news-header">
+                                  <h3 className="inbox-news-title">{announcement.title}</h3>
+                                  <svg className="inbox-news-arrow" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M13.47 6.47a.75.75 0 0 1 1.06 0l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06l3.72-3.72H5a.75.75 0 0 1 0-1.5h12.19l-3.72-3.72a.75.75 0 0 1 0-1.06" />
+                                  </svg>
+                                </div>
+                                <p className="inbox-news-desc">{announcement.description}</p>
+                                {announcement.image_url && (
+                                  <div className="inbox-news-image">
+                                    <img src={announcement.image_url} alt={announcement.title} />
+                                  </div>
+                                )}
+                                <span className="inbox-news-time">{formatRelativeTime(announcement.published_at)}</span>
+                              </div>
+                            </a>
+                          ) : (
+                            // Regular News Item
+                            <div
+                              key={announcement.id}
+                              className="inbox-news-item"
+                              onClick={() => {
+                                if (announcement.link_url) {
+                                  setIsInboxOpen(false);
+                                  router.push(announcement.link_url);
+                                }
+                              }}
+                            >
+                              <div className="inbox-news-item-inner">
+                                <div className="inbox-news-item-row">
+                                  <div className="inbox-news-item-content">
+                                    <div className="inbox-news-header">
+                                      <h3 className="inbox-news-title">{announcement.title}</h3>
+                                      <svg className="inbox-news-arrow" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M13.47 6.47a.75.75 0 0 1 1.06 0l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06l3.72-3.72H5a.75.75 0 0 1 0-1.5h12.19l-3.72-3.72a.75.75 0 0 1 0-1.06" />
+                                      </svg>
+                                    </div>
+                                    <p className="inbox-news-desc">{announcement.description}</p>
+                                    <span className="inbox-news-time">{formatRelativeTime(announcement.published_at)}</span>
+                                  </div>
+                                  {announcement.image_url && (
+                                    <div className="inbox-news-image">
+                                      <img src={announcement.image_url} alt={announcement.title} />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

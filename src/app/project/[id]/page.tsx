@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRealtime } from '@/contexts/RealtimeContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useCredits } from '@/hooks/useCredits';
+import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 import { useChatSession } from '@/hooks/useChatSession';
 import { useDashboardChat } from '@/hooks/useDashboardChat';
 import { ThinkingDisplay } from '../../../../components/ThinkingUi/components/thinking-display';
@@ -206,6 +207,7 @@ function PublishDropdown({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const { user } = useAuth();
+  const { userPreferences } = useUserPreferences();
 
   // State for editable fields
   const [surveyTitle, setSurveyTitle] = useState(project?.title || '');
@@ -4307,10 +4309,21 @@ export default function ProjectPage() {
     }
   }, [projectId, user, mockMode]);
 
-    // Sync in-frame navigations to the route dropdown
+    // Sync in-frame navigations to the route dropdown and handle page registration
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
       const data: any = e.data || {};
+
+      // Handle page registration from survey
+      if (data?.type === 'deepsite:registerPages' && Array.isArray(data.pages)) {
+        setPages(data.pages);
+        // If we're on "/" and pages were registered, select the first one
+        if (data.pages.length > 0 && selectedRoute === '/') {
+          setSelectedRoute(data.pages[0].path);
+        }
+      }
+
+      // Handle navigation sync
       if (data && data.type === 'deepsite:navigate' && typeof data.path === 'string') {
         setSelectedRoute(prevRoute => {
           // Only update if the route actually changed
@@ -4323,7 +4336,7 @@ export default function ProjectPage() {
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
-  }, []);
+  }, [selectedRoute]);
 
 
 
@@ -4510,7 +4523,8 @@ export default function ProjectPage() {
       body: {
         model: currentModel,
         projectId: id,
-        userId: user?.id
+        userId: user?.id,
+        userPreferences: userPreferences
       }
     };
 
@@ -5495,12 +5509,17 @@ Please make changes specifically to this element.`;
                               const isActive = part.state === 'input-streaming' || part.state === 'input-available';
                               const output = part.state === 'output-available' ? part.output : null;
 
+                              // Extract file name from input for active tools
+                              const input = (part as any).input;
+                              const fileName = input?.file_path || input?.path || input?.filename || input?.target_file;
+
                               return (
                                 <ToolCallTree
                                   key={`tool-${partIdx}`}
                                   toolName={toolName}
                                   output={output}
                                   isActive={isActive}
+                                  fileName={fileName}
                                 />
                               );
                             }
@@ -5589,12 +5608,24 @@ Please make changes specifically to this element.`;
                             const versionNumber = versionIndex + 1;
                             const isCurrentVersion = version.id === currentVersionId;
 
-                            // Get a short 4-5 word summary from the message
-                            const textPart = msg.parts.find(p => p.type === 'text');
-                            const messageText = textPart?.text || '';
-                            // Extract first few words as title
-                            const words = messageText.replace(/[#*\-\n]+/g, ' ').trim().split(/\s+/).slice(0, 5);
-                            const title = words.length > 0 ? words.join(' ') : `Version ${versionNumber}`;
+                            // First check for AI-generated checkpoint title from set_checkpoint_title tool
+                            const checkpointPart = msg.parts.find(
+                              (p: any) => p.type === 'tool-set_checkpoint_title' && p.state === 'output-available'
+                            );
+                            let title = (checkpointPart as any)?.output?.checkpoint_title;
+
+                            // Fallback to version description if available
+                            if (!title && version.description) {
+                              title = version.description;
+                            }
+
+                            // Final fallback: extract first few words from message text
+                            if (!title) {
+                              const textPart = msg.parts.find(p => p.type === 'text');
+                              const messageText = textPart?.text || '';
+                              const words = messageText.replace(/[#*\-\n]+/g, ' ').trim().split(/\s+/).slice(0, 5);
+                              title = words.length > 0 ? words.join(' ') : `Version ${versionNumber}`;
+                            }
 
                             return (
                               <div className="flex items-start gap-1 mt-4 w-full max-w-xs">
@@ -5622,11 +5653,11 @@ Please make changes specifically to this element.`;
 
                           {/* Suggestion pills - show AI-provided suggestions on last assistant message */}
                           {idx === messages.length - 1 && status === 'ready' && msg.role === 'assistant' && (() => {
-                            // Get suggestions from the suggest_followups tool invocation
-                            const suggestTool = (msg as any).toolInvocations?.find(
-                              (t: any) => t.toolName === 'suggest_followups' && t.state === 'result'
+                            // Get suggestions from the suggest_followups tool part
+                            const suggestPart = msg.parts.find(
+                              (p: any) => p.type === 'tool-suggest_followups' && p.state === 'output-available'
                             );
-                            const suggestions: string[] = suggestTool?.result?.suggestions || [];
+                            const suggestions: string[] = (suggestPart as any)?.output?.suggestions || [];
 
                             if (suggestions.length === 0) return null;
 
@@ -5856,24 +5887,66 @@ Please make changes specifically to this element.`;
                 </button>
               </div>
 
-              {/* Center: Route input */}
-              <div className="flex-1 flex items-center min-w-0 px-1">
-                <input
-                  type="text"
-                  value={selectedRoute}
-                  onChange={(e) => setSelectedRoute(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      setRendererKey(k => k+1);
-                    }
-                  }}
-                  className="w-full bg-transparent border-none outline-none text-sm"
-                  placeholder="/"
+              {/* Center: Route dropdown */}
+              <div className="page-dropdown flex-1 flex items-center min-w-0 px-1 relative">
+                <button
+                  onClick={() => setIsPageDropdownOpen(!isPageDropdownOpen)}
+                  className="w-full flex items-center justify-between bg-transparent text-sm px-2 py-1 rounded transition-colors"
                   style={{
                     color: 'var(--surbee-fg-primary)',
                     fontFamily: 'Sohne, sans-serif'
                   }}
-                />
+                  onMouseEnter={(e) => {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <span className="truncate font-mono text-xs">{selectedRoute}</span>
+                  <ChevronDown className={`w-3 h-3 ml-1 transition-transform ${isPageDropdownOpen ? 'rotate-180' : ''}`} style={{ color: 'var(--surbee-fg-secondary)' }} />
+                </button>
+
+                {isPageDropdownOpen && pages.length > 0 && (
+                  <div
+                    className="absolute top-full left-0 right-0 mt-1 rounded-lg shadow-lg z-50 max-h-[200px] overflow-y-auto"
+                    style={{
+                      backgroundColor: 'var(--surbee-bg-primary)',
+                      border: '1px solid rgba(128, 128, 128, 0.15)'
+                    }}
+                  >
+                    {pages.map((page) => (
+                      <button
+                        key={page.path}
+                        onClick={() => {
+                          setSelectedRoute(page.path);
+                          setIsPageDropdownOpen(false);
+                          // Navigate iframe to new path
+                          const iframe = document.querySelector('iframe');
+                          iframe?.contentWindow?.postMessage({ type: 'deepsite:navigateTo', path: page.path }, '*');
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm transition-colors flex items-center gap-2"
+                        style={{
+                          color: 'var(--surbee-fg-primary)',
+                          backgroundColor: selectedRoute === page.path ? 'var(--surbee-bg-tertiary)' : 'transparent'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (selectedRoute !== page.path) {
+                            const isDark = document.documentElement.classList.contains('dark');
+                            e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = selectedRoute === page.path ? 'var(--surbee-bg-tertiary)' : 'transparent';
+                        }}
+                      >
+                        <span className="font-mono text-xs" style={{ color: 'var(--surbee-fg-secondary)' }}>{page.path}</span>
+                        <span className="truncate">{page.title !== page.path ? page.title : ''}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}

@@ -23,7 +23,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
       if (currentParagraph.length > 0) {
         const paragraphText = currentParagraph.join('\n')
         elements.push(
-          <p key={elements.length} className="mb-4 text-[15px] leading-6" style={{ color: 'var(--surbee-fg-primary)' }}>
+          <p key={elements.length} className="mb-4 text-[14px] leading-6" style={{ color: 'var(--surbee-fg-primary)' }}>
             {parseInlineMarkdown(paragraphText)}
           </p>
         )
@@ -36,7 +36,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
         elements.push(
           <ul key={elements.length} className="mb-4 ml-4 space-y-1">
             {listItems.map((item, i) => (
-              <li key={i} className="text-[15px] leading-6 list-disc" style={{ color: 'var(--surbee-fg-primary)' }}>
+              <li key={i} className="text-[14px] leading-6 list-disc" style={{ color: 'var(--surbee-fg-primary)' }}>
                 {parseInlineMarkdown(item)}
               </li>
             ))}
@@ -145,7 +145,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
         if (match) {
           elements.push(
             <ol key={elements.length} className="mb-4 ml-4 space-y-1" start={parseInt(match[1])}>
-              <li className="text-[15px] leading-6 list-decimal" style={{ color: 'var(--surbee-fg-primary)' }}>
+              <li className="text-[14px] leading-6 list-decimal" style={{ color: 'var(--surbee-fg-primary)' }}>
                 {parseInlineMarkdown(match[2])}
               </li>
             </ol>

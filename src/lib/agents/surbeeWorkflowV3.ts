@@ -403,13 +403,14 @@ const initSandboxTool = tool({
 
       const files = projectFiles.get(project_name)!
 
-      // Create package.json
+      // Create package.json with Framer Motion pre-installed
       const packageJson = JSON.stringify({
         name: project_name,
         version: '1.0.0',
         dependencies: {
           'react': '^19.0.0',
           'react-dom': '^19.0.0',
+          'framer-motion': '^11.0.0',
         },
       }, null, 2)
 
@@ -1221,6 +1222,23 @@ const suggestFollowupsTool = tool({
 });
 
 // ============================================================================
+// Set Checkpoint Title Tool - provides a descriptive title for version history
+// ============================================================================
+
+const setCheckpointTitleTool = tool({
+  description: 'REQUIRED: Call this AFTER making any code changes to set a descriptive checkpoint title. This appears in the version history dropdown. Provide a concise 3-6 word title that summarizes what was changed (e.g., "Added progress bar", "Fixed mobile layout", "Updated color scheme").',
+  inputSchema: z.object({
+    title: z.string().describe('A concise 3-6 word title describing the changes made (e.g., "Added progress bar", "Fixed button styling")')
+  }),
+  execute: async ({ title }) => {
+    // This tool just returns the title - the client reads it from toolInvocations
+    return {
+      checkpoint_title: title,
+    };
+  },
+});
+
+// ============================================================================
 // Tool Set Definition (for useChat pattern)
 // ============================================================================
 
@@ -1264,6 +1282,9 @@ const tools = {
 
   // Follow-up Suggestions
   suggest_followups: suggestFollowupsTool,
+
+  // Checkpoint Title for version history
+  set_checkpoint_title: setCheckpointTitleTool,
 } satisfies ToolSet;
 
 export type ChatTools = InferUITools<typeof tools>;
@@ -1388,10 +1409,25 @@ function convertMessagesWithImages(messages: ChatMessage[]): any[] {
 // New Streaming Workflow (useChat pattern)
 // ============================================================================
 
-export function streamWorkflowV3({ messages: rawMessages, model = 'gpt-5', projectId, userId }: { messages: ChatMessage[], model?: string, projectId?: string, userId?: string }) {
+interface DesignThemeData {
+  id: string;
+  name: string;
+  colors: string[];
+  description: string;
+}
+
+interface UserPreferences {
+  name?: string;
+  tone?: string;
+  workFunction?: string;
+  personalPreferences?: string;
+}
+
+export function streamWorkflowV3({ messages: rawMessages, model = 'gpt-5', projectId, userId, designTheme, userPreferences }: { messages: ChatMessage[], model?: string, projectId?: string, userId?: string, designTheme?: DesignThemeData | null, userPreferences?: UserPreferences }) {
   console.log('🚀 Starting Surbee Workflow V3 (useChat Mode)...');
   console.log('🤖 Received model parameter:', model);
   console.log('🆔 Project Context:', { projectId, userId });
+  console.log('🎨 Design Theme:', designTheme?.name || 'default');
   console.log('🔍 Model type:', typeof model);
   console.log('🔍 Model === "claude-haiku"?', model === 'claude-haiku');
   console.log('🔍 Model === "gpt-5"?', model === 'gpt-5');
@@ -1779,6 +1815,311 @@ const handleSubmit = () => {
 };
 \`\`\`
 
+## CRITICAL: Typeform-Style Page-Based Survey Architecture
+
+**ALL surveys MUST use a page-based architecture with ONE question per page.** This creates an immersive, distraction-free experience like Typeform.
+
+### Required Survey Structure
+
+1. **PAGES Object Pattern:** Define all pages in a single object for routing:
+\`\`\`tsx
+const PAGES = {
+  '/': { component: WelcomePage, title: 'Welcome' },
+  '/q1': { component: Q1Page, title: 'Your Experience' },
+  '/q2': { component: Q2Page, title: 'Rating' },
+  '/q3': { component: Q3Page, title: 'Feedback' },
+  '/thankyou': { component: ThankYouPage, title: 'Complete' },
+};
+\`\`\`
+
+2. **Route Naming Convention:**
+   - \`/\` or \`/welcome\` - Welcome/intro page (REQUIRED)
+   - \`/q1\`, \`/q2\`, \`/q3\` - Question pages (numbered)
+   - \`/thankyou\` or \`/complete\` - Completion page (REQUIRED)
+
+3. **Page Registration (REQUIRED):** On mount, register pages with parent:
+\`\`\`tsx
+useEffect(() => {
+  const pages = Object.entries(PAGES).map(([path, { title }]) => ({ path, title }));
+  window.parent?.postMessage?.({ type: 'deepsite:registerPages', pages }, '*');
+}, []);
+\`\`\`
+
+4. **Navigation Function:**
+\`\`\`tsx
+const navigate = (path: string) => {
+  setCurrentPath(path);
+  window.parent?.postMessage?.({ type: 'deepsite:navigate', path }, '*');
+};
+\`\`\`
+
+5. **Listen for External Navigation:**
+\`\`\`tsx
+useEffect(() => {
+  const handler = (e: MessageEvent) => {
+    if (e.data?.type === 'deepsite:navigateTo' && PAGES[e.data.path]) {
+      setCurrentPath(e.data.path);
+    }
+  };
+  window.addEventListener('message', handler);
+  return () => window.removeEventListener('message', handler);
+}, []);
+\`\`\`
+
+### Framer Motion Page Transitions (REQUIRED)
+
+Wrap page content in AnimatePresence for smooth transitions:
+\`\`\`tsx
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// In App component return:
+<AnimatePresence mode="wait">
+  <motion.div
+    key={currentPath}
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -20 }}
+    transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+  >
+    <CurrentPage navigate={navigate} responses={responses} setResponses={setResponses} />
+  </motion.div>
+</AnimatePresence>
+\`\`\`
+
+### Progress Dots Component (REQUIRED)
+
+Include at bottom of question pages (not welcome/thankyou):
+\`\`\`tsx
+function ProgressDots({ current, total }: { current: number; total: number }) {
+  return (
+    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
+      {Array.from({ length: total }, (_, i) => (
+        <motion.div
+          key={i}
+          className={\`w-2 h-2 rounded-full \${i === current ? 'bg-black' : 'bg-gray-300'}\`}
+          animate={{ scale: i === current ? 1.2 : 1 }}
+          transition={{ duration: 0.2 }}
+        />
+      ))}
+    </div>
+  );
+}
+\`\`\`
+
+### Style Guide (REQUIRED - Match Login Page Style)
+
+- **Background:** \`#F7F7F4\` (warm off-white)
+- **Text Primary:** \`#11100C\` (near-black)
+- **Text Secondary:** \`#646464\` (gray)
+- **Accent/Hover:** \`#F2C4FF\` (light purple)
+- **Font:** \`'Inter', -apple-system, BlinkMacSystemFont, sans-serif\`
+- **Buttons:** \`borderRadius: '50px'\`, \`padding: '12px 20px'\`
+- **Button Style:** Black background with white text, or transparent with border
+
+### Navigation Buttons Pattern
+
+Each question page should have back/next buttons:
+\`\`\`tsx
+<div className="flex justify-between mt-8">
+  {canGoBack && (
+    <button
+      onClick={() => navigate(previousPath)}
+      className="px-6 py-3 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+    >
+      Back
+    </button>
+  )}
+  <button
+    onClick={() => navigate(nextPath)}
+    className="px-8 py-3 bg-black text-white rounded-full hover:bg-gray-800 transition ml-auto"
+  >
+    {isLastQuestion ? 'Submit' : 'Continue'}
+  </button>
+</div>
+\`\`\`
+
+### Complete Survey Template
+
+\`\`\`tsx
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+function ProgressDots({ current, total }: { current: number; total: number }) {
+  return (
+    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
+      {Array.from({ length: total }, (_, i) => (
+        <motion.div
+          key={i}
+          className={\`w-2 h-2 rounded-full \${i === current ? 'bg-black' : 'bg-gray-300'}\`}
+          animate={{ scale: i === current ? 1.2 : 1 }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function WelcomePage({ navigate }: { navigate: (path: string) => void }) {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center max-w-md"
+      >
+        <h1 className="text-3xl font-medium mb-4" style={{ letterSpacing: '-0.02em' }}>
+          Customer Feedback
+        </h1>
+        <p className="text-gray-600 mb-8">
+          Help us improve your experience. This will only take 2 minutes.
+        </p>
+        <button
+          onClick={() => navigate('/q1')}
+          className="px-8 py-3 bg-black text-white rounded-full hover:bg-gray-800 transition"
+        >
+          Start Survey
+        </button>
+      </motion.div>
+    </div>
+  );
+}
+
+function Q1Page({ navigate, responses, setResponses }: any) {
+  const handleSelect = (value: string) => {
+    setResponses((prev: any) => ({ ...prev, q1: value }));
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-md">
+        <h2
+          className="text-2xl font-medium mb-8"
+          data-question-id="q1"
+          data-question-text="How would you rate your experience?"
+          data-question-type="multiple_choice"
+          data-required="true"
+        >
+          How would you rate your experience?
+        </h2>
+        <div className="space-y-3">
+          {['Excellent', 'Good', 'Average', 'Poor'].map((option) => (
+            <button
+              key={option}
+              onClick={() => handleSelect(option)}
+              className={\`w-full p-4 text-left rounded-xl border transition \${
+                responses.q1 === option
+                  ? 'border-black bg-gray-50'
+                  : 'border-gray-200 hover:border-gray-400'
+              }\`}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+        <div className="flex justify-between mt-8">
+          <button
+            onClick={() => navigate('/')}
+            className="px-6 py-3 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+          >
+            Back
+          </button>
+          <button
+            onClick={() => navigate('/q2')}
+            disabled={!responses.q1}
+            className="px-8 py-3 bg-black text-white rounded-full hover:bg-gray-800 transition disabled:opacity-50"
+          >
+            Continue
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Add more question pages following the same pattern...
+
+function ThankYouPage() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="text-center"
+      >
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h1 className="text-3xl font-medium mb-4">Thank you!</h1>
+        <p className="text-gray-600">Your feedback has been submitted.</p>
+      </motion.div>
+    </div>
+  );
+}
+
+const PAGES: Record<string, { component: React.FC<any>; title: string }> = {
+  '/': { component: WelcomePage, title: 'Welcome' },
+  '/q1': { component: Q1Page, title: 'Experience' },
+  '/thankyou': { component: ThankYouPage, title: 'Complete' },
+};
+
+export default function App() {
+  const [currentPath, setCurrentPath] = useState('/');
+  const [responses, setResponses] = useState<Record<string, any>>({});
+
+  // Register pages with parent
+  useEffect(() => {
+    const pages = Object.entries(PAGES).map(([path, { title }]) => ({ path, title }));
+    window.parent?.postMessage?.({ type: 'deepsite:registerPages', pages }, '*');
+  }, []);
+
+  // Navigation function
+  const navigate = (path: string) => {
+    setCurrentPath(path);
+    window.parent?.postMessage?.({ type: 'deepsite:navigate', path }, '*');
+  };
+
+  // Listen for external navigation from parent
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === 'deepsite:navigateTo' && PAGES[e.data.path]) {
+        setCurrentPath(e.data.path);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const CurrentPage = PAGES[currentPath]?.component || PAGES['/'].component;
+  const pageOrder = Object.keys(PAGES);
+  const currentIndex = pageOrder.indexOf(currentPath);
+  const questionCount = pageOrder.filter(p => p.startsWith('/q')).length;
+  const currentQuestionIndex = pageOrder.slice(0, currentIndex + 1).filter(p => p.startsWith('/q')).length - 1;
+
+  return (
+    <div className="min-h-screen bg-[#F7F7F4]" style={{ fontFamily: "'Inter', sans-serif" }}>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentPath}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+        >
+          <CurrentPage navigate={navigate} responses={responses} setResponses={setResponses} />
+        </motion.div>
+      </AnimatePresence>
+      {currentPath.startsWith('/q') && (
+        <ProgressDots current={currentQuestionIndex} total={questionCount} />
+      )}
+    </div>
+  );
+}
+\`\`\`
+
+**IMPORTANT:** Always call \`save_survey_questions\` after generating a page-based survey to ensure all questions are tracked in the database for the Insights tab.
+
 **Image Handling**
 When users attach images to their messages, you will see them as image content in the message. Analyze the image carefully and use it to inform your survey design. If you can see an image, describe what you observe and how it relates to the survey you'll create.
 
@@ -1851,7 +2192,20 @@ Explain what you've created with enthusiasm. Describe the key features and how t
 - Example: "I've created a fun interactive gradient playground for you! The app features animated gradient backgrounds that smoothly transition when you click the 'New Gradient' button, floating bubbles that drift up the screen, and beautiful glassmorphic cards that react when you hover over them. Everything is powered by smooth animations using Motion (Framer Motion)."
 - Be descriptive about what the user will experience.
 
-**4. SUGGESTIONS (REQUIRED - Call suggest_followups tool):**
+**4. CHECKPOINT TITLE (REQUIRED after code changes):**
+After making ANY code changes, you MUST call the \`set_checkpoint_title\` tool with a descriptive 3-6 word title.
+- This title appears in the version history for users to restore previous versions.
+- Be specific: "Added progress bar" not "Made changes"
+- Example titles: "Added progress bar", "Fixed mobile layout", "Updated button colors", "Implemented skip logic"
+
+**5. BUILD VERIFICATION (REQUIRED before finishing):**
+Before completing your response, you MUST verify the build works:
+1. Call \`surbe_build_preview\` to generate the preview
+2. Call \`surbe_read_console_logs\` to check for any JavaScript errors
+3. If there are errors, FIX THEM before responding to the user
+4. Never deliver broken code - always ensure a working build
+
+**6. SUGGESTIONS (REQUIRED - Call suggest_followups tool):**
 At the END of every response, you MUST call the \`suggest_followups\` tool with exactly 3 follow-up suggestions.
 - These appear as clickable pills in the UI that the user can click to quickly send that message.
 - Each suggestion should be 10-60 characters, specific and actionable.
@@ -1934,6 +2288,11 @@ You have powerful tools at your disposal. ALWAYS use the right tool for the job:
   - These become clickable pills in the UI for quick user actions.
   - Keep each suggestion 10-60 characters and actionable.
   - Examples: "Add a progress bar", "Make colors more vibrant", "Add skip logic"
+
+**Checkpoint & Version History:**
+- \`set_checkpoint_title\`: **REQUIRED after any code changes.** Call with a 3-6 word title describing what changed.
+  - This appears in version history so users can restore previous versions.
+  - Be descriptive: "Added progress bar", "Fixed mobile layout", "Updated color scheme"
 
 ## Critical Execution Rules
 
@@ -2027,6 +2386,42 @@ User: "Create a satisfaction survey with a star rating."
 Never just describe—take action and see things through to the finish with a positive, human-centric style.
 
 Project name for this session: ${projectName} (always use this project name when calling tools).`;
+
+  // Build personalization from user preferences
+  let personalization = '';
+  if (userPreferences) {
+    const parts: string[] = [];
+
+    if (userPreferences.name && userPreferences.name.trim()) {
+      parts.push(`The user's name is ${userPreferences.name}. Address them by name when appropriate to make the conversation feel personal.`);
+    }
+
+    if (userPreferences.tone && userPreferences.tone !== 'neutral' && userPreferences.tone !== 'Select tone') {
+      const toneDescriptions: Record<string, string> = {
+        professional: 'Maintain a professional, business-like tone. Be formal and precise.',
+        friendly: 'Be warm, approachable, and conversational. Use a friendly, casual tone.',
+        concise: 'Be brief and to the point. Minimize unnecessary words while remaining helpful.',
+        detailed: 'Provide thorough, comprehensive responses with explanations and context.',
+      };
+      const toneDesc = toneDescriptions[userPreferences.tone] || `Use a ${userPreferences.tone} communication style.`;
+      parts.push(toneDesc);
+    }
+
+    if (userPreferences.workFunction && userPreferences.workFunction !== 'Select your work function') {
+      parts.push(`The user works as a ${userPreferences.workFunction}. Tailor your responses to their professional context when relevant.`);
+    }
+
+    if (userPreferences.personalPreferences && userPreferences.personalPreferences.trim()) {
+      parts.push(`User's custom preferences: ${userPreferences.personalPreferences}`);
+    }
+
+    if (parts.length > 0) {
+      personalization = '\n\n**User Personalization:**\n' + parts.join('\n');
+    }
+  }
+
+  // Append personalization to system prompt
+  const finalSystemPrompt = systemPrompt + personalization;
 
   // Check if using Claude or Mistral model for extended thinking/reasoning
   const isClaudeModel = model === 'claude-haiku' || model.includes('haiku') || model.includes('claude');
@@ -2131,7 +2526,7 @@ Project name for this session: ${projectName} (always use this project name when
       // Otherwise, let the model decide naturally (don't force stop on text)
       return false;
     },
-    system: systemPrompt,
+    system: finalSystemPrompt,
     // Use custom converter that handles images properly, then filter out any empty messages
     messages: (totalImages > 0 ? convertMessagesWithImages(messages) : convertToModelMessages(messages))
       .filter((msg: any) => {
@@ -2426,6 +2821,21 @@ CRITICAL: The design system is everything. You should never write custom styles 
 - If there are rgb colors in index.css, make sure to NOT use them in tailwind.config.ts wrapped in hsl functions as this will create wrong colors.
 - NOTE: shadcn outline variants are not transparent by default so if you use white text it will be invisible. To fix this, create button variants for all states in the design system.
 
+${designTheme && designTheme.id !== 'default' ? `
+## SELECTED COLOR THEME: ${designTheme.name}
+
+The user has selected the "${designTheme.name}" color theme. You MUST use this color palette:
+
+**Theme Vibe:** ${designTheme.description}
+
+**Color Palette:**
+- Background: ${designTheme.colors[0]} (page backgrounds, main containers)
+- Text: ${designTheme.colors[1]} (all readable text content)
+- Surface: ${designTheme.colors[2]} (cards, inputs, secondary containers)
+- Accent: ${designTheme.colors[3]} (buttons, links, highlights, focus states)
+
+**CRITICAL:** Set up CSS variables in index.css using these colors (convert to HSL format). Ensure proper contrast between Background/Text and Surface/Text pairs.
+` : ''}
 Project name for this session: "${projectName}"
 ${contextPreface ? `\n\nContext:\n${contextPreface}` : ''}
 ${hasImages ? '\n\n📷 Images provided - analyze them for design inspiration.' : ''}

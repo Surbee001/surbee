@@ -1,5 +1,8 @@
 import { NextRequest } from 'next/server';
 import { streamWorkflowV3, type ChatMessage } from '@/lib/agents/surbeeWorkflowV3';
+import { requireAuth } from '@/lib/auth-utils';
+import { checkCreditsForStream, deductCreditsAfterStream } from '@/lib/withCredits';
+import { getChatModelAction, checkFeatureAccess } from '@/lib/credits';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -7,6 +10,10 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
+    // Security: Get authenticated user from session
+    const [user, errorResponse] = await requireAuth();
+    if (!user) return errorResponse;
+
     const body = await req.json();
     console.log('📦 Received body keys:', Object.keys(body));
     console.log('📦 Body.model:', body.model);
@@ -39,13 +46,49 @@ export async function POST(req: NextRequest) {
     let messages: ChatMessage[];
     const selectedModel = body.model || 'gpt-5'; // Default to gpt-5
 
-    // Extract project context
+    // Extract project context and user preferences
     const projectId = body.projectId;
-    const userId = body.userId;
+    const designTheme = body.designTheme;
+    const userPreferences = body.userPreferences;
 
     // CRITICAL DEBUG: Log exactly what model we're using
     console.log('🎯 SELECTED MODEL:', selectedModel);
-    console.log('🎯 PROJECT CONTEXT:', { projectId, userId });
+    console.log('🎯 PROJECT CONTEXT:', { projectId, userId: user.id });
+    console.log('🎨 DESIGN THEME:', designTheme?.name || 'default');
+
+    // Check if user can use premium models (free users only get Claude Haiku)
+    const isPremiumModel = selectedModel !== 'claude-haiku' && !selectedModel.includes('haiku');
+    if (isPremiumModel) {
+      const featureCheck = await checkFeatureAccess(user.id, 'premiumModels');
+      if (!featureCheck) {
+        return Response.json(
+          {
+            error: 'Premium model not available',
+            message: 'Upgrade to Pro or Max to use GPT-5 and other premium models',
+            upgradeRequired: 'pro'
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Check credits for this survey generation action
+    const creditAction = getChatModelAction(selectedModel);
+    const creditCheck = await checkCreditsForStream(user.id, creditAction, {
+      rateLimitFeature: 'surveyGeneration',
+    });
+
+    if (!creditCheck.allowed) {
+      return creditCheck.error;
+    }
+
+    // Deduct credits upfront for streaming
+    await deductCreditsAfterStream(user.id, creditAction, {
+      model: selectedModel,
+      projectId,
+      action: 'survey_generation',
+      messageCount: body.messages?.length || 1,
+    });
 
     if (body.messages) {
       // New format: direct messages array from useChat
@@ -152,7 +195,9 @@ export async function POST(req: NextRequest) {
       messages,
       model: selectedModel,
       projectId,
-      userId
+      userId: user.id,
+      designTheme,
+      userPreferences
     });
 
     // Return the UI message stream response for useChat

@@ -349,17 +349,7 @@ export default function GeneralSettingsPage() {
                   What personal preferences should Surbee consider in responses?
                 </label>
                 <p className="text-[13px] mb-3" style={{ color: 'var(--surbee-fg-muted)' }}>
-                  Your preferences will apply to all conversations with Surbee.{' '}
-                  <a 
-                    href="#" 
-                    className="underline"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toast.info('Preferences help documentation coming soon');
-                    }}
-                  >
-                    Learn about preferences
-                  </a>
+                  Your preferences will apply to all conversations with Surbee.
                 </p>
                 <textarea
                   value={personalPreferences}

@@ -4,6 +4,7 @@ import { streamText, tool } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth-utils';
+import { deductCredits, getChatModelAction } from '@/lib/credits';
 
 // Create Supabase client with anon key + RLS instead of service role
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -388,7 +389,36 @@ export async function POST(
 
     const { id: projectId } = await params;
     const body = await request.json();
-    const { messages } = body;
+    const { messages: rawMessages, userPreferences } = body;
+
+    // Filter out messages with empty content to prevent AI SDK errors
+    const messages = rawMessages?.filter((msg: any) => {
+      // Keep messages with non-empty string content
+      if (typeof msg.content === 'string' && msg.content.trim() !== '') return true;
+      // Keep messages with parts array that has content
+      if (Array.isArray(msg.parts) && msg.parts.length > 0) return true;
+      // Keep assistant messages (they may have tool calls without text content)
+      if (msg.role === 'assistant') return true;
+      return false;
+    }) || [];
+
+    if (messages.length === 0) {
+      return Response.json({ error: 'No valid messages provided' }, { status: 400 });
+    }
+
+    // Deduct credits for chat
+    const creditAction = getChatModelAction('claude-haiku');
+    const creditResult = await deductCredits(user.id, creditAction, {
+      projectId,
+      model: 'claude-haiku-4-5-20251001'
+    });
+
+    if (!creditResult.success) {
+      return Response.json(
+        { error: creditResult.error || 'Insufficient credits' },
+        { status: 402 }
+      );
+    }
 
     // Verify user owns the project using authenticated user ID
     const { data: project, error: projectError } = await supabase
@@ -411,6 +441,40 @@ export async function POST(
     const totalResponses = responses?.length || 0;
     const completedResponses = responses?.filter((r) => r.completed_at)?.length || 0;
 
+    // Build personalization based on user preferences
+    let personalization = '';
+    if (userPreferences) {
+      const parts: string[] = [];
+
+      if (userPreferences.displayName) {
+        parts.push(`The user's name is "${userPreferences.displayName}". Address them by name when appropriate.`);
+      }
+
+      const toneInstructions: Record<string, string> = {
+        professional: 'Maintain a professional, business-like tone.',
+        casual: 'Use a casual, relaxed tone.',
+        friendly: 'Be warm and friendly.',
+        formal: 'Use formal language.',
+        creative: 'Be creative and engaging.',
+      };
+
+      if (userPreferences.tone) {
+        parts.push(toneInstructions[userPreferences.tone] || toneInstructions.professional);
+      }
+
+      if (userPreferences.workFunction && userPreferences.workFunction !== 'Select your work function') {
+        parts.push(`The user works as a ${userPreferences.workFunction}.`);
+      }
+
+      if (userPreferences.personalPreferences) {
+        parts.push(`User preferences: ${userPreferences.personalPreferences}`);
+      }
+
+      if (parts.length > 0) {
+        personalization = '\n\n' + parts.join('\n');
+      }
+    }
+
     // Build system prompt
     const systemPrompt = `You are Surbee, a precision data analyst for "${project.title}".
 
@@ -426,7 +490,7 @@ Rules:
 - Use tables for comparisons. Use bullet points sparingly.
 - Don't explain what you're doing. Just do it and present results.
 
-Tools: get_survey_stats, get_survey_questions, get_project_details, query_responses, get_response_details, analyze_question, get_all_answers_for_question, get_participant_list, get_time_series_data`;
+Tools: get_survey_stats, get_survey_questions, get_project_details, query_responses, get_response_details, analyze_question, get_all_answers_for_question, get_participant_list, get_time_series_data${personalization}`;
 
     // Create tools with projectId
     const tools = createTools(projectId);
