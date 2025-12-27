@@ -68,23 +68,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Load user profile from localStorage
+  // Load user profile from database (with localStorage fallback)
   useEffect(() => {
-    try {
-      const savedProfile = localStorage.getItem('surbee_user_profile');
-      const onboardingCompleted = localStorage.getItem('surbee_onboarding_completed');
+    const loadUserProfile = async () => {
+      // First check localStorage as fallback
+      try {
+        const savedProfile = localStorage.getItem('surbee_user_profile');
+        const onboardingCompleted = localStorage.getItem('surbee_onboarding_completed');
 
-      if (savedProfile) {
-        setUserProfile(JSON.parse(savedProfile));
+        if (savedProfile) {
+          setUserProfile(JSON.parse(savedProfile));
+        }
+
+        if (onboardingCompleted === 'true') {
+          setHasCompletedOnboarding(true);
+        }
+      } catch (error) {
+        console.error('Error loading user profile from localStorage:', error);
       }
 
-      if (onboardingCompleted === 'true') {
-        setHasCompletedOnboarding(true);
+      // If user is logged in, load from database
+      if (user?.id) {
+        try {
+          const response = await fetch(`/api/user/profile?userId=${user.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.profile) {
+              const profile: UserProfile = {
+                name: data.profile.name || '',
+                age: data.profile.age || 0,
+                interests: data.profile.interests || [],
+                surveyPreference: data.profile.survey_preference || 'fast',
+              };
+              setUserProfile(profile);
+              setHasCompletedOnboarding(data.profile.onboarding_completed || false);
+              // Sync to localStorage
+              localStorage.setItem('surbee_user_profile', JSON.stringify(profile));
+              if (data.profile.onboarding_completed) {
+                localStorage.setItem('surbee_onboarding_completed', 'true');
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error loading user profile from database:', error);
+        }
       }
-    } catch (error) {
-      console.error('Error loading user profile from localStorage:', error);
-    }
-  }, []);
+    };
+
+    loadUserProfile();
+  }, [user?.id]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -202,13 +234,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateUserProfile = async (profile: UserProfile) => {
     try {
-      // Save to localStorage for demo mode
+      // Save to localStorage as backup
       localStorage.setItem('surbee_user_profile', JSON.stringify(profile));
       localStorage.setItem('surbee_onboarding_completed', 'true');
-      
+
       // Update state
       setUserProfile(profile);
       setHasCompletedOnboarding(true);
+
+      // If user is logged in, save to database
+      if (user?.id) {
+        await fetch('/api/user/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            profile: {
+              name: profile.name,
+              age: profile.age,
+              interests: profile.interests,
+              survey_preference: profile.surveyPreference,
+              onboarding_completed: true,
+            },
+          }),
+        });
+      }
     } catch (error) {
       console.error('Error saving user profile:', error);
       throw error;

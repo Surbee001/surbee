@@ -66,11 +66,6 @@ export const middleware = async (request: NextRequest) => {
     }
   }
 
-  // Redirect root path to /login (landing page is hidden)
-  if (pathname === '/') {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
   // Create an unmodified response
   let supabaseResponse = NextResponse.next({
     request: {
@@ -101,7 +96,23 @@ export const middleware = async (request: NextRequest) => {
 
   // IMPORTANT: This refreshes the auth token and must be called
   // for server-side auth to work properly
-  await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Handle root path - redirect based on auth status
+  if (pathname === '/') {
+    if (user) {
+      // Logged in users go to home
+      return NextResponse.redirect(new URL('/home', request.url));
+    } else {
+      // Not logged in users go to login
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+  }
+
+  // Redirect logged-in users away from login page
+  if (pathname === '/login' && user) {
+    return NextResponse.redirect(new URL('/home', request.url));
+  }
 
   // Add security headers to all responses
   addSecurityHeaders(supabaseResponse);

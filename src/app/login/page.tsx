@@ -8,11 +8,43 @@ import { motion, AnimatePresence } from 'framer-motion'
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(true)
   const [error, setError] = useState('')
   const [email, setEmail] = useState('')
   const [showEmailInput, setShowEmailInput] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [isHovered, setIsHovered] = useState<string | null>(null)
+
+  // Check if user is already logged in - redirect to home if so
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          // User is already logged in, redirect to home
+          router.replace('/home')
+          return
+        }
+      } catch (err) {
+        console.error('Error checking session:', err)
+      } finally {
+        setCheckingAuth(false)
+      }
+    }
+
+    checkSession()
+
+    // Also listen for auth state changes (in case user logs in via another tab)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        router.replace('/home')
+      }
+    })
+
+    return () => {
+      subscription?.unsubscribe()
+    }
+  }, [router])
 
   const handleOAuthLogin = async (provider: 'google' | 'github') => {
     try {
@@ -65,6 +97,21 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Show minimal loading state while checking auth
+  if (checkingAuth) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#F7F7F4',
+        }}
+      />
+    )
   }
 
   return (

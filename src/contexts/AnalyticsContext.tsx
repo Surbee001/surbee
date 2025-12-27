@@ -25,7 +25,7 @@ export function useAnalyticsConsent() {
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, hasCompletedOnboarding } = useAuth();
   const [consent, setConsent] = useState<boolean | null>(null);
   const [lastAskedAt, setLastAskedAt] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,11 +66,18 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   }, [user?.id, authLoading]);
 
   // Show modal once per day if user hasn't made a decision
+  // Only show after user has completed onboarding
   useEffect(() => {
-    console.log('[Analytics] Modal check - isLoading:', isLoading, 'authLoading:', authLoading, 'userId:', user?.id, 'consent:', consent);
+    console.log('[Analytics] Modal check - isLoading:', isLoading, 'authLoading:', authLoading, 'userId:', user?.id, 'consent:', consent, 'hasCompletedOnboarding:', hasCompletedOnboarding);
 
     if (isLoading || authLoading || !user?.id) {
       console.log('[Analytics] Skipping modal - still loading or no user');
+      return;
+    }
+
+    // Don't show modal until onboarding is complete
+    if (!hasCompletedOnboarding) {
+      console.log('[Analytics] Skipping modal - onboarding not complete');
       return;
     }
 
@@ -98,7 +105,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [consent, lastAskedAt, isLoading, authLoading, user?.id]);
+  }, [consent, lastAskedAt, isLoading, authLoading, user?.id, hasCompletedOnboarding]);
 
   const updateConsent = useCallback(async (newConsent: boolean) => {
     if (!user?.id) {
@@ -108,6 +115,11 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
 
     console.log('[Analytics] Updating consent to:', newConsent, 'for user:', user.id);
 
+    // Close modal immediately and set consent optimistically
+    setConsent(newConsent);
+    setShowModal(false);
+
+    // Make API call in background
     try {
       const response = await fetch('/api/analytics/consent', {
         method: 'POST',
@@ -121,13 +133,13 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const data = await response.json();
         console.log('[Analytics] Consent updated successfully:', data);
-        setConsent(newConsent);
-        setShowModal(false);
       } else {
         console.error('[Analytics] Failed to update consent, status:', response.status);
+        // Don't revert - keep the optimistic update to prevent modal from reappearing
       }
     } catch (error) {
       console.error('[Analytics] Failed to update consent:', error);
+      // Don't revert - keep the optimistic update to prevent modal from reappearing
     }
   }, [user?.id]);
 

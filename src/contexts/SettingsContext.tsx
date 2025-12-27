@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode, useCallback } from 'react';
+import { useAuth } from './AuthContext';
 
 // Settings types
 export interface PreferencesSettings {
@@ -290,33 +291,67 @@ interface SettingsProviderProps {
 
 export function SettingsProvider({ children }: SettingsProviderProps) {
   const [settings, dispatch] = useReducer(settingsReducer, defaultSettings);
+  const { user } = useAuth();
   const isInitialized = React.useRef(false);
+  const isSyncingFromDb = React.useRef(false);
 
-  // Load settings from localStorage on mount
+  // Load settings from database (if logged in) or localStorage on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('surbee-settings');
-      if (stored) {
-        const parsedSettings = JSON.parse(stored);
-        // Merge default settings with parsed settings to ensure new fields (like privacy) are present
-        dispatch({ type: 'LOAD_SETTINGS', payload: { ...defaultSettings, ...parsedSettings, privacy: { ...defaultSettings.privacy, ...parsedSettings.privacy } } });
-      }
-      isInitialized.current = true;
-    } catch (error) {
-      console.error('Failed to load settings from localStorage:', error);
-      isInitialized.current = true;
-    }
-  }, []);
+    const loadSettings = async () => {
+      try {
+        // First load from localStorage as fallback
+        const stored = localStorage.getItem('surbee-settings');
+        let localSettings = null;
+        if (stored) {
+          localSettings = JSON.parse(stored);
+        }
 
-  // Save settings to localStorage whenever they change (but not on initial load)
+        // If user is logged in, try to load from database
+        if (user?.id) {
+          try {
+            const response = await fetch(`/api/user/settings?userId=${user.id}`);
+            if (response.ok) {
+              const data = await response.json();
+              if (data.settings && Object.keys(data.settings).length > 0) {
+                isSyncingFromDb.current = true;
+                const mergedSettings = { ...defaultSettings, ...data.settings };
+                dispatch({ type: 'LOAD_SETTINGS', payload: mergedSettings });
+                // Also update localStorage
+                localStorage.setItem('surbee-settings', JSON.stringify(mergedSettings));
+                isInitialized.current = true;
+                isSyncingFromDb.current = false;
+                return;
+              }
+            }
+          } catch (error) {
+            console.error('Failed to load settings from database:', error);
+          }
+        }
+
+        // Fall back to localStorage
+        if (localSettings) {
+          const mergedSettings = { ...defaultSettings, ...localSettings, privacy: { ...defaultSettings.privacy, ...localSettings.privacy } };
+          dispatch({ type: 'LOAD_SETTINGS', payload: mergedSettings });
+        }
+        isInitialized.current = true;
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+        isInitialized.current = true;
+      }
+    };
+
+    loadSettings();
+  }, [user?.id]);
+
+  // Save settings to localStorage and database whenever they change
   const settingsRef = React.useRef(settings);
   const saveTimeoutRef = React.useRef<NodeJS.Timeout>();
 
   useEffect(() => {
     settingsRef.current = settings;
 
-    // Only save if initialized and not the initial state
-    if (!isInitialized.current) return;
+    // Only save if initialized and not syncing from DB
+    if (!isInitialized.current || isSyncingFromDb.current) return;
 
     // Clear previous timeout
     if (saveTimeoutRef.current) {
@@ -324,20 +359,30 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     }
 
     // Debounce the save operation
-    saveTimeoutRef.current = setTimeout(() => {
+    saveTimeoutRef.current = setTimeout(async () => {
       try {
+        // Always save to localStorage
         localStorage.setItem('surbee-settings', JSON.stringify(settings));
+
+        // If user is logged in, also save to database
+        if (user?.id) {
+          await fetch('/api/user/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, settings }),
+          });
+        }
       } catch (error) {
-        console.error('Failed to save settings to localStorage:', error);
+        console.error('Failed to save settings:', error);
       }
-    }, 1000); // Longer debounce to prevent rapid saves
+    }, 1000);
 
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [settings]);
+  }, [settings, user?.id]);
 
   // Apply theme changes to the document (with safety checks)
   const lastAppliedThemeRef = React.useRef<string | null>(null);
