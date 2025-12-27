@@ -786,13 +786,14 @@ Analyze the survey structure, questions, and design. Then help me build a simila
               {messages.map((msg, idx) => (
                 <div key={msg.id} className="space-y-2">
                   {msg.role === "user" ? (
-                    <div className="w-full">
+                    <div className="flex justify-end">
                       <div
-                        className="px-4 py-2.5"
+                        className="px-4 py-2.5 inline-block"
                         style={{
                           backgroundColor: "rgb(38, 38, 38)",
                           color: "#ffffff",
                           borderRadius: "18px",
+                          maxWidth: "min(75%, 600px)",
                           wordBreak: "break-word",
                         }}
                       >

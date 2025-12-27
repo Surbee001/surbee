@@ -274,7 +274,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
   const elements = parseMarkdown(content)
 
   return (
-    <div className={`prose prose-invert max-w-none ${className}`}>
+    <div className={`max-w-none ${className}`}>
       {elements}
     </div>
   )
