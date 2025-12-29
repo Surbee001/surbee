@@ -5665,19 +5665,31 @@ Please make changes specifically to this element.`;
 
                             return (
                               <motion.div
-                                className="flex flex-wrap gap-2 pt-3 mt-3"
+                                className="flex flex-col gap-2 pt-3 mt-3"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ duration: 0.3, delay: 0.2 }}
                               >
                                 {suggestions.map((suggestion, i) => (
-                                  <button
-                                    key={i}
-                                    onClick={() => handleSuggestionClick(suggestion)}
-                                    className="px-3.5 py-2 text-[13px] text-muted-foreground bg-white/5 hover:bg-white/10 rounded-full transition-colors duration-150 hover:text-foreground"
-                                  >
-                                    {suggestion.length > 50 ? suggestion.slice(0, 50) + '...' : suggestion}
-                                  </button>
+                                  <div key={i} className="flex items-center gap-0">
+                                    {/* Branch connector */}
+                                    <div className="flex h-4 w-4 shrink-0 items-end justify-start">
+                                      <div
+                                        className="h-1/2 w-1/2 self-start rounded-bl-sm border-b border-l"
+                                        style={{ borderColor: 'rgba(255,255,255,0.2)' }}
+                                      />
+                                    </div>
+                                    <button
+                                      onClick={() => handleSuggestionClick(suggestion)}
+                                      className="h-7 px-3 py-1.5 text-[13px] text-muted-foreground rounded-md border transition-colors duration-100 hover:bg-white/10 hover:text-foreground hover:border-white/20 truncate max-w-[400px]"
+                                      style={{
+                                        backgroundColor: 'rgba(255,255,255,0.05)',
+                                        borderColor: 'rgba(255,255,255,0.1)',
+                                      }}
+                                    >
+                                      {suggestion.length > 60 ? suggestion.slice(0, 60) + '...' : suggestion}
+                                    </button>
+                                  </div>
                                 ))}
                               </motion.div>
                             );
