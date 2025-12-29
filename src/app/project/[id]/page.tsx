@@ -5681,13 +5681,9 @@ Please make changes specifically to this element.`;
                                     </div>
                                     <button
                                       onClick={() => handleSuggestionClick(suggestion)}
-                                      className="h-7 px-3 py-1.5 text-[13px] text-muted-foreground rounded-md border transition-colors duration-100 hover:bg-white/10 hover:text-foreground hover:border-white/20 truncate max-w-[400px]"
-                                      style={{
-                                        backgroundColor: 'rgba(255,255,255,0.05)',
-                                        borderColor: 'rgba(255,255,255,0.1)',
-                                      }}
+                                      className="px-3.5 py-2 text-[13px] text-muted-foreground bg-white/5 hover:bg-white/10 rounded-full transition-colors duration-150 hover:text-foreground"
                                     >
-                                      {suggestion.length > 60 ? suggestion.slice(0, 60) + '...' : suggestion}
+                                      {suggestion.length > 50 ? suggestion.slice(0, 50) + '...' : suggestion}
                                     </button>
                                   </div>
                                 ))}
