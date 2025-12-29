@@ -1,7 +1,7 @@
 "use client"
 import { cn } from "@/lib/utils"
 import { useState, useEffect, useRef } from "react"
-import { ChevronDown } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 
 import { ShiningText } from "./shining-text"
 import { TextShimmer } from "./text-shimmer"
@@ -68,10 +68,10 @@ export function ThinkingDisplay({ steps, duration = 0, isThinking = false, class
           ) : (
             <span className="text-muted-foreground/70">Reasoning</span>
           )}
-          <ChevronDown
+          <ChevronRight
             className={cn(
               "w-3.5 h-3.5 transition-transform duration-200",
-              isOpen ? "rotate-180" : "rotate-0"
+              isOpen && "rotate-90"
             )}
           />
         </button>
@@ -88,7 +88,7 @@ export function ThinkingDisplay({ steps, duration = 0, isThinking = false, class
             <div
               className="pointer-events-none absolute left-0 right-0 top-0 z-10 h-6"
               style={{
-                background: 'linear-gradient(to bottom, var(--background, hsl(0 0% 9%)) 0%, transparent 100%)',
+                background: 'linear-gradient(to bottom, #0E0E0E 0%, transparent 100%)',
               }}
             />
 
@@ -110,7 +110,7 @@ export function ThinkingDisplay({ steps, duration = 0, isThinking = false, class
             <div
               className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 h-6"
               style={{
-                background: 'linear-gradient(to top, var(--background, hsl(0 0% 9%)) 0%, transparent 100%)',
+                background: 'linear-gradient(to top, #0E0E0E 0%, transparent 100%)',
               }}
             />
           </div>
