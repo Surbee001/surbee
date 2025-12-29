@@ -3580,6 +3580,7 @@ export default function ProjectPage() {
   const projectId: string | undefined = id;
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
+  const { userPreferences } = useUserPreferences();
   const { subscribeToProject } = useRealtime();
   const router = useRouter();
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -4524,7 +4525,7 @@ export default function ProjectPage() {
         model: currentModel,
         projectId: id,
         userId: user?.id,
-        userPreferences: userPreferences
+        userPreferences: userPreferences || undefined
       }
     };
 
@@ -5457,7 +5458,7 @@ Please make changes specifically to this element.`;
                               className="text-[14px] leading-[1.5] text-foreground whitespace-pre-wrap"
                               style={{ wordBreak: 'break-word' }}
                             >
-                              {msg.parts.find(p => p.type === 'text')?.text || ''}
+                              {msg.parts?.find(p => p.type === 'text')?.text || ''}
                             </div>
                           </div>
                         </div>
@@ -5558,7 +5559,7 @@ Please make changes specifically to this element.`;
                               {/* Copy */}
                               <button
                                 onClick={() => {
-                                  const textContent = msg.parts.find(p => p.type === 'text')?.text || '';
+                                  const textContent = msg.parts?.find(p => p.type === 'text')?.text || '';
                                   handleCopyMessage(msg.id, textContent);
                                 }}
                                 className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
@@ -5573,7 +5574,7 @@ Please make changes specifically to this element.`;
                               {/* Thumbs up */}
                               <button
                                 onClick={() => {
-                                  const textContent = msg.parts.find(p => p.type === 'text')?.text || '';
+                                  const textContent = msg.parts?.find(p => p.type === 'text')?.text || '';
                                   handleFeedback(msg.id, 'up', textContent);
                                 }}
                                 className={`p-1.5 rounded-md hover:bg-white/10 transition-colors ${feedbackGiven[msg.id] === 'up' ? 'bg-white/10' : ''}`}
@@ -5585,7 +5586,7 @@ Please make changes specifically to this element.`;
                               {/* Thumbs down */}
                               <button
                                 onClick={() => {
-                                  const textContent = msg.parts.find(p => p.type === 'text')?.text || '';
+                                  const textContent = msg.parts?.find(p => p.type === 'text')?.text || '';
                                   handleFeedback(msg.id, 'down', textContent);
                                 }}
                                 className={`p-1.5 rounded-md hover:bg-white/10 transition-colors ${feedbackGiven[msg.id] === 'down' ? 'bg-white/10' : ''}`}
@@ -5609,7 +5610,7 @@ Please make changes specifically to this element.`;
                             const isCurrentVersion = version.id === currentVersionId;
 
                             // First check for AI-generated checkpoint title from set_checkpoint_title tool
-                            const checkpointPart = msg.parts.find(
+                            const checkpointPart = msg.parts?.find(
                               (p: any) => p.type === 'tool-set_checkpoint_title' && p.state === 'output-available'
                             );
                             let title = (checkpointPart as any)?.output?.checkpoint_title;
@@ -5621,7 +5622,7 @@ Please make changes specifically to this element.`;
 
                             // Final fallback: extract first few words from message text
                             if (!title) {
-                              const textPart = msg.parts.find(p => p.type === 'text');
+                              const textPart = msg.parts?.find(p => p.type === 'text');
                               const messageText = textPart?.text || '';
                               const words = messageText.replace(/[#*\-\n]+/g, ' ').trim().split(/\s+/).slice(0, 5);
                               title = words.length > 0 ? words.join(' ') : `Version ${versionNumber}`;
@@ -5654,6 +5655,7 @@ Please make changes specifically to this element.`;
                           {/* Suggestion pills - show AI-provided suggestions on last assistant message */}
                           {idx === messages.length - 1 && status === 'ready' && msg.role === 'assistant' && (() => {
                             // Get suggestions from the suggest_followups tool part
+                            if (!msg.parts) return null;
                             const suggestPart = msg.parts.find(
                               (p: any) => p.type === 'tool-suggest_followups' && p.state === 'output-available'
                             );

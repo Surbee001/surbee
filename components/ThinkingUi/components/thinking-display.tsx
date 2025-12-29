@@ -1,6 +1,6 @@
 "use client"
 import { cn } from "@/lib/utils"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { ChevronRight } from "lucide-react"
 
 import { ShiningText } from "./shining-text"
@@ -23,6 +23,7 @@ interface ThinkingDisplayProps {
 export function ThinkingDisplay({ steps, duration = 0, isThinking = false, className }: ThinkingDisplayProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [wasThinking, setWasThinking] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-open when reasoning starts, auto-close when it ends
   useEffect(() => {
@@ -36,6 +37,13 @@ export function ThinkingDisplay({ steps, duration = 0, isThinking = false, class
       setWasThinking(false);
     }
   }, [isThinking, wasThinking]);
+
+  // Auto-scroll to bottom when content updates
+  useEffect(() => {
+    if (isOpen && scrollRef.current && isThinking) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [steps, isOpen, isThinking]);
 
   // Always show if we have steps OR if thinking is active
   const shouldShow = isThinking || steps.length > 0;
@@ -55,28 +63,56 @@ export function ThinkingDisplay({ steps, duration = 0, isThinking = false, class
           onClick={() => setIsOpen(!isOpen)}
           className="flex w-fit items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground/80 transition-colors cursor-pointer"
         >
+          {isThinking ? (
+            <ShiningText text="Reasoning" className="text-[13px]" />
+          ) : (
+            <span className="text-muted-foreground/70">Reasoning</span>
+          )}
           <ChevronRight
             className={cn(
               "w-3.5 h-3.5 transition-transform duration-200",
               isOpen && "rotate-90"
             )}
           />
-          {isThinking ? (
-            <ShiningText text="Reasoning" className="text-[13px]" />
-          ) : (
-            <span className="text-muted-foreground/70">Reasoning</span>
-          )}
         </button>
 
-        {/* Collapsible content - simple paragraphs */}
+        {/* Collapsible content - scrollable with fade gradients */}
         <div
           className={cn(
             "max-w-[calc(0.8*var(--thread-content-max-width,40rem))] transition-all duration-200 ease-in-out overflow-hidden pl-5",
-            isOpen ? "opacity-100 max-h-[2000px] mt-2" : "opacity-0 max-h-0 mt-0",
+            isOpen ? "opacity-100 max-h-[220px] mt-2" : "opacity-0 max-h-0 mt-0",
           )}
         >
-          <div className="text-[13px] leading-relaxed text-muted-foreground/60 space-y-4">
-            {formatReasoningContent(combinedContent, isThinking)}
+          <div className="relative">
+            {/* Top fade gradient */}
+            <div
+              className="pointer-events-none absolute left-0 right-0 top-0 z-10 h-4"
+              style={{
+                background: 'linear-gradient(to bottom, hsl(var(--background)) 0%, transparent 100%)',
+              }}
+            />
+
+            {/* Scrollable content area */}
+            <div
+              ref={scrollRef}
+              className="max-h-[200px] overflow-y-auto pr-2"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(128,128,128,0.3) transparent',
+              }}
+            >
+              <div className="text-[13px] leading-relaxed text-muted-foreground/60 space-y-4 py-2">
+                {formatReasoningContent(combinedContent, isThinking)}
+              </div>
+            </div>
+
+            {/* Bottom fade gradient */}
+            <div
+              className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 h-4"
+              style={{
+                background: 'linear-gradient(to top, hsl(var(--background)) 0%, transparent 100%)',
+              }}
+            />
           </div>
         </div>
       </div>
