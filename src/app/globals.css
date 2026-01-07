@@ -3,6 +3,24 @@
 @import "tw-animate-css";
 @source "../node_modules/streamdown/dist/index.js";
 
+/* Kalice Font from ImageKit */
+@font-face {
+  font-family: 'Kalice-Trial-Regular';
+  src: url('https://ik.imagekit.io/on0moldgr/Kalice-Trial-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Opening Hours Sans Font from ImageKit */
+@font-face {
+  font-family: 'Opening Hours Sans';
+  src: url('https://ik.imagekit.io/on0moldgr/OpeningHoursSans-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Hide Scrollbar Globally */
 ::-webkit-scrollbar {
   display: none;
@@ -460,8 +478,47 @@ body {
   --surbee-sidebar-active: #E5E5E5;
   --surbee-sidebar-border: #E5E5E5;
 
+  /* Sidebar text - stays light since sidebar is always dark */
+  --surbee-sidebar-text-primary: #E8E8E8;
+  --surbee-sidebar-text-secondary: #d1d5db;
+  --surbee-sidebar-text-muted: #9ca3af;
+
   --surbee-scrollbar: rgba(0, 0, 0, 0.3);
   --surbee-scrollbar-hover: rgba(0, 0, 0, 0.5);
+
+  /* Dropdown menu styling - light style for light mode */
+  --surbee-dropdown-bg: rgb(255, 255, 255);
+  --surbee-dropdown-border: rgba(10, 18, 23, 0.08);
+  --surbee-dropdown-item-hover: rgba(10, 18, 23, 0.04);
+  --surbee-dropdown-text: rgb(10, 18, 23);
+  --surbee-dropdown-text-muted: rgba(10, 18, 23, 0.6);
+  --surbee-dropdown-separator: rgba(10, 18, 23, 0.08);
+
+  /* Morning sunrise gradient for light mode */
+  --surbee-gradient-start: #FFF8F0;
+  --surbee-gradient-mid: #FFEEE0;
+  --surbee-gradient-end: #FFE4D4;
+  --surbee-chat-gradient: linear-gradient(to bottom, transparent 0%, #FCFBF8 35%, #FCFBF8 100%);
+
+  /* Button styling - always dark for primary actions */
+  --surbee-button-primary-bg: #171717;
+  --surbee-button-primary-fg: #ffffff;
+
+  /* Chat user bubble - always dark */
+  --surbee-chat-user-bg: rgb(38, 38, 38);
+  --surbee-chat-user-fg: #ffffff;
+
+  /* Toast styling - always dark */
+  --surbee-toast-bg: rgb(38, 38, 38);
+  --surbee-toast-fg: #ffffff;
+
+  /* Border accent for subtle dividers */
+  --surbee-border-accent: rgba(0, 0, 0, 0.08);
+  --surbee-border-subtle: rgba(0, 0, 0, 0.05);
+  --surbee-fg-tertiary: #9ca3af;
+
+  /* Plan icon filter - off-black for light mode */
+  --plan-icon-filter: brightness(0) invert(0.15);
 }
 
 .dark {
@@ -542,8 +599,46 @@ body {
   --surbee-sidebar-active: #1a1a1a;
   --surbee-sidebar-border: rgba(255, 255, 255, 0.06);
 
+  /* Sidebar text - same as light mode since sidebar stays dark */
+  --surbee-sidebar-text-primary: #E8E8E8;
+  --surbee-sidebar-text-secondary: #d1d5db;
+  --surbee-sidebar-text-muted: #9ca3af;
+
   --surbee-scrollbar: rgba(255, 255, 255, 0.3);
   --surbee-scrollbar-hover: rgba(255, 255, 255, 0.5);
+
+  /* Dropdown menu styling for dark mode */
+  --surbee-dropdown-bg: rgba(19, 19, 20, 0.95);
+  --surbee-dropdown-border: rgba(232, 232, 232, 0.15);
+  --surbee-dropdown-item-hover: rgba(255, 255, 255, 0.05);
+  --surbee-dropdown-text: #E8E8E8;
+  --surbee-dropdown-text-muted: rgba(232, 232, 232, 0.6);
+  --surbee-dropdown-separator: rgba(232, 232, 232, 0.08);
+
+  /* Dark gradient */
+  --surbee-gradient-start: #131314;
+  --surbee-gradient-mid: #1a1a1b;
+  --surbee-gradient-end: #131314;
+  --surbee-chat-gradient: linear-gradient(to bottom, transparent 0%, #131314 35%, #131314 100%);
+
+  /* Button styling - same in dark mode */
+  --surbee-button-primary-bg: #ffffff;
+  --surbee-button-primary-fg: #171717;
+
+  /* Chat user bubble - same in dark mode */
+  --surbee-chat-user-bg: rgb(38, 38, 38);
+  --surbee-chat-user-fg: #ffffff;
+
+  /* Toast styling - same in dark mode */
+  --surbee-toast-bg: rgb(38, 38, 38);
+  --surbee-toast-fg: #ffffff;
+
+  /* Border subtle for dark mode */
+  --surbee-border-subtle: rgba(255, 255, 255, 0.08);
+  --surbee-fg-tertiary: #6b7280;
+
+  /* Plan icon filter - off-white for dark mode */
+  --plan-icon-filter: brightness(0) invert(0.9);
 }
 
 /* Legacy shadcn/ui compatibility */
@@ -613,14 +708,20 @@ body {
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    /* Theme transitions are handled by CSS variables - instant switch */
   }
 
   body {
     background-color: var(--surbee-bg-primary);
     color: var(--surbee-fg-primary);
     font-family: var(--font-inter), sans-serif;
+    /* Smooth theme transition - synced with sidebar */
     transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* Hover transitions only - theme switches are instant */
+  *:hover {
+    transition: background-color 0.15s ease, border-color 0.15s ease;
   }
 
   /* Professional scrollbar styling */
@@ -663,6 +764,34 @@ body {
   overflow: hidden;
   z-index: 1000;
   transition: background-color 0.2s ease;
+}
+
+/* Collapsed sidebar state */
+.dashboard-sidebar.collapsed .sidebar-nav,
+.dashboard-sidebar.collapsed .user-plan-text {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+}
+
+.dashboard-sidebar:not(.collapsed) .sidebar-nav,
+.dashboard-sidebar:not(.collapsed) .user-plan-text {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.2s ease 0.1s;
+}
+
+.dashboard-sidebar.collapsed .profile-section {
+  padding: 16px 12px;
+}
+
+.dashboard-sidebar.collapsed .sidebar-bottom {
+  padding: 16px 12px;
+}
+
+.dashboard-sidebar.collapsed .sidebar-bottom > .flex.items-center.justify-between {
+  flex-direction: column;
+  gap: 12px;
 }
 
 .sidebar-container {
@@ -798,7 +927,7 @@ body {
 
 .user-plan-text {
   color: var(--surbee-fg-muted);
-  font-family: var(--font-inter), sans-serif;
+  font-family: 'Opening Hours Sans', var(--font-inter), sans-serif;
   font-size: 14px;
   font-weight: 400;
   padding: 8px 12px;
@@ -808,9 +937,9 @@ body {
 
 .user-plan-text.pro {
   background: linear-gradient(
-    90deg, 
-    #6BA5C2, 
-    #FF6D67, 
+    90deg,
+    #6BA5C2,
+    #FF6D67,
     #7A7638,
     #6BA5C2
   );
@@ -820,7 +949,7 @@ body {
   -webkit-text-fill-color: transparent;
   color: transparent;
   position: relative;
-  font-family: var(--font-inter), sans-serif;
+  font-family: 'Opening Hours Sans', var(--font-inter), sans-serif;
   font-weight: 700;
   animation: proShimmer 10s infinite;
 }
@@ -875,10 +1004,10 @@ body {
   width: 100%;
   padding: 8px 12px;
   color: var(--surbee-fg-primary);
-  font-weight: 500;
+  font-weight: 400;
   font-size: 14px;
   line-height: 1.375rem;
-  font-family: var(--font-inter), sans-serif;
+  font-family: 'Opening Hours Sans', var(--font-inter), sans-serif;
   text-decoration: inherit;
   cursor: pointer;
   transition: color 0.15s linear;
@@ -892,7 +1021,7 @@ body {
   padding: 1px 4px;
   border-radius: 3px;
   margin-left: 8px;
-  font-family: var(--font-inter), sans-serif;
+  font-family: 'Opening Hours Sans', var(--font-inter), sans-serif;
   white-space: nowrap;
 }
 
@@ -940,7 +1069,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: transparent;
+  background: rgba(0, 0, 0, 0.3);
   z-index: 1100;
 }
 
@@ -1314,15 +1443,58 @@ body {
 .user-menu-overlay {
   position: fixed;
   inset: 0;
+  background: rgba(0, 0, 0, 0.3);
   z-index: 1100;
 }
 
 /* Header Section with User Info */
-.user-menu-header-section {
-  padding: 0.5rem 0.75rem;
+.user-menu-header-wrapper {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   margin-bottom: 0.25rem;
+  overflow: hidden;
+}
+
+.user-menu-header-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
   -webkit-font-smoothing: antialiased;
+}
+
+.user-menu-header-section.clickable {
+  cursor: pointer;
+  border-radius: 0.5rem;
+  margin: 0.25rem;
+  padding: 0.5rem;
+  transition: background-color 0.15s ease;
+}
+
+.user-menu-header-section.clickable:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.user-menu-header-info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.user-menu-header-chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--surbee-fg-muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.user-menu-header-chevron.open {
+  transform: rotate(180deg);
+}
+
+.user-menu-accounts-dropdown {
+  overflow: hidden;
+  padding: 0 0.25rem 0.25rem;
 }
 
 .user-menu-username {
@@ -1500,6 +1672,112 @@ body {
 
 .user-menu-footer-link:hover {
   color: #E8E8E8;
+}
+
+/* Switch Account Items */
+
+.user-menu-switch-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.user-menu-switch-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.user-menu-switch-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-menu-switch-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-menu-switch-avatar span {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--surbee-fg-primary);
+}
+
+.user-menu-switch-info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.user-menu-switch-name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--surbee-fg-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-menu-switch-email {
+  font-size: 0.6875rem;
+  color: var(--surbee-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-menu-switch-remove {
+  opacity: 0;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: var(--surbee-fg-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.user-menu-switch-item:hover .user-menu-switch-remove {
+  opacity: 1;
+}
+
+.user-menu-switch-remove:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--surbee-fg-primary);
+}
+
+.user-menu-switch-add {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  margin-top: 2px;
+  border: none;
+  background: transparent;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 456;
+  color: var(--surbee-fg-muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.user-menu-switch-add:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--surbee-fg-primary);
 }
 
 /* Feedback Modal Styles */
@@ -1900,6 +2178,19 @@ body {
   }
 }
 
+@keyframes gradientFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-gradient-fade-in {
+  animation: gradientFadeIn 1.5s ease-out forwards;
+}
+
 /* Theme-aware input styling */
 .theme-input {
   background-color: var(--surbee-input-bg);
@@ -1966,22 +2257,23 @@ body {
   .font-\[550\] { font-weight: 550; }
   .ring-offset-background { --tw-ring-offset-color: var(--surbee-bg-primary); }
 
-  /* Theme utility classes */
-  .bg-theme-primary { background-color: var(--surbee-bg-primary); }
-  .bg-theme-secondary { background-color: var(--surbee-bg-secondary); }
-  .bg-theme-tertiary { background-color: var(--surbee-bg-tertiary); }
-  .bg-theme-card { background-color: var(--surbee-card-bg); }
+  /* Theme utility classes with smooth transitions */
+  .bg-theme-primary { background-color: var(--surbee-bg-primary); transition: background-color 0.2s ease; }
+  .bg-theme-secondary { background-color: var(--surbee-bg-secondary); transition: background-color 0.2s ease; }
+  .bg-theme-tertiary { background-color: var(--surbee-bg-tertiary); transition: background-color 0.2s ease; }
+  .bg-theme-card { background-color: var(--surbee-card-bg); transition: background-color 0.2s ease; }
 
-  .text-theme-primary { color: var(--surbee-fg-primary); }
-  .text-theme-secondary { color: var(--surbee-fg-secondary); }
-  .text-theme-muted { color: var(--surbee-fg-muted); }
+  .text-theme-primary { color: var(--surbee-fg-primary); transition: color 0.2s ease; }
+  .text-theme-secondary { color: var(--surbee-fg-secondary); transition: color 0.2s ease; }
+  .text-theme-muted { color: var(--surbee-fg-muted); transition: color 0.2s ease; }
 
-  .border-theme-primary { border-color: var(--surbee-border-primary); }
-  .border-theme-secondary { border-color: var(--surbee-border-secondary); }
+  .border-theme-primary { border-color: var(--surbee-border-primary); transition: border-color 0.2s ease; }
+  .border-theme-secondary { border-color: var(--surbee-border-secondary); transition: border-color 0.2s ease; }
 
-  .accent-theme-primary { 
+  .accent-theme-primary {
     background-color: var(--surbee-accent-primary);
     color: var(--surbee-fg-inverse);
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 }
 
@@ -3031,7 +3323,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
-  background-color: var(--surbee-bg-primary);
+  background-color: transparent;
 }
 
 .projects-cards-container {
@@ -3052,13 +3344,7 @@ body {
 }
 
 .projects-cards-fade {
-  position: sticky;
-  top: 0;
-  height: 2rem;
-  background: linear-gradient(to bottom, var(--surbee-bg-primary) 0%, transparent 100%);
-  z-index: 5;
-  pointer-events: none;
-  margin-bottom: -2rem;
+  display: none;
 }
 
 .projects-cards-content {

@@ -44,15 +44,16 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     return currentTheme === 'system' ? getSystemTheme() : currentTheme;
   };
 
-  // Apply theme to DOM
+  // Apply theme to DOM - instant switch via CSS variables
   const applyTheme = (resolvedTheme: 'light' | 'dark') => {
     const root = document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(resolvedTheme);
-    
-    // Apply theme-specific styles to body
-    document.body.style.backgroundColor = resolvedTheme === 'dark' ? '#1C1C1C' : '#FCFBF8';
-    document.body.style.color = resolvedTheme === 'dark' ? '#fafafa' : '#0a0a0a';
+
+    // Body styles now use CSS variables for instant theming
+    // The CSS variables are defined in globals.css and change with the .dark class
+    document.body.style.backgroundColor = '';
+    document.body.style.color = '';
   };
 
   // Set theme with persistence

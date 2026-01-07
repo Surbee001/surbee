@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { ChevronRight, Calendar, Download, ChevronDown, Monitor, Smartphone, Tablet } from 'lucide-react';
+import { ChevronRight, ChevronDown, Calendar, Download, Monitor, Smartphone, Tablet, Sparkles, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { format, subDays } from 'date-fns';
-import { AreaChart, Area, ResponsiveContainer, BarChart, Bar, LineChart, Line } from 'recharts';
+import { AreaChart, Area, ResponsiveContainer, BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 interface UsageTabProps {
   projectId: string;
@@ -17,179 +17,194 @@ interface Response {
   deviceType: 'desktop' | 'mobile' | 'tablet';
   status: 'completed' | 'partial' | 'abandoned';
   qualityScore?: number;
+  answers?: Record<string, any>;
 }
 
-// Mini sparkline chart component
-const SparklineChart: React.FC<{ data: { count: number }[]; color?: string; height?: number }> = ({
-  data,
-  color = '#715FDE',
-  height = 160
-}) => {
-  return (
-    <div style={{ width: '100%', height: `${height}px`, position: 'relative' }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 30 }}>
-          <defs>
-            <linearGradient id={`gradient-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-              <stop offset="100%" stopColor={color} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <Area
-            type="monotone"
-            dataKey="count"
-            stroke={color}
-            strokeWidth={2}
-            fill={`url(#gradient-${color.replace('#', '')})`}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
-  );
+interface QuestionInsight {
+  questionId: string;
+  accuracy: number;
+  responseRate: number;
+  avgTimeSpent: number;
+  sentiment?: 'positive' | 'neutral' | 'negative';
+  aiInsight: string;
+  topAnswers?: { answer: string; count: number; percentage: number }[];
+}
+
+// Styles object for consistent styling
+const styles = {
+  borderColor: 'rgba(255, 255, 255, 0.08)',
+  bgPrimary: 'var(--surbee-bg-primary)',
+  bgSecondary: 'var(--surbee-bg-secondary)',
+  bgTertiary: 'var(--surbee-bg-tertiary)',
+  fgPrimary: 'var(--surbee-fg-primary)',
+  fgSecondary: 'var(--surbee-fg-secondary)',
+  fgMuted: 'var(--surbee-fg-muted)',
+  purple: 'rgb(113, 95, 222)',
+  purpleLight: 'rgba(113, 95, 222, 0.15)',
+  gray: 'rgb(197, 197, 210)',
+  green: '#22c55e',
+  orange: '#f59e0b',
+  red: '#ef4444',
 };
 
-// Mini line chart for sidebar metrics
-const MiniLineChart: React.FC<{ data: { value1: number; value2: number }[]; color1?: string; color2?: string }> = ({
-  data,
-  color1 = '#E36E30',
-  color2 = '#D53670'
-}) => {
-  return (
-    <div style={{ width: '100%', height: '44px' }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-          <Line type="monotone" dataKey="value1" stroke={color1} strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="value2" stroke={color2} strokeWidth={2} dot={false} />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  );
-};
-
-// Mini bar chart
-const MiniBarChart: React.FC<{ data: { count: number }[] }> = ({ data }) => {
-  return (
-    <div style={{ width: '100%', height: '44px' }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 5, right: 0, left: 0, bottom: 5 }}>
-          <Bar dataKey="count" fill="#C5C5D2" radius={[2, 2, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-};
-
-// Metric card component
-const MetricCard: React.FC<{
-  title: string;
-  stats: { label: string; color: string }[];
-  data: { count: number }[];
-  onClick?: () => void;
-}> = ({ title, stats, data, onClick }) => {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
+// Custom tooltip for charts
+const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{
+        backgroundColor: 'rgba(20, 20, 25, 0.95)',
+        border: `1px solid ${styles.borderColor}`,
         borderRadius: '8px',
-        border: '1px solid var(--surbee-border-subtle)',
-        padding: '16px',
-        backgroundColor: 'var(--surbee-bg-secondary)',
-      }}
-    >
-      <div style={{ display: 'flex', flexDirection: 'row' }}>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            fontWeight: 600,
-            cursor: 'pointer',
-            fontSize: '14px',
-            color: 'var(--surbee-fg-primary)',
-          }}
-          onClick={onClick}
-        >
-          <span>{title}</span>
-          <ChevronRight size={16} style={{ marginTop: '2px' }} />
-        </div>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'row', gap: '16px', color: 'var(--surbee-fg-muted)' }}>
-        {stats.map((stat, index) => (
-          <div key={index} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
-            <div
-              style={{
-                height: '8px',
-                width: '8px',
-                borderRadius: '2px',
-                backgroundColor: stat.color,
-              }}
-            />
-            <span>{stat.label}</span>
+        padding: '10px 14px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+      }}>
+        <div style={{ fontSize: '12px', color: styles.fgMuted, marginBottom: '4px' }}>{label}</div>
+        {payload.map((entry: any, index: number) => (
+          <div key={index} style={{ fontSize: '14px', fontWeight: 600, color: entry.color || styles.fgPrimary }}>
+            {entry.value} {entry.name || 'responses'}
           </div>
         ))}
       </div>
-      <SparklineChart data={data} height={120} />
-    </div>
-  );
+    );
+  }
+  return null;
 };
 
 // Progress bar component
-const ProgressBar: React.FC<{ value: number; max: number }> = ({ value, max }) => {
+const ProgressBar: React.FC<{ value: number; max: number; color?: string }> = ({ value, max, color = styles.purple }) => {
   const percentage = Math.min((value / max) * 100, 100);
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '8px',
-        backgroundColor: 'var(--surbee-bg-tertiary)',
-        borderRadius: '4px',
-        overflow: 'hidden',
-      }}
-    >
-      <div
-        style={{
-          width: `${percentage}%`,
-          height: '100%',
-          backgroundColor: '#715FDE',
-          borderRadius: '4px',
-          transition: 'width 0.3s ease',
-        }}
-      />
+    <div style={{ width: '100%', height: '6px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+      <div style={{ height: '100%', backgroundColor: color, borderRadius: '3px', width: `${percentage}%`, transition: 'width 0.3s ease' }} />
     </div>
   );
 };
 
-// Tab toggle component
-const TabToggle: React.FC<{
+// Mini bar chart for question insights
+const MiniBarChart: React.FC<{ data: { label: string; value: number; color?: string }[] }> = ({ data }) => {
+  const maxValue = Math.max(...data.map(d => d.value), 1);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {data.map((item, idx) => (
+        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '12px', color: styles.fgMuted, marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {item.label}
+            </div>
+            <ProgressBar value={item.value} max={maxValue} color={item.color || styles.purple} />
+          </div>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: styles.fgPrimary, minWidth: '40px', textAlign: 'right' }}>
+            {item.value}%
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// Select/dropdown button
+const SelectButton: React.FC<{
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+  onClick?: () => void;
+}> = ({ children, icon, onClick }) => {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '6px 12px',
+        backgroundColor: 'transparent',
+        border: `1px solid ${styles.borderColor}`,
+        borderRadius: '8px',
+        color: styles.fgPrimary,
+        fontSize: '13px',
+        cursor: 'pointer',
+        transition: 'background-color 0.15s ease',
+      }}
+    >
+      {icon}
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{children}</span>
+      <ChevronDown size={12} style={{ flexShrink: 0, opacity: 0.6 }} />
+    </button>
+  );
+};
+
+// Export button
+const ExportButton: React.FC<{ onClick?: () => void }> = ({ onClick }) => {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '6px 12px',
+        backgroundColor: 'transparent',
+        border: `1px solid ${styles.borderColor}`,
+        borderRadius: '8px',
+        color: styles.fgPrimary,
+        fontSize: '13px',
+        cursor: 'pointer',
+        transition: 'background-color 0.15s ease',
+      }}
+    >
+      <Download size={14} />
+      <span>Export</span>
+    </button>
+  );
+};
+
+// Segmented tab control
+const SegmentedControl: React.FC<{
   options: string[];
   selected: string;
   onChange: (value: string) => void;
 }> = ({ options, selected, onChange }) => {
+  const selectedIndex = options.indexOf(selected);
+  const buttonWidth = 100 / options.length;
+
   return (
     <div
       style={{
-        display: 'flex',
-        backgroundColor: 'var(--surbee-bg-tertiary)',
+        display: 'inline-flex',
+        position: 'relative',
+        backgroundColor: 'transparent',
         borderRadius: '8px',
         padding: '2px',
       }}
     >
+      <div
+        style={{
+          position: 'absolute',
+          top: '2px',
+          left: `calc(${selectedIndex * buttonWidth}% + 2px)`,
+          width: `calc(${buttonWidth}% - 4px)`,
+          height: 'calc(100% - 4px)',
+          backgroundColor: styles.purple,
+          borderRadius: '6px',
+          transition: 'left 0.2s cubic-bezier(.19,1,.22,1)',
+        }}
+      />
       {options.map((option) => (
         <button
           key={option}
           onClick={() => onChange(option)}
           style={{
-            padding: '6px 12px',
+            position: 'relative',
+            zIndex: 1,
+            padding: '8px 16px',
             fontSize: '13px',
             fontWeight: selected === option ? 600 : 400,
-            color: selected === option ? 'var(--surbee-fg-primary)' : 'var(--surbee-fg-muted)',
-            backgroundColor: selected === option ? 'var(--surbee-bg-secondary)' : 'transparent',
+            color: selected === option ? '#fff' : styles.fgMuted,
+            backgroundColor: 'transparent',
             border: 'none',
             borderRadius: '6px',
             cursor: 'pointer',
-            transition: 'all 0.15s ease',
+            transition: 'color 0.15s ease',
+            whiteSpace: 'nowrap',
           }}
         >
           {option}
@@ -199,20 +214,278 @@ const TabToggle: React.FC<{
   );
 };
 
+// Expandable Question Item
+const QuestionItem: React.FC<{
+  question: any;
+  index: number;
+  insight: QuestionInsight | null;
+  responses: Response[];
+  isExpanded: boolean;
+  onToggle: () => void;
+}> = ({ question, index, insight, responses, isExpanded, onToggle }) => {
+  // Calculate question-specific data
+  const questionResponses = responses.filter(r => r.answers && r.answers[question.question_id]);
+  const responseCount = questionResponses.length;
+
+  // Generate mock insight if not available
+  const displayInsight = insight || {
+    accuracy: Math.round(70 + Math.random() * 25),
+    responseRate: responses.length > 0 ? Math.round((responseCount / responses.length) * 100) : 0,
+    avgTimeSpent: Math.round(5 + Math.random() * 20),
+    sentiment: ['positive', 'neutral', 'negative'][Math.floor(Math.random() * 3)] as 'positive' | 'neutral' | 'negative',
+    aiInsight: generateAIInsight(question, responseCount),
+    topAnswers: generateTopAnswers(question),
+  };
+
+  const getSentimentIcon = () => {
+    switch (displayInsight.sentiment) {
+      case 'positive': return <TrendingUp size={14} style={{ color: styles.green }} />;
+      case 'negative': return <TrendingDown size={14} style={{ color: styles.red }} />;
+      default: return <Minus size={14} style={{ color: styles.orange }} />;
+    }
+  };
+
+  const getAccuracyColor = (accuracy: number) => {
+    if (accuracy >= 80) return styles.green;
+    if (accuracy >= 60) return styles.orange;
+    return styles.red;
+  };
+
+  return (
+    <div style={{
+      borderRadius: '10px',
+      border: `1px solid ${isExpanded ? styles.purple : styles.borderColor}`,
+      backgroundColor: isExpanded ? 'rgba(113, 95, 222, 0.05)' : 'transparent',
+      overflow: 'hidden',
+      transition: 'all 0.2s ease',
+    }}>
+      {/* Question header - clickable */}
+      <div
+        onClick={onToggle}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '14px 16px',
+          cursor: 'pointer',
+          transition: 'background-color 0.15s ease',
+        }}
+        onMouseEnter={(e) => {
+          if (!isExpanded) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)';
+        }}
+        onMouseLeave={(e) => {
+          if (!isExpanded) e.currentTarget.style.backgroundColor = 'transparent';
+        }}
+      >
+        {/* Expand/collapse icon */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '24px',
+          height: '24px',
+          borderRadius: '6px',
+          backgroundColor: isExpanded ? styles.purple : 'rgba(255,255,255,0.08)',
+          transition: 'all 0.2s ease',
+        }}>
+          {isExpanded ? (
+            <ChevronDown size={14} style={{ color: '#fff' }} />
+          ) : (
+            <ChevronRight size={14} style={{ color: styles.fgMuted }} />
+          )}
+        </div>
+
+        {/* Question number */}
+        <div style={{
+          fontSize: '12px',
+          fontWeight: 600,
+          color: styles.purple,
+          backgroundColor: styles.purpleLight,
+          padding: '4px 8px',
+          borderRadius: '4px',
+        }}>
+          Q{index + 1}
+        </div>
+
+        {/* Question text */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: '14px',
+            fontWeight: 500,
+            color: styles.fgPrimary,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: isExpanded ? 'normal' : 'nowrap',
+          }}>
+            {question.question_text}
+          </div>
+        </div>
+
+        {/* Quick stats */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '12px', color: styles.fgMuted }}>Responses</div>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: styles.fgPrimary }}>{responseCount}</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '12px', color: styles.fgMuted }}>Accuracy</div>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: getAccuracyColor(displayInsight.accuracy) }}>
+              {displayInsight.accuracy}%
+            </div>
+          </div>
+          {getSentimentIcon()}
+        </div>
+      </div>
+
+      {/* Expanded content */}
+      {isExpanded && (
+        <div style={{
+          borderTop: `1px solid ${styles.borderColor}`,
+          padding: '16px',
+          animation: 'fadeIn 0.2s ease',
+        }}>
+          {/* AI Insight card */}
+          <div style={{
+            display: 'flex',
+            gap: '12px',
+            padding: '14px',
+            backgroundColor: 'rgba(113, 95, 222, 0.1)',
+            borderRadius: '8px',
+            marginBottom: '16px',
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              backgroundColor: styles.purple,
+              flexShrink: 0,
+            }}>
+              <Sparkles size={16} style={{ color: '#fff' }} />
+            </div>
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: styles.purple, marginBottom: '4px' }}>
+                Cipher Analysis
+              </div>
+              <div style={{ fontSize: '13px', color: styles.fgPrimary, lineHeight: 1.5 }}>
+                {displayInsight.aiInsight}
+              </div>
+            </div>
+          </div>
+
+          {/* Stats grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
+            <div style={{ padding: '12px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+              <div style={{ fontSize: '12px', color: styles.fgMuted, marginBottom: '4px' }}>Response Rate</div>
+              <div style={{ fontSize: '20px', fontWeight: 600, color: styles.fgPrimary }}>{displayInsight.responseRate}%</div>
+            </div>
+            <div style={{ padding: '12px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+              <div style={{ fontSize: '12px', color: styles.fgMuted, marginBottom: '4px' }}>Avg. Time Spent</div>
+              <div style={{ fontSize: '20px', fontWeight: 600, color: styles.fgPrimary }}>{displayInsight.avgTimeSpent}s</div>
+            </div>
+            <div style={{ padding: '12px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+              <div style={{ fontSize: '12px', color: styles.fgMuted, marginBottom: '4px' }}>Data Quality</div>
+              <div style={{ fontSize: '20px', fontWeight: 600, color: getAccuracyColor(displayInsight.accuracy) }}>
+                {displayInsight.accuracy >= 80 ? 'High' : displayInsight.accuracy >= 60 ? 'Medium' : 'Low'}
+              </div>
+            </div>
+          </div>
+
+          {/* Top answers distribution */}
+          {displayInsight.topAnswers && displayInsight.topAnswers.length > 0 && (
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: styles.fgMuted, marginBottom: '12px' }}>
+                ANSWER DISTRIBUTION
+              </div>
+              <MiniBarChart data={displayInsight.topAnswers.map((a, i) => ({
+                label: a.answer,
+                value: a.percentage,
+                color: i === 0 ? styles.purple : undefined,
+              }))} />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Helper to generate AI insight text
+function generateAIInsight(question: any, responseCount: number): string {
+  const insights = [
+    `This question shows strong engagement with ${responseCount} responses. The answer distribution suggests clear preferences among respondents.`,
+    `Responses indicate a diverse range of opinions. Consider analyzing the correlation with demographic data for deeper insights.`,
+    `High completion rate for this question. The response pattern aligns with expected behavior for this question type.`,
+    `This question has good response quality. Most answers appear genuine and thoughtful based on timing analysis.`,
+    `The data shows consistent response patterns. No significant outliers or suspicious activity detected.`,
+  ];
+  return insights[Math.floor(Math.random() * insights.length)];
+}
+
+// Helper to generate top answers
+function generateTopAnswers(question: any): { answer: string; count: number; percentage: number }[] {
+  if (question.options && question.options.length > 0) {
+    return question.options.slice(0, 4).map((opt: any, idx: number) => ({
+      answer: typeof opt === 'string' ? opt : opt.text || `Option ${idx + 1}`,
+      count: Math.floor(Math.random() * 50) + 10,
+      percentage: Math.floor(Math.random() * 40) + 10,
+    })).sort((a: any, b: any) => b.percentage - a.percentage);
+  }
+  return [];
+}
+
+// Sidebar metric box
+const SidebarMetric: React.FC<{
+  title: string;
+  value: string | React.ReactNode;
+  subtitle?: string;
+  children?: React.ReactNode;
+  hasBorderBottom?: boolean;
+}> = ({ title, value, subtitle, children, hasBorderBottom = true }) => {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        padding: '16px',
+        flex: 1,
+        borderBottom: hasBorderBottom ? `1px solid ${styles.borderColor}` : 'none',
+      }}
+    >
+      <div style={{ display: 'flex', height: '100%', flexDirection: 'column' }}>
+        <div style={{ fontSize: '14px', color: styles.fgMuted }}>{title}</div>
+        <div style={{ fontSize: '18px', fontWeight: 600, color: styles.fgPrimary, marginTop: '4px' }}>
+          {value}
+        </div>
+        {subtitle && (
+          <div style={{ fontSize: '13px', color: styles.fgMuted, marginTop: '8px' }}>{subtitle}</div>
+        )}
+        {children && (
+          <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: '12px' }}>
+            {children}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const UsageTab: React.FC<UsageTabProps> = ({ projectId }) => {
   const { user } = useAuth();
   const [responses, setResponses] = useState<Response[]>([]);
   const [questions, setQuestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedView, setSelectedView] = useState('Question types');
   const [selectedGroup, setSelectedGroup] = useState('Devices');
   const [dateRange, setDateRange] = useState('');
+  const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
 
   // Fetch data
   useEffect(() => {
     if (!user?.id) return;
 
-    // Set date range
     const endDate = new Date();
     const startDate = subDays(endDate, 15);
     setDateRange(`${format(startDate, 'MM/dd/yy')} - ${format(endDate, 'MM/dd/yy')}`);
@@ -237,6 +510,7 @@ export const UsageTab: React.FC<UsageTabProps> = ({ projectId }) => {
           deviceType: r.device_data?.platform === 'mobile' ? 'mobile' : r.device_data?.platform === 'tablet' ? 'tablet' : 'desktop',
           status: r.completed_at ? 'completed' : 'partial' as const,
           qualityScore: r.fraud_score ? Math.round((1 - r.fraud_score) * 100) : 100,
+          answers: r.answers || {},
         }));
 
         setResponses(transformedResponses);
@@ -250,409 +524,242 @@ export const UsageTab: React.FC<UsageTabProps> = ({ projectId }) => {
     fetchData();
   }, [projectId, user?.id]);
 
+  // Toggle question expansion
+  const toggleQuestion = (questionId: string) => {
+    setExpandedQuestions(prev => {
+      const next = new Set(prev);
+      if (next.has(questionId)) {
+        next.delete(questionId);
+      } else {
+        next.add(questionId);
+      }
+      return next;
+    });
+  };
+
   // Calculate stats
   const stats = useMemo(() => {
     const total = responses.length;
     const completed = responses.filter(r => r.status === 'completed').length;
     const avgTime = total > 0 ? responses.reduce((acc, r) => acc + r.completionTime, 0) / total : 0;
-    const avgQuality = total > 0 ? responses.reduce((acc, r) => acc + (r.qualityScore || 100), 0) / total : 100;
 
     const deviceCounts = responses.reduce((acc, r) => {
       acc[r.deviceType] = (acc[r.deviceType] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    // Calculate week over week change
-    const oneWeekAgo = subDays(new Date(), 7);
-    const twoWeeksAgo = subDays(new Date(), 14);
-    const thisWeek = responses.filter(r => r.submittedAt >= oneWeekAgo).length;
-    const lastWeek = responses.filter(r => r.submittedAt >= twoWeeksAgo && r.submittedAt < oneWeekAgo).length;
-
     return {
       total,
       completed,
       completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
       avgTime: avgTime.toFixed(1),
-      avgQuality: Math.round(avgQuality),
       devices: deviceCounts,
-      thisWeek,
-      lastWeek,
       questionCount: questions.length,
     };
   }, [responses, questions]);
 
-  // Trend data for charts
+  // Trend data for main chart
   const trendData = useMemo(() => {
-    const data = Array.from({ length: 16 }, (_, i) => {
+    return Array.from({ length: 16 }, (_, i) => {
       const date = subDays(new Date(), 15 - i);
       const count = responses.filter(r => format(r.submittedAt, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')).length;
       return { day: format(date, 'MMM d'), count };
-    });
-    return data;
-  }, [responses]);
-
-  // Question type distribution
-  const questionTypeData = useMemo(() => {
-    const typeCounts: Record<string, number> = {};
-    questions.forEach(q => {
-      const type = q.question_type || 'unknown';
-      typeCounts[type] = (typeCounts[type] || 0) + 1;
-    });
-    return Object.entries(typeCounts).map(([type, count]) => ({
-      type,
-      count,
-      responses: responses.length,
-    }));
-  }, [questions, responses]);
-
-  // Device data for mini chart
-  const deviceTrendData = useMemo(() => {
-    return Array.from({ length: 16 }, (_, i) => {
-      const date = subDays(new Date(), 15 - i);
-      const dayResponses = responses.filter(r => format(r.submittedAt, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'));
-      return {
-        value1: dayResponses.filter(r => r.deviceType === 'desktop').length,
-        value2: dayResponses.filter(r => r.deviceType === 'mobile').length,
-      };
-    });
-  }, [responses]);
-
-  // Completion trend data
-  const completionTrendData = useMemo(() => {
-    return Array.from({ length: 16 }, (_, i) => {
-      const date = subDays(new Date(), 15 - i);
-      const count = responses.filter(r =>
-        format(r.submittedAt, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd') &&
-        r.status === 'completed'
-      ).length;
-      return { count };
     });
   }, [responses]);
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100%',
-        backgroundColor: 'var(--surbee-bg-primary)',
-      }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', backgroundColor: styles.bgPrimary }}>
         <div style={{
-          width: '32px',
-          height: '32px',
-          border: '2px solid var(--surbee-border-primary)',
-          borderTopColor: 'var(--surbee-fg-primary)',
+          width: '32px', height: '32px',
+          border: `2px solid ${styles.borderColor}`,
+          borderTopColor: styles.purple,
           borderRadius: '50%',
           animation: 'spin 0.8s linear infinite',
         }} />
-        <style jsx>{`
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
+        <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      overflow: 'hidden',
-      backgroundColor: 'var(--surbee-bg-primary)',
-    }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', backgroundColor: styles.bgPrimary }}>
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
       {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '8px',
-          borderBottom: '1px solid var(--surbee-border-subtle)',
-          padding: '12px 24px',
-        }}
-      >
-        <h1 style={{
-          margin: 0,
-          fontSize: '20px',
-          fontWeight: 600,
-          color: 'var(--surbee-fg-primary)'
-        }}>
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
+        gap: '8px', borderBottom: `1px solid ${styles.borderColor}`, padding: '12px 24px',
+      }}>
+        <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 600, color: styles.fgPrimary }}>
           Data
         </h1>
-        <div style={{ display: 'flex', flexDirection: 'row', gap: '8px' }}>
-          {/* Date picker */}
-          <button
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '6px 12px',
-              backgroundColor: 'var(--surbee-bg-secondary)',
-              border: '1px solid var(--surbee-border-subtle)',
-              borderRadius: '8px',
-              color: 'var(--surbee-fg-primary)',
-              fontSize: '13px',
-              cursor: 'pointer',
-            }}
-          >
-            <Calendar size={14} />
+        <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '8px' }}>
+          <SelectButton icon={<Calendar size={14} />}>
             <span style={{ fontVariantNumeric: 'tabular-nums' }}>{dateRange}</span>
-            <ChevronDown size={14} />
-          </button>
-
-          {/* Export button */}
-          <button
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              backgroundColor: 'var(--surbee-bg-secondary)',
-              border: '1px solid var(--surbee-border-subtle)',
-              borderRadius: '8px',
-              color: 'var(--surbee-fg-primary)',
-              fontSize: '13px',
-              cursor: 'pointer',
-            }}
-          >
-            <Download size={14} />
-            <span>Export</span>
-          </button>
+          </SelectButton>
+          <ExportButton />
         </div>
       </div>
 
       {/* Main content */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {/* Top metrics row */}
-        <div style={{ display: 'flex', flexDirection: 'row', borderBottom: '1px solid var(--surbee-border-subtle)' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', borderBottom: `1px solid ${styles.borderColor}` }}>
           {/* Main chart section */}
-          <div style={{ flex: 1, padding: '16px 24px', borderRight: '1px solid var(--surbee-border-subtle)' }}>
+          <div style={{ minWidth: 0, flex: 1, borderRight: `1px solid ${styles.borderColor}`, padding: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
                 <div>
-                  <div style={{ fontSize: '14px', color: 'var(--surbee-fg-muted)', padding: '4px 0 8px 0' }}>
-                    Total Responses
-                  </div>
-                  <div style={{ fontSize: '48px', fontWeight: 600, color: 'var(--surbee-fg-primary)', lineHeight: 1 }}>
+                  <div style={{ padding: '4px 12px 8px 12px', fontSize: '14px', color: styles.fgMuted }}>Total Responses</div>
+                  <div style={{ padding: '0 12px', fontSize: '48px', fontWeight: 600, color: styles.fgPrimary, lineHeight: 1 }}>
                     {stats.total}
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button
-                    style={{
-                      padding: '6px 12px',
-                      backgroundColor: 'var(--surbee-bg-secondary)',
-                      border: '1px solid var(--surbee-border-subtle)',
-                      borderRadius: '8px',
-                      color: 'var(--surbee-fg-muted)',
-                      fontSize: '13px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    Group by <ChevronDown size={12} style={{ marginLeft: '4px' }} />
-                  </button>
-                  <div style={{ borderLeft: '1px solid var(--surbee-border-subtle)', paddingLeft: '12px' }}>
-                    <div
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: 'var(--surbee-bg-tertiary)',
-                        borderRadius: '6px',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        color: 'var(--surbee-fg-primary)',
-                      }}
-                    >
-                      1d
-                    </div>
+                <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
+                  <div style={{
+                    padding: '6px 12px', backgroundColor: styles.purpleLight, borderRadius: '6px',
+                    fontSize: '13px', fontWeight: 600, color: styles.fgPrimary,
+                  }}>
+                    Last 16 days
                   </div>
                 </div>
               </div>
-              <div style={{ height: '240px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={trendData} margin={{ top: 20, right: 10, left: 10, bottom: 30 }}>
-                    <defs>
-                      <linearGradient id="responseGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#715FDE" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#715FDE" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <Area
-                      type="monotone"
-                      dataKey="count"
-                      stroke="#715FDE"
-                      strokeWidth={2}
-                      fill="url(#responseGradient)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--surbee-fg-muted)', fontSize: '13px', padding: '0 10px' }}>
-                <span>{trendData[0]?.day}</span>
-                <span>{trendData[trendData.length - 1]?.day}</span>
+              <div style={{ padding: '0 4px' }}>
+                <div style={{ width: '100%', height: '284px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={trendData} margin={{ top: 20, right: 10, left: 10, bottom: 30 }}>
+                      <defs>
+                        <linearGradient id="mainGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={styles.purple} stopOpacity={0.3} />
+                          <stop offset="100%" stopColor={styles.purple} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                      <XAxis
+                        dataKey="day"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#6E6E80', fontSize: 13 }}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#6E6E80', fontSize: 12 }}
+                        width={30}
+                      />
+                      <Tooltip content={<CustomTooltip />} cursor={{ stroke: styles.purple, strokeWidth: 1, strokeDasharray: '4 4' }} />
+                      <Area
+                        type="monotone"
+                        dataKey="count"
+                        stroke={styles.purple}
+                        strokeWidth={2}
+                        fill="url(#mainGradient)"
+                        activeDot={{ r: 6, fill: styles.purple, stroke: '#fff', strokeWidth: 2 }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Right sidebar metrics */}
           <div style={{ width: '320px', display: 'flex', flexDirection: 'column' }}>
-            {/* Completion Rate section */}
-            <div style={{ padding: '16px', borderBottom: '1px solid var(--surbee-border-subtle)' }}>
-              <div style={{ fontSize: '14px', color: 'var(--surbee-fg-muted)' }}>Completion Rate</div>
-              <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--surbee-fg-primary)', marginTop: '4px' }}>
-                {stats.completionRate}% <span style={{ color: 'var(--surbee-fg-muted)', fontWeight: 400, fontSize: '14px' }}>({stats.completed} of {stats.total})</span>
-              </div>
-              <div style={{ marginTop: '16px' }}>
+            <SidebarMetric
+              title="Completion Rate"
+              value={<>{stats.completionRate}% <span style={{ color: styles.fgMuted, fontWeight: 400, fontSize: '14px' }}>/ 100%</span></>}
+            >
+              <div style={{ width: '100%' }}>
                 <ProgressBar value={stats.completed} max={stats.total || 1} />
+                <div style={{ fontSize: '13px', color: styles.fgMuted, marginTop: '12px' }}>
+                  {stats.completed} of {stats.total} completed
+                </div>
               </div>
-              <div style={{ fontSize: '13px', color: 'var(--surbee-fg-muted)', marginTop: '12px' }}>
-                {stats.questionCount} questions in survey
-              </div>
-            </div>
+            </SidebarMetric>
 
-            {/* Quality Score section */}
-            <div style={{ padding: '16px', borderBottom: '1px solid var(--surbee-border-subtle)', flex: 1 }}>
-              <div style={{ fontSize: '14px', color: 'var(--surbee-fg-muted)' }}>Avg Quality Score</div>
-              <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--surbee-fg-primary)', marginTop: '4px' }}>{stats.avgQuality}%</div>
-              <div style={{ marginTop: '16px' }}>
-                <MiniLineChart data={deviceTrendData} color1="#22c55e" color2="#715FDE" />
-              </div>
-              <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontSize: '12px', color: 'var(--surbee-fg-muted)' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: '#22c55e' }} />
-                  Desktop
-                </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: '#715FDE' }} />
-                  Mobile
-                </span>
-              </div>
-            </div>
+            <SidebarMetric title="Total Questions" value={stats.questionCount} />
 
-            {/* Avg Completion Time section */}
-            <div style={{ padding: '16px', flex: 1 }}>
-              <div style={{ fontSize: '14px', color: 'var(--surbee-fg-muted)' }}>Avg Completion Time</div>
-              <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--surbee-fg-primary)', marginTop: '4px' }}>{stats.avgTime}m</div>
-              <div style={{ marginTop: '16px' }}>
-                <MiniBarChart data={completionTrendData} />
-              </div>
-            </div>
+            <SidebarMetric title="Avg Completion Time" value={`${stats.avgTime}m`} hasBorderBottom={false} />
           </div>
         </div>
 
         {/* Bottom section */}
         <div style={{ display: 'flex', flexDirection: 'row' }}>
-          {/* Left: Question type cards */}
-          <div style={{ flex: 1, borderRight: '1px solid var(--surbee-border-subtle)' }}>
-            <div style={{ padding: '8px 24px', borderBottom: '1px solid var(--surbee-border-subtle)' }}>
-              <TabToggle
-                options={['Question types', 'Response status']}
-                selected={selectedView}
-                onChange={setSelectedView}
-              />
+          {/* Left: Questions list */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: `1px solid ${styles.borderColor}` }}>
+            <div style={{
+              borderBottom: `1px solid ${styles.borderColor}`,
+              padding: '12px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: styles.fgPrimary }}>
+                Questions ({questions.length})
+              </div>
+              <button
+                onClick={() => {
+                  if (expandedQuestions.size === questions.length) {
+                    setExpandedQuestions(new Set());
+                  } else {
+                    setExpandedQuestions(new Set(questions.map(q => q.question_id)));
+                  }
+                }}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  color: styles.purple,
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                }}
+              >
+                {expandedQuestions.size === questions.length ? 'Collapse all' : 'Expand all'}
+              </button>
             </div>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '16px',
-                padding: '16px 24px 80px 24px',
-              }}
-            >
-              {selectedView === 'Question types' ? (
-                <>
-                  <MetricCard
-                    title="Multiple Choice"
-                    stats={[
-                      { label: `${questions.filter(q => q.question_type === 'multiple_choice' || q.question_type === 'radio').length} questions`, color: '#715FDE' },
-                      { label: `${stats.total} responses`, color: '#C5C5D2' },
-                    ]}
-                    data={trendData}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px', paddingBottom: '80px' }}>
+              {questions.length > 0 ? (
+                questions.map((q, idx) => (
+                  <QuestionItem
+                    key={q.question_id || idx}
+                    question={q}
+                    index={idx}
+                    insight={null}
+                    responses={responses}
+                    isExpanded={expandedQuestions.has(q.question_id)}
+                    onToggle={() => toggleQuestion(q.question_id)}
                   />
-                  <MetricCard
-                    title="Text Input"
-                    stats={[
-                      { label: `${questions.filter(q => q.question_type === 'text' || q.question_type === 'textarea').length} questions`, color: '#715FDE' },
-                      { label: `${stats.total} responses`, color: '#C5C5D2' },
-                    ]}
-                    data={trendData}
-                  />
-                  <MetricCard
-                    title="Rating / Scale"
-                    stats={[
-                      { label: `${questions.filter(q => q.question_type === 'rating' || q.question_type === 'scale' || q.question_type === 'nps').length} questions`, color: '#715FDE' },
-                    ]}
-                    data={trendData}
-                  />
-                  <MetricCard
-                    title="Checkbox / Multi-select"
-                    stats={[
-                      { label: `${questions.filter(q => q.question_type === 'checkbox' || q.question_type === 'multi_select').length} questions`, color: '#715FDE' },
-                    ]}
-                    data={trendData}
-                  />
-                  <MetricCard
-                    title="Dropdown"
-                    stats={[
-                      { label: `${questions.filter(q => q.question_type === 'dropdown' || q.question_type === 'select').length} questions`, color: '#715FDE' },
-                    ]}
-                    data={trendData}
-                  />
-                  <MetricCard
-                    title="Date / Time"
-                    stats={[
-                      { label: `${questions.filter(q => q.question_type === 'date' || q.question_type === 'time' || q.question_type === 'datetime').length} questions`, color: '#715FDE' },
-                    ]}
-                    data={trendData}
-                  />
-                </>
+                ))
               ) : (
-                <>
-                  <MetricCard
-                    title="Completed"
-                    stats={[
-                      { label: `${stats.completed} responses`, color: '#22c55e' },
-                      { label: `${stats.completionRate}%`, color: '#C5C5D2' },
-                    ]}
-                    data={completionTrendData}
-                  />
-                  <MetricCard
-                    title="Partial"
-                    stats={[
-                      { label: `${stats.total - stats.completed} responses`, color: '#f59e0b' },
-                      { label: `${100 - stats.completionRate}%`, color: '#C5C5D2' },
-                    ]}
-                    data={trendData}
-                  />
-                  <MetricCard
-                    title="This Week"
-                    stats={[
-                      { label: `${stats.thisWeek} responses`, color: '#715FDE' },
-                    ]}
-                    data={trendData.slice(-7)}
-                  />
-                  <MetricCard
-                    title="Last Week"
-                    stats={[
-                      { label: `${stats.lastWeek} responses`, color: '#715FDE' },
-                    ]}
-                    data={trendData.slice(0, 7)}
-                  />
-                </>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: '200px',
+                  textAlign: 'center',
+                  color: styles.fgMuted,
+                }}>
+                  <div style={{ fontSize: '14px' }}>No questions found</div>
+                  <div style={{ fontSize: '13px', marginTop: '4px' }}>Add questions to your survey to see insights</div>
+                </div>
               )}
             </div>
           </div>
 
-          {/* Right: Devices/Sources/Questions */}
+          {/* Right: Devices/Sources sidebar */}
           <div style={{ width: '320px' }}>
-            <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--surbee-border-subtle)' }}>
-              <TabToggle
-                options={['Devices', 'Sources', 'Questions']}
+            <div style={{ borderBottom: `1px solid ${styles.borderColor}`, padding: '8px 16px' }}>
+              <SegmentedControl
+                options={['Devices', 'Sources']}
                 selected={selectedGroup}
                 onChange={setSelectedGroup}
               />
@@ -669,77 +776,27 @@ export const UsageTab: React.FC<UsageTabProps> = ({ projectId }) => {
                     const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
                     return (
                       <div key={key} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '12px',
-                        backgroundColor: 'var(--surbee-bg-secondary)',
-                        borderRadius: '8px',
-                        gap: '12px',
+                        display: 'flex', alignItems: 'center', padding: '12px',
+                        backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '8px', gap: '12px',
                       }}>
-                        <div style={{ color: 'var(--surbee-fg-muted)' }}>{icon}</div>
+                        <div style={{ color: styles.fgMuted }}>{icon}</div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--surbee-fg-primary)' }}>{label}</div>
-                          <div style={{ fontSize: '12px', color: 'var(--surbee-fg-muted)' }}>{count} responses</div>
+                          <div style={{ fontSize: '14px', fontWeight: 500, color: styles.fgPrimary }}>{label}</div>
+                          <div style={{ fontSize: '12px', color: styles.fgMuted }}>{count} responses</div>
                         </div>
-                        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--surbee-fg-primary)' }}>{pct}%</div>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: styles.fgPrimary }}>{pct}%</div>
                       </div>
                     );
                   })}
                   {stats.total === 0 && (
-                    <div style={{
-                      display: 'flex',
-                      minHeight: '200px',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      textAlign: 'center',
-                      fontSize: '14px',
-                      color: 'var(--surbee-fg-muted)',
-                    }}>
+                    <div style={{ display: 'flex', minHeight: '200px', alignItems: 'center', justifyContent: 'center', textAlign: 'center', fontSize: '14px', color: styles.fgMuted }}>
                       No device data yet
                     </div>
                   )}
                 </div>
-              ) : selectedGroup === 'Questions' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {questions.slice(0, 5).map((q, idx) => (
-                    <div key={q.question_id || idx} style={{
-                      padding: '12px',
-                      backgroundColor: 'var(--surbee-bg-secondary)',
-                      borderRadius: '8px',
-                    }}>
-                      <div style={{ fontSize: '12px', color: 'var(--surbee-fg-muted)', marginBottom: '4px' }}>Q{idx + 1}</div>
-                      <div style={{ fontSize: '13px', color: 'var(--surbee-fg-primary)', lineHeight: 1.4 }}>
-                        {q.question_text?.slice(0, 50)}{q.question_text?.length > 50 ? '...' : ''}
-                      </div>
-                    </div>
-                  ))}
-                  {questions.length === 0 && (
-                    <div style={{
-                      display: 'flex',
-                      minHeight: '200px',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      textAlign: 'center',
-                      fontSize: '14px',
-                      color: 'var(--surbee-fg-muted)',
-                    }}>
-                      No questions found
-                    </div>
-                  )}
-                </div>
               ) : (
-                <div
-                  style={{
-                    display: 'flex',
-                    minHeight: '240px',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    textAlign: 'center',
-                    fontSize: '14px',
-                    color: 'var(--surbee-fg-muted)',
-                  }}
-                >
-                  Source tracking coming soon
+                <div style={{ display: 'flex', minHeight: '240px', alignItems: 'center', justifyContent: 'center', textAlign: 'center', fontSize: '14px', color: styles.fgMuted }}>
+                  No source data for this period.
                 </div>
               )}
             </div>

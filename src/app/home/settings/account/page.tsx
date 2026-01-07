@@ -1,312 +1,415 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Shield, CreditCard, HelpCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { SkeletonText, SkeletonCard, SkeletonForm } from '@/components/ui/skeleton';
+import React, { useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+type SettingsTab = 'general' | 'account' | 'privacy' | 'billing';
+
+const settingsTabs: { id: SettingsTab; label: string; href: string }[] = [
+  { id: 'general', label: 'General', href: '/home/settings/general' },
+  { id: 'account', label: 'Account', href: '/home/settings/account' },
+  { id: 'privacy', label: 'Privacy', href: '/home/settings/privacy' },
+  { id: 'billing', label: 'Billing', href: '/home/settings/billing' },
+];
+
 export default function AccountSettingsPage() {
   const router = useRouter();
-  const { user, loading: authLoading, signOut, deleteAccount } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
-  const [showFade, setShowFade] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const { user, signOut, deleteAccount } = useAuth();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteInput, setDeleteInput] = useState('');
 
-  useEffect(() => {
-    // Reset scroll position and fade when component mounts
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = 0;
-      setShowFade(false);
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Failed to log out. Please try again.');
     }
+  };
 
-    const handleScroll = () => {
-      if (scrollRef.current) {
-        setShowFade(scrollRef.current.scrollTop > 0);
+  const handleDeleteAccount = async () => {
+    if (deleteInput !== 'DELETE') return;
+    try {
+      toast.loading('Deleting your account...');
+      const { error } = await deleteAccount();
+      if (error) {
+        toast.dismiss();
+        toast.error(`Failed to delete account: ${error.message}`);
+        return;
       }
-    };
-
-    const scrollElement = scrollRef.current;
-    if (scrollElement) {
-      scrollElement.addEventListener('scroll', handleScroll);
-      return () => scrollElement.removeEventListener('scroll', handleScroll);
+      toast.dismiss();
+      toast.success('Your account has been deleted successfully.');
+      router.push('/');
+    } catch (error) {
+      console.error('Delete account error:', error);
+      toast.dismiss();
+      toast.error('Failed to delete account. Please try again or contact support.');
     }
-  }, []);
-
-  // Only show loading on first visit, not on navigation
-  useEffect(() => {
-    if (!authLoading) {
-      const hasLoaded = sessionStorage.getItem('dashboard_loaded');
-      if (hasLoaded) {
-        setIsLoading(false);
-      } else {
-        const timer = setTimeout(() => {
-          setIsLoading(false);
-          sessionStorage.setItem('dashboard_loaded', 'true');
-        }, 800);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [authLoading]);
-
-
-  if (authLoading || isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col overflow-hidden">
-        <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full max-w-6xl mx-auto">
-            {/* Settings Navigation Skeleton */}
-            <div className="lg:col-span-1">
-              <div className="space-y-4">
-                <SkeletonText width="120px" height="2rem" className="mb-6" />
-                <div className="space-y-1">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="flex items-center gap-3 px-3 py-2">
-                      <div className="skeleton-circle" style={{ width: '16px', height: '16px' }}></div>
-                      <SkeletonText width={`${60 + Math.random() * 40}px`} height="14px" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Help Content Skeleton */}
-            <div className="lg:col-span-3 space-y-6">
-              {/* Contact Support Card Skeleton */}
-              <div className="skeleton-card" style={{ padding: '24px' }}>
-                <div className="space-y-4">
-                  <SkeletonText width="140px" height="1.5rem" className="mb-2" />
-                  <SkeletonText width="300px" height="1rem" className="mb-6" />
-                  
-                  <SkeletonForm fields={4} />
-                  
-                  <div className="skeleton-base" style={{ width: '140px', height: '2.5rem', borderRadius: '0.5rem' }}></div>
-                </div>
-              </div>
-
-              {/* Quick Help Card Skeleton */}
-              <div className="skeleton-card" style={{ padding: '24px' }}>
-                <div className="space-y-4">
-                  <SkeletonText width="100px" height="1.5rem" className="mb-2" />
-                  <SkeletonText width="220px" height="1rem" className="mb-6" />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="skeleton-base" style={{ height: '4rem', borderRadius: '0.5rem' }}></div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Documentation Card Skeleton */}
-              <div className="skeleton-card" style={{ padding: '24px' }}>
-                <div className="space-y-4">
-                  <SkeletonText width="130px" height="1.5rem" className="mb-2" />
-                  <SkeletonText width="280px" height="1rem" className="mb-6" />
-                  
-                  <div className="space-y-3">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                      <div key={i} className="flex items-center justify-between p-3">
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="skeleton-circle" style={{ width: '20px', height: '20px' }}></div>
-                          <div className="flex-1">
-                            <SkeletonText width={`${120 + Math.random() * 80}px`} height="1rem" className="mb-1" />
-                            <SkeletonText width={`${200 + Math.random() * 100}px`} height="0.75rem" />
-                          </div>
-                        </div>
-                        <div className="skeleton-circle" style={{ width: '16px', height: '16px' }}></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Contact Information Card Skeleton */}
-              <div className="skeleton-card" style={{ padding: '24px' }}>
-                <div className="space-y-4">
-                  <SkeletonText width="160px" height="1.5rem" className="mb-2" />
-                  <SkeletonText width="250px" height="1rem" className="mb-6" />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="skeleton-base" style={{ height: '6rem', borderRadius: '0.5rem' }}></div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="settings-root">
+      {/* Header */}
+      <header className="settings-header">
+        <h1 className="settings-title">Settings</h1>
+      </header>
 
-      {/* Main Content Area */}
-      <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12 overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full max-w-6xl mx-auto">
-          {/* Settings Navigation - Fixed */}
-          <div className="lg:col-span-1 flex flex-col">
-            <div className="space-y-4 flex-shrink-0">
-              <h1 className="projects-title">
-                Settings
-              </h1>
+      {/* Tab Navigation */}
+      <nav className="settings-tabs">
+        {settingsTabs.map((tab) => (
+          <button
+            key={tab.id}
+            className={`settings-tab ${pathname === tab.href ? 'active' : ''}`}
+            onClick={() => router.push(tab.href)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
 
-              <div className="space-y-1">
-                {[
-                  { icon: Settings, label: 'General', active: false, href: '/home/settings/general' },
-                  { icon: HelpCircle, label: 'Account', active: true, href: '/home/settings/account' },
-                  { icon: Shield, label: 'Privacy & Security', active: false, href: '/home/settings/privacy' },
-                  { icon: CreditCard, label: 'Billing', active: false, href: '/home/settings/billing' },
-                  { icon: Settings, label: 'Connectors', active: false, href: '/home/settings/connectors' },
-                ].map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.label}
-                      onClick={() => router.push(item.href)}
-                      className={`
-                        relative w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all duration-150 cursor-pointer mb-0.5
-                        ${item.active ? 'text-theme-primary' : 'text-theme-secondary hover:text-theme-primary'}
-                      `}
-                      style={{
-                        backgroundColor: item.active 
-                          ? 'var(--surbee-sidebar-active)' 
-                          : 'transparent',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!item.active) {
-                          e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!item.active) {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                        }
-                      }}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span className="text-[14px] font-medium">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+      {/* Content */}
+      <div className="settings-content">
+        <div className="settings-section">
+          {/* Account Email */}
+          <div className="form-field">
+            <label className="field-label">Email address</label>
+            <p className="field-description">Your account email</p>
+            <div className="email-display">
+              {user?.email || 'Not available'}
             </div>
           </div>
 
-            {/* Account Content - Only this scrolls */}
-            <div className="lg:col-span-3 relative flex flex-col min-h-0 overflow-hidden">
-              {/* Fade overlay at top - only show when scrolling */}
-              <div className={`absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[var(--surbee-bg-primary)] to-transparent z-10 pointer-events-none transition-opacity duration-300 ${
-                showFade ? 'opacity-100' : 'opacity-0'
-              }`} />
-              
-              {/* Scrollable content - only the cards */}
-              <div 
-                ref={scrollRef}
-                className="flex-1 min-h-0 overflow-y-auto pr-4 space-y-6 pb-16" 
-                style={{ scrollbarWidth: 'thin' }}
-              >
-              {/* Account */}
-              <Card style={{ backgroundColor: 'var(--surbee-card-bg)', borderColor: 'var(--surbee-card-border)' }}>
-                <CardHeader>
-                  <CardTitle style={{ color: 'var(--surbee-fg-primary)' }}>
-                    Account
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    {/* Log out option */}
-                    <div className="flex items-center justify-between py-3">
-                      <span className="text-[16px]" style={{ color: 'var(--surbee-fg-primary)' }}>
-                        Log out of all devices
-                      </span>
-                      <button
-                        onClick={async () => {
-                          try {
-                            await signOut();
-                            router.push('/');
-                          } catch (error) {
-                            console.error('Logout error:', error);
-                            toast.error('Failed to log out. Please try again.');
-                          }
-                        }}
-                        className="px-6 py-2.5 rounded-lg font-medium text-[14px] transition-all"
-                        style={{
-                          backgroundColor: 'var(--surbee-fg-primary)',
-                          color: 'var(--surbee-bg-primary)'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.opacity = '0.9';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.opacity = '1';
-                        }}
-                      >
-                        Log out
-                      </button>
-                    </div>
+          <div className="divider" />
 
-                    <div className="h-px" style={{ backgroundColor: 'var(--surbee-border-primary)' }} />
-
-                    {/* Delete account */}
-                    <div className="flex items-center justify-between py-3">
-                      <span className="text-[16px]" style={{ color: 'var(--surbee-fg-primary)' }}>
-                        Delete account
-                      </span>
-                      <button
-                        onClick={() => {
-                          toast.warning('Are you sure you want to delete your account? This action cannot be undone. All your surveys, responses, and data will be permanently deleted.', {
-                            duration: 8000,
-                            action: {
-                              label: 'Yes, Delete Account',
-                              onClick: async () => {
-                                try {
-                                  toast.loading('Deleting your account...');
-                                  const { error } = await deleteAccount();
-                                  if (error) {
-                                    toast.dismiss();
-                                    toast.error(`Failed to delete account: ${error.message}`);
-                                    return;
-                                  }
-                                  toast.dismiss();
-                                  toast.success('Your account has been deleted successfully.');
-                                  router.push('/');
-                                } catch (error) {
-                                  console.error('Delete account error:', error);
-                                  toast.dismiss();
-                                  toast.error('Failed to delete account. Please try again or contact support.');
-                                }
-                              }
-                            }
-                          });
-                        }}
-                        className="px-6 py-2.5 rounded-lg font-medium text-[14px] transition-all"
-                        style={{
-                          backgroundColor: 'var(--surbee-fg-primary)',
-                          color: 'var(--surbee-bg-primary)'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.opacity = '0.9';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.opacity = '1';
-                        }}
-                      >
-                        Delete account
-                      </button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+          {/* Log Out */}
+          <div className="form-field">
+            <label className="toggle-field">
+              <div className="toggle-info">
+                <span className="field-label">Log out of all devices</span>
+                <span className="field-description">Sign out from this account on all devices</span>
               </div>
+              <button className="action-btn" onClick={handleLogout}>
+                Log out
+              </button>
+            </label>
+          </div>
+
+          <div className="divider" />
+
+          {/* Danger Zone */}
+          <div className="danger-zone">
+            <div className="danger-zone-content">
+              <h3 className="danger-zone-title">Delete account</h3>
+              <p className="danger-zone-description">
+                Once deleted, your account and all associated data (surveys, responses, settings) will be permanently removed. This action cannot be undone.
+              </p>
             </div>
+
+            {!showDeleteConfirm ? (
+              <button
+                className="danger-zone-btn"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                Delete account
+              </button>
+            ) : (
+              <div className="danger-zone-confirm">
+                <p className="danger-zone-confirm-label">
+                  Type <strong>DELETE</strong> to confirm:
+                </p>
+                <input
+                  type="text"
+                  className="danger-zone-input"
+                  value={deleteInput}
+                  onChange={(e) => setDeleteInput(e.target.value)}
+                  placeholder="DELETE"
+                />
+                <div className="danger-zone-actions">
+                  <button
+                    className="danger-zone-cancel"
+                    onClick={() => {
+                      setShowDeleteConfirm(false);
+                      setDeleteInput('');
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="danger-zone-delete"
+                    onClick={handleDeleteAccount}
+                    disabled={deleteInput !== 'DELETE'}
+                  >
+                    Delete permanently
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .settings-root {
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 48px 32px 120px;
+          color: var(--surbee-fg-primary, #E8E8E8);
+        }
+
+        /* Header */
+        .settings-header {
+          margin-bottom: 32px;
+        }
+
+        .settings-title {
+          font-family: 'Kalice-Trial-Regular', sans-serif;
+          font-size: 28px;
+          font-weight: 400;
+          line-height: 1.4;
+          margin-bottom: 0;
+        }
+
+        /* Tabs */
+        .settings-tabs {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 32px;
+          flex-wrap: wrap;
+        }
+
+        .settings-tab {
+          padding: 8px 16px;
+          font-size: 14px;
+          font-weight: 500;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          background: transparent;
+          border: 1px solid rgba(232, 232, 232, 0.1);
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .settings-tab:hover {
+          border-color: rgba(232, 232, 232, 0.2);
+        }
+
+        .settings-tab.active {
+          background: rgba(232, 232, 232, 0.05);
+          border-color: transparent;
+        }
+
+        /* Content */
+        .settings-content {
+          animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        .settings-section {
+          max-width: 100%;
+        }
+
+        .divider {
+          margin: 32px 0;
+          width: 100%;
+          height: 1px;
+          background-color: rgba(232, 232, 232, 0.08);
+        }
+
+        /* Form Fields */
+        .form-field {
+          display: flex;
+          flex-direction: column;
+          margin-top: 24px;
+        }
+
+        .form-field:first-child {
+          margin-top: 0;
+        }
+
+        .field-label {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--surbee-fg-primary, #E8E8E8);
+        }
+
+        .field-description {
+          font-size: 14px;
+          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          margin: 4px 0 12px;
+        }
+
+        .email-display {
+          padding: 12px 16px;
+          border-radius: 12px;
+          font-size: 14px;
+          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          background: rgba(232, 232, 232, 0.04);
+          border: 1px solid rgba(232, 232, 232, 0.1);
+          max-width: 400px;
+        }
+
+        /* Toggle Field */
+        .toggle-field {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+        }
+
+        .toggle-info {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .action-btn {
+          padding: 10px 20px;
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--surbee-bg-primary, rgb(19, 19, 20));
+          background: var(--surbee-fg-primary, #E8E8E8);
+          border: none;
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .action-btn:hover {
+          opacity: 0.9;
+        }
+
+        /* Danger Zone */
+        .danger-zone {
+          margin-top: 24px;
+          border: 1px solid rgba(239, 68, 68, 0.15);
+          border-radius: 16px;
+          padding: 24px;
+          background: rgba(239, 68, 68, 0.02);
+        }
+
+        .danger-zone-content {
+          margin-bottom: 20px;
+        }
+
+        .danger-zone-title {
+          font-size: 15px;
+          font-weight: 600;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          margin: 0 0 8px 0;
+        }
+
+        .danger-zone-description {
+          font-size: 14px;
+          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          margin: 0;
+          line-height: 1.5;
+        }
+
+        .danger-zone-btn {
+          display: inline-flex;
+          align-items: center;
+          padding: 10px 20px;
+          font-size: 14px;
+          font-weight: 500;
+          color: #ef4444;
+          background: transparent;
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .danger-zone-btn:hover {
+          background: rgba(239, 68, 68, 0.1);
+          border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        .danger-zone-confirm {
+          padding-top: 20px;
+          border-top: 1px solid rgba(239, 68, 68, 0.1);
+        }
+
+        .danger-zone-confirm-label {
+          font-size: 14px;
+          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          margin: 0 0 12px 0;
+        }
+
+        .danger-zone-confirm-label strong {
+          color: var(--surbee-fg-primary, #E8E8E8);
+        }
+
+        .danger-zone-input {
+          width: 100%;
+          max-width: 280px;
+          padding: 12px 16px;
+          font-size: 14px;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          background: transparent;
+          border: 1px solid rgba(232, 232, 232, 0.15);
+          border-radius: 12px;
+          outline: none;
+          margin-bottom: 16px;
+        }
+
+        .danger-zone-input:focus {
+          border-color: rgba(232, 232, 232, 0.3);
+        }
+
+        .danger-zone-input::placeholder {
+          color: rgba(232, 232, 232, 0.3);
+        }
+
+        .danger-zone-actions {
+          display: flex;
+          gap: 12px;
+        }
+
+        .danger-zone-cancel {
+          padding: 10px 20px;
+          font-size: 14px;
+          font-weight: 500;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          background: rgba(232, 232, 232, 0.06);
+          border: none;
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: background 0.2s ease;
+        }
+
+        .danger-zone-cancel:hover {
+          background: rgba(232, 232, 232, 0.1);
+        }
+
+        .danger-zone-delete {
+          padding: 10px 20px;
+          font-size: 14px;
+          font-weight: 500;
+          color: white;
+          background: #ef4444;
+          border: none;
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .danger-zone-delete:hover:not(:disabled) {
+          background: #dc2626;
+        }
+
+        .danger-zone-delete:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      `}</style>
+    </div>
   );
 }

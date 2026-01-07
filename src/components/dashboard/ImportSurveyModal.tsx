@@ -76,7 +76,7 @@ export function ImportSurveyModal({ isOpen, onClose, onImport }: ImportSurveyMod
       <div
         className="relative flex flex-col w-full max-w-[500px] overflow-hidden transition-all"
         style={{
-          backgroundColor: 'rgb(19, 19, 20)',
+          backgroundColor: 'var(--surbee-dropdown-bg)',
           borderRadius: '40px',
           padding: '28px 36px 36px',
           boxShadow: '0 0 4px 0 rgba(0,0,0,0.04), 0 12px 32px 0 rgba(0,0,0,0.08)',
@@ -90,7 +90,7 @@ export function ImportSurveyModal({ isOpen, onClose, onImport }: ImportSurveyMod
         {/* Close button */}
         <button
           className="absolute top-6 right-6 flex items-center justify-center w-9 h-9 rounded-full transition-colors disabled:opacity-50"
-          style={{ backgroundColor: 'rgba(232, 232, 232, 0.06)' }}
+          style={{ backgroundColor: 'var(--surbee-accent-subtle)' }}
           onClick={onClose}
           disabled={isImporting}
         >
@@ -118,14 +118,14 @@ export function ImportSurveyModal({ isOpen, onClose, onImport }: ImportSurveyMod
           <Link2 
             size={16} 
             className="absolute left-4 pointer-events-none"
-            style={{ color: 'rgba(232, 232, 232, 0.4)' }}
+            style={{ color: 'var(--surbee-fg-muted)' }}
           />
           <input
             type="url"
             className="w-full h-11 py-2 pl-11 pr-4 text-sm rounded-full transition-all duration-200"
             style={{
               backgroundColor: 'transparent',
-              border: '1px solid rgba(232, 232, 232, 0.15)',
+              border: '1px solid var(--surbee-dropdown-border)',
               color: 'var(--surbee-fg-primary)',
             }}
             placeholder="https://..."
@@ -147,8 +147,8 @@ export function ImportSurveyModal({ isOpen, onClose, onImport }: ImportSurveyMod
           disabled={!url.trim() || isImporting}
           className="w-full h-11 rounded-full font-medium text-sm transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
-            backgroundColor: url.trim() ? '#E8E8E8' : 'rgba(232, 232, 232, 0.1)',
-            color: url.trim() ? '#000' : 'rgba(232, 232, 232, 0.4)',
+            backgroundColor: url.trim() ? 'var(--surbee-fg-primary)' : 'var(--surbee-accent-subtle)',
+            color: url.trim() ? 'var(--surbee-bg-primary)' : 'var(--surbee-fg-muted)',
           }}
         >
           {isImporting ? (

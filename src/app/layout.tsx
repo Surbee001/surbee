@@ -12,9 +12,27 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Surbee Lyra - Pricing",
-  description: "Choose the perfect plan for your AI-powered workflow. Free, Pro, and Max plans available.",
-  generator: "Surbee Lyra",
+  title: {
+    default: "Surbee | AI-Powered Survey Platform",
+    template: "%s | Surbee",
+  },
+  description: "Create beautiful, intelligent surveys with AI. Get real-time fraud detection, smart analytics, and actionable insights from your survey responses.",
+  keywords: ["survey", "AI surveys", "form builder", "survey analytics", "fraud detection", "response validation"],
+  authors: [{ name: "Surbee" }],
+  creator: "Surbee",
+  publisher: "Surbee",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName: "Surbee",
+    title: "Surbee | AI-Powered Survey Platform",
+    description: "Create beautiful, intelligent surveys with AI. Get real-time fraud detection, smart analytics, and actionable insights.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Surbee | AI-Powered Survey Platform",
+    description: "Create beautiful, intelligent surveys with AI. Get real-time fraud detection, smart analytics, and actionable insights.",
+  },
 }
 
 export default function RootLayout({

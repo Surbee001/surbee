@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useImperativeHandle, forwardRef } from "react";
 import { ArrowUp, Plus, X, Settings2, Crosshair, Eye, Lightbulb, Square, Hammer } from "lucide-react";
 import ChatSettingsMenu from "@/components/ui/chat-settings-menu";
 import { ImageViewerModal } from "@/components/ui/image-viewer-modal";
@@ -59,9 +59,16 @@ export interface ReferenceItem {
   title: string;
 }
 
+// Ref handle for external file additions
+export interface ChatInputLightRef {
+  addFiles: (files: File[]) => void;
+  triggerFileInput: () => void;
+}
+
 interface ChatInputLightProps {
   onSendMessage: (message: string, files?: FileUIPart[], references?: ReferenceItem[]) => void;
   isInputDisabled?: boolean;
+  onHasFilesChange?: (hasFiles: boolean) => void; // callback when files are added/removed
   placeholder?: string;
   className?: string;
   isEditMode?: boolean;
@@ -88,11 +95,13 @@ interface ChatInputLightProps {
   compact?: boolean; // optional, makes the chatbox thinner in height
   references?: ReferenceItem[]; // optional, referenced surveys/chats
   onRemoveReference?: (id: string) => void; // optional, callback to remove a reference
+  forceDarkStyle?: boolean; // optional, forces dark mode styling regardless of theme
 }
 
-export default function ChatInputLight({
+const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(function ChatInputLight({
   onSendMessage,
   isInputDisabled = false,
+  onHasFilesChange,
   placeholder = "Type your message...",
   className = "",
   isEditMode = false,
@@ -119,23 +128,27 @@ export default function ChatInputLight({
   compact = false,
   references = [],
   onRemoveReference,
-}: ChatInputLightProps) {
+  forceDarkStyle = false,
+}, ref) {
   const [chatText, setChatText] = useState("");
   // Initialize theme by checking DOM immediately
-  const [detectedTheme, setDetectedTheme] = useState<'dark' | 'white'>(() => {
+  const [systemTheme, setSystemTheme] = useState<'dark' | 'white'>(() => {
     if (typeof document !== 'undefined') {
       const isDark = document.documentElement.classList.contains('dark');
       return isDark ? 'dark' : 'white';
     }
     return theme;
   });
+  // Use forceDarkStyle to override theme detection
+  const detectedTheme = forceDarkStyle ? 'dark' : systemTheme;
   const [files, setFiles] = useState<File[]>([]);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
 
   // Watch for theme changes
   useEffect(() => {
     const updateTheme = () => {
       const isDark = document.documentElement.classList.contains('dark');
-      setDetectedTheme(isDark ? 'dark' : 'white');
+      setSystemTheme(isDark ? 'dark' : 'white');
     };
 
     // Watch for theme changes
@@ -151,7 +164,6 @@ export default function ChatInputLight({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const uploadInputRef = useRef<HTMLInputElement>(null);
   const contentEditableRef = useRef<HTMLDivElement>(null);
   const chatboxContainerRef = useRef<HTMLDivElement>(null);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
@@ -210,6 +222,11 @@ export default function ChatInputLight({
       node.classList.remove('is-editor-empty');
     }
   }, [chatText, files]);
+
+  // Notify parent when files change
+  useEffect(() => {
+    onHasFilesChange?.(files.length > 0);
+  }, [files.length, onHasFilesChange]);
 
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
     const text = e.currentTarget.textContent || "";
@@ -357,6 +374,16 @@ export default function ChatInputLight({
     reader.readAsDataURL(file);
   };
 
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    addFiles: (newFiles: File[]) => {
+      newFiles.forEach(file => processFile(file));
+    },
+    triggerFileInput: () => {
+      uploadInputRef.current?.click();
+    },
+  }));
+
   const handleRemoveFile = (index: number) => {
     const fileToRemove = files[index];
     const newFiles = files.filter((_, i) => i !== index)
@@ -465,10 +492,8 @@ export default function ChatInputLight({
           borderRadius: borderRadius,
           border: shouldGlow
             ? '1px solid rgba(255, 255, 255, 0.8)'
-            : detectedTheme === 'white'
-              ? '1px solid rgba(0, 0, 0, 0.1)'
-              : 'none',
-          backgroundColor: detectedTheme === 'white' ? '#F8F8F8' : '#1E1E1F',
+            : '1px solid var(--surbee-dropdown-border)',
+          backgroundColor: 'transparent',
           boxShadow: shouldGlow ? '0 0 20px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.2)' : 'none'
         }}
         onDragOver={handleDragOver}
@@ -477,12 +502,12 @@ export default function ChatInputLight({
       >
         {/* File Previews - positioned at top with auto height */}
         {files.length > 0 && (
-          <div className="flex flex-wrap gap-2 p-3 pb-0">
+          <div className="flex flex-wrap gap-2 px-6 pt-3 pb-0">
             {files.map((file, index) => (
               <div key={index} className="relative group">
                 {file.type.startsWith("image/") && filePreviews[file.name] && (
-                  <div 
-                    className="w-16 h-16 rounded-xl overflow-hidden cursor-pointer border transition-all duration-300 hover:scale-105"
+                  <div
+                    className="w-16 h-16 rounded-xl overflow-hidden cursor-pointer border"
                     onClick={() => handleImageClick(index)}
                   >
                     <img
@@ -660,6 +685,20 @@ export default function ChatInputLight({
           </div>
           <div className="flex-shrink-0 px-6 pb-4">
           <div className="flex flex-row items-center justify-between w-full gap-2 relative">
+            {/* Hidden file input - always rendered for external triggers */}
+            <input
+              ref={uploadInputRef}
+              type="file"
+              className="hidden"
+              multiple
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  Array.from(e.target.files).slice(0, 5).forEach(processFile)
+                }
+                if (e.target) e.target.value = "";
+              }}
+              accept="image/*"
+            />
             <div className="flex flex-row gap-1 items-center min-w-0 flex-1">
               {!hideAttachButton && (
                 <button
@@ -670,19 +709,6 @@ export default function ChatInputLight({
                   title="Add"
                 >
                   <Plus className="h-3 w-3" />
-                  <input
-                    ref={uploadInputRef}
-                    type="file"
-                    className="hidden"
-                    multiple
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files.length > 0) {
-                        Array.from(e.target.files).slice(0, 5).forEach(processFile)
-                      }
-                      if (e.target) e.target.value = "";
-                    }}
-                    accept="image/*"
-                  />
                 </button>
               )}
               {showModelSelector && onModelChange && (
@@ -751,6 +777,6 @@ export default function ChatInputLight({
       />
     </div>
   );
-}
+});
 
-
+export default ChatInputLight;

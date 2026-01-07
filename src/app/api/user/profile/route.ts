@@ -51,6 +51,8 @@ export async function POST(request: NextRequest) {
     const surveyPreference = profile.surveyPreference || profile.survey_preference;
     const interests = profile.interests;
     const onboardingCompleted = profile.onboarding_completed ?? profile.onboardingCompleted;
+    const acceptedTermsAt = profile.acceptedTermsAt || profile.accepted_terms_at;
+    const subscribedToEmails = profile.subscribedToEmails ?? profile.subscribed_to_emails;
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -74,6 +76,8 @@ export async function POST(request: NextRequest) {
     if (surveyPreference !== undefined) updateData.survey_preference = surveyPreference;
     if (interests !== undefined) updateData.interests = interests;
     if (onboardingCompleted !== undefined) updateData.onboarding_completed = onboardingCompleted;
+    if (acceptedTermsAt !== undefined) updateData.accepted_terms_at = acceptedTermsAt;
+    if (subscribedToEmails !== undefined) updateData.subscribed_to_emails = subscribedToEmails;
 
     if (existingProfile) {
       // Update existing profile

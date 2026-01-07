@@ -29,7 +29,7 @@ interface UseChatSessionReturn {
   sessionId: string | null;
   isLoading: boolean;
   error: string | null;
-  saveMessages: (messages: Message[]) => Promise<void>;
+  saveMessages: (messages: Message[], title?: string) => Promise<void>;
   loadSession: () => Promise<ChatSession | null>;
   completeSession: () => Promise<void>;
 }
@@ -85,14 +85,17 @@ export function useChatSession({
 
   // Save messages to session
   const saveMessages = useCallback(
-    async (messages: Message[]) => {
+    async (messages: Message[], customTitle?: string) => {
       // Skip if disabled or missing required data
       if (!enabled || !userId || !projectId || messages.length === 0) return;
 
       try {
-        // Generate title from first user message
-        const firstUserMessage = messages.find((m) => m.role === 'user');
-        const title = firstUserMessage?.content?.substring(0, 50) || 'New Chat';
+        // Use custom title if provided, otherwise generate from first user message
+        let title = customTitle;
+        if (!title) {
+          const firstUserMessage = messages.find((m) => m.role === 'user');
+          title = firstUserMessage?.content?.substring(0, 50) || 'New Chat';
+        }
 
         const response = await fetch(`/api/projects/${projectId}/chat-session`, {
           method: 'POST',

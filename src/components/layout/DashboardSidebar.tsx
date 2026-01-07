@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 import { useTheme } from '@/hooks/useTheme';
-import { HelpCircle, Check, ChevronUp, ChevronDown, Gift, X, Copy, ArrowRight, ExternalLink, Settings as SettingsIcon, Sun, Moon, Laptop, MessageSquare, MoreHorizontal, Pencil, Trash2, Coins, Inbox, PanelLeftClose, PanelLeft } from "lucide-react";
+import { HelpCircle, Check, ChevronUp, ChevronDown, Gift, X, Copy, ArrowRight, ExternalLink, Settings as SettingsIcon, Sun, Moon, Laptop, MessageSquare, MoreHorizontal, Pencil, Trash2, Coins, Inbox, PanelLeftClose, PanelLeft, UserPlus } from "lucide-react";
 import { useCredits } from '@/hooks/useCredits';
 import {
   DropdownMenu,
@@ -81,6 +81,7 @@ interface DashboardSidebarProps {
 
 export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse }: DashboardSidebarProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isAccountSwitcherOpen, setIsAccountSwitcherOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isChatsOpen, setIsChatsOpen] = useState(false);
@@ -99,10 +100,11 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
   const renameInputRef = useRef<HTMLInputElement>(null);
   const pathname = usePathname();
   const router = useRouter();
-  const { signOut, user, userProfile } = useAuth();
+  const { signOut, user, userProfile, recentAccounts, switchToAccount, removeRecentAccount } = useAuth();
   const { userPreferences } = useUserPreferences();
   const { theme, setTheme } = useTheme();
   const { credits, loading: creditsLoading, percentUsed } = useCredits();
+
 
   // Check if profile is set up (has name or profile picture)
   const isProfileComplete = useMemo(() => {
@@ -358,10 +360,25 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
   }, [user?.id]);
 
   // Get plan display name and class
-  const planDisplayName = subscription?.plan
-    ? subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)
-    : 'Free';
-  const isPaidPlan = subscription?.plan === 'pro' || subscription?.plan === 'max';
+  const planDisplayName = useMemo(() => {
+    const plan = subscription?.plan || credits?.plan || 'free_user';
+    const displayNames: Record<string, string> = {
+      'free_user': 'Free',
+      'free': 'Free',
+      'surbee_pro': 'Pro',
+      'pro': 'Pro',
+      'surbee_max': 'Max',
+      'max': 'Max',
+      'surbee_enterprise': 'Enterprise',
+      'enterprise': 'Enterprise',
+    };
+    return displayNames[plan] || 'Free';
+  }, [subscription?.plan, credits?.plan]);
+
+  const isPaidPlan = useMemo(() => {
+    const plan = subscription?.plan || credits?.plan || 'free_user';
+    return ['pro', 'surbee_pro', 'max', 'surbee_max', 'enterprise', 'surbee_enterprise'].includes(plan);
+  }, [subscription?.plan, credits?.plan]);
 
   return (
     <div className={`dashboard-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
@@ -464,8 +481,17 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
                   className="overflow-hidden"
                 >
                   <div className="pl-4 py-1 space-y-1">
-                    <div 
-                      className="text-xs text-zinc-400 hover:text-zinc-100 cursor-pointer py-1.5 px-2 rounded-md hover:bg-white/5 transition-colors truncate"
+                    <div
+                      className="text-xs cursor-pointer py-1.5 px-2 rounded-md transition-colors truncate"
+                      style={{ color: 'var(--surbee-fg-muted)' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+                        e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = 'var(--surbee-fg-muted)';
+                      }}
                       onClick={() => {
                         // Clear any chatId from URL and go to fresh home
                         router.push('/home');
@@ -478,9 +504,18 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
                       style={{ maxHeight: '150px' }}
                     >
                     {recentChats.map((chat) => (
-                      <div 
+                      <div
                         key={chat.id}
-                        className="group relative text-xs text-zinc-400 hover:text-zinc-100 cursor-pointer py-1.5 px-2 rounded-md hover:bg-white/5 transition-colors flex items-center gap-1.5"
+                        className="group relative text-xs cursor-pointer py-1.5 px-2 rounded-md transition-colors flex items-center gap-1.5"
+                        style={{ color: 'var(--surbee-fg-muted)' }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+                          e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                          e.currentTarget.style.color = 'var(--surbee-fg-muted)';
+                        }}
                       >
                         {renamingChatId === chat.id ? (
                           <input
@@ -519,7 +554,10 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <button
-                                  className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded transition-all flex-shrink-0"
+                                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded transition-all flex-shrink-0"
+                                  style={{ backgroundColor: 'transparent' }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-active)'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <MoreHorizontal className="w-3.5 h-3.5" />
@@ -532,8 +570,8 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
                                 style={{
                                   borderRadius: '12px',
                                   padding: '4px',
-                                  border: '1px solid rgba(232, 232, 232, 0.08)',
-                                  backgroundColor: 'rgb(19, 19, 20)',
+                                  border: '1px solid var(--surbee-dropdown-border)',
+                                  backgroundColor: 'var(--surbee-dropdown-bg)',
                                   boxShadow: 'rgba(0, 0, 0, 0.2) 0px 8px 24px',
                                   minWidth: '140px',
                                 }}
@@ -645,7 +683,7 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
 
           {/* Overlay to close on outside click; high z-index */}
           {isUserMenuOpen && (
-            <div className="user-menu-overlay" onClick={() => setIsUserMenuOpen(false)} />
+            <div className="user-menu-overlay" onClick={() => { setIsUserMenuOpen(false); setIsAccountSwitcherOpen(false); }} />
           )}
 
           <AnimatePresence>
@@ -658,29 +696,106 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
                 className="user-menu-panel"
                 role="menu"
               >
-                {/* User info header */}
-                <div className="user-menu-header-section">
-                  <div className="user-menu-username">{displayName}</div>
-                  <div className="user-menu-email">{user?.email || 'you@example.com'}</div>
+                {/* User info header with account switcher */}
+                <div className="user-menu-header-wrapper">
+                  <div
+                    className={`user-menu-header-section ${recentAccounts.filter(a => a.userId !== user?.id).length > 0 ? 'clickable' : ''}`}
+                    onClick={() => {
+                      if (recentAccounts.filter(a => a.userId !== user?.id).length > 0) {
+                        setIsAccountSwitcherOpen(!isAccountSwitcherOpen);
+                      }
+                    }}
+                  >
+                    <div className="user-menu-header-info">
+                      <div className="user-menu-username">{displayName}</div>
+                      <div className="user-menu-email">{user?.email || 'you@example.com'}</div>
+                    </div>
+                    {recentAccounts.filter(a => a.userId !== user?.id).length > 0 && (
+                      <ChevronDown
+                        className={`user-menu-header-chevron ${isAccountSwitcherOpen ? 'open' : ''}`}
+                      />
+                    )}
+                  </div>
+
+                  {/* Account switcher dropdown */}
+                  <AnimatePresence>
+                    {isAccountSwitcherOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+                        className="user-menu-accounts-dropdown"
+                      >
+                        {recentAccounts
+                          .filter(account => account.userId !== user?.id)
+                          .slice(0, 4)
+                          .map(account => (
+                            <div
+                              key={account.userId}
+                              className="user-menu-switch-item"
+                              onClick={() => {
+                                setIsUserMenuOpen(false);
+                                setIsAccountSwitcherOpen(false);
+                                switchToAccount(account);
+                              }}
+                            >
+                              <div className="user-menu-switch-avatar">
+                                {account.picture ? (
+                                  <img src={account.picture} alt={account.displayName} />
+                                ) : (
+                                  <span>{account.displayName?.[0]?.toUpperCase() || 'U'}</span>
+                                )}
+                              </div>
+                              <div className="user-menu-switch-info">
+                                <div className="user-menu-switch-name">{account.displayName}</div>
+                                <div className="user-menu-switch-email">{account.email}</div>
+                              </div>
+                              <button
+                                className="user-menu-switch-remove"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeRecentAccount(account.userId);
+                                }}
+                                aria-label="Remove account"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        <button
+                          className="user-menu-switch-add"
+                          onClick={() => {
+                            setIsUserMenuOpen(false);
+                            setIsAccountSwitcherOpen(false);
+                            signOut().then(() => router.push('/login'));
+                          }}
+                        >
+                          <UserPlus className="h-3.5 w-3.5" />
+                          <span>Add another account</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 {/* Credits Section */}
-                <div className="flex flex-col gap-2 px-3 py-3" style={{ color: 'rgb(153, 153, 153)' }}>
+                <div className="flex flex-col gap-2 px-3 py-3" style={{ color: 'var(--surbee-sidebar-text-muted)' }}>
                   <div className="flex items-center justify-between">
-                    <h5 className="text-xs font-medium flex items-center gap-1.5" style={{ color: 'var(--surbee-fg-muted)' }}>
+                    <h5 className="text-xs font-medium flex items-center gap-1.5" style={{ color: 'var(--surbee-sidebar-text-muted)' }}>
                       <Coins className="w-3 h-3" />
                       Credits
                     </h5>
                     <span className="text-xs">
                       {creditsLoading ? (
-                        <span style={{ color: 'var(--surbee-fg-secondary)' }}>Loading...</span>
+                        <span style={{ color: 'var(--surbee-sidebar-text-secondary)' }}>Loading...</span>
                       ) : credits ? (
                         <>
-                          <span style={{ color: 'var(--surbee-fg-muted)' }}>{credits.creditsRemaining.toLocaleString()}</span>
-                          <span style={{ color: 'var(--surbee-fg-secondary)' }}> / {credits.monthlyCredits.toLocaleString()}</span>
+                          <span style={{ color: 'var(--surbee-sidebar-text-muted)' }}>{credits.creditsRemaining.toLocaleString()}</span>
+                          <span style={{ color: 'var(--surbee-sidebar-text-secondary)' }}> / {credits.monthlyCredits.toLocaleString()}</span>
                         </>
                       ) : (
-                        <span style={{ color: 'var(--surbee-fg-secondary)' }}>--</span>
+                        <span style={{ color: 'var(--surbee-sidebar-text-secondary)' }}>--</span>
                       )}
                     </span>
                   </div>
@@ -697,26 +812,26 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
                       <div
                         className="h-full w-full flex-1 transition-all rounded-full"
                         style={{
-                          backgroundColor: percentUsed > 80 ? '#ef4444' : percentUsed > 50 ? '#eab308' : '#a855f7',
+                          backgroundColor: percentUsed > 80 ? '#ef4444' : percentUsed > 50 ? '#eab308' : '#3b82f6',
                           width: `${100 - percentUsed}%`,
                         }}
                       />
                     </div>
                   </div>
-                  <p className="text-xs leading-4" style={{ color: 'var(--surbee-fg-secondary)' }}>
-                    {credits?.plan === 'enterprise' ? (
+                  <p className="text-xs leading-4" style={{ color: 'var(--surbee-sidebar-text-secondary)' }}>
+                    {credits?.plan === 'surbee_enterprise' ? (
                       'Unlimited credits on Enterprise plan.'
                     ) : daysUntilReset !== null ? (
                       <>
                         {daysUntilReset === 0 ? 'Credits reset today.' : `${daysUntilReset} day${daysUntilReset === 1 ? '' : 's'} until credits reset.`}
-                        {credits?.plan !== 'max' && (
+                        {!isPaidPlan && (
                           <>
                             {' '}
                             <button
                               className="hover:underline cursor-pointer"
                               type="button"
                               onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/pricing'); }}
-                              style={{ color: 'var(--surbee-fg-muted)' }}
+                              style={{ color: 'var(--surbee-sidebar-text-muted)' }}
                             >
                               Upgrade
                             </button>
@@ -726,14 +841,14 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
                     ) : (
                       <>
                         Credits reset monthly.
-                        {credits?.plan !== 'max' && (
+                        {!isPaidPlan && (
                           <>
                             {' '}
                             <button
                               className="hover:underline cursor-pointer"
                               type="button"
                               onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/pricing'); }}
-                              style={{ color: 'var(--surbee-fg-muted)' }}
+                              style={{ color: 'var(--surbee-sidebar-text-muted)' }}
                             >
                               Upgrade
                             </button>
@@ -795,8 +910,8 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
                   </div>
                 </div>
 
-                {/* Upgrade Plan - hide for max/enterprise users */}
-                {credits?.plan !== 'max' && credits?.plan !== 'enterprise' && (
+                {/* Upgrade Plan - hide ONLY for confirmed paid plans */}
+                {!isPaidPlan && (
                   <button
                     onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/pricing'); }}
                     className="user-menu-item"
@@ -804,14 +919,6 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
                     <span>Upgrade plan</span>
                   </button>
                 )}
-
-                {/* Changelog */}
-                <button
-                  onClick={() => { setIsUserMenuOpen(false); handleNavigation('/changelog'); }}
-                  className="user-menu-item"
-                >
-                  <span>Changelog</span>
-                </button>
 
                 {/* Give Feedback */}
                 <button
@@ -996,7 +1103,7 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
               className="flex-1 sm:flex-none cursor-pointer hover:opacity-80 transition-opacity"
               style={{
                 backgroundColor: 'transparent',
-                border: '1px solid rgba(232, 232, 232, 0.12)',
+                border: '1px solid var(--surbee-dropdown-border)',
                 color: 'var(--surbee-fg-primary)',
                 borderRadius: '10px',
               }}

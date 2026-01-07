@@ -1,59 +1,6 @@
 "use client";
 
-// Quirky verbs for tool call actions
-const QUIRKY_VERBS = [
-  "Doodling",
-  "Tinkering",
-  "Sprinkling",
-  "Crafting",
-  "Brewing",
-  "Conjuring",
-  "Weaving",
-  "Sculpting",
-  "Polishing",
-  "Sketching",
-  "Assembling",
-  "Orchestrating",
-  "Composing",
-  "Mixing",
-  "Forging",
-  "Bedazzling",
-  "Whisking",
-  "Knitting",
-  "Molding",
-  "Designing",
-  "Piecing",
-  "Stitching",
-  "Fusing",
-  "Blending",
-  "Shaping",
-];
-
-// Counter to ensure different verbs for each tool call instance
-let verbCounter = 0;
-
-function getQuirkyVerb(): string {
-  // Get a different verb each time by using counter + random offset
-  const index = (verbCounter + Math.floor(Math.random() * 5)) % QUIRKY_VERBS.length;
-  verbCounter = (verbCounter + 1) % QUIRKY_VERBS.length;
-  return QUIRKY_VERBS[index];
-}
-
-function countEdits(output: any): number {
-  if (!output) return 0;
-
-  // Count source_files as edits
-  if (output.source_files && typeof output.source_files === 'object') {
-    return Object.keys(output.source_files).length;
-  }
-
-  // Count other edit-like structures
-  if (Array.isArray(output.edits)) {
-    return output.edits.length;
-  }
-
-  return 0;
-}
+import { motion } from 'framer-motion';
 
 function getEditedFiles(output: any): string[] {
   if (!output) return [];
@@ -69,66 +16,121 @@ function getEditedFiles(output: any): string[] {
   return [];
 }
 
+// Get the action verb based on tool name
+function getToolAction(toolName: string, isActive: boolean): { verb: string; icon: 'edit' | 'build' | 'search' | 'default' } {
+  const activeVerbs: Record<string, { verb: string; icon: 'edit' | 'build' | 'search' | 'default' }> = {
+    'surbe_write': { verb: isActive ? 'Creating' : 'Created', icon: 'edit' },
+    'surbe_quick_edit': { verb: isActive ? 'Editing' : 'Edited', icon: 'edit' },
+    'surbe_line_replace': { verb: isActive ? 'Editing' : 'Edited', icon: 'edit' },
+    'surbe_view': { verb: isActive ? 'Reading' : 'Read', icon: 'search' },
+    'surbe_search_files': { verb: isActive ? 'Searching' : 'Searched', icon: 'search' },
+    'surbe_preview': { verb: isActive ? 'Building' : 'Built', icon: 'build' },
+    'surbe_add_dependency': { verb: isActive ? 'Installing' : 'Installed', icon: 'build' },
+    'init_sandbox': { verb: isActive ? 'Initializing' : 'Initialized', icon: 'build' },
+  };
+  return activeVerbs[toolName] || { verb: isActive ? 'Processing' : 'Processed', icon: 'default' };
+}
+
+// Shimmer text component for active state
+function ShimmerText({ children }: { children: string }) {
+  return (
+    <motion.span
+      className="inline-block bg-gradient-to-r from-muted-foreground via-foreground to-muted-foreground bg-[length:200%_100%] bg-clip-text text-transparent"
+      animate={{ backgroundPosition: ['100% 0%', '0% 0%'] }}
+      transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+    >
+      {children}
+    </motion.span>
+  );
+}
+
 interface ToolCallTreeProps {
   toolName: string;
   output: any;
   isActive: boolean;
+  fileName?: string;
 }
 
-export function ToolCallTree({ toolName, output, isActive }: ToolCallTreeProps) {
-  // Generate verb deterministically based on toolName to keep it consistent
-  const quirkyVerb = QUIRKY_VERBS[toolName.length % QUIRKY_VERBS.length];
-  const editCount = countEdits(output);
+export function ToolCallTree({ toolName, output, isActive, fileName }: ToolCallTreeProps) {
   const editedFiles = getEditedFiles(output);
+  const { verb, icon } = getToolAction(toolName, isActive);
+
+  // Show active state with shimmer
+  if (isActive) {
+    const displayFile = fileName || (editedFiles.length > 0 ? editedFiles[0] : null);
+
+    return (
+      <div className="flex flex-col gap-1 my-1">
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          {/* Animated spinner */}
+          <motion.div
+            className="shrink-0 h-3.5 w-3.5"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          >
+            <svg
+              className="h-full w-full opacity-60"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+            </svg>
+          </motion.div>
+          <ShimmerText>{verb}</ShimmerText>
+          {displayFile && (
+            <span
+              className="rounded bg-secondary/80 px-1.5 py-0.5 text-xs font-mono truncate max-w-[200px]"
+              title={displayFile}
+            >
+              {displayFile}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Don't show completed state if no files were edited
+  if (editedFiles.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="flex flex-col text-muted-foreground">
-      <div
-        className="flex h-6 items-center whitespace-nowrap text-base font-medium md:text-sm"
-        style={{ fontSize: '14px' }}
-      >
-        {/* Edit Icon */}
-        <div className="mb-px mr-1.5 flex shrink-0 items-center">
+    <div className="flex flex-col gap-1 my-1">
+      {editedFiles.map((file, idx) => (
+        <motion.div
+          key={idx}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground"
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.2, delay: idx * 0.05 }}
+        >
+          {/* File edit icon */}
           <svg
-            className="shrink-0 h-4 w-4"
-            height="100%"
-            width="100%"
-            fill="currentColor"
-            viewBox="0 -960 960 960"
-            xmlns="http://www.w3.org/2000/svg"
+            className="shrink-0 h-3.5 w-3.5 opacity-60"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            <path d="M560-110v-81q0-5.57 2-10.78 2-5.22 7-10.22l211.61-210.77q9.11-9.12 20.25-13.18Q812-440 823-440q12 0 23 4.5t20 13.5l37 37q9 9 13 20t4 22-4.5 22.5-13.58 20.62L692-89q-5 5-10.22 7-5.21 2-10.78 2h-81q-12.75 0-21.37-8.63Q560-97.25 560-110m300-233-37-37zM620-140h38l121-122-37-37-122 121zM220-80q-24 0-42-18t-18-42v-680q0-24 18-42t42-18h315q12.44 0 23.72 5T578-862l204 204q8 8 13 19.28t5 23.72v71q0 12.75-8.68 21.37-8.67 8.63-21.5 8.63-12.82 0-21.32-8.63-8.5-8.62-8.5-21.37v-56H550q-12.75 0-21.37-8.63Q520-617.25 520-630v-190H220v680h250q12.75 0 21.38 8.68 8.62 8.67 8.62 21.5 0 12.82-8.62 21.32Q482.75-80 470-80zm0-60v-680zm541-141-19-18 37 37z" />
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+            <polyline points="14 2 14 8 20 8" />
+            <path d="M12 18v-6" />
+            <path d="M9 15l3 3 3-3" />
           </svg>
-        </div>
-
-        {/* Quirky verb with shimmer effect when active */}
-        <span className={`flex-shrink-0 font-normal ${isActive ? 'animate-shimmer bg-gradient-to-r from-muted-foreground via-foreground to-muted-foreground bg-[length:200%_100%] bg-clip-text text-transparent' : ''}`}>
-          {isActive ? `${quirkyVerb}...` : `${quirkyVerb}`}
-        </span>
-
-        {!isActive && editCount > 0 && (
-          <span className="ml-2 text-xs opacity-70">
-            {editCount} {editCount === 1 ? 'edit' : 'edits'} made
+          <span className="opacity-70">{verb}</span>
+          <span
+            className="rounded bg-secondary/80 px-1.5 py-0.5 text-xs font-mono truncate max-w-[200px]"
+            title={file}
+          >
+            {file}
           </span>
-        )}
-      </div>
-
-      {/* Show edited files when not active and files exist */}
-      {!isActive && editedFiles.length > 0 && (
-        <div className="mt-2 ml-6 space-y-1">
-          {editedFiles.map((file, idx) => (
-            <div key={idx} className="flex items-center text-sm">
-              <span className="text-muted-foreground">Edited</span>
-              <span
-                className="relative ml-1 w-fit max-w-xs truncate rounded-md bg-secondary px-2 py-0.5 text-xs font-normal text-muted-foreground"
-                title={file}
-              >
-                {file}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+        </motion.div>
+      ))}
     </div>
   );
 }

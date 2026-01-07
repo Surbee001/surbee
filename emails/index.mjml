@@ -1,0 +1,160 @@
+<mjml>
+  <mj-head>
+    <mj-title>You're In! Welcome to Surbee</mj-title>
+    <mj-preview>You've secured your spot on the Surbee waitlist</mj-preview>
+    <mj-font name="Inter" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" />
+    <mj-font name="Roboto Mono" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" />
+    <mj-attributes>
+      <mj-all font-family="'Opening Hours Sans', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" />
+      <mj-text font-size="17px" line-height="1.6" color="rgb(26, 26, 26)" align="left" padding="0" />
+      <mj-button background-color="rgb(26, 26, 26)" color="rgb(255, 255, 255)" border-radius="30px" font-family="'Roboto Mono', monospace" font-size="14px" text-transform="uppercase" letter-spacing="0.5px" />
+    </mj-attributes>
+    <mj-style>
+      @font-face {
+        font-family: 'Opening Hours Sans';
+        src: url('https://ik.imagekit.io/on0moldgr/Waitlist%20Content/OpeningHoursSans-Regular.woff2') format('woff2');
+        font-weight: 400;
+        font-style: normal;
+      }
+      a { color: rgb(26, 26, 26); }
+    </mj-style>
+  </mj-head>
+
+  <mj-body background-color="rgb(247, 247, 244)">
+    <mj-section padding="20px 0 0 0" background-color="rgb(247, 247, 244)"></mj-section>
+
+    <mj-wrapper padding="0 20px" background-color="rgb(247, 247, 244)">
+      <mj-section padding="48px 40px 32px 40px" background-color="rgb(255, 255, 255)" border-radius="5px 5px 0 0">
+        <mj-column>
+          <mj-image
+            src="img/Surbee Logo.png"
+            alt="Surbee"
+            width="100px"
+            align="left"
+            padding="0"
+          />
+        </mj-column>
+      </mj-section>
+
+      <mj-section padding="0 40px 40px 40px" background-color="rgb(255, 255, 255)">
+        <mj-column>
+          <mj-text
+            font-size="26px"
+            font-weight="400"
+            line-height="1.2"
+            color="rgb(17, 16, 12)"
+            padding="0 0 16px 0"
+            letter-spacing="-0.05em"
+          >
+            You're in.
+          </mj-text>
+          <mj-text
+            font-size="17px"
+            line-height="1.6"
+            color="rgb(100, 100, 100)"
+            padding="0"
+            letter-spacing="-0.01em"
+          >
+            Welcome to the future of research.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section padding="24px 40px" background-color="rgb(255, 255, 255)">
+        <mj-column>
+          <mj-text font-size="17px" line-height="1.6" color="rgb(26, 26, 26)" letter-spacing="-0.01em" padding="0">
+            Thank you for joining our waitlist. We're building something different and we're thrilled you want to be part of it.
+          </mj-text>
+          <mj-text font-size="17px" line-height="1.6" color="rgb(26, 26, 26)" padding="20px 0 0 0" letter-spacing="-0.01em">
+            At Surbee, we believe data collection shouldn't be tedious. It should be intelligent, beautiful, and human. We're changing the way research is done, making it extraordinarily efficient while keeping the quality researchers demand.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section padding="16px 40px" background-color="rgb(255, 255, 255)">
+        <mj-column background-color="rgb(247, 247, 244)" padding="28px" border-radius="5px">
+          <mj-text
+            font-size="20px"
+            font-weight="500"
+            color="rgb(17, 16, 12)"
+            padding="0 0 20px 0"
+            letter-spacing="-0.04em"
+          >
+            What is Surbee?
+          </mj-text>
+          <mj-text font-size="15px" line-height="1.6" color="rgb(26, 26, 26)" padding="0 0 16px 0">
+            <span style="color: rgb(17, 16, 12); font-weight: 500;">Generate</span><br/>
+            Create surveys for any domain. Our AI understands your industry's language and builds research-grade questions in seconds.
+          </mj-text>
+          <mj-text font-size="15px" line-height="1.6" color="rgb(26, 26, 26)" padding="0 0 16px 0">
+            <span style="color: rgb(17, 16, 12); font-weight: 500;">Verify</span><br/>
+            Cipher validates every response. Detect bots, VPNs, duplicates, and even classroom proximity for academic integrity.
+          </mj-text>
+          <mj-text font-size="15px" line-height="1.6" color="rgb(26, 26, 26)" padding="0 0 16px 0">
+            <span style="color: rgb(17, 16, 12); font-weight: 500;">Chat</span><br/>
+            Ask questions about your data in plain language. Surface patterns across thousands of responses instantly.
+          </mj-text>
+          <mj-text font-size="15px" line-height="1.6" color="rgb(26, 26, 26)" padding="0">
+            <span style="color: rgb(17, 16, 12); font-weight: 500;">Visualize</span><br/>
+            Generate charts, graphs, and reports automatically. From raw data to board-ready presentations in one click.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section padding="24px 40px 16px 40px" background-color="rgb(255, 255, 255)">
+        <mj-column>
+          <mj-text
+            font-size="20px"
+            font-weight="500"
+            color="rgb(17, 16, 12)"
+            padding="0 0 12px 0"
+            letter-spacing="-0.04em"
+          >
+            What happens next?
+          </mj-text>
+          <mj-text font-size="17px" line-height="1.6" color="rgb(26, 26, 26)" letter-spacing="-0.01em" padding="0">
+            We're currently in closed beta, carefully onboarding users to ensure the best possible experience. We'll reach out via email when a spot opens up for you.
+          </mj-text>
+          <mj-text font-size="17px" line-height="1.6" color="rgb(100, 100, 100)" padding="12px 0 0 0" letter-spacing="-0.01em">
+            <em>In the meantime, keep an eye on your inbox. We might send you early previews, behind-the-scenes updates, and exclusive invites.</em>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section padding="24px 40px 48px 40px" background-color="rgb(255, 255, 255)">
+        <mj-column>
+          <mj-button
+            href="https://surbee.dev"
+            background-color="rgb(242, 196, 255)"
+            color="rgb(17, 16, 12)"
+            border-radius="30px"
+            font-size="14px"
+            font-weight="500"
+            align="left"
+            inner-padding="12px 24px"
+            padding="0"
+          >
+            VISIT SURBEE
+          </mj-button>
+        </mj-column>
+      </mj-section>
+
+      <mj-section padding="28px 40px 40px 40px" background-color="rgb(255, 255, 255)" border-radius="0 0 5px 5px">
+        <mj-column>
+          <mj-text font-size="14px" color="rgb(100, 100, 100)" line-height="1.5" padding="0">
+            Thanks for believing in what we're building.<br/>
+            The Surbee Team
+          </mj-text>
+          <mj-text font-size="12px" color="rgb(100, 100, 100)" padding="24px 0 0 0" line-height="1.5">
+            © 2025 Surbee. All rights reserved.<br/><br/>
+            <a href="{{unsubscribe_link}}" style="color: rgb(100, 100, 100); text-decoration: underline;">Unsubscribe</a> ·
+            <a href="https://surbee.dev/privacy" style="color: rgb(100, 100, 100); text-decoration: underline;">Privacy Policy</a> ·
+            <a href="https://surbee.dev/terms" style="color: rgb(100, 100, 100); text-decoration: underline;">Terms of Service</a>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
+
+    <mj-section padding="20px 0" background-color="rgb(247, 247, 244)"></mj-section>
+  </mj-body>
+</mjml>

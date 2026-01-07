@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Download, ChevronDown, ChevronUp, Monitor, Smartphone, Tablet, AlertTriangle, Zap, Copy, Hash, TrendingUp, TrendingDown, ArrowUpRight, Users } from 'lucide-react';
+import { Download, ChevronDown, ChevronUp, Monitor, Smartphone, Tablet, AlertTriangle, Zap, Copy, Hash, TrendingUp, TrendingDown, ArrowUpRight, Users, ArrowRight } from 'lucide-react';
 import { format, formatDistanceToNow, subDays } from 'date-fns';
 import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip, BarChart, Bar, LineChart, Line } from 'recharts';
+
+// Light theme styles matching Framer homepage
 
 interface InsightsTabRedesignProps {
   projectId: string;
@@ -631,14 +633,33 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
       )}
 
       <style jsx>{`
+        /* ===================================== */
+        /* THEME-AWARE - USING SURBEE VARIABLES */
+        /* ===================================== */
         .insights-root {
-          --font-display: 'Kalice Regular', 'Kalice-Trial-Regular', Georgia, serif;
-          --font-body: var(--font-inter, 'Sohne', -apple-system, sans-serif);
-          --font-mono: 'Menlo', 'Monaco', 'Courier New', monospace;
-          --accent: #091717;
+          --font-body: var(--font-inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+          --font-mono: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+
+          /* Theme-aware colors using Surbee design system */
+          --bg-primary: transparent;
+          --bg-secondary: var(--surbee-bg-secondary, rgba(255, 255, 255, 0.03));
+          --bg-tertiary: var(--surbee-bg-tertiary, rgba(255, 255, 255, 0.05));
+          --bg-elevated: var(--surbee-bg-elevated, rgba(255, 255, 255, 0.06));
+          --bg-card: var(--surbee-card-bg, rgba(255, 255, 255, 0.03));
+          --bg-card-hover: var(--surbee-bg-tertiary, rgba(255, 255, 255, 0.06));
+          --fg-primary: var(--surbee-fg-primary, #E8E8E8);
+          --fg-secondary: var(--surbee-fg-secondary, #B8B8B8);
+          --fg-muted: var(--surbee-fg-muted, rgba(232, 232, 232, 0.5));
+          --fg-subtle: var(--surbee-fg-subtle, rgba(232, 232, 232, 0.3));
+          --border-primary: var(--surbee-border-primary, rgba(232, 232, 232, 0.08));
+          --border-secondary: var(--surbee-border-secondary, rgba(232, 232, 232, 0.04));
+          --border-hover: var(--surbee-border-hover, rgba(232, 232, 232, 0.15));
+          --accent: #3b82f6;
+          --accent-soft: rgba(59, 130, 246, 0.15);
 
           font-family: var(--font-body);
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--fg-primary);
+          background: var(--bg-primary);
         }
 
         /* Header */
@@ -646,7 +667,7 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 32px;
+          margin-bottom: 24px;
           flex-wrap: wrap;
           gap: 16px;
         }
@@ -655,29 +676,30 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           display: flex;
           gap: 4px;
           padding: 4px;
-          background: var(--surbee-bg-secondary, #1E1E1F);
-          border-radius: 12px;
+          background: var(--bg-tertiary);
+          border-radius: 9999px;
         }
 
         .nav-btn {
-          padding: 10px 20px;
+          padding: 8px 18px;
           background: transparent;
           border: none;
-          border-radius: 8px;
+          border-radius: 9999px;
           font-size: 13px;
           font-weight: 500;
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
         .nav-btn:hover {
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--fg-primary);
+          background: var(--bg-secondary);
         }
 
         .nav-btn.active {
-          background: var(--surbee-bg-primary, #131314);
-          color: var(--surbee-fg-primary, #E8E8E8);
+          background: var(--fg-primary);
+          color: var(--surbee-bg-primary, #0a0a0a);
         }
 
         .time-selector {
@@ -686,24 +708,24 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .time-btn {
-          padding: 8px 14px;
-          background: transparent;
-          border: 1px solid var(--surbee-border-primary, rgba(255,255,255,0.1));
-          border-radius: 8px;
+          padding: 6px 14px;
+          background: var(--bg-tertiary);
+          border: none;
+          border-radius: 9999px;
           font-size: 12px;
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
         .time-btn:hover {
-          border-color: var(--surbee-fg-muted, #888);
+          background: var(--bg-elevated);
+          color: var(--fg-secondary);
         }
 
         .time-btn.active {
-          background: var(--surbee-fg-primary, #E8E8E8);
-          border-color: var(--surbee-fg-primary, #E8E8E8);
-          color: var(--surbee-bg-primary, #131314);
+          background: var(--fg-primary);
+          color: var(--surbee-bg-primary, #0a0a0a);
         }
 
         /* Bento Grid */
@@ -711,7 +733,7 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           grid-auto-rows: minmax(120px, auto);
-          gap: 16px;
+          gap: 12px;
         }
 
         @media (max-width: 1200px) {
@@ -727,42 +749,52 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .bento-card {
-          background: var(--surbee-bg-secondary, #1E1E1F);
-          border-radius: 8px;
-          padding: 24px;
+          background: var(--bg-card);
+          border: 1px solid var(--border-primary);
+          border-radius: 16px;
+          padding: 20px;
           position: relative;
           overflow: hidden;
+          transition: all 0.2s ease;
+        }
+
+        .bento-card:hover {
+          background: var(--bg-card-hover);
+          border-color: var(--border-hover);
         }
 
         /* Main Stats Card */
         .main-stats {
           grid-column: span 2;
           grid-row: span 2;
+          background: var(--bg-tertiary);
         }
 
         .card-label {
-          font-size: 12px;
+          font-family: var(--font-mono);
+          font-size: 10px;
           font-weight: 500;
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
           text-transform: uppercase;
           letter-spacing: 0.5px;
           margin-bottom: 8px;
         }
 
         .main-number {
-          font-family: var(--font-display);
-          font-size: 96px;
-          font-weight: 400;
+          font-family: var(--font-body);
+          font-size: 72px;
+          font-weight: 600;
           line-height: 1;
-          margin-bottom: 16px;
-          letter-spacing: -4px;
+          margin-bottom: 12px;
+          letter-spacing: -3px;
+          color: var(--fg-primary);
         }
 
         .change-indicator {
           display: flex;
           align-items: center;
           gap: 8px;
-          margin-bottom: 24px;
+          margin-bottom: 20px;
         }
 
         .change {
@@ -770,10 +802,10 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           align-items: center;
           gap: 4px;
           font-family: var(--font-mono);
-          font-size: 13px;
+          font-size: 11px;
           font-weight: 500;
-          padding: 4px 10px;
-          border-radius: 6px;
+          padding: 4px 8px;
+          border-radius: 9999px;
         }
 
         .change.positive {
@@ -787,8 +819,8 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .change-label {
-          font-size: 12px;
-          color: var(--surbee-fg-muted, #888);
+          font-size: 11px;
+          color: var(--fg-muted);
         }
 
         .mini-chart {
@@ -796,25 +828,15 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           bottom: 0;
           left: 0;
           right: 0;
-          height: 80px;
+          height: 70px;
+          opacity: 0.6;
         }
 
         /* Stat Cards */
         .stat-card {
           display: flex;
           flex-direction: column;
-          gap: 12px;
-        }
-
-        .stat-icon {
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--surbee-bg-tertiary, #252526);
-          border-radius: 10px;
-          color: var(--surbee-fg-muted, #888);
+          gap: 10px;
         }
 
         .stat-content {
@@ -822,27 +844,31 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .stat-number {
-          font-family: var(--font-mono);
-          font-size: 32px;
-          font-weight: 500;
+          font-family: var(--font-body);
+          font-size: 28px;
+          font-weight: 600;
           line-height: 1;
+          color: var(--fg-primary);
         }
 
         .stat-unit {
-          font-size: 18px;
+          font-size: 16px;
           opacity: 0.5;
           margin-left: 2px;
         }
 
         .stat-label {
-          font-size: 12px;
-          color: var(--surbee-fg-muted, #888);
-          margin-top: 4px;
+          font-family: var(--font-mono);
+          font-size: 10px;
+          color: var(--fg-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-top: 6px;
         }
 
         .stat-bar {
-          height: 4px;
-          background: var(--surbee-bg-tertiary, #252526);
+          height: 3px;
+          background: var(--bg-elevated);
           border-radius: 2px;
           overflow: hidden;
           margin-top: auto;
@@ -859,8 +885,11 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           display: flex;
           align-items: center;
           gap: 6px;
-          font-size: 11px;
-          color: var(--surbee-fg-muted, #888);
+          font-family: var(--font-mono);
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--fg-muted);
           margin-top: auto;
         }
 
@@ -878,30 +907,38 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         .insight-feature {
           grid-column: span 2;
           background: var(--accent);
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: white;
+          border-color: transparent;
+        }
+
+        .insight-feature:hover {
+          background: var(--accent);
+          border-color: transparent;
         }
 
         .insight-badge {
           font-family: var(--font-mono);
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 600;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
-          padding: 4px 8px;
-          background: rgba(255,255,255,0.15);
-          border-radius: 4px;
+          letter-spacing: 1px;
+          padding: 4px 10px;
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 9999px;
           display: inline-block;
-          margin-bottom: 16px;
+          margin-bottom: 12px;
         }
 
         .insight-text {
-          font-size: 18px;
-          line-height: 1.5;
-          margin-bottom: 16px;
+          font-size: 15px;
+          line-height: 1.6;
+          margin-bottom: 12px;
+          opacity: 0.95;
         }
 
         .insight-text strong {
           font-weight: 600;
+          opacity: 1;
         }
 
         .insight-chart {
@@ -909,13 +946,8 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           bottom: 0;
           left: 0;
           right: 0;
-          height: 100px;
-          opacity: 0.3;
-        }
-
-        .insight-chart :global(path),
-        .insight-chart :global(line) {
-          stroke: var(--surbee-fg-primary, #E8E8E8) !important;
+          height: 80px;
+          opacity: 0.2;
         }
 
         /* Chart Card */
@@ -927,60 +959,69 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 16px;
+          margin-bottom: 12px;
         }
 
         .chart-title {
-          font-size: 14px;
-          font-weight: 600;
+          font-family: var(--font-mono);
+          font-size: 10px;
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--fg-muted);
         }
 
         .chart-period {
           font-family: var(--font-mono);
           font-size: 10px;
-          color: var(--surbee-fg-muted, #888);
-          padding: 4px 8px;
-          background: var(--surbee-bg-tertiary, #252526);
-          border-radius: 4px;
+          color: var(--fg-subtle);
+          padding: 4px 10px;
+          background: var(--bg-elevated);
+          border-radius: 9999px;
         }
 
         .chart-container {
-          height: 140px;
+          height: 120px;
         }
 
         /* Devices Card */
         .devices-card .card-title,
         .recent-card .card-title {
-          font-size: 14px;
-          font-weight: 600;
-          margin-bottom: 16px;
+          font-family: var(--font-mono);
+          font-size: 10px;
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--fg-muted);
+          margin-bottom: 12px;
         }
 
         .devices-list {
           display: flex;
           flex-direction: column;
-          gap: 14px;
+          gap: 10px;
         }
 
         .device-item {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
         }
 
         .device-info {
           display: flex;
           align-items: center;
-          gap: 8px;
-          min-width: 90px;
+          gap: 6px;
+          min-width: 80px;
         }
 
         .device-icon {
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
         }
 
         .device-name {
-          font-size: 13px;
+          font-size: 12px;
+          color: var(--fg-secondary);
         }
 
         .device-stats {
@@ -992,24 +1033,24 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
 
         .device-bar {
           flex: 1;
-          height: 4px;
-          background: var(--surbee-bg-tertiary, #252526);
+          height: 3px;
+          background: var(--bg-elevated);
           border-radius: 2px;
           overflow: hidden;
         }
 
         .device-bar-fill {
           height: 100%;
-          background: var(--surbee-fg-primary, #E8E8E8);
+          background: var(--fg-secondary);
           border-radius: 2px;
           transition: width 0.5s ease;
         }
 
         .device-pct {
           font-family: var(--font-mono);
-          font-size: 11px;
-          color: var(--surbee-fg-muted, #888);
-          min-width: 32px;
+          font-size: 10px;
+          color: var(--fg-muted);
+          min-width: 28px;
           text-align: right;
         }
 
@@ -1017,27 +1058,32 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         .recent-list {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 6px;
         }
 
         .recent-item {
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 10px;
-          background: var(--surbee-bg-tertiary, #252526);
+          gap: 10px;
+          padding: 8px 10px;
+          background: var(--bg-secondary);
           border-radius: 10px;
+          transition: all 0.15s ease;
+        }
+
+        .recent-item:hover {
+          background: var(--bg-elevated);
         }
 
         .recent-avatar {
-          width: 32px;
-          height: 32px;
+          width: 28px;
+          height: 28px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: var(--surbee-bg-secondary, #1E1E1F);
+          background: var(--bg-tertiary);
           border-radius: 8px;
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
         }
 
         .recent-info {
@@ -1048,19 +1094,23 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .recent-time {
-          font-size: 12px;
+          font-size: 11px;
+          color: var(--fg-secondary);
         }
 
         .recent-status {
-          font-size: 10px;
-          color: var(--surbee-fg-muted, #888);
-          text-transform: capitalize;
+          font-family: var(--font-mono);
+          font-size: 9px;
+          color: var(--fg-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
 
         .recent-score .score-badge {
           font-family: var(--font-mono);
-          font-size: 11px;
-          padding: 4px 8px;
+          font-size: 10px;
+          font-weight: 500;
+          padding: 3px 6px;
           border-radius: 6px;
         }
 
@@ -1075,10 +1125,10 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .recent-empty {
-          font-size: 13px;
-          color: var(--surbee-fg-muted, #888);
+          font-size: 12px;
+          color: var(--fg-muted);
           text-align: center;
-          padding: 20px;
+          padding: 16px;
         }
 
         /* ==================== */
@@ -1087,7 +1137,7 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         .responses-bento {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 16px;
+          gap: 12px;
         }
 
         @media (max-width: 1200px) {
@@ -1101,18 +1151,22 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         .resp-total {
           grid-column: span 2;
           position: relative;
+          background: var(--bg-tertiary);
         }
 
         .resp-big-number {
-          font-family: var(--font-display);
-          font-size: 72px;
+          font-family: var(--font-body);
+          font-size: 56px;
+          font-weight: 600;
           line-height: 1;
-          letter-spacing: -3px;
+          letter-spacing: -2px;
+          color: var(--fg-primary);
         }
 
         .resp-label {
-          font-size: 12px;
-          color: var(--surbee-fg-muted, #888);
+          font-family: var(--font-mono);
+          font-size: 10px;
+          color: var(--fg-muted);
           margin-top: 8px;
           text-transform: uppercase;
           letter-spacing: 0.5px;
@@ -1120,14 +1174,14 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
 
         .export-fab {
           position: absolute;
-          top: 20px;
-          right: 20px;
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          background: var(--surbee-bg-tertiary, #252526);
-          border: none;
-          color: var(--surbee-fg-primary, #E8E8E8);
+          top: 16px;
+          right: 16px;
+          width: 32px;
+          height: 32px;
+          border-radius: 9999px;
+          background: var(--bg-elevated);
+          border: 1px solid var(--border-primary);
+          color: var(--fg-secondary);
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -1136,8 +1190,9 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .export-fab:hover {
-          background: var(--accent);
-          color: #0a0a0a;
+          background: var(--fg-primary);
+          border-color: var(--fg-primary);
+          color: var(--surbee-bg-primary, #0a0a0a);
         }
 
         .resp-stat {
@@ -1145,27 +1200,29 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .resp-stat-number {
-          font-family: var(--font-mono);
-          font-size: 28px;
-          font-weight: 500;
+          font-family: var(--font-body);
+          font-size: 24px;
+          font-weight: 600;
+          color: var(--fg-primary);
         }
 
         .resp-unit {
-          font-size: 16px;
+          font-size: 14px;
           opacity: 0.5;
         }
 
         .resp-stat-label {
-          font-size: 11px;
-          color: var(--surbee-fg-muted, #888);
-          margin-top: 4px;
+          font-family: var(--font-mono);
+          font-size: 10px;
+          color: var(--fg-muted);
+          margin-top: 6px;
           text-transform: uppercase;
-          letter-spacing: 0.3px;
+          letter-spacing: 0.5px;
         }
 
         .resp-stat-bar {
           height: 3px;
-          background: var(--surbee-bg-tertiary, #252526);
+          background: var(--bg-elevated);
           border-radius: 2px;
           margin-top: auto;
           overflow: hidden;
@@ -1183,8 +1240,8 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
 
         .resp-stat-icon {
           position: absolute;
-          top: 20px;
-          right: 20px;
+          top: 16px;
+          right: 16px;
         }
 
         .resp-stat-icon.flagged {
@@ -1192,8 +1249,8 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .resp-quality-dot {
-          width: 8px;
-          height: 8px;
+          width: 6px;
+          height: 6px;
           border-radius: 50%;
           margin-top: auto;
         }
@@ -1208,9 +1265,9 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 16px;
-          padding: 60px;
-          color: var(--surbee-fg-muted, #888);
+          gap: 12px;
+          padding: 48px;
+          color: var(--fg-muted);
         }
 
         .resp-card {
@@ -1235,20 +1292,21 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 12px;
+          margin-bottom: 10px;
         }
 
         .resp-card-id {
           font-family: var(--font-mono);
           font-size: 10px;
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
         }
 
         .resp-card-quality {
           font-family: var(--font-mono);
-          font-size: 11px;
+          font-size: 10px;
+          font-weight: 500;
           padding: 3px 8px;
-          border-radius: 6px;
+          border-radius: 9999px;
         }
 
         .resp-card-quality.high {
@@ -1267,16 +1325,17 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .resp-card-time {
-          font-size: 14px;
-          margin-bottom: 8px;
+          font-size: 13px;
+          color: var(--fg-secondary);
+          margin-bottom: 6px;
         }
 
         .resp-card-meta {
           display: flex;
           align-items: center;
-          gap: 10px;
-          font-size: 12px;
-          color: var(--surbee-fg-muted, #888);
+          gap: 8px;
+          font-size: 11px;
+          color: var(--fg-muted);
         }
 
         .resp-card-device {
@@ -1285,36 +1344,36 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .resp-card-status {
-          width: 6px;
-          height: 6px;
+          width: 5px;
+          height: 5px;
           border-radius: 50%;
           margin-left: auto;
         }
 
         .resp-card-status.completed { background: #22c55e; }
         .resp-card-status.partial { background: #f59e0b; }
-        .resp-card-status.abandoned { background: var(--surbee-fg-muted); opacity: 0.4; }
+        .resp-card-status.abandoned { background: var(--fg-muted); opacity: 0.4; }
 
         .resp-card-expanded {
-          margin-top: 16px;
+          margin-top: 12px;
         }
 
         .resp-card-divider {
           height: 1px;
-          background: var(--surbee-border-primary, rgba(255,255,255,0.1));
-          margin-bottom: 16px;
+          background: var(--border-primary);
+          margin-bottom: 12px;
         }
 
         .resp-card-answers {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 8px;
         }
 
         .resp-answer {
-          padding: 12px;
-          background: var(--surbee-bg-tertiary, #252526);
-          border-radius: 10px;
+          padding: 10px;
+          background: var(--bg-secondary);
+          border-radius: 8px;
           cursor: default;
         }
 
@@ -1324,33 +1383,34 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .resp-answer-q {
-          font-size: 11px;
-          color: var(--surbee-fg-muted, #888);
-          margin-bottom: 6px;
+          font-size: 10px;
+          color: var(--fg-muted);
+          margin-bottom: 4px;
           display: flex;
-          gap: 8px;
+          gap: 6px;
         }
 
         .resp-q-num {
           font-family: var(--font-mono);
           font-size: 9px;
           padding: 2px 5px;
-          background: var(--surbee-bg-secondary);
-          border-radius: 3px;
+          background: var(--bg-elevated);
+          border-radius: 4px;
         }
 
         .resp-answer-a {
-          font-size: 13px;
+          font-size: 12px;
           line-height: 1.5;
-          margin-bottom: 8px;
+          margin-bottom: 6px;
+          color: var(--fg-secondary);
         }
 
         .resp-answer-meta {
           display: flex;
-          gap: 10px;
+          gap: 8px;
           font-family: var(--font-mono);
-          font-size: 10px;
-          color: var(--surbee-fg-muted, #888);
+          font-size: 9px;
+          color: var(--fg-muted);
         }
 
         .resp-score.high { color: #22c55e; }
@@ -1358,22 +1418,22 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
 
         .resp-issues-badge {
           color: #ef4444;
-          padding: 1px 6px;
-          background: rgba(239, 68, 68, 0.1);
+          padding: 1px 5px;
+          background: rgba(239, 68, 68, 0.15);
           border-radius: 4px;
         }
 
         .resp-issues-detail {
-          margin-top: 10px;
-          padding-top: 10px;
-          border-top: 1px solid var(--surbee-border-secondary);
+          margin-top: 8px;
+          padding-top: 8px;
+          border-top: 1px solid var(--border-secondary);
         }
 
         .resp-issue {
           display: flex;
-          gap: 8px;
-          font-size: 11px;
-          padding: 6px 0;
+          gap: 6px;
+          font-size: 10px;
+          padding: 4px 0;
         }
 
         .resp-issue-type {
@@ -1385,8 +1445,8 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         .resp-issue-sev {
           font-family: var(--font-mono);
           font-size: 9px;
-          padding: 2px 6px;
-          border-radius: 3px;
+          padding: 2px 5px;
+          border-radius: 4px;
         }
 
         .resp-issue-sev.high {
@@ -1400,8 +1460,8 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .resp-issue-sev.low {
-          background: rgba(156, 163, 175, 0.15);
-          color: var(--surbee-fg-muted);
+          background: var(--bg-elevated);
+          color: var(--fg-muted);
         }
 
         .resp-more {
@@ -1414,17 +1474,22 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .resp-more:hover {
-          background: var(--surbee-bg-tertiary, #252526);
+          background: var(--bg-elevated);
         }
 
         .resp-more-count {
-          font-family: var(--font-display);
-          font-size: 32px;
+          font-family: var(--font-body);
+          font-size: 28px;
+          font-weight: 600;
+          color: var(--fg-primary);
         }
 
         .resp-more-label {
-          font-size: 11px;
-          color: var(--surbee-fg-muted, #888);
+          font-family: var(--font-mono);
+          font-size: 9px;
+          color: var(--fg-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
 
         /* =============== */
@@ -1433,7 +1498,7 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         .flow-bento {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 16px;
+          gap: 12px;
         }
 
         @media (max-width: 1200px) {
@@ -1446,69 +1511,74 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
 
         .flow-hero {
           grid-column: span 3;
+          background: var(--bg-tertiary);
         }
 
         .flow-hero-label {
-          font-family: var(--font-display);
-          font-size: 28px;
-          margin-bottom: 24px;
+          font-family: var(--font-body);
+          font-size: 22px;
+          font-weight: 600;
+          margin-bottom: 20px;
+          color: var(--fg-primary);
         }
 
         .flow-hero-stats {
           display: flex;
-          gap: 32px;
-          margin-bottom: 24px;
+          gap: 24px;
+          margin-bottom: 20px;
         }
 
         .flow-hero-stat {
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          gap: 2px;
         }
 
         .flow-stat-num {
-          font-family: var(--font-mono);
-          font-size: 32px;
-          font-weight: 500;
+          font-family: var(--font-body);
+          font-size: 28px;
+          font-weight: 600;
+          color: var(--fg-primary);
         }
 
         .flow-stat-label {
-          font-size: 11px;
-          color: var(--surbee-fg-muted, #888);
+          font-family: var(--font-mono);
+          font-size: 9px;
+          color: var(--fg-muted);
           text-transform: uppercase;
-          letter-spacing: 0.3px;
+          letter-spacing: 0.5px;
         }
 
         .flow-hero-divider {
           width: 1px;
-          background: var(--surbee-border-primary, rgba(255,255,255,0.1));
+          background: var(--border-primary);
         }
 
         .flow-hero-rate {
           display: flex;
           align-items: center;
-          gap: 16px;
+          gap: 12px;
         }
 
         .flow-rate-bar {
           flex: 1;
-          height: 6px;
-          background: var(--surbee-bg-tertiary, #252526);
-          border-radius: 3px;
+          height: 3px;
+          background: var(--bg-elevated);
+          border-radius: 2px;
           overflow: hidden;
         }
 
         .flow-rate-fill {
           height: 100%;
-          background: var(--surbee-fg-primary, #E8E8E8);
-          border-radius: 3px;
+          background: var(--accent);
+          border-radius: 2px;
           transition: width 0.5s ease;
         }
 
         .flow-rate-pct {
           font-family: var(--font-mono);
-          font-size: 12px;
-          color: var(--surbee-fg-muted, #888);
+          font-size: 11px;
+          color: var(--fg-muted);
           white-space: nowrap;
         }
 
@@ -1516,62 +1586,65 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         .flow-summary {
           display: flex;
           align-items: center;
-          gap: 24px;
-          padding: 24px 32px;
-          background: var(--surbee-bg-secondary, #1E1E1F);
-          border-radius: 8px;
-          margin-bottom: 24px;
+          gap: 20px;
+          padding: 20px 24px;
+          background: var(--bg-card);
+          border: 1px solid var(--border-primary);
+          border-radius: 16px;
+          margin-bottom: 16px;
         }
 
         .flow-summary-stat {
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          gap: 2px;
         }
 
         .flow-summary-stat.highlight .flow-summary-num {
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--fg-primary);
           font-weight: 600;
         }
 
         .flow-summary-num {
-          font-family: var(--font-display);
-          font-size: 28px;
-          color: var(--surbee-fg-primary, #E8E8E8);
+          font-family: var(--font-body);
+          font-size: 24px;
+          font-weight: 600;
+          color: var(--fg-primary);
         }
 
         .flow-summary-label {
           font-family: var(--font-mono);
-          font-size: 10px;
+          font-size: 9px;
           text-transform: uppercase;
           letter-spacing: 0.5px;
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
         }
 
         .flow-summary-divider {
           width: 1px;
-          height: 40px;
-          background: var(--surbee-border-primary, rgba(255,255,255,0.1));
+          height: 36px;
+          background: var(--border-primary);
         }
 
         .flow-table {
-          background: var(--surbee-bg-secondary, #1E1E1F);
-          border-radius: 8px;
+          background: var(--bg-card);
+          border: 1px solid var(--border-primary);
+          border-radius: 16px;
           overflow: hidden;
         }
 
         .flow-table-header {
           display: grid;
           grid-template-columns: 50px 1fr 100px 100px 100px;
-          gap: 16px;
-          padding: 16px 24px;
-          background: var(--surbee-bg-tertiary, #252526);
+          gap: 12px;
+          padding: 12px 20px;
+          background: var(--bg-tertiary);
           font-family: var(--font-mono);
-          font-size: 10px;
-          font-weight: 600;
+          font-size: 9px;
+          font-weight: 500;
           text-transform: uppercase;
           letter-spacing: 0.5px;
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
         }
 
         .flow-table-empty {
@@ -1579,17 +1652,17 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 16px;
-          padding: 60px;
-          color: var(--surbee-fg-muted, #888);
+          gap: 12px;
+          padding: 48px;
+          color: var(--fg-muted);
         }
 
         .flow-table-row {
           display: grid;
           grid-template-columns: 50px 1fr 100px 100px 100px;
-          gap: 16px;
-          padding: 20px 24px;
-          border-bottom: 1px solid var(--surbee-border-secondary, rgba(255,255,255,0.05));
+          gap: 12px;
+          padding: 16px 20px;
+          border-bottom: 1px solid var(--border-secondary);
           transition: background 0.15s ease;
         }
 
@@ -1598,11 +1671,12 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .flow-table-row:hover {
-          background: var(--surbee-bg-tertiary, #252526);
+          background: var(--bg-secondary);
         }
 
         .flow-table-row.high-dropoff {
           background: rgba(239, 68, 68, 0.05);
+          border-left: 2px solid #ef4444;
         }
 
         .flow-table-row.high-dropoff:hover {
@@ -1611,8 +1685,8 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
 
         .flow-col-num {
           font-family: var(--font-mono);
-          font-size: 12px;
-          color: var(--surbee-fg-muted, #888);
+          font-size: 11px;
+          color: var(--fg-muted);
           display: flex;
           align-items: center;
         }
@@ -1620,27 +1694,27 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         .flow-col-question {
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 6px;
         }
 
         .flow-question-text {
-          font-size: 14px;
+          font-size: 13px;
           line-height: 1.5;
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--fg-primary);
         }
 
         .flow-progress-bar {
-          height: 4px;
-          background: var(--surbee-bg-tertiary, #252526);
+          height: 3px;
+          background: var(--bg-elevated);
           border-radius: 2px;
           overflow: hidden;
           width: 100%;
-          max-width: 300px;
+          max-width: 280px;
         }
 
         .flow-progress-fill {
           height: 100%;
-          background: var(--surbee-fg-primary, #E8E8E8);
+          background: var(--fg-secondary);
           border-radius: 2px;
           transition: width 0.5s ease;
         }
@@ -1649,22 +1723,22 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         .flow-col-retention,
         .flow-col-dropoff {
           font-family: var(--font-mono);
-          font-size: 13px;
+          font-size: 12px;
           display: flex;
           align-items: center;
         }
 
         .flow-col-responses {
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--fg-secondary);
         }
 
         .flow-col-retention {
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--fg-primary);
           font-weight: 600;
         }
 
         .flow-col-dropoff {
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
         }
 
         .flow-col-dropoff.danger {
@@ -1676,20 +1750,21 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         .export-btn {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 10px 16px;
-          background: var(--surbee-bg-secondary, #1E1E1F);
-          border: 1px solid var(--surbee-border-primary, rgba(255,255,255,0.1));
-          border-radius: 10px;
-          font-size: 13px;
+          gap: 6px;
+          padding: 8px 14px;
+          background: var(--bg-tertiary);
+          border: none;
+          border-radius: 9999px;
+          font-size: 12px;
           font-weight: 500;
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--fg-secondary);
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
         .export-btn:hover {
-          background: var(--surbee-bg-tertiary, #252526);
+          background: var(--bg-elevated);
+          color: var(--fg-primary);
         }
 
         .empty-state {
@@ -1697,21 +1772,22 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 16px;
-          padding: 80px 20px;
-          color: var(--surbee-fg-muted, #888);
+          gap: 12px;
+          padding: 60px 20px;
+          color: var(--fg-muted);
         }
 
         .empty-circle {
-          width: 48px;
-          height: 48px;
+          width: 40px;
+          height: 40px;
           border-radius: 50%;
-          border: 2px dashed var(--surbee-border-primary, rgba(255,255,255,0.1));
+          border: 2px dashed var(--border-primary);
         }
 
         .responses-list {
-          background: var(--surbee-bg-secondary, #1E1E1F);
-          border-radius: 8px;
+          background: var(--bg-card);
+          border: 1px solid var(--border-primary);
+          border-radius: 16px;
           overflow: hidden;
         }
 
@@ -1719,56 +1795,56 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           display: grid;
           grid-template-columns: 60px 1fr 60px 60px 60px 60px 40px;
           gap: 8px;
-          padding: 14px 20px;
-          background: var(--surbee-bg-tertiary, #252526);
+          padding: 12px 16px;
+          background: var(--bg-tertiary);
           font-family: var(--font-mono);
           font-size: 9px;
-          font-weight: 600;
+          font-weight: 500;
           text-transform: uppercase;
           letter-spacing: 0.5px;
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
         }
 
         .response-row {
           display: grid;
           grid-template-columns: 60px 1fr 60px 60px 60px 60px 40px;
           gap: 8px;
-          padding: 16px 20px;
-          border-bottom: 1px solid var(--surbee-border-secondary, rgba(255,255,255,0.05));
+          padding: 14px 16px;
+          border-bottom: 1px solid var(--border-secondary);
           cursor: pointer;
           transition: background 0.15s ease;
         }
 
         .response-row:hover {
-          background: var(--surbee-bg-tertiary, #252526);
+          background: var(--bg-secondary);
         }
 
         .response-row.expanded {
-          background: var(--surbee-bg-tertiary, #252526);
+          background: var(--bg-secondary);
           border-bottom-color: transparent;
         }
 
         .col-id {
           font-family: var(--font-mono);
-          font-size: 11px;
-          color: var(--surbee-fg-muted, #888);
+          font-size: 10px;
+          color: var(--fg-muted);
         }
 
         .col-when {
-          font-size: 13px;
+          font-size: 12px;
         }
 
         .when-relative {
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--fg-primary);
         }
 
         .col-device {
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
         }
 
         .col-time {
           font-family: var(--font-mono);
-          font-size: 12px;
+          font-size: 11px;
         }
 
         .col-status {
@@ -1777,21 +1853,21 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .status-dot {
-          width: 8px;
-          height: 8px;
+          width: 6px;
+          height: 6px;
           border-radius: 50%;
         }
 
         .status-dot.completed { background: #22c55e; }
         .status-dot.partial { background: #f59e0b; }
-        .status-dot.abandoned { background: var(--surbee-fg-muted, #888); opacity: 0.4; }
+        .status-dot.abandoned { background: var(--fg-muted); opacity: 0.4; }
 
         .quality-badge {
           font-family: var(--font-mono);
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 500;
           padding: 3px 8px;
-          border-radius: 6px;
+          border-radius: 9999px;
         }
 
         .quality-badge.high {
@@ -1810,7 +1886,7 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .expand-icon {
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
           transition: transform 0.2s ease;
         }
 
@@ -1819,51 +1895,52 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .response-detail {
-          padding: 20px;
-          background: var(--surbee-bg-tertiary, #252526);
-          border-bottom: 1px solid var(--surbee-border-secondary, rgba(255,255,255,0.05));
+          padding: 16px;
+          background: var(--bg-secondary);
+          border-bottom: 1px solid var(--border-secondary);
         }
 
         .detail-meta {
           display: flex;
-          gap: 16px;
-          margin-bottom: 16px;
-          padding-bottom: 12px;
-          border-bottom: 1px solid var(--surbee-border-secondary, rgba(255,255,255,0.05));
+          gap: 12px;
+          margin-bottom: 12px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid var(--border-secondary);
         }
 
         .meta-id {
           font-family: var(--font-mono);
-          font-size: 10px;
-          color: var(--surbee-fg-muted, #888);
+          font-size: 9px;
+          color: var(--fg-muted);
           padding: 3px 8px;
-          background: var(--surbee-bg-secondary, #1E1E1F);
+          background: var(--bg-tertiary);
           border-radius: 4px;
         }
 
         .meta-date {
-          font-size: 12px;
-          color: var(--surbee-fg-muted, #888);
+          font-size: 11px;
+          color: var(--fg-muted);
         }
 
         .answers-grid {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 8px;
         }
 
         .answer-card {
-          background: var(--surbee-bg-secondary, #1E1E1F);
-          border-radius: 12px;
+          background: var(--bg-card);
+          border: 1px solid var(--border-primary);
+          border-radius: 10px;
           overflow: hidden;
         }
 
         .answer-clickable {
-          padding: 16px;
+          padding: 12px;
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          gap: 12px;
+          gap: 10px;
         }
 
         .answer-clickable.has-issues {
@@ -1872,13 +1949,13 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .answer-clickable.has-issues:hover {
-          background: var(--surbee-bg-tertiary, #252526);
+          background: var(--bg-secondary);
         }
 
         .answer-main { flex: 1; }
 
         .answer-expand {
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
           flex-shrink: 0;
           margin-top: 4px;
         }
@@ -1886,37 +1963,38 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         .answer-header {
           display: flex;
           align-items: flex-start;
-          gap: 10px;
-          margin-bottom: 10px;
+          gap: 8px;
+          margin-bottom: 8px;
         }
 
         .q-number {
           font-family: var(--font-mono);
           font-size: 9px;
-          font-weight: 600;
-          color: var(--surbee-fg-muted, #888);
-          padding: 3px 6px;
-          background: var(--surbee-bg-tertiary, #252526);
+          font-weight: 500;
+          color: var(--fg-muted);
+          padding: 2px 5px;
+          background: var(--bg-elevated);
           border-radius: 4px;
           flex-shrink: 0;
         }
 
         .q-text {
-          font-size: 12px;
-          color: var(--surbee-fg-muted, #888);
+          font-size: 11px;
+          color: var(--fg-muted);
           line-height: 1.4;
         }
 
         .answer-content {
-          font-size: 14px;
+          font-size: 13px;
           line-height: 1.6;
-          margin-bottom: 12px;
-          padding-left: 32px;
+          margin-bottom: 10px;
+          padding-left: 28px;
+          color: var(--fg-secondary);
         }
 
         .answer-footer {
           display: flex;
-          gap: 12px;
+          gap: 10px;
           padding-left: 32px;
           align-items: center;
         }
@@ -1924,7 +2002,7 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         .footer-time {
           font-family: var(--font-mono);
           font-size: 10px;
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
         }
 
         .footer-score {
@@ -1933,33 +2011,33 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           font-weight: 500;
         }
 
-        .footer-score.high { color: #22c55e; }
-        .footer-score.mid { color: #f59e0b; }
-        .footer-score.low { color: #ef4444; }
+        .footer-score.high { color: #059669; }
+        .footer-score.mid { color: #d97706; }
+        .footer-score.low { color: #dc2626; }
 
         .footer-issues {
           font-family: var(--font-mono);
           font-size: 10px;
-          color: #ef4444;
+          color: #dc2626;
           padding: 2px 8px;
-          background: rgba(239, 68, 68, 0.1);
+          background: rgba(220, 38, 38, 0.1);
           border-radius: 4px;
         }
 
         /* Issues Section */
         .issues-section {
           padding: 16px;
-          background: var(--surbee-bg-tertiary, #252526);
-          border-top: 1px solid var(--surbee-border-secondary, rgba(255,255,255,0.05));
+          background: var(--bg-secondary);
+          border-top: 1px solid var(--border-secondary);
         }
 
         .issues-header {
           font-family: var(--font-mono);
           font-size: 10px;
           font-weight: 600;
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
           text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: 1px;
           margin-bottom: 12px;
         }
 
@@ -1973,12 +2051,13 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           display: flex;
           gap: 12px;
           padding: 12px;
-          background: var(--surbee-bg-secondary, #1E1E1F);
+          background: var(--bg-primary);
+          border: 1px solid var(--border-primary);
           border-radius: 8px;
         }
 
         .issue-icon {
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
           flex-shrink: 0;
           margin-top: 2px;
         }
@@ -1996,7 +2075,7 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           font-family: var(--font-mono);
           font-size: 10px;
           font-weight: 600;
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--fg-primary);
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
@@ -2010,23 +2089,23 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .issue-severity.high {
-          background: rgba(239, 68, 68, 0.15);
-          color: #ef4444;
+          background: rgba(220, 38, 38, 0.1);
+          color: #dc2626;
         }
 
         .issue-severity.medium {
-          background: rgba(245, 158, 11, 0.15);
-          color: #f59e0b;
+          background: rgba(217, 119, 6, 0.1);
+          color: #d97706;
         }
 
         .issue-severity.low {
-          background: rgba(156, 163, 175, 0.15);
-          color: var(--surbee-fg-muted, #888);
+          background: var(--bg-tertiary);
+          color: var(--fg-muted);
         }
 
         .issue-description {
           font-size: 12px;
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
           line-height: 1.5;
         }
 
@@ -2044,7 +2123,7 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
 
         .funnel-subtitle {
           font-size: 14px;
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
         }
 
         .funnel-steps {
@@ -2059,19 +2138,22 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           gap: 20px;
           align-items: center;
           padding: 24px;
-          background: var(--surbee-bg-secondary, #1E1E1F);
-          border-radius: 8px;
-          transition: transform 0.2s ease;
+          background: var(--bg-primary);
+          border: 1px solid var(--border-primary);
+          border-left: 2px solid var(--border-primary);
+          border-radius: 16px;
+          transition: all 0.2s ease;
         }
 
         .funnel-step:hover {
           transform: translateX(4px);
+          border-left-color: var(--fg-primary);
         }
 
         .step-index {
           font-family: var(--font-mono);
           font-size: 12px;
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
           opacity: 0.5;
         }
 
@@ -2085,19 +2167,20 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
           font-size: 14px;
           font-weight: 500;
           line-height: 1.5;
+          color: var(--fg-primary);
         }
 
         .step-bar-track {
-          height: 6px;
-          background: var(--surbee-bg-tertiary, #252526);
-          border-radius: 3px;
+          height: 4px;
+          background: var(--bg-tertiary);
+          border-radius: 2px;
           overflow: hidden;
         }
 
         .step-bar-fill {
           height: 100%;
-          background: var(--surbee-fg-primary, #E8E8E8);
-          border-radius: 3px;
+          background: var(--fg-primary);
+          border-radius: 2px;
           transition: width 0.6s ease;
         }
 
@@ -2108,23 +2191,24 @@ export const InsightsTabRedesign: React.FC<InsightsTabRedesignProps> = ({ projec
         }
 
         .stat-answered {
-          color: var(--surbee-fg-muted, #888);
+          color: var(--fg-muted);
         }
 
         .stat-dropoff {
           font-family: var(--font-mono);
           font-size: 10px;
-          color: #ef4444;
+          color: #dc2626;
           padding: 2px 6px;
-          background: rgba(239, 68, 68, 0.1);
+          background: rgba(220, 38, 38, 0.1);
           border-radius: 4px;
         }
 
         .step-retention {
           font-family: var(--font-mono);
           font-size: 20px;
-          font-weight: 500;
+          font-weight: 600;
           text-align: right;
+          color: var(--fg-primary);
         }
       `}</style>
     </div>

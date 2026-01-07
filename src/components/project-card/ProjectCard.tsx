@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Pencil, Copy, Share2, Settings, Archive, Trash2, ExternalLink } from 'lucide-react';
+import { User, Pencil, Copy, Share2, Settings, Archive, Trash2, ExternalLink, Upload, Globe } from 'lucide-react';
 import { Image as IKImage } from '@imagekit/next';
 import {
   ContextMenu,
@@ -10,7 +10,11 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
 } from '@/components/ui/context-menu';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Simple draft placeholder - just text
 const DraftPlaceholder: React.FC = () => (
@@ -37,12 +41,15 @@ interface ProjectCardProps {
   activeChatSessionId?: string | null;
   responseCount?: number;
   publishedUrl?: string | null;
+  isMarketplaceVisible?: boolean;
+  isTemplate?: boolean;
   onRename?: (id: string, newTitle: string) => void;
   onDuplicate?: (id: string) => void;
   onShare?: (id: string) => void;
   onSettings?: (id: string) => void;
   onArchive?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onPublishToMarketplace?: (id: string, isTemplate: boolean) => void;
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({
@@ -55,16 +62,46 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   activeChatSessionId,
   responseCount = 0,
   publishedUrl,
+  isMarketplaceVisible = false,
+  isTemplate = false,
   onRename,
   onDuplicate,
   onShare,
   onSettings,
   onArchive,
   onDelete,
+  onPublishToMarketplace,
 }) => {
   const router = useRouter();
+  const { user } = useAuth();
   const [isRenaming, setIsRenaming] = useState(false);
   const [newTitle, setNewTitle] = useState(title);
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  const handlePublishToMarketplace = async (asTemplate: boolean) => {
+    if (!user) return;
+
+    setIsPublishing(true);
+    try {
+      const response = await fetch('/api/marketplace/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: id,
+          isTemplate: asTemplate,
+          userId: user.id,
+        }),
+      });
+
+      if (response.ok) {
+        onPublishToMarketplace?.(id, asTemplate);
+      }
+    } catch (error) {
+      console.error('Failed to publish to marketplace:', error);
+    } finally {
+      setIsPublishing(false);
+    }
+  };
 
   const handleCardClick = () => {
     if (isRenaming) return;
@@ -183,14 +220,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                   className="w-full h-full object-cover"
                 />
               )
-            ) : status === 'draft' ? (
-              <DraftPlaceholder />
             ) : (
-              <img
-                src="https://endlesstools.io/embeds/4.png"
-                alt={title}
-                className="w-full h-full object-cover"
-              />
+              <DraftPlaceholder />
             )}
           </div>
         </div>
@@ -200,9 +231,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         style={{
           borderRadius: '24px',
           padding: '8px',
-          border: '1px solid rgba(232, 232, 232, 0.08)',
-          backgroundColor: 'rgb(19, 19, 20)',
-          boxShadow: 'rgba(0, 0, 0, 0.04) 0px 7px 16px',
+          border: '1px solid var(--surbee-dropdown-border)',
+          backgroundColor: 'var(--surbee-dropdown-bg)',
+          backdropFilter: 'blur(12px)',
+          boxShadow: 'rgba(0, 0, 0, 0.2) 0px 7px 16px',
           minWidth: '200px',
         }}
       >
@@ -213,7 +245,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           onClick={() => window.open(`/projects/${id}/manage`, '_blank')}
         >
           <div className="flex items-center gap-3">
-            <ExternalLink className="h-4 w-4" style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
+            <ExternalLink className="h-4 w-4" style={{ color: 'var(--surbee-dropdown-text-muted)' }} />
             <span>Open in new tab</span>
           </div>
         </ContextMenuItem>
@@ -225,7 +257,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           onClick={() => setIsRenaming(true)}
         >
           <div className="flex items-center gap-3">
-            <Pencil className="h-4 w-4" style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
+            <Pencil className="h-4 w-4" style={{ color: 'var(--surbee-dropdown-text-muted)' }} />
             <span>Rename</span>
           </div>
         </ContextMenuItem>
@@ -237,12 +269,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           onClick={() => onDuplicate?.(id)}
         >
           <div className="flex items-center gap-3">
-            <Copy className="h-4 w-4" style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
+            <Copy className="h-4 w-4" style={{ color: 'var(--surbee-dropdown-text-muted)' }} />
             <span>Duplicate</span>
           </div>
         </ContextMenuItem>
 
-        <ContextMenuSeparator style={{ backgroundColor: 'rgba(232, 232, 232, 0.08)', margin: '4px 0' }} />
+        <ContextMenuSeparator style={{ backgroundColor: 'var(--surbee-dropdown-separator)', margin: '4px 0' }} />
 
         {/* Share */}
         {status === 'published' && publishedUrl && (
@@ -256,7 +288,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             }}
           >
             <div className="flex items-center gap-3">
-              <Share2 className="h-4 w-4" style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
+              <Share2 className="h-4 w-4" style={{ color: 'var(--surbee-dropdown-text-muted)' }} />
               <span>Copy survey link</span>
             </div>
           </ContextMenuItem>
@@ -272,12 +304,76 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           }}
         >
           <div className="flex items-center gap-3">
-            <Settings className="h-4 w-4" style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
+            <Settings className="h-4 w-4" style={{ color: 'var(--surbee-dropdown-text-muted)' }} />
             <span>Settings</span>
           </div>
         </ContextMenuItem>
 
-        <ContextMenuSeparator style={{ backgroundColor: 'rgba(232, 232, 232, 0.08)', margin: '4px 0' }} />
+        <ContextMenuSeparator style={{ backgroundColor: 'var(--surbee-dropdown-separator)', margin: '4px 0' }} />
+
+        {/* Publish to Marketplace */}
+        {status === 'published' && !isMarketplaceVisible && (
+          <ContextMenuSub>
+            <ContextMenuSubTrigger
+              className="cursor-pointer"
+              style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-primary)', fontSize: '14px', marginBottom: '1px' }}
+            >
+              <div className="flex items-center gap-3">
+                <Globe className="h-4 w-4" style={{ color: 'var(--surbee-dropdown-text-muted)' }} />
+                <span>Publish to Marketplace</span>
+              </div>
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent
+              style={{
+                borderRadius: '18px',
+                padding: '6px',
+                border: '1px solid var(--surbee-dropdown-border)',
+                backgroundColor: 'var(--surbee-dropdown-bg)',
+                backdropFilter: 'blur(12px)',
+                boxShadow: 'rgba(0, 0, 0, 0.2) 0px 7px 16px',
+              }}
+            >
+              <ContextMenuItem
+                className="cursor-pointer"
+                style={{ borderRadius: '14px', padding: '8px 12px', color: 'var(--surbee-fg-primary)', fontSize: '13px', marginBottom: '1px' }}
+                onClick={() => handlePublishToMarketplace(false)}
+                disabled={isPublishing}
+              >
+                <div className="flex items-center gap-2">
+                  <Upload className="h-3.5 w-3.5" style={{ color: 'var(--surbee-dropdown-text-muted)' }} />
+                  <span>As Survey</span>
+                </div>
+              </ContextMenuItem>
+              <ContextMenuItem
+                className="cursor-pointer"
+                style={{ borderRadius: '14px', padding: '8px 12px', color: 'var(--surbee-fg-primary)', fontSize: '13px' }}
+                onClick={() => handlePublishToMarketplace(true)}
+                disabled={isPublishing}
+              >
+                <div className="flex items-center gap-2">
+                  <Copy className="h-3.5 w-3.5" style={{ color: 'var(--surbee-dropdown-text-muted)' }} />
+                  <span>As Template (Remixable)</span>
+                </div>
+              </ContextMenuItem>
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        )}
+
+        {/* Already in marketplace indicator */}
+        {isMarketplaceVisible && (
+          <ContextMenuItem
+            className="cursor-default"
+            style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-fg-secondary)', fontSize: '14px', marginBottom: '1px' }}
+            disabled
+          >
+            <div className="flex items-center gap-3">
+              <Globe className="h-4 w-4" style={{ color: 'rgba(100, 200, 100, 0.8)' }} />
+              <span>In Marketplace {isTemplate ? '(Template)' : '(Survey)'}</span>
+            </div>
+          </ContextMenuItem>
+        )}
+
+        <ContextMenuSeparator style={{ backgroundColor: 'var(--surbee-dropdown-separator)', margin: '4px 0' }} />
 
         {/* Archive */}
         <ContextMenuItem
@@ -286,7 +382,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           onClick={() => onArchive?.(id)}
         >
           <div className="flex items-center gap-3">
-            <Archive className="h-4 w-4" style={{ color: 'rgba(232, 232, 232, 0.6)' }} />
+            <Archive className="h-4 w-4" style={{ color: 'var(--surbee-dropdown-text-muted)' }} />
             <span>{status === 'archived' ? 'Unarchive' : 'Archive'}</span>
           </div>
         </ContextMenuItem>

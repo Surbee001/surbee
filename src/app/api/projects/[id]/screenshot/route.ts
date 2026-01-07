@@ -46,8 +46,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     // Determine the preview URL
+    // Use the preview-render endpoint which works for both published and draft surveys
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://surbee.com';
-    const previewUrl = customUrl || `${baseUrl}/s/${project.published_url || projectId}`;
+    const previewUrl = customUrl || `${baseUrl}/api/projects/${projectId}/preview-render`;
 
     console.log(`📸 Capturing screenshot for project ${projectId} from ${previewUrl}`);
 

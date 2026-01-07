@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { TypeformButton, TypeformButtonContainer } from '@/components/ui/typeform-button';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { PreviewTab } from '@/components/project-manage/PreviewTab';
-import { ShareTabRedesign } from '@/components/project-manage/ShareTabRedesign';
+import { ShareTab } from '@/components/project-manage/share';
 import { EvaluationTab } from '@/components/project-manage/EvaluationTab';
-import DataHeroSection from '@/components/project-manage/DataHeroSection';
-import DataStatisticsSection from '@/components/project-manage/DataStatisticsSection';
+import { InsightsTab } from '@/components/project-manage/insights';
+import { ProjectSettings } from '@/components/project-manage/ProjectSettings';
 import AppLayout from '@/components/layout/AppLayout';
 import { useTheme } from '@/hooks/useTheme';
 import { motion } from 'framer-motion';
@@ -513,7 +513,7 @@ function AskSurbeeComponent({ activeTab, projectId }: { activeTab: TabType; proj
   );
 }
 
-export type TabType = 'preview' | 'insights' | 'evaluation' | 'share';
+export type TabType = 'preview' | 'insights' | 'evaluation' | 'share' | 'settings';
 
 export default function ProjectManagePage() {
   const params = useParams();
@@ -916,7 +916,7 @@ export default function ProjectManagePage() {
                                         fontWeight: '500',
                                         color: isAgentOpen ? 'var(--surbee-fg-primary)' : 'var(--surbee-fg-primary)',
                                         backgroundColor: isAgentOpen ? 'var(--surbee-bg-secondary, #f5f5f5)' : 'transparent',
-                                        border: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.1))',
+                                        border: 'none',
                                         borderRadius: '9999px',
                                         cursor: 'pointer',
                                         transition: 'all 200ms ease',
@@ -1098,7 +1098,7 @@ export default function ProjectManagePage() {
                                     {/* Settings Icon */}
                                     <button
                                       onClick={() => {
-                                        // TODO: Open settings modal or navigate to settings
+                                        setActiveTab('settings');
                                       }}
                                       style={{
                                         padding: '6px',
@@ -1116,7 +1116,7 @@ export default function ProjectManagePage() {
                                       onMouseEnter={(e) => {
                                         e.currentTarget.style.opacity = '1';
                                         e.currentTarget.style.color = 'var(--surbee-fg-primary)';
-                                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                                        e.currentTarget.style.backgroundColor = 'var(--surbee-bg-secondary, rgba(0, 0, 0, 0.05))';
                                       }}
                                       onMouseLeave={(e) => {
                                         e.currentTarget.style.opacity = '0.6';
@@ -1151,8 +1151,8 @@ export default function ProjectManagePage() {
                                         padding: '6px 14px',
                                         fontSize: '13px',
                                         fontWeight: '500',
-                                        color: 'white',
-                                        backgroundColor: '#171717',
+                                        color: 'var(--surbee-button-primary-fg, white)',
+                                        backgroundColor: 'var(--surbee-button-primary-bg, #171717)',
                                         border: 'none',
                                         borderRadius: '9999px',
                                         cursor: 'pointer',
@@ -1162,10 +1162,10 @@ export default function ProjectManagePage() {
                                         gap: '6px',
                                       }}
                                       onMouseEnter={(e) => {
-                                        e.currentTarget.style.backgroundColor = '#262626';
+                                        e.currentTarget.style.opacity = '0.85';
                                       }}
                                       onMouseLeave={(e) => {
-                                        e.currentTarget.style.backgroundColor = '#171717';
+                                        e.currentTarget.style.opacity = '1';
                                       }}
                                     >
                                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1210,14 +1210,12 @@ export default function ProjectManagePage() {
                       boxSizing: 'border-box',
                       position: 'relative',
                       zIndex: 10,
-                      border: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
                     }}
                   >          {/* Tab Content */}
           {activeTab === 'insights' ? (
             <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
-              <div className="overflow-y-auto" style={{ height: '100%' }}>
-                <DataHeroSection projectId={projectId} />
-                <DataStatisticsSection projectId={projectId} />
+              <div className="overflow-y-auto" style={{ padding: '24px', height: '100%' }}>
+                <InsightsTab projectId={projectId} />
               </div>
             </div>
           ) : activeTab === 'evaluation' ? (
@@ -1229,12 +1227,13 @@ export default function ProjectManagePage() {
           ) : (
             <div className="flex-1 overflow-auto" style={{ padding: '24px' }}>
               {activeTab === 'preview' && <PreviewTab projectId={projectId} sandboxBundle={sandboxBundle} activeChatSessionId={activeChatSessionId} />}
-              {activeTab === 'share' && <ShareTabRedesign projectId={projectId} publishedUrl={publishedUrl} />}
+              {activeTab === 'share' && <ShareTab projectId={projectId} publishedUrl={publishedUrl} />}
+              {activeTab === 'settings' && <ProjectSettings projectId={projectId} onClose={() => setActiveTab('preview')} />}
             </div>
           )}
 
-          {/* Ask Surbee Component - Inside container at bottom - Hidden for Preview, Insights, Evaluation, and Cipher Tabs */}
-          {activeTab !== 'preview' && activeTab !== 'insights' && activeTab !== 'evaluation' && activeTab !== 'cipher' && !isAgentOpen && (
+          {/* Ask Surbee Component - Inside container at bottom - Hidden for Preview, Insights, Evaluation, Cipher, and Settings Tabs */}
+          {activeTab !== 'preview' && activeTab !== 'insights' && activeTab !== 'evaluation' && activeTab !== 'cipher' && activeTab !== 'settings' && !isAgentOpen && (
             <div className="ask-surbee-container">
               <AskSurbeeComponent activeTab={activeTab} projectId={projectId} />
             </div>
@@ -1253,7 +1252,6 @@ export default function ProjectManagePage() {
               width: '380px',
               flexShrink: 0,
               backgroundColor: 'var(--surbee-bg-primary)',
-              border: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
             }}
           >
             {/* Agent Header */}
@@ -1263,7 +1261,6 @@ export default function ProjectManagePage() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '12px 16px',
-                borderBottom: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
               }}
             >
               <span
@@ -1401,7 +1398,7 @@ export default function ProjectManagePage() {
                           fontSize: '13px',
                           color: 'var(--surbee-fg-secondary)',
                           backgroundColor: 'var(--surbee-bg-secondary, #f5f5f5)',
-                          border: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
+                          border: 'none',
                           borderRadius: '9999px',
                           cursor: 'pointer',
                           transition: 'all 150ms ease',
@@ -1431,8 +1428,8 @@ export default function ProjectManagePage() {
                         <div
                           style={{
                             padding: '10px 16px',
-                            backgroundColor: 'rgb(38, 38, 38)',
-                            color: '#ffffff',
+                            backgroundColor: 'var(--surbee-chat-user-bg, rgb(38, 38, 38))',
+                            color: 'var(--surbee-chat-user-fg, #ffffff)',
                             borderRadius: '18px',
                             maxWidth: 'min(85%, 280px)',
                             wordBreak: 'break-word',
@@ -1488,7 +1485,6 @@ export default function ProjectManagePage() {
             <div
               style={{
                 padding: '12px 16px',
-                borderTop: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
               }}
             >
               {/* Reference Button - Above chatbox, Only on Insights and Evaluation tabs */}
@@ -1581,7 +1577,6 @@ export default function ProjectManagePage() {
                     padding: '12px 14px',
                     backgroundColor: 'var(--surbee-bg-secondary, #f5f5f5)',
                     borderRadius: agentInputHeight > 30 ? '15px' : '9999px',
-                    border: '1px solid var(--surbee-border-subtle, rgba(0,0,0,0.05))',
                   }}
                 >
                   <textarea
@@ -1679,8 +1674,8 @@ export default function ProjectManagePage() {
               left: '50%',
               transform: 'translateX(-50%)',
               padding: '10px 20px',
-              backgroundColor: 'rgb(38, 38, 38)',
-              color: 'white',
+              backgroundColor: 'var(--surbee-toast-bg, rgb(38, 38, 38))',
+              color: 'var(--surbee-toast-fg, white)',
               borderRadius: '9999px',
               fontSize: '13px',
               fontWeight: '500',

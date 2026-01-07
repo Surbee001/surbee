@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { TypeformButton, TypeformButtonContainer } from '@/components/ui/typeform-button';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { PreviewTab } from '@/components/project-manage/PreviewTab';
-import { InsightsTabRedesign } from '@/components/project-manage/InsightsTabRedesign';
-import { ShareTabRedesign } from '@/components/project-manage/ShareTabRedesign';
+import { InsightsTab } from '@/components/project-manage/insights';
+import { ShareTab } from '@/components/project-manage/share';
 import { CipherTab } from '@/components/project-manage/CipherTab';
 import { EvaluationTab } from '@/components/project-manage/EvaluationTab';
 import DataHeroSection from '@/components/project-manage/DataHeroSection';
@@ -888,7 +888,7 @@ export default function ProjectManagePage() {
                 <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
                   <AnalysisDotsManager projectId={projectId}>
                     <div className="overflow-y-auto" style={{ padding: '24px', height: '100%' }}>
-                      <InsightsTabRedesign projectId={projectId} />
+                      <InsightsTab projectId={projectId} />
                     </div>
                   </AnalysisDotsManager>
                 </div>
@@ -907,7 +907,7 @@ export default function ProjectManagePage() {
               ) : (
                 <div className="flex-1 overflow-auto" style={{ padding: '24px' }}>
                   {activeTab === 'preview' && <PreviewTab projectId={projectId} sandboxBundle={sandboxBundle} activeChatSessionId={activeChatSessionId} />}
-                  {activeTab === 'share' && <ShareTabRedesign projectId={projectId} publishedUrl={publishedUrl} />}
+                  {activeTab === 'share' && <ShareTab projectId={projectId} publishedUrl={publishedUrl} />}
                 </div>
               )}
 

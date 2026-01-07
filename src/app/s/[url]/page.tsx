@@ -1,8 +1,10 @@
 "use client"
 
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { generateCipherTrackerScript, type BehavioralMetrics } from '@/lib/cipher/cipher-tracker'
+import type { CipherTier } from '@/lib/cipher/tier-config'
 
 interface SandboxBundle {
   files: Record<string, string>;
@@ -20,6 +22,15 @@ interface PublishedSurvey {
   published_at: string
 }
 
+interface CipherSettings {
+  enabled: boolean
+  tier: CipherTier
+  sessionResume: boolean
+  resumeWindowHours: number
+  flagThreshold: number
+  blockThreshold: number
+}
+
 export default function PublishedSurveyPage() {
   const params = useParams()
   const publishedUrl = params.url as string
@@ -28,26 +39,36 @@ export default function PublishedSurveyPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isCompleted, setIsCompleted] = useState(false)
-  const [iframeHtml, setIframeHtml] = useState<string | null>(null)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
+  // Cipher integration state
+  const [cipherSettings, setCipherSettings] = useState<CipherSettings | null>(null)
+  const [behavioralMetrics, setBehavioralMetrics] = useState<BehavioralMetrics | null>(null)
+  const sessionIdRef = useRef<string>(crypto.randomUUID())
+  const periodicAnalysisRef = useRef<any[]>([])
+
+  // Fetch survey and cipher settings
   useEffect(() => {
     const fetchSurvey = async () => {
       if (!publishedUrl) return
 
       try {
         setLoading(true)
-        const response = await fetch(`/api/surveys/published/${publishedUrl}`)
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
-          console.error('=== SHARED SURVEY: API error ===', response.status, errorData)
+        // Fetch survey and cipher settings in parallel
+        const [surveyRes, cipherRes] = await Promise.all([
+          fetch(`/api/surveys/published/${publishedUrl}`),
+          fetch(`/api/surveys/published/${publishedUrl}/cipher-settings`).catch(() => null),
+        ])
 
-          // Use specific error message from API if available
+        if (!surveyRes.ok) {
+          const errorData = await surveyRes.json().catch(() => ({}))
+          console.error('=== SHARED SURVEY: API error ===', surveyRes.status, errorData)
+
           const apiError = errorData.error || errorData.message
           if (apiError) {
             setError(apiError)
-          } else if (response.status === 404) {
+          } else if (surveyRes.status === 404) {
             setError('This survey is not available. It may not be published yet or the link may be incorrect.')
           } else {
             setError('Failed to load survey')
@@ -55,13 +76,23 @@ export default function PublishedSurveyPage() {
           return
         }
 
-        const data = await response.json()
-        setSurvey(data)
+        const surveyData = await surveyRes.json()
+        setSurvey(surveyData)
 
-        // Generate iframe HTML if sandbox bundle exists
-        if (data.sandbox_bundle?.files) {
-          const html = generateSurveyHtml(data.sandbox_bundle)
-          setIframeHtml(html)
+        // Load cipher settings (use defaults if not available)
+        if (cipherRes && cipherRes.ok) {
+          const cipherData = await cipherRes.json()
+          setCipherSettings(cipherData)
+        } else {
+          // Default cipher settings
+          setCipherSettings({
+            enabled: true,
+            tier: 3,
+            sessionResume: true,
+            resumeWindowHours: 48,
+            flagThreshold: 0.6,
+            blockThreshold: 0.85,
+          })
         }
       } catch (err) {
         console.error('Error loading survey:', err)
@@ -74,25 +105,148 @@ export default function PublishedSurveyPage() {
     fetchSurvey()
   }, [publishedUrl])
 
-  // Listen for messages from the iframe (for form submissions)
+  // Generate iframe HTML with Cipher tracker injected
+  const iframeHtml = useMemo(() => {
+    if (!survey?.sandbox_bundle?.files || !cipherSettings) return null
+
+    // Generate base HTML
+    const baseHtml = generateSurveyHtml(survey.sandbox_bundle)
+
+    // If cipher is disabled, return base HTML
+    if (!cipherSettings.enabled) return baseHtml
+
+    // Generate and inject cipher tracker script
+    const trackerScript = generateCipherTrackerScript({
+      projectId: survey.id,
+      tier: cipherSettings.tier,
+      sessionId: sessionIdRef.current,
+      resumeEnabled: cipherSettings.sessionResume,
+      resumeWindowHours: cipherSettings.resumeWindowHours,
+    })
+
+    // Inject tracker script before </body>
+    return baseHtml.replace('</body>', `${trackerScript}</body>`)
+  }, [survey, cipherSettings])
+
+  // Run periodic analysis for tier 4-5
+  const runPeriodicAnalysis = useCallback(async (metrics: BehavioralMetrics) => {
+    if (!cipherSettings || cipherSettings.tier < 4 || !survey) return
+
+    const interval = cipherSettings.tier === 5 ? 3 : 5
+    const questionsAnswered = metrics.responseTime.length
+
+    // Only analyze at intervals
+    if (questionsAnswered === 0 || questionsAnswered % interval !== 0) return
+
+    try {
+      const response = await fetch('/api/surbee/fraud/tiered-assess', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tier: Math.min(cipherSettings.tier, 3) as CipherTier, // Use lighter analysis for periodic
+          responses: {}, // Empty for periodic checks
+          behavioralMetrics: metrics,
+          projectId: survey.id,
+          sessionId: sessionIdRef.current,
+        }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        periodicAnalysisRef.current.push(result)
+      }
+    } catch (err) {
+      console.error('Periodic analysis error:', err)
+    }
+  }, [cipherSettings, survey])
+
+  // Listen for messages from the iframe (for form submissions and Cipher metrics)
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
+      const messageType = event.data?.type
+
+      // Handle periodic Cipher metrics
+      if (messageType === 'CIPHER_METRICS') {
+        const metrics = event.data.metrics as BehavioralMetrics
+        setBehavioralMetrics(metrics)
+
+        // Run periodic analysis for higher tiers
+        runPeriodicAnalysis(metrics)
+        return
+      }
+
+      // Handle session restoration notification
+      if (messageType === 'CIPHER_SESSION_RESTORED') {
+        console.log('Cipher session restored at question:', event.data.questionIndex)
+        return
+      }
+
       // Handle survey completion from iframe
-      if (event.data?.type === 'SURVEY_COMPLETE' || event.data?.type === 'survey-response') {
+      if (messageType === 'SURVEY_COMPLETE' || messageType === 'survey-response') {
         const responses = event.data.responses || event.data.data
+        const metrics = event.data.behavioralMetrics as BehavioralMetrics | undefined
 
         if (survey?.id && responses) {
           try {
+            // Submit response with behavioral metrics
             await fetch(`/api/projects/${survey.id}/responses`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 responses,
                 completed_at: new Date().toISOString(),
-                user_id: user?.id || null, // Associate with user if logged in
-                is_preview: false, // Published surveys are not previews
+                user_id: user?.id || null,
+                is_preview: false,
+                session_id: sessionIdRef.current,
+                // Include behavioral metrics for fraud detection
+                mouse_data: metrics?.mouseMovements?.slice(-100),
+                keystroke_data: metrics?.keystrokeDynamics?.slice(-50),
+                timing_data: metrics?.responseTime,
+                device_data: metrics?.deviceFingerprint,
               }),
             })
+
+            // Run fraud assessment if cipher is enabled
+            if (cipherSettings?.enabled && metrics) {
+              try {
+                const assessmentRes = await fetch('/api/surbee/fraud/tiered-assess', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    tier: cipherSettings.tier,
+                    responses,
+                    behavioralMetrics: metrics,
+                    projectId: survey.id,
+                    sessionId: sessionIdRef.current,
+                  }),
+                })
+
+                if (assessmentRes.ok) {
+                  const assessment = await assessmentRes.json()
+
+                  // Update response with fraud score and contradictions
+                  if (assessment.overallRiskScore > 0 || assessment.findings?.contradictions?.hasContradictions) {
+                    await fetch(`/api/projects/${survey.id}/responses/update-fraud`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        session_id: sessionIdRef.current,
+                        fraud_score: assessment.overallRiskScore,
+                        is_flagged: assessment.overallRiskScore >= cipherSettings.flagThreshold,
+                        flag_reasons: assessment.flags,
+                        // Include contradiction data if available
+                        contradictions: assessment.findings?.contradictions,
+                        consistency_score: assessment.findings?.contradictions?.consistencyScore,
+                      }),
+                    }).catch(() => {
+                      // Silent fail - fraud update is non-critical
+                    })
+                  }
+                }
+              } catch (err) {
+                console.error('Fraud assessment error:', err)
+              }
+            }
           } catch (err) {
             console.error('Error saving response:', err)
           }
@@ -104,7 +258,7 @@ export default function PublishedSurveyPage() {
 
     window.addEventListener('message', handleMessage)
     return () => window.removeEventListener('message', handleMessage)
-  }, [survey?.id])
+  }, [survey?.id, user?.id, cipherSettings, runPeriodicAnalysis])
 
   // Show nothing during load
   if (loading) {
@@ -225,6 +379,13 @@ function generateSurveyHtml(bundle: SandboxBundle): string {
     const sendResponse = (responses) => {
       window.parent.postMessage({ type: 'SURVEY_COMPLETE', responses }, '*');
     };
+
+    // Listen for navigation commands from parent (for route dropdown)
+    window.addEventListener('message', (e) => {
+      if (e.data?.type === 'deepsite:navigateTo' && typeof e.data.path === 'string') {
+        window.dispatchEvent(new CustomEvent('deepsite:navigateTo', { detail: e.data.path }));
+      }
+    });
 
     ${appCode
       .replace(/import\s+.*?from\s+['"].*?['"];?\n?/g, '')

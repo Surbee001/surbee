@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 // Placeholder pipeline: generate basic structure with components using OpenAI
 import { generateSurveyComponents } from '@/lib/ai/survey-generator'
 import { z } from 'zod'
-const rateLimit = async ({ key, limit, windowSec }: { key: string; limit: number; windowSec: number }) => ({ allowed: true, resetAt: Date.now() + windowSec * 1000 })
-import { updateUserCredits } from '@/lib/user/credits'
 import { supabase } from '@/lib/supabase'
 import { getCachedComponents, cacheGeneratedComponents } from '../../../../../lib/optimization/component-cache'
 import { hashString } from '../../../../../lib/utils/hash'
 import { metrics } from '../../../../../lib/monitoring/metrics'
+import { checkCredits, deductCredits, getSurveyComplexity } from '@/lib/credits'
+import { checkRateLimit } from '@/lib/feature-gate'
 
 const Body = z.object({
   userPrompt: z.string().min(4),
@@ -30,25 +30,47 @@ export async function POST(req: NextRequest) {
   try {
     const raw = await req.json()
     const body = Body.parse(raw)
-    // rate limit by ip
-    const ip = req.headers.get('x-forwarded-for') || 'local'
-    const rl = await rateLimit({ key: `gen:${ip}`, limit: 60, windowSec: 60 })
-    if (!rl.allowed) {
+
+    // Check rate limits for survey generation
+    const rateLimitCheck = await checkRateLimit(body.userId, 'surveyGeneration');
+    if (!rateLimitCheck.allowed) {
       return NextResponse.json(
-        { success: false, error: 'rate_limited', retryAt: rl.resetAt },
+        {
+          success: false,
+          error: 'rate_limited',
+          message: rateLimitCheck.reason,
+          remaining: rateLimitCheck.remaining,
+          limit: rateLimitCheck.limit,
+        },
         { status: 429 },
       )
     }
-    // credits
-    // Placeholder credits gate
-    const credits = 100
-    if (credits <= 0) {
+
+    // Estimate complexity based on prompt length and context
+    // This is a heuristic - actual complexity determined after generation
+    const estimatedQuestions = Math.min(20, Math.max(3, Math.ceil(body.userPrompt.length / 50)));
+    const creditAction = getSurveyComplexity(estimatedQuestions);
+
+    // Check credits
+    const creditCheck = await checkCredits(body.userId, creditAction);
+    if (!creditCheck.allowed) {
       return NextResponse.json(
-        { success: false, error: 'no_credits' },
+        {
+          success: false,
+          error: 'insufficient_credits',
+          message: `This action requires ${creditCheck.required} credits, but you have ${creditCheck.remaining}`,
+          required: creditCheck.required,
+          remaining: creditCheck.remaining,
+        },
         { status: 402 },
       )
     }
-    await updateUserCredits(body.userId, 'SPENT_GENERATION', -1)
+
+    // Deduct credits upfront
+    const deductResult = await deductCredits(body.userId, creditAction, {
+      prompt: body.userPrompt.slice(0, 100),
+      estimatedQuestions,
+    });
 
     const start = Date.now()
     const promptHash = hashString(`${body.userPrompt}:${JSON.stringify(body.contextData || {})}`)

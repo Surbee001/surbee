@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Knowledge Base - Surbee Lyra",
-  description: "Circular navigation interface for document management and knowledge organization",
+  title: "Knowledge Base",
+  description: "Access documentation, guides, and resources to help you get the most out of Surbee's AI-powered survey platform.",
 };
 
 export default function KBLayout({

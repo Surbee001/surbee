@@ -83,6 +83,13 @@ function generateSurveyHtml(bundle: SandboxBundle): string {
       window.parent.postMessage({ type: 'SURVEY_COMPLETE', responses }, '*');
     };
 
+    // Listen for navigation commands from parent (for route dropdown)
+    window.addEventListener('message', (e) => {
+      if (e.data?.type === 'deepsite:navigateTo' && typeof e.data.path === 'string') {
+        window.dispatchEvent(new CustomEvent('deepsite:navigateTo', { detail: e.data.path }));
+      }
+    });
+
     ${appCode
       .replace(/import\s+.*?from\s+['"].*?['"];?\n?/g, '')
       .replace(/export\s+default\s+/g, 'const App = ')

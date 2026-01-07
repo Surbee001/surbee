@@ -81,55 +81,50 @@ export function ImageViewerModal({
         onClick={onClose}
       />
       
-      {/* Modal content */}
-      <div className="relative z-10 w-full h-full flex items-center justify-center p-8">
-        {/* Navigation buttons */}
-        {images.length > 1 && (
-          <>
-            <button
-              onClick={handlePrevious}
-              className="absolute left-8 top-1/2 -translate-y-1/2 z-20 text-white hover:text-white/70 transition-colors"
-            >
-              <ChevronLeft className="w-8 h-8" />
-            </button>
-            <button
-              onClick={handleNext}
-              className="absolute right-8 top-1/2 -translate-y-1/2 z-20 text-white hover:text-white/70 transition-colors"
-            >
-              <ChevronRight className="w-8 h-8" />
-            </button>
-          </>
-        )}
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="absolute top-6 right-6 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+      >
+        <X className="w-5 h-5" />
+      </button>
 
-        {/* Image container */}
-        <div className="relative w-full h-full flex items-center justify-center">
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            </div>
-          )}
-          
-          <div className="relative">
-            {/* Close button positioned on the image */}
-            <button
-              onClick={onClose}
-              className="absolute top-2 right-2 z-20 p-1 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            
-            <img
-              src={images[currentIndex]}
-              alt={`Image ${currentIndex + 1}`}
-              className={`max-w-[95vw] max-h-[95vh] object-contain rounded-xl transition-opacity duration-300 ${
-                isLoading ? "opacity-0" : "opacity-100"
-              }`}
-              onLoad={handleImageLoad}
-              onError={() => setIsLoading(false)}
-            />
-          </div>
+      {/* Navigation buttons */}
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={handlePrevious}
+            className="absolute left-6 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <button
+            onClick={handleNext}
+            className="absolute right-6 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        </>
+      )}
+
+      {/* Loading spinner */}
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+          <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
         </div>
-      </div>
+      )}
+
+      {/* Image - directly on backdrop */}
+      <img
+        src={images[currentIndex]}
+        alt={`Image ${currentIndex + 1}`}
+        className={`relative z-10 max-w-[90vw] max-h-[90vh] object-contain transition-opacity duration-300 ${
+          isLoading ? "opacity-0" : "opacity-100"
+        }`}
+        style={{ background: 'transparent' }}
+        onLoad={handleImageLoad}
+        onError={() => setIsLoading(false)}
+      />
     </div>
   );
 }

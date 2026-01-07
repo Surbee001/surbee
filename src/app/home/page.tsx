@@ -100,14 +100,6 @@ function DashboardContent() {
   const [currentChatSessionId, setCurrentChatSessionId] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<'gpt-5' | 'claude-haiku'>('gpt-5');
   const [greeting, setGreeting] = useState<string>("Let's get creative.");
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState(1);
-  const [onboardingData, setOnboardingData] = useState({
-    name: '',
-    age: '',
-    heardFrom: '',
-    usage: ''
-  });
 
   const chatAreaRef = useRef<HTMLDivElement>(null);
 
@@ -161,65 +153,27 @@ function DashboardContent() {
     return pool[Math.floor(Math.random() * pool.length)];
   };
 
-  // Check if onboarding is needed
+  // Check if onboarding is needed - redirect to /onboarding if terms not accepted
   useEffect(() => {
     if (!user) return;
 
-    // Show onboarding if userProfile is null or missing name
-    if (!userProfile || !userProfile.name) {
-      setShowOnboarding(true);
-    } else {
-      setShowOnboarding(false);
-      // Use session-stored greeting or generate new one
-      const storedGreeting = sessionStorage.getItem('surbee_session_greeting');
-      if (storedGreeting) {
-        setGreeting(storedGreeting);
-      } else {
-        const newGreeting = generateGreeting(userProfile.name);
-        sessionStorage.setItem('surbee_session_greeting', newGreeting);
-        setGreeting(newGreeting);
-      }
+    // Redirect to onboarding if user hasn't accepted terms
+    if (!userProfile?.acceptedTermsAt && !userProfile?.onboardingCompleted) {
+      router.push('/onboarding');
+      return;
     }
-  }, [user, userProfile]);
 
-  // Handle onboarding completion
-  const completeOnboarding = async () => {
-    if (!user) return;
-
-    const profile = {
-      name: onboardingData.name,
-      age: parseInt(onboardingData.age),
-      interests: [onboardingData.usage],
-      surveyPreference: (onboardingData.usage === 'work' ? 'fast' : 'research') as 'fast' | 'research'
-    };
-
-    try {
-      // Save to localStorage via AuthContext (this is what controls the onboarding display)
-      await updateUserProfile(profile);
-
-      // Also save to database for persistence
-      fetch('/api/user/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          name: onboardingData.name,
-          age: parseInt(onboardingData.age),
-          heardFrom: onboardingData.heardFrom,
-          surveyPreference: profile.surveyPreference,
-          interests: profile.interests
-        })
-      }).catch(err => console.error('Failed to save profile to database:', err));
-
-      // Close onboarding and update greeting
-      setShowOnboarding(false);
-      const newGreeting = generateGreeting(profile.name);
+    // Use session-stored greeting or generate new one
+    const storedGreeting = sessionStorage.getItem('surbee_session_greeting');
+    if (storedGreeting) {
+      setGreeting(storedGreeting);
+    } else {
+      const userName = userProfile?.name || user?.user_metadata?.name || user?.email?.split('@')[0];
+      const newGreeting = generateGreeting(userName);
       sessionStorage.setItem('surbee_session_greeting', newGreeting);
       setGreeting(newGreeting);
-    } catch (error) {
-      console.error('Failed to save profile:', error);
     }
-  };
+  }, [user, userProfile, router]);
 
   const knowledgeBaseElements = [
     {
@@ -472,250 +426,6 @@ function DashboardContent() {
 
   return (
     <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
-      {/* Onboarding Modal */}
-      {showOnboarding && (
-        <div className="fixed inset-0" style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.25)',
-          backdropFilter: 'blur(4px)',
-          zIndex: 1100,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <div className="relative w-full max-w-xl p-12 mx-4" style={{
-            backgroundColor: 'var(--surbee-card-bg)',
-            borderRadius: '19px',
-            border: '1px solid var(--surbee-border-accent)',
-            minHeight: '600px',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            {onboardingStep === 1 ? (
-              <>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', paddingTop: '20px' }}>
-                  {/* Surbee Logo SVG */}
-                  <img
-                    src="/logo.svg"
-                    alt="Surbee Logo"
-                    style={{
-                      width: '100px',
-                      height: 'auto',
-                      marginBottom: '16px',
-                      marginLeft: 'auto',
-                      marginRight: 'auto',
-                      display: 'block'
-                    }}
-                  />
-                  <h2 style={{
-                    fontFamily: 'Kalice-Trial-Regular, sans-serif',
-                    fontSize: '32px',
-                    color: 'var(--surbee-fg-primary)',
-                    marginBottom: '32px',
-                    textAlign: 'center',
-                    lineHeight: '1.2'
-                  }}>Welcome to Surbee</h2>
-
-                  <input
-                    type="text"
-                    value={onboardingData.name}
-                    onChange={(e) => setOnboardingData({ ...onboardingData, name: e.target.value })}
-                    placeholder="Name"
-                    style={{
-                      width: '100%',
-                      padding: '14px 16px',
-                      backgroundColor: 'var(--surbee-bg-primary)',
-                      border: '1px solid var(--surbee-border-accent)',
-                      borderRadius: '12px',
-                      color: 'var(--surbee-fg-primary)',
-                      fontSize: '15px',
-                      fontFamily: 'Suisse intl mono, monospace',
-                      outline: 'none',
-                      marginBottom: '14px'
-                    }}
-                  />
-
-                  <input
-                    type="number"
-                    value={onboardingData.age}
-                    onChange={(e) => setOnboardingData({ ...onboardingData, age: e.target.value })}
-                    placeholder="Age"
-                    style={{
-                      width: '100%',
-                      padding: '14px 16px',
-                      backgroundColor: 'var(--surbee-bg-primary)',
-                      border: '1px solid var(--surbee-border-accent)',
-                      borderRadius: '12px',
-                      color: 'var(--surbee-fg-primary)',
-                      fontSize: '15px',
-                      fontFamily: 'Suisse intl mono, monospace',
-                      outline: 'none',
-                      marginBottom: '14px'
-                    }}
-                  />
-
-                  <input
-                    type="text"
-                    value={onboardingData.heardFrom}
-                    onChange={(e) => setOnboardingData({ ...onboardingData, heardFrom: e.target.value })}
-                    placeholder="Where did you hear about us"
-                    style={{
-                      width: '100%',
-                      padding: '14px 16px',
-                      backgroundColor: 'var(--surbee-bg-primary)',
-                      border: '1px solid var(--surbee-border-accent)',
-                      borderRadius: '12px',
-                      color: 'var(--surbee-fg-primary)',
-                      fontSize: '15px',
-                      fontFamily: 'Suisse intl mono, monospace',
-                      outline: 'none',
-                      marginBottom: '24px'
-                    }}
-                  />
-
-                  <button
-                    onClick={() => setOnboardingStep(2)}
-                    disabled={!onboardingData.name || !onboardingData.age}
-                    style={{
-                      width: '100%',
-                      padding: '14px',
-                      backgroundColor: !onboardingData.name || !onboardingData.age ? '#444' : '#fff',
-                      color: !onboardingData.name || !onboardingData.age ? '#888' : '#000',
-                      border: 'none',
-                      borderRadius: '999px',
-                      fontSize: '15px',
-                      fontWeight: 500,
-                      cursor: !onboardingData.name || !onboardingData.age ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    Continue
-                  </button>
-                </div>
-
-                {/* Progress Bar - Single pill with fill */}
-                <div style={{
-                  marginTop: 'auto',
-                  display: 'flex',
-                  justifyContent: 'center'
-                }}>
-                  <div style={{
-                    width: '120px',
-                    height: '4px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                    borderRadius: '999px',
-                    overflow: 'hidden'
-                  }}>
-                    <div style={{
-                      width: '50%',
-                      height: '100%',
-                      backgroundColor: '#fff',
-                      transition: 'width 0.3s ease'
-                    }} />
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <h2 style={{
-                    fontFamily: 'Kalice-Trial-Regular, sans-serif',
-                    fontSize: '32px',
-                    color: 'var(--surbee-fg-primary)',
-                    marginBottom: '48px',
-                    textAlign: 'center',
-                    lineHeight: '1.2'
-                  }}>What will you use Surbee for?</h2>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-                    {['Work', 'Personal', 'Education'].map((option) => (
-                      <button
-                        key={option}
-                        onClick={() => setOnboardingData({ ...onboardingData, usage: option.toLowerCase() })}
-                        style={{
-                          padding: '14px',
-                          backgroundColor: onboardingData.usage === option.toLowerCase() ? '#fff' : 'var(--surbee-bg-primary)',
-                          color: onboardingData.usage === option.toLowerCase() ? '#000' : 'var(--surbee-fg-primary)',
-                          border: `1px solid ${onboardingData.usage === option.toLowerCase() ? '#fff' : 'var(--surbee-border-accent)'}`,
-                          borderRadius: '12px',
-                          fontSize: '15px',
-                          fontWeight: 500,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          fontFamily: 'Suisse intl mono, monospace'
-                        }}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
-                    <button
-                      onClick={completeOnboarding}
-                      disabled={!onboardingData.usage}
-                      style={{
-                        flex: 1,
-                        padding: '14px',
-                        backgroundColor: !onboardingData.usage ? '#444' : '#fff',
-                        color: !onboardingData.usage ? '#888' : '#000',
-                        border: 'none',
-                        borderRadius: '999px',
-                        fontSize: '15px',
-                        fontWeight: 500,
-                        cursor: !onboardingData.usage ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      Get Started
-                    </button>
-                    <button
-                      onClick={() => setOnboardingStep(1)}
-                      style={{
-                        flex: 1,
-                        padding: '10px', // Reduced padding for text-like button
-                        backgroundColor: 'transparent',
-                        color: 'var(--surbee-fg-secondary)',
-                        border: 'none', // No border for text button
-                        borderRadius: '999px',
-                        fontSize: '14px', // Slightly smaller font size
-                        fontWeight: 400, // Regular weight for text button
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        marginTop: '10px' // Space between buttons
-                      }}
-                    >
-                      Back
-                    </button>
-                  </div>
-                </div>
-
-                {/* Progress Bar - Single pill with fill */}
-                <div style={{
-                  marginTop: 'auto',
-                  display: 'flex',
-                  justifyContent: 'center'
-                }}>
-                  <div style={{
-                    width: '120px',
-                    height: '4px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                    borderRadius: '999px',
-                    overflow: 'hidden'
-                  }}>
-                    <div style={{
-                      width: '100%',
-                      height: '100%',
-                      backgroundColor: '#fff',
-                      transition: 'width 0.3s ease'
-                    }} />
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
       <div className="relative flex flex-col h-full">
         {/* Dashboard Chat Container - handles greeting, messages, and input */}
         {user && (

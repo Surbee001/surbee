@@ -11,6 +11,11 @@ export interface Project {
   preview_image?: string | null; // Screenshot of the survey/sandbox
   published_url?: string; // Shareable public URL
   published_at?: string; // Timestamp when published
+  // Marketplace fields
+  is_template?: boolean; // If true, this project is a template that can be remixed
+  is_marketplace_visible?: boolean; // If true, this project is visible in the marketplace
+  remix_count?: number; // Number of times this project has been remixed
+  remixed_from_id?: string | null; // The original project this was remixed from
 }
 
 export interface ChatMessage {

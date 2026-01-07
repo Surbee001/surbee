@@ -1,22 +1,21 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, User, Bell, Shield, CreditCard, HelpCircle, Download, Calendar, AlertCircle, CreditCard as CreditCardIcon } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { SkeletonText, SkeletonCard, SkeletonStatsCard } from '@/components/ui/skeleton';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { toast } from 'sonner';
+import { useCredits } from '@/hooks/useCredits';
+import { CreditCard as CreditCardIcon, AlertCircle, Plus, Trash2 } from 'lucide-react';
 
-interface Plan {
-  id: string;
-  name: string;
-  price: number;
-  billing: 'monthly' | 'annual';
-  features: string[];
-  popular?: boolean;
-  current?: boolean;
-}
+type SettingsTab = 'general' | 'account' | 'privacy' | 'billing';
+
+const settingsTabs: { id: SettingsTab; label: string; href: string }[] = [
+  { id: 'general', label: 'General', href: '/home/settings/general' },
+  { id: 'account', label: 'Account', href: '/home/settings/account' },
+  { id: 'privacy', label: 'Privacy', href: '/home/settings/privacy' },
+  { id: 'billing', label: 'Billing', href: '/home/settings/billing' },
+];
 
 interface Invoice {
   id: string;
@@ -24,478 +23,987 @@ interface Invoice {
   amount: number;
   status: 'paid' | 'pending' | 'failed' | 'overdue';
   description: string;
+  invoiceUrl?: string;
+}
+
+interface PaymentMethod {
+  id: string;
+  type: string;
+  brand: string;
+  last4: string;
+  expMonth?: number;
+  expYear?: number;
+  isDefault: boolean;
 }
 
 export default function BillingSettingsPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentPlan, setCurrentPlan] = useState<'free' | 'pro' | 'max'>('free');
-  const [showFade, setShowFade] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const { user, session } = useAuth();
+  const { credits, percentUsed } = useCredits();
+  const { resolvedTheme } = useTheme();
 
-  useEffect(() => {
-    // Reset scroll position and fade when component mounts
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = 0;
-      setShowFade(false);
-    }
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(true);
+  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(true);
 
-    const handleScroll = () => {
-      if (scrollRef.current) {
-        setShowFade(scrollRef.current.scrollTop > 0);
+  const currentPlan = credits?.plan || 'free';
+
+  // Icon filter: off-white for dark mode, off-black for light mode
+  const isDark = resolvedTheme === 'dark';
+  const iconFilter = isDark
+    ? 'brightness(0) invert(0.9)'
+    : 'brightness(0) invert(0.15)';
+
+  const daysUntilReset = useMemo(() => {
+    if (!credits?.creditsResetAt) return null;
+    const resetDate = new Date(credits.creditsResetAt);
+    const now = new Date();
+    const diffTime = resetDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  }, [credits?.creditsResetAt]);
+
+  // Fetch invoices
+  const fetchInvoices = useCallback(async () => {
+    if (!session?.access_token) return;
+    try {
+      const response = await fetch('/api/billing/invoices', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setInvoices(data.invoices || []);
       }
-    };
-
-    const scrollElement = scrollRef.current;
-    if (scrollElement) {
-      scrollElement.addEventListener('scroll', handleScroll);
-      return () => scrollElement.removeEventListener('scroll', handleScroll);
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+    } finally {
+      setLoadingInvoices(false);
     }
-  }, []);
+  }, [session?.access_token]);
 
-  // Only show loading on first visit, not on navigation
+  // Fetch payment methods
+  const fetchPaymentMethods = useCallback(async () => {
+    if (!session?.access_token) return;
+    try {
+      const response = await fetch('/api/billing/payment-methods', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPaymentMethods(data.paymentMethods || []);
+      }
+    } catch (error) {
+      console.error('Error fetching payment methods:', error);
+    } finally {
+      setLoadingPaymentMethods(false);
+    }
+  }, [session?.access_token]);
+
   useEffect(() => {
-    if (!authLoading) {
-      const hasLoaded = sessionStorage.getItem('dashboard_loaded');
-      if (hasLoaded) {
-        setIsLoading(false);
+    fetchInvoices();
+    fetchPaymentMethods();
+  }, [fetchInvoices, fetchPaymentMethods]);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const handleUpgrade = () => router.push('/home/pricing');
+
+  const handleAddPaymentMethod = async () => {
+    if (!session?.access_token) {
+      toast.error('Please log in to add a payment method');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/billing/payment-methods', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.setupUrl) {
+        window.location.href = data.setupUrl;
+      } else if (data.error === 'Stripe not configured') {
+        toast.error('Stripe is not configured. Please add STRIPE_SECRET_KEY to your environment.');
       } else {
-        const timer = setTimeout(() => {
-          setIsLoading(false);
-          sessionStorage.setItem('dashboard_loaded', 'true');
-        }, 800);
-        return () => clearTimeout(timer);
+        toast.error('Failed to set up payment method. Please try again.');
       }
+    } catch (error) {
+      console.error('Error adding payment method:', error);
+      toast.error('Failed to set up payment method. Please try again.');
     }
-  }, [authLoading]);
+  };
 
-  const invoices: Invoice[] = [
-    {
-      id: 'INV-001',
-      date: '2025-11-28',
-      amount: 100,
-      status: 'overdue',
-      description: 'Max Plan - Monthly'
-    },
-    {
-      id: 'INV-002',
-      date: '2025-10-28',
-      amount: 83.88,
-      status: 'paid',
-      description: 'Pro Plan - Monthly'
-    },
-    {
-      id: 'INV-003',
-      date: '2025-10-22',
-      amount: 20,
-      status: 'paid',
-      description: 'Add-on Services'
-    },
-    {
-      id: 'INV-004',
-      date: '2025-08-15',
-      amount: 100,
-      status: 'paid',
-      description: 'Max Plan - Monthly'
+  const handleDeletePaymentMethod = async (paymentMethodId: string) => {
+    if (!session?.access_token) return;
+
+    try {
+      const response = await fetch('/api/billing/payment-methods', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ paymentMethodId }),
+      });
+
+      if (response.ok) {
+        toast.success('Payment method removed');
+        fetchPaymentMethods();
+      } else {
+        toast.error('Failed to remove payment method');
+      }
+    } catch (error) {
+      console.error('Error deleting payment method:', error);
+      toast.error('Failed to remove payment method');
     }
-  ];
-
-  const handleUpgrade = () => {
-    // TODO: Implement upgrade to Max plan
-    toast.info('Redirecting to upgrade page...');
-    // router.push('/home/upgrade-plan');
   };
 
-  const handleUpdatePayment = () => {
-    // TODO: Implement payment method update
-    toast.info('Payment method update feature coming soon');
+  const handleViewInvoice = (invoice: Invoice) => {
+    if (invoice.invoiceUrl) {
+      window.open(invoice.invoiceUrl, '_blank');
+    } else {
+      toast.info(`Opening invoice ${invoice.id}...`);
+    }
   };
 
-  const handlePayInvoice = (invoiceId: string) => {
-    // TODO: Implement invoice payment
-    toast.info(`Processing payment for invoice ${invoiceId}...`);
-  };
-
-  const handleViewInvoice = (invoiceId: string) => {
-    // TODO: Implement invoice view/download
-    toast.info(`Opening invoice ${invoiceId}...`);
+  const handlePayInvoice = (invoice: Invoice) => {
+    if (invoice.invoiceUrl) {
+      window.open(invoice.invoiceUrl, '_blank');
+    } else {
+      toast.info(`Processing payment for ${invoice.id}...`);
+    }
   };
 
   const handleCancelPlan = () => {
-    toast.warning('Are you sure you want to cancel your subscription?', {
+    toast.warning('Are you sure you want to cancel?', {
       duration: 5000,
       action: {
         label: 'Yes, Cancel',
-        onClick: () => {
-          // TODO: Implement plan cancellation
-          toast.error('Plan cancellation initiated. Your subscription will remain active until the end of the billing period.');
-        }
-      }
+        onClick: () => toast.error('Plan cancellation initiated.'),
+      },
     });
   };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  if (authLoading || isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>
-        <div className="flex-1 min-h-0">
-          <div className="max-w-screen-xl mx-auto px-6 md:px-10 lg:px-16 h-full pt-8">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full max-w-6xl mx-auto">
-              {/* Settings Navigation Skeleton */}
-              <div className="lg:col-span-1">
-                <div className="space-y-4">
-                  <SkeletonText width="120px" height="2rem" className="mb-6" />
-                  <div className="space-y-1">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="flex items-center gap-3 px-3 py-2">
-                        <div className="skeleton-circle" style={{ width: '16px', height: '16px' }}></div>
-                        <SkeletonText width={`${60 + Math.random() * 40}px`} height="14px" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Billing Content Skeleton */}
-              <div className="lg:col-span-3 space-y-6">
-                {/* Current Plan Card Skeleton */}
-                <div className="skeleton-card" style={{ padding: '24px' }}>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="skeleton-circle" style={{ width: '20px', height: '20px' }}></div>
-                      <SkeletonText width="120px" height="1.5rem" />
-                    </div>
-                    <SkeletonText width="250px" height="1rem" className="mb-6" />
-                    
-                    {/* Current plan display */}
-                    <div className="skeleton-base" style={{ height: '5rem', borderRadius: '0.5rem', marginBottom: '1rem' }}></div>
-                    
-                    {/* Usage stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="skeleton-stats-card" style={{ height: '5rem' }}></div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Available Plans Card Skeleton */}
-                <div className="skeleton-card" style={{ padding: '24px' }}>
-                  <div className="space-y-6">
-                    <SkeletonText width="140px" height="1.5rem" className="mb-2" />
-                    <SkeletonText width="220px" height="1rem" className="mb-6" />
-                    
-                    {/* Billing toggle */}
-                    <div className="flex justify-center mb-6">
-                      <div className="skeleton-base" style={{ width: '200px', height: '2.5rem', borderRadius: '0.5rem' }}></div>
-                    </div>
-                    
-                    {/* Plans grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="skeleton-base" style={{ height: '20rem', borderRadius: '0.75rem' }}></div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Payment Method Card Skeleton */}
-                <div className="skeleton-card" style={{ padding: '24px' }}>
-                  <div className="space-y-4">
-                    <SkeletonText width="140px" height="1.5rem" className="mb-2" />
-                    <SkeletonText width="300px" height="1rem" className="mb-6" />
-                    
-                    {/* Payment method display */}
-                    <div className="skeleton-base" style={{ height: '4rem', borderRadius: '0.5rem' }}></div>
-                    <div className="skeleton-base" style={{ height: '3rem', borderRadius: '0.5rem' }}></div>
-                  </div>
-                </div>
-
-                {/* Billing History Card Skeleton */}
-                <div className="skeleton-card" style={{ padding: '24px' }}>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="skeleton-circle" style={{ width: '20px', height: '20px' }}></div>
-                      <SkeletonText width="140px" height="1.5rem" />
-                    </div>
-                    <SkeletonText width="250px" height="1rem" className="mb-6" />
-                    
-                    {/* Invoice list */}
-                    <div className="space-y-3">
-                      {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="skeleton-base" style={{ height: '4rem', borderRadius: '0.5rem' }}></div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>
+    <div className="settings-root">
+      {/* Header */}
+      <header className="settings-header">
+        <h1 className="settings-title">Settings</h1>
+      </header>
 
-      {/* Main Content Area */}
-      <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12 overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full max-w-6xl mx-auto">
-            {/* Settings Navigation - Fixed */}
-            <div className="lg:col-span-1 flex flex-col">
-            <div className="space-y-4 flex-shrink-0">
-              <h1 className="projects-title">
-                Settings
-              </h1>
+      {/* Tab Navigation */}
+      <nav className="settings-tabs">
+        {settingsTabs.map((tab) => (
+          <button
+            key={tab.id}
+            className={`settings-tab ${pathname === tab.href ? 'active' : ''}`}
+            onClick={() => router.push(tab.href)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
 
-              <div className="space-y-1">
-                {[
-                  { icon: Settings, label: 'General', active: false, href: '/home/settings/general' },
-                  { icon: HelpCircle, label: 'Account', active: false, href: '/home/settings/account' },
-                  { icon: Shield, label: 'Privacy & Security', active: false, href: '/home/settings/privacy' },
-                  { icon: CreditCard, label: 'Billing', active: true, href: '/home/settings/billing' },
-                  { icon: Settings, label: 'Connectors', active: false, href: '/home/settings/connectors' },
-                ].map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.label}
-                      onClick={() => router.push(item.href)}
-                      className={`
-                        relative w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all duration-150 cursor-pointer mb-0.5
-                        ${item.active ? 'text-theme-primary' : 'text-theme-secondary hover:text-theme-primary'}
-                      `}
-                      style={{
-                        backgroundColor: item.active 
-                          ? 'var(--surbee-sidebar-active)' 
-                          : 'transparent',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!item.active) {
-                          e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!item.active) {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                        }
-                      }}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span className="text-[14px] font-medium">{item.label}</span>
-                    </button>
-                  );
-                })}
+      {/* Content */}
+      <div className="settings-content">
+        <div className="settings-section">
+          {/* Current Plan */}
+          <div className="plan-section">
+            <div className="plan-row">
+              <div className="plan-left">
+                <img
+                  src={
+                    currentPlan === 'surbee_max' || currentPlan === 'max' || currentPlan === 'surbee_enterprise' || currentPlan === 'enterprise'
+                      ? 'https://ik.imagekit.io/on0moldgr/composition%20(2).svg'
+                      : currentPlan === 'surbee_pro' || currentPlan === 'pro'
+                        ? 'https://ik.imagekit.io/on0moldgr/composition%20(1).svg'
+                        : 'https://ik.imagekit.io/on0moldgr/composition.svg'
+                  }
+                  alt="Plan icon"
+                  className="plan-icon"
+                  style={{ width: '64px', height: '64px', filter: iconFilter }}
+                />
+                <div className="plan-text">
+                  <h2 className="plan-name">
+                    {currentPlan === 'surbee_max' || currentPlan === 'max' ? 'Max plan' : currentPlan === 'surbee_pro' || currentPlan === 'pro' ? 'Pro plan' : currentPlan === 'surbee_enterprise' || currentPlan === 'enterprise' ? 'Enterprise plan' : 'Free plan'}
+                  </h2>
+                  <p className="plan-description">
+                    {currentPlan === 'max' ? '5x more usage than Pro' : currentPlan === 'pro' ? '20x more usage than Free' : currentPlan === 'enterprise' ? 'Unlimited usage with API access' : 'Get started with Surbee'}
+                  </p>
+                  <p className="plan-renewal">
+                    {credits?.creditsResetAt ? `Credits reset on ${new Date(credits.creditsResetAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : 'Monthly credits included'}
+                  </p>
+                </div>
               </div>
+              <button className="adjust-plan-btn" onClick={handleUpgrade}>
+                {currentPlan === 'free' ? 'Upgrade' : 'Adjust plan'}
+              </button>
             </div>
           </div>
 
-            {/* Billing Content - Only this scrolls */}
-            <div className="lg:col-span-3 relative flex flex-col min-h-0 overflow-hidden">
-              {/* Fade overlay at top - only show when scrolling */}
-              <div className={`absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[var(--surbee-bg-primary)] to-transparent z-10 pointer-events-none transition-opacity duration-300 ${
-                showFade ? 'opacity-100' : 'opacity-0'
-              }`} />
-              
-              {/* Scrollable content - only the cards */}
-              <div 
-                ref={scrollRef}
-                className="flex-1 min-h-0 overflow-y-auto pr-4 space-y-6 pb-16" 
-                style={{ scrollbarWidth: 'thin' }}
-              >
-              {/* Current Plan */}
-              <Card style={{ backgroundColor: 'var(--surbee-card-bg)', borderColor: 'var(--surbee-card-border)' }}>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--surbee-bg-secondary)' }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{ color: 'var(--surbee-fg-primary)' }}>
-                          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <h2 className="text-[24px] font-bold mb-1" style={{ color: 'var(--surbee-fg-primary)' }}>
-                          {currentPlan === 'max' ? 'Max plan' : currentPlan === 'pro' ? 'Pro plan' : 'Free plan'}
-                        </h2>
-                        <p className="text-[14px] mb-4" style={{ color: 'var(--surbee-fg-muted)' }}>
-                          {currentPlan === 'max' ? '5x more usage than Pro' : currentPlan === 'pro' ? 'Unlimited surveys and advanced features' : 'Perfect for getting started'}
-                        </p>
-                        {currentPlan === 'max' && (
-                          <p className="text-[14px]" style={{ color: 'var(--surbee-fg-muted)' }}>
-                            Your subscription will auto renew on Dec 28, 2025.
-                          </p>
-                        )}
-                        {(currentPlan === 'free' || currentPlan === 'pro') && (
-                          <button
-                            onClick={handleUpgrade}
-                            className="px-6 py-2.5 rounded-lg font-medium text-[14px] transition-all mt-4"
-                            style={{
-                              backgroundColor: 'var(--surbee-fg-primary)',
-                              color: 'var(--surbee-bg-primary)'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.opacity = '0.9';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.opacity = '1';
-                            }}
-                          >
-                            Upgrade to Max
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+          <div className="divider" />
 
-              {/* Payment */}
-              <Card style={{ backgroundColor: 'var(--surbee-card-bg)', borderColor: 'var(--surbee-card-border)' }}>
-                <CardContent>
-                  <div className="space-y-6">
-                    <h2 className="text-[24px] font-bold" style={{ color: 'var(--surbee-fg-primary)' }}>
-                      Payment
-                    </h2>
-                    <div className="flex items-center justify-between py-3">
-                      <div className="flex items-center gap-3">
-                        <CreditCardIcon className="w-5 h-5" style={{ color: 'var(--surbee-fg-muted)' }} />
-                        <span className="text-[16px]" style={{ color: 'var(--surbee-fg-primary)' }}>
-                          Visa •••• 6947
-                        </span>
-                      </div>
-                      <button
-                        onClick={handleUpdatePayment}
-                        className="px-6 py-2.5 rounded-lg font-medium text-[14px] transition-all"
-                        style={{
-                          backgroundColor: 'var(--surbee-fg-primary)',
-                          color: 'var(--surbee-bg-primary)'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.opacity = '0.9';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.opacity = '1';
-                        }}
-                      >
-                        Update
-                      </button>
-                    </div>
-                    {currentPlan === 'max' && invoices.some(inv => inv.status === 'overdue') && (
-                      <div className="p-4 rounded-lg" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.2)', borderWidth: '1px', borderStyle: 'solid' }}>
-                        <p className="text-[14px]" style={{ color: 'rgb(239, 68, 68)' }}>
-                          Your subscription is past due. Please change your payment method and pay your overdue invoice, or cancel your subscription.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+          {/* Usage Analytics */}
+          <div className="usage-analytics">
+            <div className="analytics-header">
+              <div className="analytics-controls">
+                <button className="date-range-btn">
+                  <span>Dec 08 - Jan 06</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
+                </button>
+                <div className="period-selector">
+                  <button className="period-btn">1d</button>
+                  <button className="period-btn">7d</button>
+                  <button className="period-btn active">30d</button>
+                </div>
+              </div>
+            </div>
 
-              {/* Invoices */}
-              <Card style={{ backgroundColor: 'var(--surbee-card-bg)', borderColor: 'var(--surbee-card-border)' }}>
-                <CardContent>
-                  <div className="space-y-6">
-                    <h2 className="text-[24px] font-bold" style={{ color: 'var(--surbee-fg-primary)' }}>
-                      Invoices
-                    </h2>
-                    <div className="space-y-0">
-                      <div className="grid grid-cols-4 gap-4 pb-3 border-b" style={{ borderColor: 'var(--surbee-border-primary)' }}>
-                        <div className="text-[12px] font-medium" style={{ color: 'var(--surbee-fg-muted)' }}>Date</div>
-                        <div className="text-[12px] font-medium" style={{ color: 'var(--surbee-fg-muted)' }}>Total</div>
-                        <div className="text-[12px] font-medium" style={{ color: 'var(--surbee-fg-muted)' }}>Status</div>
-                        <div className="text-[12px] font-medium" style={{ color: 'var(--surbee-fg-muted)' }}>Actions</div>
-                      </div>
-                      {invoices.map((invoice) => (
-                        <div key={invoice.id} className="grid grid-cols-4 gap-4 py-4 border-b last:border-b-0" style={{ borderColor: 'var(--surbee-border-primary)' }}>
-                          <div className="text-[14px]" style={{ color: 'var(--surbee-fg-primary)' }}>
-                            {formatDate(invoice.date)}
-                          </div>
-                          <div className="text-[14px]" style={{ color: 'var(--surbee-fg-primary)' }}>
-                            US${invoice.amount.toFixed(2)}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {invoice.status === 'overdue' && (
-                              <AlertCircle className="w-4 h-4" style={{ color: 'rgb(239, 68, 68)' }} />
-                            )}
-                            <span className={`text-[14px] capitalize ${
-                              invoice.status === 'paid' ? 'text-green-400' :
-                              invoice.status === 'overdue' ? 'text-red-400' : 'text-yellow-400'
-                            }`}>
-                              {invoice.status === 'overdue' ? 'Overdue' : invoice.status}
-                            </span>
-                          </div>
-                          <div>
-                            {invoice.status === 'overdue' ? (
-                              <button 
-                                onClick={() => handlePayInvoice(invoice.id)}
-                                className="text-[14px] underline" 
-                                style={{ color: 'var(--surbee-fg-primary)' }}
-                              >
-                                Pay
-                              </button>
-                            ) : (
-                              <button 
-                                onClick={() => handleViewInvoice(invoice.id)}
-                                className="text-[14px] underline" 
-                                style={{ color: 'var(--surbee-fg-primary)' }}
-                              >
-                                View
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="analytics-title">Your Analytics</div>
 
-              {/* Cancellation */}
-              <Card style={{ backgroundColor: 'var(--surbee-card-bg)', borderColor: 'var(--surbee-card-border)' }}>
-                <CardContent>
-                  <div className="space-y-6">
-                    <h2 className="text-[24px] font-bold" style={{ color: 'var(--surbee-fg-primary)' }}>
-                      Cancellation
-                    </h2>
-                    <div className="flex items-center justify-between py-3">
-                      <span className="text-[16px]" style={{ color: 'var(--surbee-fg-primary)' }}>
-                        Cancel plan
+            <div className="analytics-tiles">
+              <div className="analytics-tile active">
+                <div className="tile-label">
+                  Credits Used
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <path d="M12 17h.01"/>
+                  </svg>
+                </div>
+                <div className="tile-value">
+                  <span className="tile-number">{credits ? (credits.monthlyCredits - credits.creditsRemaining).toLocaleString() : 0}</span>
+                  <span className="tile-total">/ {credits?.monthlyCredits?.toLocaleString() || 0}</span>
+                </div>
+              </div>
+              <div className="analytics-tile">
+                <div className="tile-label">Surveys Created</div>
+                <div className="tile-value">
+                  <span className="tile-number">0</span>
+                </div>
+              </div>
+              <div className="analytics-tile">
+                <div className="tile-label">Responses</div>
+                <div className="tile-value">
+                  <span className="tile-number">0</span>
+                </div>
+              </div>
+              <div className="analytics-tile">
+                <div className="tile-label">AI Analyses</div>
+                <div className="tile-value">
+                  <span className="tile-number">0</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div className="divider" />
+
+          {/* Payment Methods */}
+          <div className="section-header">
+            <h2 className="section-title">Payment methods</h2>
+          </div>
+
+          <div className="payment-methods-list">
+            {loadingPaymentMethods ? (
+              <div className="loading-state">Loading payment methods...</div>
+            ) : paymentMethods.length > 0 ? (
+              paymentMethods.map((pm) => (
+                <div key={pm.id} className="payment-method-row">
+                  <div className="payment-info">
+                    <CreditCardIcon className="w-5 h-5 opacity-50" />
+                    <div className="payment-details">
+                      <span className="payment-card">
+                        {pm.brand.charAt(0).toUpperCase() + pm.brand.slice(1)} •••• {pm.last4}
                       </span>
-                      <button
-                        onClick={handleCancelPlan}
-                        className="px-6 py-2.5 rounded-lg font-medium text-[14px] transition-all"
-                        style={{
-                          backgroundColor: 'rgb(239, 68, 68)',
-                          color: 'white'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.opacity = '0.9';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.opacity = '1';
-                        }}
-                      >
-                        Cancel
-                      </button>
+                      {pm.expMonth && pm.expYear && (
+                        <span className="payment-expiry">
+                          Expires {pm.expMonth}/{pm.expYear.toString().slice(-2)}
+                        </span>
+                      )}
                     </div>
+                    {pm.isDefault && <span className="default-badge">Default</span>}
                   </div>
-                </CardContent>
-              </Card>
+                  {!pm.isDefault && paymentMethods.length > 1 && (
+                    <button
+                      className="delete-payment-btn"
+                      onClick={() => handleDeletePaymentMethod(pm.id)}
+                      title="Remove payment method"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="no-payment-methods">
+                <p>No payment methods on file</p>
               </div>
-            </div>
+            )}
+
+            <button className="add-payment-btn-solid" onClick={handleAddPaymentMethod}>
+              <Plus className="w-4 h-4" />
+              Add payment method
+            </button>
           </div>
+
+          {invoices.some(inv => inv.status === 'overdue') && (
+            <div className="overdue-alert">
+              <AlertCircle className="w-4 h-4" />
+              Your subscription is past due. Please update your payment method.
+            </div>
+          )}
+
+          <div className="divider" />
+
+          {/* Invoices */}
+          <div className="section-header">
+            <h2 className="section-title">Invoices</h2>
+          </div>
+
+          <div className="invoices-table">
+            {loadingInvoices ? (
+              <div className="loading-state">Loading invoices...</div>
+            ) : invoices.length > 0 ? (
+              <>
+                <div className="invoices-header">
+                  <span>Date</span>
+                  <span>Total</span>
+                  <span>Status</span>
+                  <span>Action</span>
+                </div>
+                {invoices.map((invoice) => (
+                  <div key={invoice.id} className="invoice-row">
+                    <span className="invoice-date">{formatDate(invoice.date)}</span>
+                    <span className="invoice-amount">US${invoice.amount.toFixed(2)}</span>
+                    <span className={`invoice-status ${invoice.status}`}>
+                      {invoice.status === 'overdue' && <AlertCircle className="w-3.5 h-3.5" />}
+                      {invoice.status}
+                    </span>
+                    <button
+                      className="invoice-action"
+                      onClick={() => invoice.status === 'overdue' ? handlePayInvoice(invoice) : handleViewInvoice(invoice)}
+                    >
+                      {invoice.status === 'overdue' ? 'Pay' : 'View'}
+                    </button>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <div className="no-invoices">
+                <p>No invoices yet</p>
+              </div>
+            )}
+          </div>
+
+          {/* Cancellation - only show for paid plans */}
+          {currentPlan !== 'free' && currentPlan !== 'free_user' && (
+            <>
+              <div className="divider" />
+              <div className="danger-zone">
+                <div className="danger-zone-content">
+                  <h3 className="danger-zone-title">Cancel subscription</h3>
+                  <p className="danger-zone-description">
+                    Your subscription will remain active until the end of the billing period.
+                  </p>
+                </div>
+                <button className="danger-zone-btn" onClick={handleCancelPlan}>
+                  Cancel plan
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
+
+      <style jsx>{`
+        .settings-root {
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 48px 32px 120px;
+          color: var(--surbee-fg-primary, #E8E8E8);
+        }
+
+        /* Header */
+        .settings-header {
+          margin-bottom: 32px;
+        }
+
+        .settings-title {
+          font-family: 'Kalice-Trial-Regular', sans-serif;
+          font-size: 28px;
+          font-weight: 400;
+          line-height: 1.4;
+          margin-bottom: 0;
+        }
+
+        /* Tabs */
+        .settings-tabs {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 32px;
+          flex-wrap: wrap;
+        }
+
+        .settings-tab {
+          padding: 8px 16px;
+          font-size: 14px;
+          font-weight: 500;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          background: transparent;
+          border: 1px solid rgba(232, 232, 232, 0.1);
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .settings-tab:hover {
+          border-color: rgba(232, 232, 232, 0.2);
+        }
+
+        .settings-tab.active {
+          background: rgba(232, 232, 232, 0.05);
+          border-color: transparent;
+        }
+
+        /* Content */
+        .settings-content {
+          animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        .settings-section {
+          max-width: 100%;
+        }
+
+        .section-header {
+          margin-bottom: 16px;
+        }
+
+        .section-title {
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          margin: 0;
+        }
+
+        .divider {
+          margin: 32px 0;
+          width: 100%;
+          height: 1px;
+          background-color: rgba(232, 232, 232, 0.08);
+        }
+
+        /* Plan Section - Claude.ai style */
+        .plan-section {
+          margin-bottom: 0;
+        }
+
+        .plan-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          column-gap: 32px;
+          row-gap: 12px;
+        }
+
+        .plan-left {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .plan-text {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          min-width: 0;
+          text-align: start;
+        }
+
+        .plan-name {
+          font-size: 16px;
+          font-weight: 600;
+          margin: 0;
+          color: var(--surbee-fg-primary, #E8E8E8);
+        }
+
+        .plan-description {
+          font-size: 14px;
+          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          margin: 0;
+        }
+
+        .plan-renewal {
+          font-size: 13px;
+          color: var(--surbee-fg-muted, rgba(232, 232, 232, 0.4));
+          margin: 0;
+        }
+
+        .adjust-plan-btn {
+          padding: 10px 20px;
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--surbee-bg-primary, rgb(19, 19, 20));
+          background: var(--surbee-fg-primary, #E8E8E8);
+          border: none;
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .adjust-plan-btn:hover {
+          opacity: 0.9;
+        }
+
+        @media (max-width: 640px) {
+          .plan-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+          }
+
+          .adjust-plan-btn {
+            align-self: flex-start;
+          }
+        }
+
+        /* Usage Analytics */
+        .usage-analytics {
+          padding: 24px;
+          border-radius: 12px;
+          background: rgba(232, 232, 232, 0.025);
+          border: 1px solid rgba(232, 232, 232, 0.06);
+        }
+
+        .analytics-header {
+          margin-bottom: 24px;
+        }
+
+        .analytics-controls {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .date-range-btn {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 0 8px;
+          height: 28px;
+          font-size: 12px;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          background: transparent;
+          border: 1px solid rgba(232, 232, 232, 0.08);
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        .date-range-btn:hover {
+          border-color: rgba(232, 232, 232, 0.15);
+        }
+
+        .date-range-btn svg {
+          opacity: 0.6;
+        }
+
+        .period-selector {
+          display: flex;
+          align-items: center;
+          gap: 1px;
+        }
+
+        .period-btn {
+          padding: 4px 8px;
+          height: 28px;
+          min-width: 40px;
+          font-size: 13px;
+          font-weight: 500;
+          color: rgba(232, 232, 232, 0.6);
+          background: transparent;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        .period-btn:hover {
+          color: var(--surbee-fg-primary, #E8E8E8);
+        }
+
+        .period-btn.active {
+          background: rgba(255, 255, 255, 0.1);
+          color: var(--surbee-fg-primary, #E8E8E8);
+        }
+
+        .analytics-title {
+          font-size: 13px;
+          font-weight: 400;
+          margin-bottom: 16px;
+        }
+
+        .analytics-tiles {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 8px;
+          margin-bottom: 24px;
+        }
+
+        @media (max-width: 768px) {
+          .analytics-tiles {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        .analytics-tile {
+          padding: 12px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: background-color 0.15s ease;
+        }
+
+        .analytics-tile:hover {
+          background: rgba(232, 232, 232, 0.04);
+        }
+
+        .analytics-tile.active {
+          background: rgba(232, 232, 232, 0.06);
+        }
+
+        .tile-label {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12px;
+          color: rgba(232, 232, 232, 0.6);
+          margin-bottom: 4px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .tile-label svg {
+          flex-shrink: 0;
+        }
+
+        .tile-value {
+          display: flex;
+          align-items: baseline;
+          gap: 4px;
+        }
+
+        .tile-number {
+          font-size: 20px;
+          font-weight: 500;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          font-variant-numeric: tabular-nums;
+        }
+
+        .tile-total {
+          font-size: 12px;
+          color: rgba(232, 232, 232, 0.4);
+          font-variant-numeric: tabular-nums;
+        }
+
+        /* Form Fields */
+        .form-field {
+          display: flex;
+          flex-direction: column;
+          margin-top: 16px;
+        }
+
+        .toggle-field {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+        }
+
+        .payment-methods-list {
+          margin-top: 16px;
+        }
+
+        .payment-method-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 16px;
+          border-radius: 12px;
+          background: rgba(232, 232, 232, 0.03);
+          border: 1px solid rgba(232, 232, 232, 0.08);
+          margin-bottom: 12px;
+        }
+
+        .payment-info {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .payment-details {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .payment-card {
+          font-size: 14px;
+        }
+
+        .payment-expiry {
+          font-size: 12px;
+          color: var(--surbee-fg-muted, rgba(232, 232, 232, 0.4));
+        }
+
+        .default-badge {
+          font-size: 11px;
+          font-weight: 500;
+          padding: 4px 8px;
+          border-radius: 9999px;
+          background: rgba(34, 197, 94, 0.15);
+          color: #22c55e;
+        }
+
+        .delete-payment-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          background: transparent;
+          border: none;
+          color: var(--surbee-fg-muted, rgba(232, 232, 232, 0.4));
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .delete-payment-btn:hover {
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
+        }
+
+        .add-payment-btn-solid {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 10px 20px;
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--surbee-bg-primary, rgb(19, 19, 20));
+          background: var(--surbee-fg-primary, #E8E8E8);
+          border: none;
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          width: fit-content;
+        }
+
+        .add-payment-btn-solid:hover {
+          opacity: 0.9;
+        }
+
+        .no-payment-methods {
+          padding: 24px;
+          text-align: center;
+          color: var(--surbee-fg-muted, rgba(232, 232, 232, 0.4));
+          font-size: 14px;
+        }
+
+        .no-payment-methods p {
+          margin: 0 0 16px 0;
+        }
+
+        .loading-state {
+          padding: 24px;
+          text-align: center;
+          color: var(--surbee-fg-muted, rgba(232, 232, 232, 0.4));
+          font-size: 14px;
+        }
+
+        .no-invoices {
+          padding: 24px;
+          text-align: center;
+          color: var(--surbee-fg-muted, rgba(232, 232, 232, 0.4));
+          font-size: 14px;
+        }
+
+        .no-invoices p {
+          margin: 0;
+        }
+
+        .action-btn {
+          padding: 10px 20px;
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--surbee-bg-primary, rgb(19, 19, 20));
+          background: var(--surbee-fg-primary, #E8E8E8);
+          border: none;
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+          opacity: 0.9;
+        }
+
+        .overdue-alert {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 12px 16px;
+          margin-top: 16px;
+          border-radius: 12px;
+          font-size: 14px;
+          color: #ef4444;
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        /* Invoices */
+        .invoices-table {
+          margin-top: 16px;
+        }
+
+        .invoices-header {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr 80px;
+          gap: 16px;
+          padding-bottom: 12px;
+          border-bottom: 1px solid rgba(232, 232, 232, 0.08);
+          font-size: 12px;
+          font-weight: 500;
+          color: var(--surbee-fg-muted, rgba(232, 232, 232, 0.4));
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .invoice-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr 80px;
+          gap: 16px;
+          padding: 16px 0;
+          border-bottom: 1px solid rgba(232, 232, 232, 0.05);
+          align-items: center;
+        }
+
+        .invoice-row:last-child {
+          border-bottom: none;
+        }
+
+        .invoice-date {
+          font-size: 14px;
+        }
+
+        .invoice-amount {
+          font-size: 14px;
+        }
+
+        .invoice-status {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 14px;
+          text-transform: capitalize;
+        }
+
+        .invoice-status.paid {
+          color: #22c55e;
+        }
+
+        .invoice-status.overdue {
+          color: #ef4444;
+        }
+
+        .invoice-status.pending {
+          color: #eab308;
+        }
+
+        .invoice-action {
+          font-size: 14px;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          background: none;
+          border: none;
+          text-decoration: underline;
+          cursor: pointer;
+          text-align: left;
+          padding: 0;
+        }
+
+        .invoice-action:hover {
+          opacity: 0.8;
+        }
+
+        /* Danger Zone */
+        .danger-zone {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          border: 1px solid rgba(239, 68, 68, 0.15);
+          border-radius: 16px;
+          padding: 24px;
+          background: rgba(239, 68, 68, 0.02);
+        }
+
+        .danger-zone-content {
+          flex: 1;
+        }
+
+        .danger-zone-title {
+          font-size: 15px;
+          font-weight: 600;
+          margin: 0 0 4px 0;
+        }
+
+        .danger-zone-description {
+          font-size: 14px;
+          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          margin: 0;
+        }
+
+        .danger-zone-btn {
+          padding: 10px 20px;
+          font-size: 14px;
+          font-weight: 500;
+          color: #ef4444;
+          background: transparent;
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .danger-zone-btn:hover {
+          background: rgba(239, 68, 68, 0.1);
+          border-color: rgba(239, 68, 68, 0.5);
+        }
+      `}</style>
+    </div>
   );
 }

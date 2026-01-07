@@ -1896,8 +1896,6 @@
 		--tw-gradient-position: to right in oklab;
 	}
 
-	.bg-\[url\(\'\/images\/pricing-bg\.png\'\)\] {
-		background-image: url("/images/pricing-bg.png");
 	}
 
 	.from-\[\#0072CC\] {

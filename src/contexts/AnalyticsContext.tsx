@@ -49,14 +49,11 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
         const response = await fetch(`/api/analytics/consent?userId=${user.id}`);
         if (response.ok) {
           const data = await response.json();
-          console.log('[Analytics] Fetched consent:', data);
           setConsent(data.consent);
           setLastAskedAt(data.lastAskedAt);
-        } else {
-          console.error('[Analytics] Failed to fetch consent, status:', response.status);
         }
-      } catch (error) {
-        console.error('[Analytics] Failed to fetch consent status:', error);
+      } catch {
+        // Consent fetch failed, will use default
       } finally {
         setIsLoading(false);
       }
@@ -68,22 +65,17 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   // Show modal once per day if user hasn't made a decision
   // Only show after user has completed onboarding
   useEffect(() => {
-    console.log('[Analytics] Modal check - isLoading:', isLoading, 'authLoading:', authLoading, 'userId:', user?.id, 'consent:', consent, 'hasCompletedOnboarding:', hasCompletedOnboarding);
-
     if (isLoading || authLoading || !user?.id) {
-      console.log('[Analytics] Skipping modal - still loading or no user');
       return;
     }
 
     // Don't show modal until onboarding is complete
     if (!hasCompletedOnboarding) {
-      console.log('[Analytics] Skipping modal - onboarding not complete');
       return;
     }
 
     // If user has already made a decision (consent is true or false), don't show modal
     if (consent !== null) {
-      console.log('[Analytics] User already made a decision, consent:', consent);
       return;
     }
 
@@ -92,15 +84,12 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
       const lastAskedTime = new Date(lastAskedAt).getTime();
       const now = Date.now();
       if (now - lastAskedTime < ONE_DAY_MS) {
-        console.log('[Analytics] Already asked within 24 hours, not showing modal');
         return; // Don't show again within 24 hours
       }
     }
 
-    console.log('[Analytics] Will show modal in 2 seconds');
     // Small delay to let the page load first
     const timer = setTimeout(() => {
-      console.log('[Analytics] Showing modal now');
       setShowModal(true);
     }, 2000);
 
@@ -109,11 +98,8 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
 
   const updateConsent = useCallback(async (newConsent: boolean) => {
     if (!user?.id) {
-      console.error('[Analytics] Cannot update consent - no user ID');
       return;
     }
-
-    console.log('[Analytics] Updating consent to:', newConsent, 'for user:', user.id);
 
     // Close modal immediately and set consent optimistically
     setConsent(newConsent);
@@ -121,7 +107,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
 
     // Make API call in background
     try {
-      const response = await fetch('/api/analytics/consent', {
+      await fetch('/api/analytics/consent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -129,16 +115,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
           consent: newConsent,
         }),
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('[Analytics] Consent updated successfully:', data);
-      } else {
-        console.error('[Analytics] Failed to update consent, status:', response.status);
-        // Don't revert - keep the optimistic update to prevent modal from reappearing
-      }
-    } catch (error) {
-      console.error('[Analytics] Failed to update consent:', error);
+    } catch {
       // Don't revert - keep the optimistic update to prevent modal from reappearing
     }
   }, [user?.id]);
@@ -157,8 +134,8 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ userId: user.id }),
       });
       setLastAskedAt(new Date().toISOString());
-    } catch (error) {
-      console.error('Failed to mark consent as asked:', error);
+    } catch {
+      // Mark consent request failed, will try again later
     }
 
     setShowModal(false);

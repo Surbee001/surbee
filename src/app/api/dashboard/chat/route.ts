@@ -5,6 +5,8 @@ import { anthropic } from '@ai-sdk/anthropic';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth-utils';
+import { checkCreditsForStream, deductCreditsAfterStream } from '@/lib/withCredits';
+import { getChatModelAction, checkFeatureAccess } from '@/lib/credits';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -562,7 +564,40 @@ export async function POST(request: NextRequest) {
     if (!user) return errorResponse;
 
     const body = await request.json();
-    const { messages, model = 'claude-haiku', userPreferences, createMode, searchWebEnabled = true, references = [] } = body;
+    const { messages, model = 'claude-haiku', userPreferences, createMode, searchWebEnabled = true, references = [], designTheme } = body;
+
+    // Check if user can use premium models (free users only get Claude Haiku)
+    const isPremiumModel = model !== 'claude-haiku' && !model.includes('haiku');
+    if (isPremiumModel) {
+      const featureCheck = await checkFeatureAccess(user.id, 'premiumModels');
+      if (!featureCheck) {
+        return Response.json(
+          {
+            error: 'Premium model not available',
+            message: 'Upgrade to Pro or Max to use GPT-5 and other premium models',
+            upgradeRequired: 'pro'
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Check credits for this chat action
+    const creditAction = getChatModelAction(model);
+    const creditCheck = await checkCreditsForStream(user.id, creditAction, {
+      rateLimitFeature: 'dashboardChat',
+    });
+
+    if (!creditCheck.allowed) {
+      return creditCheck.error;
+    }
+
+    // Deduct credits (for streaming, we deduct upfront)
+    await deductCreditsAfterStream(user.id, creditAction, {
+      model,
+      createMode,
+      messageCount: messages?.length || 0,
+    });
 
     console.log('📦 Dashboard chat received:', {
       messageCount: messages?.length,
@@ -571,6 +606,7 @@ export async function POST(request: NextRequest) {
       createMode,
       searchWebEnabled,
       referencesCount: references?.length || 0,
+      designTheme: designTheme?.name || 'default',
     });
 
     // Fetch referenced content
@@ -653,24 +689,54 @@ export async function POST(request: NextRequest) {
       const parts: string[] = [];
 
       if (userPreferences.displayName) {
-        parts.push(`The user's name is "${userPreferences.displayName}". Address them by name occasionally.`);
+        parts.push(`The user's name is "${userPreferences.displayName}". Address them by name when appropriate, especially in greetings.`);
       }
 
       const toneInstructions: Record<string, string> = {
-        professional: 'Maintain a professional, business-like tone.',
-        casual: 'Use a casual, relaxed tone.',
-        friendly: 'Be warm and friendly.',
-        formal: 'Use formal language.',
-        creative: 'Be creative and engaging.',
+        professional: 'Maintain a professional, business-like tone. Be clear, direct, and focused on results.',
+        casual: 'Use a casual, relaxed tone. Feel free to use contractions and be conversational.',
+        friendly: 'Be warm and friendly. Use an encouraging, supportive tone while remaining helpful.',
+        formal: 'Use formal language. Be respectful, precise, and maintain a traditional professional demeanor.',
+        creative: 'Be creative and engaging. Use vivid language, analogies, and make the conversation interesting.',
       };
 
       if (userPreferences.tone) {
-        parts.push(toneInstructions[userPreferences.tone] || '');
+        parts.push(toneInstructions[userPreferences.tone] || toneInstructions.professional);
+      }
+
+      if (userPreferences.workFunction && userPreferences.workFunction !== 'Select your work function') {
+        parts.push(`The user works as a ${userPreferences.workFunction}. Tailor your responses to their professional context when relevant.`);
+      }
+
+      if (userPreferences.personalPreferences) {
+        parts.push(`User's custom preferences: ${userPreferences.personalPreferences}`);
       }
 
       if (parts.length > 0) {
         personalization = '\n\nUser Preferences:\n' + parts.join('\n');
       }
+    }
+
+    // Build design theme instructions
+    let designThemeInstructions = '';
+    if (designTheme && designTheme.id !== 'default') {
+      designThemeInstructions = `
+
+SELECTED COLOR THEME: ${designTheme.name}
+
+**Color Palette:**
+- Background: ${designTheme.colors[0]}
+- Text: ${designTheme.colors[1]}
+- Surface: ${designTheme.colors[2]}
+- Accent: ${designTheme.colors[3]}
+
+${designTheme.description ? `**Theme Vibe:** ${designTheme.description}` : ''}
+
+**CRITICAL:** Apply these colors throughout the survey design:
+- Use Background for page/container backgrounds
+- Use Text for all readable content
+- Use Surface for cards, inputs, and secondary containers
+- Use Accent for buttons, links, and highlights`;
     }
 
     // Build system prompt based on create mode
@@ -703,7 +769,7 @@ Tips:
 - For question analysis, use 'bar' or 'pie' charts
 - For time-based data, use 'line' or 'area' charts
 - Keep data series to 5 or fewer for readability
-- Always provide clear titles and descriptions${personalization}${referenceContext}`;
+- Always provide clear titles and descriptions${personalization}${referenceContext}${designThemeInstructions}`;
     } else {
       systemPrompt = `You are Surbee, an intelligent AI assistant with deep access to survey data.
 
@@ -730,7 +796,7 @@ RULES:
 - Be concise but thorough
 - If asked to visualize data, use generate_chart after fetching data
 - For complex queries, break them into steps using multiple tool calls
-- Never make up data - always fetch it first${searchWebEnabled ? '\n- You can search the web for information using the search_web tool if needed' : ''}${personalization}${referenceContext}`;
+- Never make up data - always fetch it first${searchWebEnabled ? '\n- You can search the web for information using the search_web tool if needed' : ''}${personalization}${referenceContext}${designThemeInstructions}`;
     }
 
     // Transform messages to model format

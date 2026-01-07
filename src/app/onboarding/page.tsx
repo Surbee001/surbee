@@ -2,329 +2,836 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import OnboardingStep from '@/components/onboarding/OnboardingStep';
-import InterestPills from '@/components/onboarding/InterestPills';
+import { Check } from 'lucide-react';
 
-interface OnboardingData {
-  ageRange: string;
-  hearAboutUs: string;
-  interests: string[];
-  name: string;
-  surveyPreference: 'research' | 'fast';
+// Custom font URL for Opening Hours Sans
+const OPENING_HOURS_FONT_URL = 'https://ik.imagekit.io/on0moldgr/OpeningHoursSans-Regular.woff2';
+
+// Interest topics that Surbee can help with
+const INTEREST_TOPICS = [
+  { id: 'research', label: 'Research' },
+  { id: 'customer-feedback', label: 'Customer Feedback' },
+  { id: 'market-research', label: 'Market Research' },
+  { id: 'employee-surveys', label: 'Employee Engagement' },
+  { id: 'product', label: 'Product Development' },
+  { id: 'academia', label: 'Academic Studies' },
+];
+
+// Animated text component that reveals text word by word
+function AnimatedText({
+  children,
+  delay = 0,
+  className = "",
+  style = {}
+}: {
+  children: string;
+  delay?: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const words = children.split(' ');
+
+  return (
+    <span className={className} style={style}>
+      {words.map((word, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.3,
+            delay: delay + (i * 0.05),
+            ease: [0.25, 0.1, 0.25, 1]
+          }}
+          style={{ display: 'inline-block', marginRight: '0.25em' }}
+        >
+          {word}
+        </motion.span>
+      ))}
+    </span>
+  );
 }
 
-const steps = [
-  {
-    id: 'welcome',
-    title: 'Welc<em>o</em>me to Surbee',
-    description: 'We\'ll ask you a few quick questions to personalize your experience.',
-  },
-  {
-    id: 'age',
-    title: 'What\'s y<em>o</em>ur age range?',
-    description: 'This helps us create better survey templates for you.',
-  },
-  {
-    id: 'source',
-    title: 'Where did you h<em>e</em>ar about us?',
-    description: 'Help us understand how people discover Surbee.',
-  },
-  {
-    id: 'interests',
-    title: 'What <em>i</em>nterests y<em>o</em>u?',
-    description: 'Select topics that fascinate you to get relevant suggestions.',
-  },
-  {
-    id: 'name',
-    title: 'What Should We C<em>a</em>ll You?',
-    description: 'Just so we can personalize your experience.',
-  },
-  {
-    id: 'complete',
-    title: 'All <em>s</em>et!',
-    description: 'You\'re ready to start creating amazing surveys.',
-  },
-];
+// Feature item component (text only, no icons)
+function FeatureItem({
+  text,
+  delay
+}: {
+  text: string;
+  delay: number;
+}) {
+  return (
+    <motion.p
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay, ease: [0.25, 0.1, 0.25, 1] }}
+      style={{
+        fontFamily: "'Opening Hours Sans', sans-serif",
+        fontSize: '17px',
+        lineHeight: '1.6em',
+        letterSpacing: '-0.01em',
+        color: '#11100C',
+        margin: 0,
+      }}
+    >
+      {text}
+    </motion.p>
+  );
+}
 
-const backgroundImages = [
-  'https://github.com/Surbee001/webimg/blob/main/u7411232448_A_radiant_quasar_glowing_in_deep_space_swirling_str_de4b6b4d-88a6-4c80-8e8a-9e521e57bd9a.png?raw=true',
-  'https://github.com/Surbee001/webimg/blob/main/u7411232448_An_ancient_library_overgrown_with_glowing_plants_ho_10f63546-553d-4e9d-b8e1-28a37405b661.png?raw=true',
-  'https://github.com/Surbee001/webimg/blob/main/u7411232448_An_ancient_library_overgrown_with_glowing_plants_ho_9a0349a1-1706-4f65-ab44-e7cc62af5b72.png?raw=true',
-  'https://github.com/Surbee001/webimg/blob/main/u7411232448_create_a_soft_mountain_sceenary_with_furutistic_atm_764a2eaa-7543-4abb-8f5b-c57677355786.png?raw=true'
-];
-
-const ageRanges = ['18-24', '25-34', '35-54', '55+'];
-
-const hearAboutOptions = [
-  'Social Media',
-  'Search Engine',
-  'Friend/Colleague',
-  'Advertisement',
-  'Blog/Article',
-  'Other'
-];
-
-const interestOptions = [
-  'Technology', 'Marketing', 'Healthcare', 'Education', 'Finance',
-  'Entertainment', 'Sports', 'Food & Dining', 'Travel', 'Science',
-  'Art & Design', 'Music', 'Fashion', 'Gaming', 'Environment'
-];
+// Interest pill component
+function InterestPill({
+  topic,
+  isSelected,
+  onClick,
+  delay
+}: {
+  topic: { id: string; label: string };
+  isSelected: boolean;
+  onClick: () => void;
+  delay: number;
+}) {
+  return (
+    <motion.button
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3, delay, ease: [0.25, 0.1, 0.25, 1] }}
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        padding: '10px 16px',
+        borderRadius: '50px',
+        border: isSelected ? '2px solid #11100C' : '2px solid rgba(100, 100, 100, 0.2)',
+        backgroundColor: isSelected ? '#11100C' : '#FFFFFF',
+        color: isSelected ? '#FFFFFF' : '#11100C',
+        fontFamily: "'Opening Hours Sans', sans-serif",
+        fontSize: '14px',
+        fontWeight: 400,
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {topic.label}
+    </motion.button>
+  );
+}
 
 function OnboardingPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const { user, updateUserProfile } = useAuth();
-  
-  // Get step from URL or default to 0
-  const getInitialStep = () => {
-    const step = searchParams.get('step');
-    return step ? Math.max(0, Math.min(parseInt(step) - 1, steps.length - 1)) : 0;
-  };
-  
-  const [currentStep, setCurrentStep] = useState(getInitialStep());
-  const [isLoading, setIsLoading] = useState(false);
+  const { user, userProfile, hasCompletedOnboarding, updateUserProfile, loading } = useAuth();
 
-  // Sync with URL changes (browser back/forward)
+  // Step state: 1 = terms, 2 = introduction, 3 = name, 4 = interests
+  const [step, setStep] = useState(1);
+
+  // Track if we've started onboarding in this session (to prevent redirect after step 1)
+  const [onboardingStarted, setOnboardingStarted] = useState(false);
+
+  // Load custom font
   useEffect(() => {
-    const handlePopState = () => {
-      setCurrentStep(getInitialStep());
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    const font = new FontFace('Opening Hours Sans', `url(${OPENING_HOURS_FONT_URL})`);
+    font.load().then((loadedFont) => {
+      document.fonts.add(loadedFont);
+    }).catch((error) => {
+      console.error('Error loading font:', error);
+    });
   }, []);
-  const [data, setData] = useState<OnboardingData>({
-    ageRange: '',
-    hearAboutUs: '',
-    interests: [],
-    name: '',
-    surveyPreference: 'fast'
-  });
 
-  const updateStepInURL = (step: number) => {
-    const url = new URL(window.location.href);
-    if (step === 0) {
-      url.searchParams.delete('step');
-    } else {
-      url.searchParams.set('step', (step + 1).toString());
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
     }
-    window.history.pushState({}, '', url.toString());
+  }, [user, loading, router]);
+
+  // Redirect to home if already completed onboarding (only if not currently going through it)
+  useEffect(() => {
+    if (!loading && !onboardingStarted && hasCompletedOnboarding) {
+      router.push('/home');
+    }
+  }, [hasCompletedOnboarding, loading, router, onboardingStarted]);
+
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [subscribedToEmails, setSubscribedToEmails] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isUnderstandHovered, setIsUnderstandHovered] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [isNameHovered, setIsNameHovered] = useState(false);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [isLetsGoHovered, setIsLetsGoHovered] = useState(false);
+
+  const handleContinue = async () => {
+    if (!acceptedTerms) return;
+
+    // Mark that we've started onboarding (prevents redirect to home)
+    setOnboardingStarted(true);
+
+    // Move to step 2 immediately - we'll save everything at the end
+    setStep(2);
   };
 
-  const handleNext = async () => {
-    if (currentStep === steps.length - 1) {
-      // Complete onboarding
-      setIsLoading(true);
-      try {
-        // Save user profile through AuthContext
-        await updateUserProfile({
-          name: data.name,
-          ageRange: data.ageRange,
-          hearAboutUs: data.hearAboutUs,
-          interests: data.interests,
-          surveyPreference: data.surveyPreference
-        });
-        
-        // Redirect to dashboard
-        router.push('/home');
-      } catch (error) {
-        console.error('Error completing onboarding:', error);
-      } finally {
-        setIsLoading(false);
+  const handleUnderstand = () => {
+    // Move to step 3 (name input)
+    setStep(3);
+  };
+
+  const handleNameContinue = () => {
+    if (!userName.trim()) return;
+
+    // Move to step 4 (interests) - we'll save everything at the end
+    setStep(4);
+  };
+
+  const toggleInterest = (interestId: string) => {
+    setSelectedInterests(prev => {
+      if (prev.includes(interestId)) {
+        return prev.filter(id => id !== interestId);
       }
-    } else {
-      const nextStep = currentStep + 1;
-      setCurrentStep(nextStep);
-      updateStepInURL(nextStep);
+      return [...prev, interestId];
+    });
+  };
+
+  const handleLetsGo = async () => {
+    setIsLoading(true);
+    try {
+      // Save ALL onboarding data at once
+      await updateUserProfile({
+        name: userName.trim(),
+        interests: selectedInterests,
+        acceptedTermsAt: new Date().toISOString(),
+        subscribedToEmails: subscribedToEmails,
+        onboardingCompleted: true,
+      });
+
+      // If user subscribed to emails, add to email_subscribers table for Loops
+      if (subscribedToEmails && user?.email) {
+        try {
+          await fetch('/api/email-subscribers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: user.email,
+              name: userName.trim() || undefined,
+              userId: user.id,
+              source: 'onboarding',
+              interests: selectedInterests.length > 0 ? selectedInterests : undefined,
+            }),
+          });
+        } catch (emailError) {
+          // Don't block onboarding if email subscription fails
+          console.error('Error adding email subscriber:', emailError);
+        }
+      }
+
+      // Redirect to home
+      router.push('/home');
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleBack = () => {
-    if (currentStep > 0) {
-      const prevStep = currentStep - 1;
-      setCurrentStep(prevStep);
-      updateStepInURL(prevStep);
-    }
-  };
-
-  const canProceed = () => {
-    switch (currentStep) {
-      case 0: return true; // Welcome step
-      case 1: return data.ageRange; // Age range
-      case 2: return data.hearAboutUs; // Source
-      case 3: return data.interests.length > 0; // Interests
-      case 4: return data.name.trim(); // Name
-      case 5: return true; // Complete step
-      default: return false;
-    }
-  };
-
-  const getCurrentImage = () => {
-    // Use the first image (quasar) for the last step as requested
-    if (currentStep === 5) return backgroundImages[0];
-    // For other steps, use the remaining images in order
-    const imageIndex = currentStep % (backgroundImages.length - 1) + 1;
-    return backgroundImages[imageIndex];
-  };
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0:
-        return null; // Welcome step
-      
-      case 1:
-        // Age range selection
-        return (
-          <div className="space-y-6 max-w-md">
-            <div className="age-range-grid">
-              {ageRanges.map((range) => (
-                <button
-                  key={range}
-                  type="button"
-                  onClick={() => setData({ ...data, ageRange: range })}
-                  className={`age-range-button ${data.ageRange === range ? 'selected' : ''}`}
-                >
-                  {range}
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-      
-      case 2:
-        // Where did you hear about us
-        return (
-          <div className="space-y-6 max-w-md">
-            <select
-              value={data.hearAboutUs}
-              onChange={(e) => setData({ ...data, hearAboutUs: e.target.value })}
-              className="onboarding-select"
-              autoFocus
-            >
-              <option value="">Select an option</option>
-              {hearAboutOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-        );
-      
-      case 3:
-        // Interests selection
-        return (
-          <div className="space-y-6 max-w-2xl">
-            <InterestPills
-              interests={interestOptions}
-              selected={data.interests}
-              onSelectionChange={(interests) => setData({ ...data, interests })}
-            />
-          </div>
-        );
-      
-      case 4:
-        // Name input
-        return (
-          <div className="space-y-6 max-w-md">
-            <Input
-              value={data.name}
-              onChange={(e) => setData({ ...data, name: e.target.value })}
-              placeholder="Enter your name"
-              className="onboarding-input"
-              autoFocus
-            />
-          </div>
-        );
-      
-      case 5:
-        return null; // Complete step
-      
-      default:
-        return null;
-    }
-  };
+  // Show loading while checking auth
+  if (loading || !user) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#F7F7F4',
+        }}
+      />
+    );
+  }
 
   return (
-    <div className="flex h-screen bg-black">
-      {/* Surbee Logo */}
-      <div className="absolute top-8 left-8 z-10">
-        <img 
-          src="https://github.com/Surbee001/webimg/blob/main/White%20Logo.png?raw=true"
-          alt="Surbee" 
-          className="h-10 w-auto"
-        />
-      </div>
-
-      {/* Left Side - Content */}
-      <div className="flex-1 flex items-center justify-start pl-24 pr-16">
-        <div className="max-w-lg">
-          <AnimatePresence mode="wait">
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+        backgroundColor: '#F7F7F4',
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      }}
+    >
+      <AnimatePresence mode="wait">
+        {step === 1 && (
+          <motion.div
+            key="step1"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+            style={{
+              width: '100%',
+              maxWidth: '440px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px',
+            }}
+          >
+            {/* Title */}
             <motion.div
-              key={currentStep}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+            >
+              <h1
+                style={{
+                  fontFamily: "'Opening Hours Sans', 'Inter', sans-serif",
+                  fontSize: '26px',
+                  lineHeight: '1.2em',
+                  letterSpacing: '-0.05em',
+                  color: '#11100C',
+                  margin: 0,
+                  fontWeight: 400,
+                }}
+              >
+                Let's create your account
+              </h1>
+              <p
+                style={{
+                  fontSize: '15px',
+                  lineHeight: '1.5',
+                  color: '#646464',
+                  margin: 0,
+                }}
+              >
+                A few things for you to review.
+              </p>
+            </motion.div>
+
+            {/* Terms Box */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: '16px',
+                padding: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                border: '1px solid rgba(100, 100, 100, 0.1)',
+              }}
+            >
+              {/* Terms Checkbox */}
+              <label
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  cursor: 'pointer',
+                  alignItems: 'flex-start',
+                }}
+              >
+                <div
+                  onClick={() => setAcceptedTerms(!acceptedTerms)}
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    minWidth: '20px',
+                    borderRadius: '6px',
+                    border: acceptedTerms ? 'none' : '2px solid rgba(100, 100, 100, 0.3)',
+                    backgroundColor: acceptedTerms ? '#11100C' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    marginTop: '2px',
+                  }}
+                >
+                  {acceptedTerms && <Check size={14} color="#FFFFFF" strokeWidth={3} />}
+                </div>
+                <span
+                  style={{
+                    fontSize: '14px',
+                    lineHeight: '1.5',
+                    color: '#11100C',
+                  }}
+                >
+                  I agree to Surbee's{' '}
+                  <a
+                    href="/terms"
+                    target="_blank"
+                    style={{ color: '#11100C', textDecoration: 'underline' }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Consumer Terms
+                  </a>
+                  {' '}and{' '}
+                  <a
+                    href="/acceptable-use"
+                    target="_blank"
+                    style={{ color: '#11100C', textDecoration: 'underline' }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Acceptable Use Policy
+                  </a>
+                  , and confirm that I am at least 18 years old.
+                </span>
+              </label>
+
+              {/* Divider */}
+              <div style={{ height: '1px', backgroundColor: 'rgba(100, 100, 100, 0.1)' }} />
+
+              {/* Email Subscription Checkbox */}
+              <label
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  cursor: 'pointer',
+                  alignItems: 'flex-start',
+                }}
+              >
+                <div
+                  onClick={() => setSubscribedToEmails(!subscribedToEmails)}
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    minWidth: '20px',
+                    borderRadius: '6px',
+                    border: subscribedToEmails ? 'none' : '2px solid rgba(100, 100, 100, 0.3)',
+                    backgroundColor: subscribedToEmails ? '#11100C' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    marginTop: '2px',
+                  }}
+                >
+                  {subscribedToEmails && <Check size={14} color="#FFFFFF" strokeWidth={3} />}
+                </div>
+                <span
+                  style={{
+                    fontSize: '14px',
+                    lineHeight: '1.5',
+                    color: '#646464',
+                  }}
+                >
+                  Subscribe to occasional product updates and promotional emails. You can opt out anytime.
+                </span>
+              </label>
+            </motion.div>
+
+            {/* Continue Button */}
+            <motion.button
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+              onClick={handleContinue}
+              disabled={!acceptedTerms || isLoading}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '14px 24px',
+                backgroundColor: !acceptedTerms ? 'rgba(0, 0, 0, 0.3)' : isHovered ? '#F2C4FF' : '#000000',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '50px',
+                fontSize: '15px',
+                fontWeight: 500,
+                cursor: !acceptedTerms ? 'not-allowed' : isLoading ? 'wait' : 'pointer',
+                opacity: isLoading ? 0.7 : 1,
+                transition: 'background-color 0.25s ease',
+                width: '100%',
+              }}
+            >
+              {isLoading ? 'Setting up...' : 'Continue'}
+            </motion.button>
+          </motion.div>
+        )}
+
+        {step === 2 && (
+          <motion.div
+            key="step2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+            style={{
+              width: '100%',
+              maxWidth: '520px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '32px',
+            }}
+          >
+            {/* Greeting */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <motion.h1
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+                style={{
+                  fontFamily: "'Opening Hours Sans', sans-serif",
+                  fontSize: '26px',
+                  lineHeight: '1.2em',
+                  letterSpacing: '-0.05em',
+                  color: '#11100C',
+                  margin: 0,
+                  fontWeight: 400,
+                }}
+              >
+                <AnimatedText delay={0.2}>
+                  Hey there, I'm Surbee.
+                </AnimatedText>
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+                style={{
+                  fontFamily: "'Opening Hours Sans', sans-serif",
+                  fontSize: '17px',
+                  lineHeight: '1.6em',
+                  letterSpacing: '-0.01em',
+                  color: '#11100C',
+                  margin: 0,
+                  fontWeight: 400,
+                }}
+              >
+                <AnimatedText delay={0.7}>
+                  Built to make research extraordinarily efficient, I'm the best way to create and analyze surveys with AI.
+                </AnimatedText>
+              </motion.p>
+            </div>
+
+            {/* Features - simple text list */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <FeatureItem
+                text="Just describe what you need and I'll create beautiful, professional surveys in seconds."
+                delay={1.2}
+              />
+
+              <FeatureItem
+                text="Watch as I build your survey live. Chat with me to refine questions, adjust styling, and perfect every detail."
+                delay={1.5}
+              />
+
+              <FeatureItem
+                text="When responses come in, I'll help you analyze the data and uncover insights you might have missed."
+                delay={1.8}
+              />
+            </div>
+
+            {/* I Understand Button - small and left-aligned */}
+            <motion.button
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 2.1, ease: [0.25, 0.1, 0.25, 1] }}
+              onClick={handleUnderstand}
+              disabled={isLoading}
+              onMouseEnter={() => setIsUnderstandHovered(true)}
+              onMouseLeave={() => setIsUnderstandHovered(false)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '10px 20px',
+                backgroundColor: isUnderstandHovered ? '#F2C4FF' : '#000000',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '50px',
+                fontFamily: "'Opening Hours Sans', sans-serif",
+                fontSize: '14px',
+                fontWeight: 400,
+                cursor: isLoading ? 'wait' : 'pointer',
+                opacity: isLoading ? 0.7 : 1,
+                transition: 'background-color 0.25s ease',
+                marginTop: '8px',
+                alignSelf: 'flex-start',
+              }}
+            >
+              {isLoading ? 'Getting started...' : 'I understand'}
+            </motion.button>
+          </motion.div>
+        )}
+
+        {step === 3 && (
+          <motion.div
+            key="step3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+            style={{
+              width: '100%',
+              maxWidth: '480px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '32px',
+            }}
+          >
+            {/* Name Question */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <motion.h1
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+                style={{
+                  fontFamily: "'Opening Hours Sans', sans-serif",
+                  fontSize: '26px',
+                  lineHeight: '1.2em',
+                  letterSpacing: '-0.05em',
+                  color: '#11100C',
+                  margin: 0,
+                  fontWeight: 400,
+                }}
+              >
+                <AnimatedText delay={0.2}>
+                  Before we get started,
+                </AnimatedText>
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+                style={{
+                  fontFamily: "'Opening Hours Sans', sans-serif",
+                  fontSize: '22px',
+                  lineHeight: '1.4',
+                  letterSpacing: '-0.01em',
+                  color: '#11100C',
+                  margin: 0,
+                  fontWeight: 400,
+                }}
+              >
+                <AnimatedText delay={0.6}>
+                  what should I call you?
+                </AnimatedText>
+              </motion.p>
+            </div>
+
+            {/* Name Input */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.9, ease: [0.25, 0.1, 0.25, 1] }}
+            >
+              <input
+                type="text"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && userName.trim()) {
+                    handleNameContinue();
+                  }
+                }}
+                placeholder="Your name"
+                autoFocus
+                style={{
+                  width: '100%',
+                  padding: '16px 20px',
+                  fontSize: '18px',
+                  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                  border: '2px solid rgba(100, 100, 100, 0.2)',
+                  borderRadius: '12px',
+                  backgroundColor: '#FFFFFF',
+                  color: '#11100C',
+                  outline: 'none',
+                  transition: 'border-color 0.2s ease',
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#11100C';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(100, 100, 100, 0.2)';
+                }}
+              />
+            </motion.div>
+
+            {/* Continue Button */}
+            <motion.button
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 1.1, ease: [0.25, 0.1, 0.25, 1] }}
+              onClick={handleNameContinue}
+              disabled={!userName.trim() || isLoading}
+              onMouseEnter={() => setIsNameHovered(true)}
+              onMouseLeave={() => setIsNameHovered(false)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '14px 24px',
+                backgroundColor: !userName.trim() ? 'rgba(0, 0, 0, 0.3)' : isNameHovered ? '#F2C4FF' : '#000000',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '50px',
+                fontSize: '15px',
+                fontWeight: 500,
+                cursor: !userName.trim() ? 'not-allowed' : isLoading ? 'wait' : 'pointer',
+                opacity: isLoading ? 0.7 : 1,
+                transition: 'background-color 0.25s ease',
+                width: '100%',
+              }}
+            >
+              {isLoading ? 'Saving...' : 'Continue'}
+            </motion.button>
+          </motion.div>
+        )}
+
+        {step === 4 && (
+          <motion.div
+            key="step4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+            style={{
+              width: '100%',
+              maxWidth: '600px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '32px',
+            }}
+          >
+            {/* Interests Question */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <motion.h1
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+                style={{
+                  fontFamily: "'Opening Hours Sans', sans-serif",
+                  fontSize: '26px',
+                  lineHeight: '1.2em',
+                  letterSpacing: '-0.05em',
+                  color: '#11100C',
+                  margin: 0,
+                  fontWeight: 400,
+                }}
+              >
+                <AnimatedText delay={0.2}>
+                  {`What're you into, ${userName || 'friend'}?`}
+                </AnimatedText>
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+                style={{
+                  fontFamily: "'Opening Hours Sans', sans-serif",
+                  fontSize: '17px',
+                  lineHeight: '1.6em',
+                  letterSpacing: '-0.01em',
+                  color: '#646464',
+                  margin: 0,
+                }}
+              >
+                Pick up to three topics you'd like to explore. This helps me personalize your experience.
+              </motion.p>
+            </div>
+
+            {/* Interest Pills */}
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="space-y-8"
+              transition={{ duration: 0.5, delay: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '10px',
+              }}
             >
-              <OnboardingStep
-                title={steps[currentStep].title}
-                description={steps[currentStep].description}
-              >
-                {renderStepContent()}
-              </OnboardingStep>
+              {INTEREST_TOPICS.map((topic, index) => (
+                <InterestPill
+                  key={topic.id}
+                  topic={topic}
+                  isSelected={selectedInterests.includes(topic.id)}
+                  onClick={() => toggleInterest(topic.id)}
+                  delay={0.9 + (index * 0.05)}
+                />
+              ))}
             </motion.div>
-          </AnimatePresence>
 
-          {/* Navigation Buttons */}
-          <div className="mt-12 flex items-center gap-4">
-            {currentStep > 0 && (
-              <button
-                onClick={handleBack}
-                className="onboarding-button"
-                style={{ background: 'transparent', border: '1px solid rgba(255, 255, 255, 0.2)', color: 'white' }}
-              >
-                Back
-              </button>
-            )}
-            <button
-              onClick={handleNext}
-              disabled={!canProceed() || isLoading}
-              className="onboarding-button"
+            {/* Selection indicator */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 1.5, ease: [0.25, 0.1, 0.25, 1] }}
+              style={{
+                fontFamily: "'Opening Hours Sans', sans-serif",
+                fontSize: '14px',
+                color: '#646464',
+                margin: 0,
+              }}
             >
-              {isLoading ? 'Setting up...' : currentStep === steps.length - 1 ? 'Get Started' : 'Next'}
-            </button>
-          </div>
-        </div>
-      </div>
+              {selectedInterests.length === 0
+                ? 'Select the topics that interest you'
+                : `${selectedInterests.length} selected`
+              }
+            </motion.p>
 
-      {/* Right Side - Image */}
-      <div className="w-1/2 relative overflow-hidden bg-black">
-        <AnimatePresence mode="wait">
-          <motion.img
-            key={currentStep}
-            src={getCurrentImage()}
-            alt="Onboarding background"
-            className="onboarding-right-image"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          />
-        </AnimatePresence>
-      </div>
+            {/* Let's Go Button - small and left-aligned */}
+            <motion.button
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 1.7, ease: [0.25, 0.1, 0.25, 1] }}
+              onClick={handleLetsGo}
+              disabled={isLoading}
+              onMouseEnter={() => setIsLetsGoHovered(true)}
+              onMouseLeave={() => setIsLetsGoHovered(false)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '10px 20px',
+                backgroundColor: isLetsGoHovered ? '#F2C4FF' : '#000000',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '50px',
+                fontFamily: "'Opening Hours Sans', sans-serif",
+                fontSize: '14px',
+                fontWeight: 400,
+                cursor: isLoading ? 'wait' : 'pointer',
+                opacity: isLoading ? 0.7 : 1,
+                transition: 'background-color 0.25s ease',
+                alignSelf: 'flex-start',
+              }}
+            >
+              {isLoading ? 'Starting Surbee...' : "Let's go"}
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-// Wrapper component with Suspense boundary for useSearchParams
+// Wrapper component with Suspense boundary
 export default function OnboardingPageWrapper() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-black text-white">Loading...</div>}>
+    <Suspense fallback={
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#F7F7F4',
+        }}
+      />
+    }>
       <OnboardingPage />
     </Suspense>
   );

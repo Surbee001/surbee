@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemeSelector } from '@/components/ui/theme-selector';
-import { Upload, Settings, User, Bell, Shield, CreditCard, HelpCircle, ChevronDown } from 'lucide-react';
+import { Settings, Shield, CreditCard, HelpCircle, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserPreferences } from '@/contexts/UserPreferencesContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
@@ -15,8 +14,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+type SettingsTab = 'general' | 'account' | 'privacy' | 'billing';
+
+const settingsTabs: { id: SettingsTab; label: string; href: string }[] = [
+  { id: 'general', label: 'General', href: '/home/settings/general' },
+  { id: 'account', label: 'Account', href: '/home/settings/account' },
+  { id: 'privacy', label: 'Privacy', href: '/home/settings/privacy' },
+  { id: 'billing', label: 'Billing', href: '/home/settings/billing' },
+];
+
 export default function GeneralSettingsPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useAuth();
   const { preferences, updatePreferences, isLoading: prefsLoading } = useUserPreferences();
 
@@ -28,7 +37,8 @@ export default function GeneralSettingsPage() {
   const [tone, setTone] = useState<'professional' | 'casual' | 'friendly' | 'formal' | 'creative'>('professional');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [workFunction, setWorkFunction] = useState('Select your work function');
-  const [showFade, setShowFade] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [saving, setSaving] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -51,34 +61,22 @@ export default function GeneralSettingsPage() {
     }
   }, [user]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (scrollRef.current) {
-        setShowFade(scrollRef.current.scrollTop > 0);
-      }
-    };
-
-    const scrollElement = scrollRef.current;
-    if (scrollElement) {
-      scrollElement.addEventListener('scroll', handleScroll);
-      return () => scrollElement.removeEventListener('scroll', handleScroll);
-    }
-  }, []);
-
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfilePicture(reader.result as string);
+        setHasChanges(true);
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleSave = async () => {
+    if (!hasChanges) return;
+    setSaving(true);
     try {
-      // Save to preferences context (persists to localStorage)
       updatePreferences({
         displayName: surBeeCallName,
         tone: tone,
@@ -86,362 +84,500 @@ export default function GeneralSettingsPage() {
         workFunction: workFunction,
         notificationsEnabled: notificationsEnabled,
       });
-
-      console.log('Saving settings:', { name, surBeeCallName, profilePicture, personalPreferences, tone, notificationsEnabled, workFunction });
-      toast.success('Settings saved! Surbee will now use your preferences.');
+      setHasChanges(false);
+      toast.success('Settings saved!');
     } catch (error) {
       console.error('Error saving settings:', error);
       toast.error('Failed to save settings. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
+  const handleFieldChange = (setter: React.Dispatch<React.SetStateAction<any>>, value: any) => {
+    setter(value);
+    setHasChanges(true);
+  };
+
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      {/* Main Content Area */}
-      <div className="flex-1 min-h-0 px-6 md:px-10 lg:px-16 pt-12 overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full max-w-6xl mx-auto">
-          {/* Settings Navigation - Fixed */}
-          <div className="lg:col-span-1 flex flex-col">
-            <div className="space-y-4 flex-shrink-0">
-              <h1 className="projects-title">
-                Settings
-              </h1>
+    <div className="settings-root">
+      {/* Header */}
+      <header className="settings-header">
+        <h1 className="settings-title">Settings</h1>
+      </header>
 
-              <div className="space-y-1">
-                {[
-                  { icon: Settings, label: 'General', active: true, href: '/home/settings/general' },
-                  { icon: HelpCircle, label: 'Account', active: false, href: '/home/settings/account' },
-                  { icon: Shield, label: 'Privacy & Security', active: false, href: '/home/settings/privacy' },
-                  { icon: CreditCard, label: 'Billing', active: false, href: '/home/settings/billing' },
-                  { icon: Settings, label: 'Connectors', active: false, href: '/home/settings/connectors' },
-                ].map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.label}
-                      onClick={() => router.push(item.href)}
-                      className={`
-                        relative w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all duration-150 cursor-pointer mb-0.5
-                        ${item.active ? 'text-theme-primary' : 'text-theme-secondary hover:text-theme-primary'}
-                      `}
-                      style={{
-                        backgroundColor: item.active
-                          ? 'var(--surbee-sidebar-active)'
-                          : 'transparent',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!item.active) {
-                          e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!item.active) {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                        }
-                      }}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span className="text-[14px] font-medium">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* General Content - Only this scrolls */}
-          <div className="lg:col-span-3 relative flex flex-col min-h-0 overflow-hidden">
-      {/* Fade overlay at top - only show when scrolling */}
-      <div className={`absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[var(--surbee-bg-primary)] to-transparent z-10 pointer-events-none transition-opacity duration-300 ${
-        showFade ? 'opacity-100' : 'opacity-0'
-      }`} />
-
-      {/* Scrollable content */}
-      <div
-        ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto pr-4 space-y-6 pb-16"
-        style={{ scrollbarWidth: 'thin' }}
-      >
-        {/* Profile & Preferences Section - Combined */}
-        <Card style={{ backgroundColor: 'var(--surbee-card-bg)', borderColor: 'var(--surbee-card-border)' }}>
-          <CardContent>
-            <div className="space-y-6">
-              {/* Full Name with Avatar - Top Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Full Name with Avatar */}
-                <div>
-                  <label className="text-[16px] font-medium mb-3 block" style={{ color: 'var(--surbee-fg-primary)' }}>
-                    Full name
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 cursor-pointer transition-opacity hover:opacity-80"
-                      style={{ backgroundColor: 'var(--surbee-fg-primary)', color: 'var(--surbee-bg-primary)' }}
-                    >
-                      {profilePicture ? (
-                        <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-lg font-semibold">
-                          {name ? name.charAt(0).toUpperCase() : 'H'}
-                        </span>
-                      )}
-                    </button>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Enter your name"
-                      className="flex-1 p-3 rounded-lg border text-[15px] transition-all"
-                      style={{
-                        backgroundColor: 'var(--surbee-bg-secondary)',
-                        borderColor: 'var(--surbee-card-border)',
-                        color: 'var(--surbee-fg-primary)'
-                      }}
-                      onFocus={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--surbee-border-accent)';
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--surbee-card-border)';
-                      }}
-                    />
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                  </div>
-                </div>
-
-                {/* What should Surbee call you */}
-                <div>
-                  <label className="text-[16px] font-medium mb-3 block" style={{ color: 'var(--surbee-fg-primary)' }}>
-                    What should Surbee call you?
-                  </label>
-                  <input
-                    type="text"
-                    value={surBeeCallName}
-                    onChange={(e) => setSurBeeCallName(e.target.value)}
-                    placeholder="Hadi"
-                    className="w-full p-3 rounded-lg border text-[15px] transition-all"
-                    style={{
-                      backgroundColor: 'var(--surbee-bg-secondary)',
-                      borderColor: 'var(--surbee-card-border)',
-                      color: 'var(--surbee-fg-primary)'
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--surbee-border-accent)';
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--surbee-card-border)';
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Work Function - Optional */}
-              <div>
-                <div className="flex items-center gap-x-3">
-                  <p className="text-[16px] font-medium" style={{ color: 'var(--surbee-fg-primary)' }}>
-                    What best describes your work?
-                  </p>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        className="flex items-center justify-between gap-2 px-3 py-2 text-sm font-medium border rounded-xl transition-colors cursor-pointer"
-                        style={{
-                          color: 'var(--surbee-fg-primary)',
-                          backgroundColor: 'transparent',
-                          borderColor: 'var(--surbee-sidebar-border)',
-                          fontFamily: 'var(--font-inter), sans-serif',
-                          minWidth: '200px'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                        }}
-                      >
-                        <span>{workFunction}</span>
-                        <ChevronDown className="w-4 h-4" style={{ color: 'var(--surbee-fg-muted)' }} />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="start"
-                      style={{
-                        backgroundColor: 'var(--surbee-card-bg)',
-                        borderColor: 'var(--surbee-sidebar-border)',
-                        color: 'var(--surbee-fg-primary)',
-                      }}
-                    >
-                      {['Student', 'Researcher', 'Marketer', 'Developer', 'Designer', 'Data Analyst', 'Other'].map((option) => (
-                        <DropdownMenuItem
-                          key={option}
-                          onClick={() => setWorkFunction(option)}
-                          style={{
-                            color: 'var(--surbee-fg-primary)',
-                            cursor: 'pointer',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }}
-                        >
-                          {option}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-
-              {/* Tone Preference */}
-              <div>
-                <label className="text-[16px] font-medium mb-3 block" style={{ color: 'var(--surbee-fg-primary)' }}>
-                  What tone should Surbee use when talking to you?
-                </label>
-                <div className="flex gap-2 flex-wrap">
-                  {['professional', 'casual', 'friendly', 'formal', 'creative'].map((toneOption) => (
-                    <button
-                      key={toneOption}
-                      onClick={() => setTone(toneOption)}
-                      className="px-4 py-2 rounded-lg text-[14px] font-medium transition-all"
-                      style={{
-                        backgroundColor: tone === toneOption
-                          ? 'var(--surbee-fg-primary)'
-                          : 'var(--surbee-bg-secondary)',
-                        color: tone === toneOption
-                          ? 'var(--surbee-bg-primary)'
-                          : 'var(--surbee-fg-primary)',
-                        borderColor: tone === toneOption
-                          ? 'var(--surbee-fg-primary)'
-                          : 'var(--surbee-card-border)',
-                        borderWidth: '1px',
-                        borderStyle: 'solid'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (tone !== toneOption) {
-                          e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
-                          e.currentTarget.style.color = 'var(--surbee-fg-primary)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (tone !== toneOption) {
-                          e.currentTarget.style.backgroundColor = 'var(--surbee-bg-secondary)';
-                          e.currentTarget.style.color = 'var(--surbee-fg-primary)';
-                        }
-                      }}
-                    >
-                      {toneOption.charAt(0).toUpperCase() + toneOption.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Personal Preferences */}
-              <div>
-                <label className="text-[16px] font-medium mb-1 block" style={{ color: 'var(--surbee-fg-primary)' }}>
-                  What personal preferences should Surbee consider in responses?
-                </label>
-                <p className="text-[13px] mb-3" style={{ color: 'var(--surbee-fg-muted)' }}>
-                  Your preferences will apply to all conversations with Surbee.
-                </p>
-                <textarea
-                  value={personalPreferences}
-                  onChange={(e) => setPersonalPreferences(e.target.value)}
-                  placeholder="e.g. I prefer concise survey questions, focus on user research for SaaS products, and use data-driven insights"
-                  rows={4}
-                  className="w-full p-3 rounded-lg border text-[15px] resize-none transition-all"
-                  style={{
-                    backgroundColor: 'var(--surbee-bg-secondary)',
-                    borderColor: 'var(--surbee-card-border)',
-                    color: 'var(--surbee-fg-primary)'
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--surbee-border-accent)';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--surbee-card-border)';
-                  }}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notifications */}
-        <Card style={{ backgroundColor: 'var(--surbee-card-bg)', borderColor: 'var(--surbee-card-border)' }}>
-          <CardHeader>
-            <CardTitle style={{ color: 'var(--surbee-fg-primary)' }}>
-              Notifications
-            </CardTitle>
-            <CardDescription style={{ color: 'var(--surbee-fg-muted)' }}>
-              Manage how you receive updates from Surbee
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <h4 className="text-[14px] font-medium mb-1" style={{ color: 'var(--surbee-fg-primary)' }}>
-                    Task Completion Notifications
-                  </h4>
-                  <p className="text-[12px]" style={{ color: 'var(--surbee-fg-muted)' }}>
-                    Get notified when Surbee collects data, generates reports, or finishes long-running tasks
-                  </p>
-                </div>
-                <button
-                  onClick={() => setNotificationsEnabled(!notificationsEnabled)}
-                  className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${
-                    notificationsEnabled ? 'bg-blue-500' : 'bg-gray-600'
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                      notificationsEnabled ? 'transform translate-x-5' : 'transform translate-x-0.5'
-                    }`}
-                  ></div>
-                </button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Appearance */}
-        <Card style={{ backgroundColor: 'var(--surbee-card-bg)', borderColor: 'var(--surbee-card-border)' }}>
-          <CardContent>
-            <ThemeSelector />
-          </CardContent>
-        </Card>
-
-        {/* Save Button */}
-        <div className="flex justify-end">
+      {/* Tab Navigation */}
+      <nav className="settings-tabs">
+        {settingsTabs.map((tab) => (
           <button
-            onClick={handleSave}
-            className="px-6 py-2.5 rounded-lg font-medium text-[14px] transition-all"
-            style={{
-              backgroundColor: 'var(--surbee-fg-primary)',
-              color: 'var(--surbee-bg-primary)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = '0.9';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = '1';
-            }}
+            key={tab.id}
+            className={`settings-tab ${pathname === tab.href ? 'active' : ''}`}
+            onClick={() => router.push(tab.href)}
           >
-            Save Changes
+            {tab.label}
           </button>
-        </div>
-      </div>
+        ))}
+      </nav>
+
+      {/* Content */}
+      <div className="settings-content" ref={scrollRef}>
+        <div className="settings-section">
+          {/* Profile Section */}
+          <div className="form-field">
+            <label className="field-label">Full name</label>
+            <p className="field-description">Your display name across Surbee</p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="avatar-btn"
+              >
+                {profilePicture ? (
+                  <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-lg font-semibold">
+                    {name ? name.charAt(0).toUpperCase() : 'U'}
+                  </span>
+                )}
+              </button>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => handleFieldChange(setName, e.target.value)}
+                placeholder="Enter your name"
+                className="field-input flex-1"
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label className="field-label">What should Surbee call you?</label>
+            <p className="field-description">This name will be used in conversations</p>
+            <input
+              type="text"
+              value={surBeeCallName}
+              onChange={(e) => handleFieldChange(setSurBeeCallName, e.target.value)}
+              placeholder="e.g. Hadi"
+              className="field-input"
+              style={{ maxWidth: '320px' }}
+            />
+          </div>
+
+          <div className="divider" />
+
+          {/* Work Function */}
+          <div className="form-field">
+            <label className="field-label">What best describes your work?</label>
+            <p className="field-description">Helps Surbee tailor suggestions to your role</p>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="field-select-btn">
+                  <span>{workFunction}</span>
+                  <ChevronDown className="w-4 h-4 opacity-50" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="dropdown-content">
+                {['Student', 'Researcher', 'Marketer', 'Developer', 'Designer', 'Data Analyst', 'Other'].map((option) => (
+                  <DropdownMenuItem
+                    key={option}
+                    onClick={() => handleFieldChange(setWorkFunction, option)}
+                    className="dropdown-item"
+                  >
+                    {option}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Tone Preference */}
+          <div className="form-field">
+            <label className="field-label">Conversation tone</label>
+            <p className="field-description">How should Surbee communicate with you?</p>
+            <div className="tone-options">
+              {(['professional', 'casual', 'friendly', 'formal', 'creative'] as const).map((toneOption) => (
+                <button
+                  key={toneOption}
+                  onClick={() => handleFieldChange(setTone, toneOption)}
+                  className={`tone-btn ${tone === toneOption ? 'active' : ''}`}
+                >
+                  {toneOption.charAt(0).toUpperCase() + toneOption.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Personal Preferences */}
+          <div className="form-field">
+            <label className="field-label">Personal preferences</label>
+            <p className="field-description">Custom instructions for Surbee to consider in all responses</p>
+            <textarea
+              value={personalPreferences}
+              onChange={(e) => handleFieldChange(setPersonalPreferences, e.target.value)}
+              placeholder="e.g. I prefer concise survey questions, focus on user research for SaaS products, and use data-driven insights"
+              rows={4}
+              className="field-textarea"
+            />
+          </div>
+
+          <div className="divider" />
+
+          {/* Notifications */}
+          <div className="form-field">
+            <label className="toggle-field">
+              <div className="toggle-info">
+                <span className="field-label">Task completion notifications</span>
+                <span className="field-description">Get notified when Surbee finishes long-running tasks</span>
+              </div>
+              <button
+                type="button"
+                className={`toggle-btn ${notificationsEnabled ? 'active' : ''}`}
+                onClick={() => handleFieldChange(setNotificationsEnabled, !notificationsEnabled)}
+              >
+                <div className="toggle-thumb" />
+              </button>
+            </label>
+          </div>
+
+          <div className="divider" />
+
+          {/* Appearance */}
+          <div className="form-field">
+            <label className="field-label">Appearance</label>
+            <p className="field-description">Choose your preferred theme</p>
+            <div className="mt-3">
+              <ThemeSelector />
+            </div>
+          </div>
+
+          {/* Save Button */}
+          <div className="save-section">
+            <button
+              className={`save-btn ${hasChanges ? '' : 'disabled'}`}
+              onClick={handleSave}
+              disabled={!hasChanges || saving}
+            >
+              {saving ? 'Saving...' : 'Save changes'}
+            </button>
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .settings-root {
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 48px 32px 120px;
+          color: var(--surbee-fg-primary, #E8E8E8);
+        }
+
+        .hidden {
+          display: none;
+        }
+
+        /* Header */
+        .settings-header {
+          margin-bottom: 32px;
+        }
+
+        .settings-title {
+          font-family: 'Kalice-Trial-Regular', sans-serif;
+          font-size: 28px;
+          font-weight: 400;
+          line-height: 1.4;
+          margin-bottom: 0;
+        }
+
+        /* Tabs */
+        .settings-tabs {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 32px;
+          flex-wrap: wrap;
+        }
+
+        .settings-tab {
+          padding: 8px 16px;
+          font-size: 14px;
+          font-weight: 500;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          background: transparent;
+          border: 1px solid rgba(232, 232, 232, 0.1);
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .settings-tab:hover {
+          border-color: rgba(232, 232, 232, 0.2);
+        }
+
+        .settings-tab.active {
+          background: rgba(232, 232, 232, 0.05);
+          border-color: transparent;
+        }
+
+        /* Content */
+        .settings-content {
+          animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        .settings-section {
+          max-width: 100%;
+        }
+
+        .divider {
+          margin: 32px 0;
+          width: 100%;
+          height: 1px;
+          background-color: rgba(232, 232, 232, 0.08);
+        }
+
+        /* Form Fields */
+        .form-field {
+          display: flex;
+          flex-direction: column;
+          margin-top: 24px;
+        }
+
+        .form-field:first-child {
+          margin-top: 0;
+        }
+
+        .field-label {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .field-description {
+          font-size: 14px;
+          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          margin: 4px 0 12px;
+        }
+
+        .field-input {
+          display: flex;
+          align-items: center;
+          padding: 0 16px;
+          height: 44px;
+          border-radius: 12px;
+          font-size: 14px;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          background: transparent;
+          border: 1px solid rgba(232, 232, 232, 0.15);
+          transition: all 0.2s ease;
+        }
+
+        .field-input:focus {
+          outline: none;
+          border-color: rgba(232, 232, 232, 0.3);
+        }
+
+        .field-input::placeholder {
+          color: var(--surbee-fg-muted, rgba(232, 232, 232, 0.4));
+        }
+
+        .field-textarea {
+          display: flex;
+          padding: 12px 16px;
+          border-radius: 12px;
+          font-size: 14px;
+          line-height: 1.5;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          background: transparent;
+          border: 1px solid rgba(232, 232, 232, 0.15);
+          resize: vertical;
+          min-height: 100px;
+          transition: all 0.2s ease;
+          font-family: inherit;
+        }
+
+        .field-textarea:focus {
+          outline: none;
+          border-color: rgba(232, 232, 232, 0.3);
+        }
+
+        .field-textarea::placeholder {
+          color: var(--surbee-fg-muted, rgba(232, 232, 232, 0.4));
+        }
+
+        .field-select-btn {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 16px;
+          height: 44px;
+          max-width: 280px;
+          border-radius: 12px;
+          font-size: 14px;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          background: transparent;
+          border: 1px solid rgba(232, 232, 232, 0.15);
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .field-select-btn:hover {
+          border-color: rgba(232, 232, 232, 0.25);
+        }
+
+        /* Avatar */
+        .avatar-btn {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          flex-shrink: 0;
+          overflow: hidden;
+          background: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--surbee-bg-primary, rgb(19, 19, 20));
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: opacity 0.2s ease;
+          border: none;
+        }
+
+        .avatar-btn:hover {
+          opacity: 0.8;
+        }
+
+        /* Tone Options */
+        .tone-options {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .tone-btn {
+          padding: 8px 16px;
+          font-size: 14px;
+          font-weight: 500;
+          border-radius: 9999px;
+          border: 1px solid rgba(232, 232, 232, 0.15);
+          background: transparent;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .tone-btn:hover {
+          border-color: rgba(232, 232, 232, 0.3);
+        }
+
+        .tone-btn.active {
+          background: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--surbee-bg-primary, rgb(19, 19, 20));
+          border-color: transparent;
+        }
+
+        /* Toggle */
+        .toggle-field {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+          cursor: pointer;
+        }
+
+        .toggle-info {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .toggle-btn {
+          position: relative;
+          width: 44px;
+          height: 24px;
+          border-radius: 12px;
+          background: rgba(232, 232, 232, 0.12);
+          border: none;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .toggle-btn.active {
+          background: var(--surbee-fg-primary, #E8E8E8);
+        }
+
+        .toggle-thumb {
+          position: absolute;
+          top: 3px;
+          left: 3px;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: var(--surbee-bg-primary, rgb(19, 19, 20));
+          transition: transform 0.2s ease;
+        }
+
+        .toggle-btn.active .toggle-thumb {
+          transform: translateX(20px);
+        }
+
+        /* Save Section */
+        .save-section {
+          margin-top: 40px;
+          padding-top: 24px;
+          border-top: 1px solid rgba(232, 232, 232, 0.08);
+        }
+
+        .save-btn {
+          padding: 10px 20px;
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--surbee-bg-primary, rgb(19, 19, 20));
+          background: var(--surbee-fg-primary, #E8E8E8);
+          border: none;
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .save-btn:hover:not(.disabled) {
+          opacity: 0.9;
+        }
+
+        .save-btn.disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+          background: rgba(232, 232, 232, 0.08);
+          color: var(--surbee-fg-muted, rgba(232, 232, 232, 0.4));
+        }
+
+        /* Dropdown styling */
+        :global(.dropdown-content) {
+          background: var(--surbee-bg-primary, rgb(19, 19, 20)) !important;
+          border: 1px solid rgba(232, 232, 232, 0.1) !important;
+          border-radius: 12px !important;
+        }
+
+        :global(.dropdown-item) {
+          color: var(--surbee-fg-primary, #E8E8E8) !important;
+          cursor: pointer !important;
+          border-radius: 8px !important;
+        }
+
+        :global(.dropdown-item:hover) {
+          background: rgba(232, 232, 232, 0.05) !important;
+        }
+      `}</style>
     </div>
   );
 }

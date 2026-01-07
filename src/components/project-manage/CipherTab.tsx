@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Settings, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow, subDays, format } from 'date-fns';
 import { AreaChart, Area, ResponsiveContainer, BarChart, Bar, XAxis, Tooltip } from 'recharts';
+import { CipherSettingsPanel } from './CipherSettingsPanel';
 
 interface CipherTabProps {
   projectId: string;
@@ -19,14 +20,38 @@ interface Alert {
   responseId?: string;
 }
 
+interface Contradiction {
+  questionIds: string[];
+  type: 'factual' | 'logical' | 'temporal' | 'demographic' | 'preference';
+  description: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  evidence: string[];
+}
+
+interface ContradictionData {
+  hasContradictions: boolean;
+  count: number;
+  contradictions: Contradiction[];
+  consistencyScore: number;
+  reasoning?: string;
+}
+
+interface ResponseWithContradictions {
+  id: string;
+  created_at: string;
+  contradictions: ContradictionData;
+  consistency_score: number;
+}
+
 export const CipherTab: React.FC<CipherTabProps> = ({ projectId }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [responses, setResponses] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [activeView, setActiveView] = useState<'overview' | 'alerts' | 'patterns'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'alerts' | 'contradictions' | 'patterns' | 'settings'>('overview');
   const [timePeriod, setTimePeriod] = useState<'week' | 'month' | 'quarter'>('month');
   const [expandedAlert, setExpandedAlert] = useState<string | null>(null);
+  const [expandedContradiction, setExpandedContradiction] = useState<string | null>(null);
 
   // Fetch response data for analysis
   useEffect(() => {
@@ -128,6 +153,49 @@ export const CipherTab: React.FC<CipherTabProps> = ({ projectId }) => {
     return data;
   }, [responses, timePeriod]);
 
+  // Contradictions analysis
+  const contradictionsData = useMemo(() => {
+    const responsesWithContradictions = responses.filter(
+      (r: any) => r.contradictions?.hasContradictions
+    );
+
+    const allContradictions = responsesWithContradictions.flatMap((r: any) =>
+      (r.contradictions?.contradictions || []).map((c: Contradiction) => ({
+        ...c,
+        responseId: r.id,
+        timestamp: new Date(r.created_at),
+      }))
+    );
+
+    const byType: Record<string, number> = {};
+    const bySeverity: Record<string, number> = {};
+
+    allContradictions.forEach((c: any) => {
+      byType[c.type] = (byType[c.type] || 0) + 1;
+      bySeverity[c.severity] = (bySeverity[c.severity] || 0) + 1;
+    });
+
+    const avgConsistencyScore = responsesWithContradictions.length > 0
+      ? responsesWithContradictions.reduce((acc: number, r: any) =>
+          acc + (r.consistency_score || r.contradictions?.consistencyScore || 0), 0
+        ) / responsesWithContradictions.length
+      : 1;
+
+    return {
+      totalResponses: responsesWithContradictions.length,
+      totalContradictions: allContradictions.length,
+      byType,
+      bySeverity,
+      avgConsistencyScore: Math.round(avgConsistencyScore * 100),
+      list: responsesWithContradictions.map((r: any) => ({
+        id: r.id,
+        created_at: r.created_at,
+        contradictions: r.contradictions as ContradictionData,
+        consistency_score: r.consistency_score || r.contradictions?.consistencyScore || 0,
+      })),
+    };
+  }, [responses]);
+
   // Pattern analysis
   const patterns = useMemo(() => {
     const patternMap: Record<string, number> = {};
@@ -177,13 +245,28 @@ export const CipherTab: React.FC<CipherTabProps> = ({ projectId }) => {
       {/* Header with Navigation */}
       <header className="cipher-header">
         <nav className="cipher-nav">
-          {(['overview', 'alerts', 'patterns'] as const).map((view) => (
+          {(['overview', 'alerts', 'contradictions', 'patterns', 'settings'] as const).map((view) => (
             <button
               key={view}
               className={`nav-btn ${activeView === view ? 'active' : ''}`}
               onClick={() => setActiveView(view)}
             >
-              {view.charAt(0).toUpperCase() + view.slice(1)}
+              {view === 'settings' ? (
+                <span className="flex items-center gap-1">
+                  <Settings className="w-3.5 h-3.5" />
+                  Settings
+                </span>
+              ) : view === 'contradictions' ? (
+                <span className="flex items-center gap-1">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  Contradictions
+                  {contradictionsData.totalContradictions > 0 && (
+                    <span className="contradiction-badge">{contradictionsData.totalContradictions}</span>
+                  )}
+                </span>
+              ) : (
+                view.charAt(0).toUpperCase() + view.slice(1)
+              )}
             </button>
           ))}
         </nav>
@@ -441,6 +524,112 @@ export const CipherTab: React.FC<CipherTabProps> = ({ projectId }) => {
         </div>
       )}
 
+      {/* CONTRADICTIONS VIEW */}
+      {activeView === 'contradictions' && (
+        <div className="view-content">
+          <div className="contradictions-summary">
+            <div className="summary-stat">
+              <span className="summary-num">{contradictionsData.totalResponses}</span>
+              <span className="summary-label">Responses with Issues</span>
+            </div>
+            <div className="summary-divider" />
+            <div className="summary-stat">
+              <span className="summary-num">{contradictionsData.totalContradictions}</span>
+              <span className="summary-label">Total Contradictions</span>
+            </div>
+            <div className="summary-divider" />
+            <div className="summary-stat">
+              <span className="summary-num">{contradictionsData.avgConsistencyScore}%</span>
+              <span className="summary-label">Avg Consistency</span>
+            </div>
+          </div>
+
+          {/* Contradiction Type Breakdown */}
+          {Object.keys(contradictionsData.byType).length > 0 && (
+            <div className="contradiction-types">
+              <div className="types-header">By Type</div>
+              <div className="types-list">
+                {Object.entries(contradictionsData.byType).map(([type, count]) => (
+                  <div key={type} className={`type-chip type-${type}`}>
+                    <span className="type-name">{type}</span>
+                    <span className="type-count">{count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="contradictions-table">
+            <div className="table-header">
+              <span className="col-time">Time</span>
+              <span className="col-consistency">Consistency</span>
+              <span className="col-count">Issues</span>
+              <span className="col-types">Types</span>
+              <span className="col-expand"></span>
+            </div>
+
+            {contradictionsData.list.length === 0 ? (
+              <div className="table-empty">
+                <div className="empty-circle" />
+                <span>No contradictions detected</span>
+                <span className="empty-subtext">Responses are consistent</span>
+              </div>
+            ) : (
+              contradictionsData.list.map((response) => (
+                <React.Fragment key={response.id}>
+                  <div
+                    className={`table-row ${expandedContradiction === response.id ? 'expanded' : ''}`}
+                    onClick={() => setExpandedContradiction(expandedContradiction === response.id ? null : response.id)}
+                  >
+                    <span className="col-time">
+                      {formatDistanceToNow(new Date(response.created_at), { addSuffix: true })}
+                    </span>
+                    <span className={`col-consistency ${response.consistency_score >= 0.7 ? 'good' : response.consistency_score >= 0.4 ? 'medium' : 'poor'}`}>
+                      {Math.round(response.consistency_score * 100)}%
+                    </span>
+                    <span className="col-count">{response.contradictions.count}</span>
+                    <span className="col-types">
+                      {[...new Set(response.contradictions.contradictions.map(c => c.type))].join(', ')}
+                    </span>
+                    <span className="col-expand">
+                      {expandedContradiction === response.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </span>
+                  </div>
+                  {expandedContradiction === response.id && (
+                    <div className="contradiction-details">
+                      {response.contradictions.reasoning && (
+                        <div className="reasoning-section">
+                          <span className="reasoning-label">AI Analysis</span>
+                          <p className="reasoning-text">{response.contradictions.reasoning}</p>
+                        </div>
+                      )}
+                      <div className="contradictions-list">
+                        {response.contradictions.contradictions.map((c, idx) => (
+                          <div key={idx} className="contradiction-item">
+                            <div className="contradiction-header">
+                              <span className={`type-badge type-${c.type}`}>{c.type}</span>
+                              <span className={`severity-badge ${c.severity}`}>{c.severity}</span>
+                            </div>
+                            <p className="contradiction-description">{c.description}</p>
+                            {c.evidence.length > 0 && (
+                              <div className="evidence-list">
+                                {c.evidence.map((e, i) => (
+                                  <div key={i} className="evidence-item">"{e}"</div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </React.Fragment>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
       {/* PATTERNS VIEW */}
       {activeView === 'patterns' && (
         <div className="view-content">
@@ -487,6 +676,16 @@ export const CipherTab: React.FC<CipherTabProps> = ({ projectId }) => {
               ))
             )}
           </div>
+        </div>
+      )}
+
+      {/* SETTINGS VIEW */}
+      {activeView === 'settings' && user?.id && (
+        <div className="view-content settings-view">
+          <CipherSettingsPanel
+            projectId={projectId}
+            userId={user.id}
+          />
         </div>
       )}
 
@@ -1086,6 +1285,195 @@ export const CipherTab: React.FC<CipherTabProps> = ({ projectId }) => {
 
         .detail-value {
           font-size: 13px;
+        }
+
+        /* Contradictions View */
+        .contradictions-summary {
+          display: flex;
+          align-items: center;
+          gap: 24px;
+          padding: 24px 32px;
+          background: var(--surbee-bg-secondary, #1E1E1F);
+          border-radius: 8px;
+          margin-bottom: 24px;
+        }
+
+        .contradiction-badge {
+          margin-left: 4px;
+          padding: 2px 6px;
+          background: rgba(245, 158, 11, 0.2);
+          color: #f59e0b;
+          border-radius: 4px;
+          font-size: 10px;
+          font-weight: 600;
+        }
+
+        .contradiction-types {
+          background: var(--surbee-bg-secondary, #1E1E1F);
+          border-radius: 8px;
+          padding: 16px 24px;
+          margin-bottom: 16px;
+        }
+
+        .types-header {
+          font-family: var(--font-mono);
+          font-size: 10px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--surbee-fg-muted, #888);
+          margin-bottom: 12px;
+        }
+
+        .types-list {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .type-chip {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 12px;
+          background: var(--surbee-bg-tertiary, #252526);
+          border-radius: 6px;
+          font-size: 12px;
+        }
+
+        .type-name {
+          text-transform: capitalize;
+        }
+
+        .type-count {
+          font-family: var(--font-mono);
+          font-size: 11px;
+          color: var(--surbee-fg-muted, #888);
+        }
+
+        .type-chip.type-factual { border-left: 2px solid #ef4444; }
+        .type-chip.type-logical { border-left: 2px solid #8b5cf6; }
+        .type-chip.type-temporal { border-left: 2px solid #3b82f6; }
+        .type-chip.type-demographic { border-left: 2px solid #22c55e; }
+        .type-chip.type-preference { border-left: 2px solid #f59e0b; }
+
+        .contradictions-table {
+          background: var(--surbee-bg-secondary, #1E1E1F);
+          border-radius: 8px;
+          overflow: hidden;
+        }
+
+        .contradictions-table .table-header {
+          grid-template-columns: 120px 100px 80px 1fr 40px;
+        }
+
+        .contradictions-table .table-row {
+          grid-template-columns: 120px 100px 80px 1fr 40px;
+        }
+
+        .col-consistency {
+          font-family: var(--font-mono);
+          font-size: 13px;
+          font-weight: 500;
+        }
+
+        .col-consistency.good { color: #22c55e; }
+        .col-consistency.medium { color: #f59e0b; }
+        .col-consistency.poor { color: #ef4444; }
+
+        .col-types {
+          font-size: 12px;
+          text-transform: capitalize;
+          color: var(--surbee-fg-muted, #888);
+        }
+
+        .empty-subtext {
+          font-size: 12px;
+          color: var(--surbee-fg-muted, #666);
+        }
+
+        .contradiction-details {
+          padding: 20px 24px;
+          background: var(--surbee-bg-tertiary, #252526);
+          border-bottom: 1px solid var(--surbee-border-secondary, rgba(255,255,255,0.05));
+        }
+
+        .reasoning-section {
+          margin-bottom: 20px;
+          padding: 16px;
+          background: rgba(99, 102, 241, 0.1);
+          border-radius: 8px;
+          border-left: 3px solid #6366f1;
+        }
+
+        .reasoning-label {
+          font-family: var(--font-mono);
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: #6366f1;
+          display: block;
+          margin-bottom: 8px;
+        }
+
+        .reasoning-text {
+          font-size: 13px;
+          line-height: 1.6;
+          color: var(--surbee-fg-secondary, #ccc);
+          margin: 0;
+        }
+
+        .contradictions-list {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .contradiction-item {
+          padding: 16px;
+          background: var(--surbee-bg-secondary, #1E1E1F);
+          border-radius: 8px;
+        }
+
+        .contradiction-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 10px;
+        }
+
+        .type-badge {
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-family: var(--font-mono);
+          font-size: 10px;
+          text-transform: uppercase;
+        }
+
+        .type-badge.type-factual { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .type-badge.type-logical { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .type-badge.type-temporal { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .type-badge.type-demographic { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+        .type-badge.type-preference { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+
+        .contradiction-description {
+          font-size: 13px;
+          line-height: 1.5;
+          margin: 0 0 12px 0;
+        }
+
+        .evidence-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .evidence-item {
+          font-size: 12px;
+          color: var(--surbee-fg-muted, #888);
+          padding-left: 12px;
+          border-left: 2px solid var(--surbee-border-primary, rgba(255,255,255,0.1));
+          font-style: italic;
         }
       `}</style>
     </div>

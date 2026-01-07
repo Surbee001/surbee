@@ -3,47 +3,238 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { useCredits } from "@/hooks/useCredits";
+import { useTheme } from "@/contexts/ThemeContext";
 
-type PlanType = "free" | "pro" | "max";
+type PlanType = "free_user" | "surbee_pro" | "surbee_max" | "surbee_enterprise";
 
-interface UserSubscription {
-  plan: PlanType;
-  billing_cycle: "monthly" | "annual" | null;
-  status: string;
+// Plan icon URLs from ImageKit
+const PLAN_ICONS: Record<string, string> = {
+  free_user: 'https://ik.imagekit.io/on0moldgr/composition.svg',
+  surbee_pro: 'https://ik.imagekit.io/on0moldgr/composition%20(1).svg',
+  surbee_max: 'https://ik.imagekit.io/on0moldgr/composition%20(2).svg',
+};
+
+// Cancel/Downgrade Modal with retention offer
+function CancelModal({
+  isOpen,
+  onClose,
+  onConfirmCancel,
+  onAcceptOffer
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirmCancel: () => void;
+  onAcceptOffer: () => void;
+}) {
+  const [step, setStep] = useState<'initial' | 'offer' | 'confirming'>('initial');
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)' }}
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md rounded-2xl p-8"
+        style={{ backgroundColor: 'var(--surbee-bg-secondary)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {step === 'initial' && (
+          <>
+            <h2
+              className="text-xl font-semibold mb-3"
+              style={{ color: 'var(--surbee-fg-primary)' }}
+            >
+              We're sad to see you go
+            </h2>
+            <p
+              className="text-sm mb-6"
+              style={{ color: 'var(--surbee-fg-secondary)' }}
+            >
+              Before you cancel, we'd love to understand what we could do better. Your feedback helps us improve Surbee for everyone.
+            </p>
+
+            <div className="flex flex-col gap-3 mb-6">
+              {['Too expensive', 'Missing features I need', 'Found a better alternative', 'Not using it enough', 'Other'].map((reason) => (
+                <label
+                  key={reason}
+                  className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors"
+                  style={{
+                    backgroundColor: 'var(--surbee-bg-tertiary)',
+                    border: '1px solid transparent'
+                  }}
+                >
+                  <input type="radio" name="cancel-reason" className="accent-blue-500" />
+                  <span className="text-sm" style={{ color: 'var(--surbee-fg-primary)' }}>
+                    {reason}
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={onClose}
+                className="flex-1 h-10 rounded-full text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: 'var(--surbee-bg-tertiary)',
+                  color: 'var(--surbee-fg-primary)'
+                }}
+              >
+                Keep my plan
+              </button>
+              <button
+                onClick={() => setStep('offer')}
+                className="flex-1 h-10 rounded-full text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  color: '#ef4444'
+                }}
+              >
+                Continue canceling
+              </button>
+            </div>
+          </>
+        )}
+
+        {step === 'offer' && (
+          <>
+            <div
+              className="text-center mb-6 p-4 rounded-xl"
+              style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}
+            >
+              <div className="text-3xl mb-2">🎁</div>
+              <h2
+                className="text-xl font-semibold mb-2"
+                style={{ color: 'var(--surbee-fg-primary)' }}
+              >
+                Wait! Here's a special offer
+              </h2>
+              <p
+                className="text-2xl font-bold mb-1"
+                style={{ color: '#3b82f6' }}
+              >
+                40% OFF
+              </p>
+              <p
+                className="text-sm"
+                style={{ color: 'var(--surbee-fg-secondary)' }}
+              >
+                Stay with us for one more month at a discounted rate
+              </p>
+            </div>
+
+            <p
+              className="text-sm text-center mb-6"
+              style={{ color: 'var(--surbee-fg-muted)' }}
+            >
+              This offer is only available right now. Your discount will be applied to your next billing cycle.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  onAcceptOffer();
+                  onClose();
+                }}
+                className="w-full h-11 rounded-full text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: '#3b82f6',
+                  color: '#ffffff'
+                }}
+              >
+                Accept 40% discount
+              </button>
+              <button
+                onClick={() => setStep('confirming')}
+                className="w-full h-10 rounded-full text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: 'transparent',
+                  color: 'var(--surbee-fg-muted)'
+                }}
+              >
+                No thanks, cancel anyway
+              </button>
+            </div>
+          </>
+        )}
+
+        {step === 'confirming' && (
+          <>
+            <h2
+              className="text-xl font-semibold mb-3"
+              style={{ color: 'var(--surbee-fg-primary)' }}
+            >
+              Confirm cancellation
+            </h2>
+            <p
+              className="text-sm mb-6"
+              style={{ color: 'var(--surbee-fg-secondary)' }}
+            >
+              Your subscription will remain active until the end of your current billing period. After that, you'll be moved to the Free plan.
+            </p>
+
+            <div
+              className="p-4 rounded-xl mb-6"
+              style={{ backgroundColor: 'var(--surbee-bg-tertiary)' }}
+            >
+              <p className="text-sm" style={{ color: 'var(--surbee-fg-muted)' }}>
+                You'll lose access to:
+              </p>
+              <ul className="mt-2 space-y-1">
+                {['Advanced AI models', 'Agent Mode', 'Priority support', 'Custom branding'].map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-sm" style={{ color: 'var(--surbee-fg-secondary)' }}>
+                    <span style={{ color: '#ef4444' }}>✕</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={onClose}
+                className="flex-1 h-10 rounded-full text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: '#3b82f6',
+                  color: '#ffffff'
+                }}
+              >
+                Keep my plan
+              </button>
+              <button
+                onClick={() => {
+                  onConfirmCancel();
+                  onClose();
+                }}
+                className="flex-1 h-10 rounded-full text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  color: '#ef4444'
+                }}
+              >
+                Cancel subscription
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function PricingPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { credits } = useCredits();
   const [isAnnual, setIsAnnual] = useState(true);
-  const [currentPlan, setCurrentPlan] = useState<PlanType>("free");
-  const [loading, setLoading] = useState(true);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  useEffect(() => {
-    const fetchSubscription = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("user_subscriptions")
-        .select("plan, billing_cycle, status")
-        .eq("user_id", user.id)
-        .single();
-
-      if (data && !error) {
-        setCurrentPlan(data.plan as PlanType);
-        if (data.billing_cycle) {
-          setIsAnnual(data.billing_cycle === "annual");
-        }
-      }
-      setLoading(false);
-    };
-
-    fetchSubscription();
-  }, [user]);
+  const currentPlan = credits?.plan || "free_user";
 
   const handleClose = () => {
     router.back();
@@ -52,16 +243,52 @@ export default function PricingPage() {
   const getButtonText = (plan: PlanType): string => {
     if (currentPlan === plan) return "Current plan";
 
-    const planOrder: Record<PlanType, number> = { free: 0, pro: 1, max: 2 };
+    const planOrder: Record<PlanType, number> = { free_user: 0, surbee_pro: 1, surbee_max: 2, surbee_enterprise: 3 };
 
-    if (planOrder[plan] > planOrder[currentPlan]) {
-      return plan === "pro" ? "Upgrade to Pro" : "Upgrade to Max";
+    if (planOrder[plan] > planOrder[currentPlan as PlanType]) {
+      if (plan === "surbee_enterprise") return "Contact Sales";
+      return plan === "surbee_pro" ? "Upgrade to Pro" : "Upgrade to Max";
     } else {
-      return `Downgrade to ${plan.charAt(0).toUpperCase() + plan.slice(1)}`;
+      const displayName = plan.replace('surbee_', '').replace('free_user', 'Free');
+      return `Downgrade to ${displayName.charAt(0).toUpperCase() + displayName.slice(1)}`;
     }
   };
 
   const isCurrentPlan = (plan: PlanType): boolean => currentPlan === plan;
+
+  const handleUpgrade = async (plan: PlanType) => {
+    // Redirect to Clerk's billing portal for the specific plan
+    // Clerk handles the checkout flow automatically
+    window.location.href = `/billing?plan=${plan}`;
+  };
+
+  const handleDowngrade = () => {
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    // Redirect to Clerk's billing portal to manage/cancel subscription
+    window.location.href = '/billing';
+  };
+
+  const handleAcceptOffer = async () => {
+    // For retention offers, we can track this and handle via Clerk's billing portal
+    // The 40% discount would be configured as a coupon in Clerk
+    setShowCancelModal(false);
+    window.location.href = '/billing?offer=retention';
+  };
+
+  const handlePlanClick = (plan: PlanType) => {
+    if (isCurrentPlan(plan)) return;
+
+    if (plan === "surbee_enterprise") {
+      router.push("/contact-sales");
+    } else if (plan === "free_user") {
+      handleDowngrade();
+    } else {
+      handleUpgrade(plan);
+    }
+  };
 
   return (
     <div
@@ -113,7 +340,7 @@ export default function PricingPage() {
         {/* Plan Toggle */}
         <div className="flex items-center gap-3">
           <p className="text-sm" style={{ color: "var(--surbee-fg-secondary)" }}>
-            Save <strong style={{ color: "var(--surbee-fg-primary)" }}>20%</strong> with annual billing
+            Save <strong style={{ color: "var(--surbee-fg-primary)" }}>17%</strong> with annual billing
           </p>
           <button
             className="relative w-8 h-5 rounded-full transition-colors duration-200"
@@ -133,89 +360,88 @@ export default function PricingPage() {
         </div>
 
         {/* Pricing Tiers */}
-        <div className="grid gap-4 justify-center grid-cols-1 md:grid-cols-3">
+        <div className="grid gap-5 justify-center grid-cols-1 md:grid-cols-3">
           {/* Free Tier */}
           <PricingTier
             name="Free"
             price="$0"
-            description="Get started with basic survey features"
-            buttonText={getButtonText("free")}
-            isCurrentPlan={isCurrentPlan("free")}
-            isHighlighted={false}
+            credits="100 credits/month"
+            buttonText={getButtonText("free_user")}
+            isCurrentPlan={isCurrentPlan("free_user")}
+            tierStyle="default"
+            iconUrl={PLAN_ICONS.free_user}
             features={[
-              "Up to 3 surveys",
-              "100 responses per month",
-              "Basic question types",
+              "Survey generation (all complexities)",
+              "Unlimited survey responses",
+              "Chat with Claude Haiku",
+              "Cipher fraud detection (2/month)",
+              "CSV export",
               "Email support",
-              "Standard analytics",
-              "Surbee branding",
             ]}
-            onButtonClick={() => {
-              if (!isCurrentPlan("free")) {
-                console.log("Downgrade to free");
-              }
-            }}
-            disabled={isCurrentPlan("free")}
+            onButtonClick={() => handlePlanClick("free_user")}
+            disabled={isCurrentPlan("free_user") || isProcessing}
           />
 
           {/* Pro Tier */}
           <PricingTier
             name="Pro"
-            price={isAnnual ? "$19/month" : "$24/month"}
-            originalPrice={isAnnual ? "$24/month" : undefined}
-            billingNote={`Billed ${isAnnual ? "annually" : "monthly"}`}
-            buttonText={getButtonText("pro")}
-            isCurrentPlan={isCurrentPlan("pro")}
-            isHighlighted={true}
+            price={isAnnual ? "$16.67/mo" : "$20/mo"}
+            originalPrice={isAnnual ? "$20/mo" : undefined}
+            credits="2,000 credits/month"
+            buttonText={getButtonText("surbee_pro")}
+            isCurrentPlan={isCurrentPlan("surbee_pro")}
+            tierStyle="highlighted"
+            iconUrl={PLAN_ICONS.surbee_pro}
             features={[
-              "Everything in Free",
-              "Unlimited surveys",
-              "1,000 responses per month",
-              "Advanced question types",
-              "Priority support",
-              "Advanced analytics & exports",
+              "All AI models (GPT-5, Lema, Claude)",
+              "Agent Mode for workflows",
+              "Evaluation tools",
+              "Cipher Basic analysis",
               "Remove Surbee branding",
-              "Custom thank you pages",
+              "All export formats",
+              "Priority support",
             ]}
-            highlightFirstFeature
-            onButtonClick={() => {
-              if (!isCurrentPlan("pro")) {
-                console.log("Upgrade to Pro");
-              }
-            }}
-            disabled={isCurrentPlan("pro")}
+            onButtonClick={() => handlePlanClick("surbee_pro")}
+            disabled={isCurrentPlan("surbee_pro") || isProcessing}
           />
 
           {/* Max Tier */}
           <PricingTier
             name="Max"
-            price={isAnnual ? "$49/month" : "$59/month"}
-            originalPrice={isAnnual ? "$59/month" : undefined}
-            billingNote={`Billed ${isAnnual ? "annually" : "monthly"}`}
-            buttonText={getButtonText("max")}
-            isCurrentPlan={isCurrentPlan("max")}
-            isHighlighted={false}
+            price={isAnnual ? "$50/mo" : "$60/mo"}
+            originalPrice={isAnnual ? "$60/mo" : undefined}
+            credits="6,000 credits/month"
+            buttonText={getButtonText("surbee_max")}
+            isCurrentPlan={isCurrentPlan("surbee_max")}
+            tierStyle="glow"
+            iconUrl={PLAN_ICONS.surbee_max}
             features={[
               "Everything in Pro",
-              "Unlimited responses",
-              "AI-powered insights",
-              "White-label surveys",
-              "Custom domains",
-              "API access",
-              "Dedicated account manager",
-              "Advanced fraud detection",
-              "Team collaboration",
+              "Full Cipher + real-time monitoring",
+              "Custom domain support",
+              "Higher rate limits (3x Pro)",
+              "Advanced analytics",
+              "Dedicated support",
             ]}
-            highlightFirstFeature
-            onButtonClick={() => {
-              if (!isCurrentPlan("max")) {
-                console.log("Upgrade to Max");
-              }
-            }}
-            disabled={isCurrentPlan("max")}
+            onButtonClick={() => handlePlanClick("surbee_max")}
+            disabled={isCurrentPlan("surbee_max") || isProcessing}
           />
+
         </div>
+
+        {/* Enterprise CTA */}
+        <p className="text-center text-sm mt-6" style={{ color: "var(--surbee-fg-muted)" }}>
+          Need more? <a href="/contact-sales" className="underline hover:opacity-80" style={{ color: "var(--surbee-fg-secondary)" }}>Contact us for Enterprise pricing</a>
+        </p>
       </div>
+
+      {/* Cancel Modal */}
+      <CancelModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirmCancel={handleConfirmCancel}
+        onAcceptOffer={handleAcceptOffer}
+      />
     </div>
   );
 }
@@ -224,45 +450,99 @@ interface PricingTierProps {
   name: string;
   price: string;
   originalPrice?: string;
+  credits: string;
   description?: string;
-  billingNote?: string;
   buttonText: string;
   isCurrentPlan: boolean;
-  isHighlighted: boolean;
+  tierStyle: "default" | "highlighted" | "glow";
   features: string[];
-  highlightFirstFeature?: boolean;
   onButtonClick: () => void;
   disabled?: boolean;
+  iconUrl?: string;
 }
 
 function PricingTier({
   name,
   price,
   originalPrice,
+  credits,
   description,
-  billingNote,
   buttonText,
   isCurrentPlan,
-  isHighlighted,
+  tierStyle,
   features,
-  highlightFirstFeature,
   onButtonClick,
   disabled,
+  iconUrl,
 }: PricingTierProps) {
+  const [isHovered, setIsHovered] = React.useState(false);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+
+  // Icon filter: off-white for dark mode, off-black for light mode
+  const iconFilter = isDark
+    ? 'brightness(0) invert(0.9)'
+    : 'brightness(0) invert(0.15)';
+
+  const getCardStyle = () => {
+    const base: React.CSSProperties = {
+      backgroundColor: "var(--surbee-card-bg)",
+    };
+
+    if (tierStyle === "highlighted") {
+      base.backgroundColor = "var(--surbee-bg-tertiary)";
+      base.border = "1px solid var(--surbee-border-accent)";
+    } else if (tierStyle === "glow") {
+      base.backgroundColor = "var(--surbee-bg-tertiary)";
+      base.boxShadow = "0 0 40px rgba(59, 130, 246, 0.15), 0 0 80px rgba(59, 130, 246, 0.1)";
+      base.border = "1px solid rgba(59, 130, 246, 0.3)";
+    }
+
+    return base;
+  };
+
+  const getButtonStyle = (): React.CSSProperties => {
+    if (disabled) {
+      return {
+        backgroundColor: "var(--surbee-bg-tertiary)",
+        color: "var(--surbee-fg-muted)",
+        cursor: "default",
+        opacity: 0.7,
+      };
+    }
+
+    if (tierStyle === "highlighted") {
+      return {
+        backgroundColor: isHovered ? "#0070e0" : "#0285ff",
+        color: "#ffffff",
+        cursor: "pointer",
+      };
+    }
+
+    if (tierStyle === "glow") {
+      return {
+        backgroundColor: isHovered ? "#2563eb" : "#3b82f6",
+        color: "#ffffff",
+        cursor: "pointer",
+      };
+    }
+
+    return {
+      backgroundColor: isHovered ? "#1a1a1a" : "#000000",
+      color: "#ffffff",
+      cursor: "pointer",
+    };
+  };
+
   return (
     <div
-      className="relative flex flex-col rounded-2xl p-5 w-full max-w-[320px]"
-      style={{
-        backgroundColor: isHighlighted
-          ? "var(--surbee-bg-tertiary)"
-          : "var(--surbee-card-bg)",
-        border: isHighlighted ? "1px solid var(--surbee-border-accent)" : "none",
-      }}
+      className="relative flex flex-col rounded-2xl p-6 w-full max-w-[320px] h-full"
+      style={getCardStyle()}
     >
       {/* Current Plan Badge */}
       {isCurrentPlan && (
         <div
-          className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-medium"
+          className="absolute top-5 right-5 px-3 py-1 rounded-full text-xs font-medium"
           style={{
             backgroundColor: "var(--surbee-bg-primary)",
             color: "var(--surbee-fg-muted)",
@@ -273,100 +553,90 @@ function PricingTier({
         </div>
       )}
 
-      {/* Popular Badge for Pro */}
-      {isHighlighted && !isCurrentPlan && (
+      {/* Recommended Badge for Pro */}
+      {tierStyle === "highlighted" && !isCurrentPlan && (
         <div
-          className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-medium"
+          className="absolute top-5 right-5 px-3 py-1 rounded-full text-xs font-medium"
           style={{
             backgroundColor: "#0285ff",
             color: "#ffffff",
           }}
         >
-          Most Popular
+          Recommended
         </div>
       )}
 
+      {/* Header Section */}
       <div className="flex flex-col gap-3 mb-5">
-        <div className="flex flex-col gap-0.5">
-          <h6
-            className="font-semibold text-sm"
-            style={{ color: "var(--surbee-fg-primary)" }}
-          >
-            {name}
-          </h6>
-        </div>
+        {iconUrl && (
+          <img
+            src={iconUrl}
+            alt={`${name} plan icon`}
+            style={{ width: 40, height: 40, filter: iconFilter }}
+          />
+        )}
+        <h6
+          className="font-semibold text-base"
+          style={{ color: "var(--surbee-fg-primary)" }}
+        >
+          {name}
+        </h6>
         <div className="flex items-baseline gap-2">
           <h6
-            className="font-bold text-xl"
+            className="font-bold text-2xl"
             style={{ color: "var(--surbee-fg-primary)" }}
           >
             {price}
           </h6>
           {originalPrice && (
             <span
-              className="text-xs line-through"
+              className="text-sm line-through"
               style={{ color: "var(--surbee-fg-muted)" }}
             >
               {originalPrice}
             </span>
           )}
         </div>
+        <p className="text-sm font-medium" style={{ color: "var(--surbee-fg-secondary)" }}>
+          {credits}
+        </p>
         {description && (
-          <p className="text-xs" style={{ color: "var(--surbee-fg-muted)" }}>
+          <p className="text-sm" style={{ color: "var(--surbee-fg-muted)" }}>
             {description}
           </p>
         )}
-        {billingNote && (
-          <p className="text-xs" style={{ color: "var(--surbee-fg-muted)" }}>
-            {billingNote}
-          </p>
-        )}
-        <button
-          onClick={onButtonClick}
-          disabled={disabled}
-          className="flex justify-center items-center h-10 text-sm whitespace-nowrap transition-all duration-200 cursor-pointer rounded-full font-medium px-5 py-2.5 mt-1"
-          style={{
-            backgroundColor: disabled
-              ? "var(--surbee-bg-tertiary)"
-              : isHighlighted
-              ? "#0285ff"
-              : "var(--surbee-fg-primary)",
-            color: disabled
-              ? "var(--surbee-fg-muted)"
-              : "#ffffff",
-            cursor: disabled ? "default" : "pointer",
-            opacity: disabled ? 0.7 : 1,
-          }}
-        >
-          {buttonText}
-        </button>
       </div>
-      <FeatureList features={features} highlightFirst={highlightFirstFeature} />
+
+      {/* Features List - grows to fill space */}
+      <div className="flex-1 mb-5">
+        <FeatureList features={features} />
+      </div>
+
+      {/* Button - always at bottom */}
+      <button
+        onClick={onButtonClick}
+        disabled={disabled}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="flex justify-center items-center h-11 text-sm whitespace-nowrap transition-all duration-200 rounded-full font-medium px-6 py-3 w-full"
+        style={getButtonStyle()}
+      >
+        {buttonText}
+      </button>
     </div>
   );
 }
 
-function FeatureList({
-  features,
-  highlightFirst,
-}: {
-  features: string[];
-  highlightFirst?: boolean;
-}) {
+function FeatureList({ features }: { features: string[] }) {
   return (
-    <ul className="flex flex-col gap-2.5">
+    <ul className="flex flex-col gap-3">
       {features.map((feature, index) => (
-        <li key={index} className="flex items-start gap-2">
+        <li key={index} className="flex items-start gap-2.5">
           <svg
-            height="14"
-            width="14"
+            height="16"
+            width="16"
             className="flex-shrink-0 mt-0.5"
-            style={{
-              color:
-                index === 0 && highlightFirst
-                  ? "var(--surbee-fg-primary)"
-                  : "var(--surbee-fg-muted)",
-            }}
+            style={{ color: "var(--surbee-fg-secondary)" }}
             fill="none"
             viewBox="0 0 16 16"
             xmlns="http://www.w3.org/2000/svg"
@@ -377,13 +647,8 @@ function FeatureList({
             />
           </svg>
           <p
-            className="text-xs leading-relaxed"
-            style={{
-              color:
-                index === 0 && highlightFirst
-                  ? "var(--surbee-fg-primary)"
-                  : "var(--surbee-fg-muted)",
-            }}
+            className="text-[13px] leading-relaxed"
+            style={{ color: "var(--surbee-fg-secondary)" }}
           >
             {feature}
           </p>

@@ -47,7 +47,21 @@ const defaultSettings = {
   },
   cipher: {
     enabled: true,
-    sensitivity: "medium",
+    // NEW: Tier system (1-5)
+    tier: 3 as 1 | 2 | 3 | 4 | 5,
+    // Legacy sensitivity (kept for backwards compatibility)
+    sensitivity: "medium" as "low" | "medium" | "high",
+    // Advanced mode allows granular check control
+    advancedMode: false,
+    advancedChecks: {} as Record<string, boolean>,
+    // Session persistence
+    sessionResume: true,
+    resumeWindowHours: 48,
+    // Thresholds
+    flagThreshold: 0.6,
+    blockThreshold: 0.85,
+    minResponseTimeMs: 30000,
+    // Legacy individual checks (kept for backwards compatibility)
     detectBots: true,
     detectVpn: true,
     detectDuplicates: true,
@@ -57,7 +71,6 @@ const defaultSettings = {
     minTimeSeconds: 30,
     detectStraightLining: true,
     detectSpeedsters: true,
-    flagThreshold: 70,
   },
   advanced: {
     enableCaptcha: false,
@@ -227,9 +240,35 @@ export async function PUT(
       },
       cipher: {
         enabled: Boolean(settings.cipher?.enabled ?? defaultSettings.cipher.enabled),
+        // NEW: Tier system (1-5)
+        tier: typeof settings.cipher?.tier === 'number'
+          ? Math.min(5, Math.max(1, Math.round(settings.cipher.tier))) as 1 | 2 | 3 | 4 | 5
+          : defaultSettings.cipher.tier,
+        // Legacy sensitivity
         sensitivity: ['low', 'medium', 'high'].includes(settings.cipher?.sensitivity)
           ? settings.cipher.sensitivity
           : defaultSettings.cipher.sensitivity,
+        // Advanced mode
+        advancedMode: Boolean(settings.cipher?.advancedMode ?? defaultSettings.cipher.advancedMode),
+        advancedChecks: typeof settings.cipher?.advancedChecks === 'object' && settings.cipher?.advancedChecks !== null
+          ? settings.cipher.advancedChecks
+          : defaultSettings.cipher.advancedChecks,
+        // Session persistence
+        sessionResume: Boolean(settings.cipher?.sessionResume ?? defaultSettings.cipher.sessionResume),
+        resumeWindowHours: typeof settings.cipher?.resumeWindowHours === 'number'
+          ? Math.min(168, Math.max(1, settings.cipher.resumeWindowHours)) // 1 hour to 1 week
+          : defaultSettings.cipher.resumeWindowHours,
+        // Thresholds (0-1 scale)
+        flagThreshold: typeof settings.cipher?.flagThreshold === 'number'
+          ? Math.min(1, Math.max(0, settings.cipher.flagThreshold))
+          : defaultSettings.cipher.flagThreshold,
+        blockThreshold: typeof settings.cipher?.blockThreshold === 'number'
+          ? Math.min(1, Math.max(0, settings.cipher.blockThreshold))
+          : defaultSettings.cipher.blockThreshold,
+        minResponseTimeMs: typeof settings.cipher?.minResponseTimeMs === 'number'
+          ? Math.max(1000, settings.cipher.minResponseTimeMs)
+          : defaultSettings.cipher.minResponseTimeMs,
+        // Legacy individual checks (kept for backwards compatibility)
         detectBots: Boolean(settings.cipher?.detectBots ?? defaultSettings.cipher.detectBots),
         detectVpn: Boolean(settings.cipher?.detectVpn ?? defaultSettings.cipher.detectVpn),
         detectDuplicates: Boolean(settings.cipher?.detectDuplicates ?? defaultSettings.cipher.detectDuplicates),
@@ -241,9 +280,6 @@ export async function PUT(
           : defaultSettings.cipher.minTimeSeconds,
         detectStraightLining: Boolean(settings.cipher?.detectStraightLining ?? defaultSettings.cipher.detectStraightLining),
         detectSpeedsters: Boolean(settings.cipher?.detectSpeedsters ?? defaultSettings.cipher.detectSpeedsters),
-        flagThreshold: typeof settings.cipher?.flagThreshold === 'number'
-          ? Math.min(100, Math.max(0, settings.cipher.flagThreshold))
-          : defaultSettings.cipher.flagThreshold,
       },
       advanced: {
         enableCaptcha: Boolean(settings.advanced?.enableCaptcha ?? defaultSettings.advanced.enableCaptcha),

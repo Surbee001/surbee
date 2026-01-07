@@ -259,7 +259,7 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
           flex-direction: column;
           height: 100%;
           padding: 24px;
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--surbee-fg-primary);
         }
 
         /* Header */
@@ -295,18 +295,18 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
           background: transparent;
           border: 1px solid transparent;
           border-radius: 9999px;
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--surbee-fg-primary);
           font-size: 14px;
           cursor: pointer;
           transition: background 0.2s ease;
         }
 
         .dropdown-trigger:hover {
-          background: rgba(255, 255, 255, 0.05);
+          background: var(--surbee-bg-tertiary);
         }
 
         .dropdown-trigger svg {
-          color: rgba(232, 232, 232, 0.6);
+          color: var(--surbee-fg-muted);
         }
 
         /* Dropdown Menu - /home style */
@@ -315,8 +315,8 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
           top: 100%;
           left: 0;
           margin-top: 4px;
-          background: rgb(19, 19, 20);
-          border: 1px solid rgba(232, 232, 232, 0.08);
+          background: var(--surbee-dropdown-bg, var(--surbee-bg-secondary));
+          border: 1px solid var(--surbee-border-primary);
           border-radius: 24px;
           padding: 8px;
           min-width: 180px;
@@ -332,16 +332,16 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
           border-radius: 18px;
           cursor: pointer;
           font-size: 14px;
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--surbee-fg-primary);
           margin-bottom: 1px;
         }
 
         .dropdown-item:hover {
-          background: rgba(255, 255, 255, 0.05);
+          background: var(--surbee-bg-tertiary);
         }
 
         .dropdown-item svg {
-          color: rgba(232, 232, 232, 0.6);
+          color: var(--surbee-fg-muted);
         }
 
         .dropdown-menu-right {
@@ -356,10 +356,10 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
           align-items: center;
           gap: 6px;
           padding: 8px 18px;
-          background: var(--surbee-fg-primary, #E8E8E8);
+          background: var(--surbee-fg-primary);
           border: none;
           border-radius: 9999px;
-          color: rgb(19, 19, 20);
+          color: var(--surbee-bg-primary);
           font-size: 14px;
           font-weight: 500;
           cursor: pointer;
@@ -379,19 +379,19 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
         .prompt-section {
           margin-top: 24px;
           padding-top: 24px;
-          border-top: 1px solid rgba(232, 232, 232, 0.08);
+          border-top: 1px solid var(--surbee-border-primary);
         }
 
         .prompt-label {
           font-size: 14px;
           font-weight: 500;
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--surbee-fg-primary);
           margin-bottom: 8px;
         }
 
         .prompt-sublabel {
           font-size: 13px;
-          color: rgba(232, 232, 232, 0.5);
+          color: var(--surbee-fg-muted);
           margin-bottom: 12px;
         }
 
@@ -399,10 +399,10 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
           width: 100%;
           min-height: 100px;
           padding: 12px;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(232, 232, 232, 0.1);
+          background: var(--surbee-bg-secondary);
+          border: 1px solid var(--surbee-border-primary);
           border-radius: 8px;
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--surbee-fg-primary);
           font-size: 13px;
           font-family: inherit;
           resize: vertical;
@@ -411,11 +411,11 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
         }
 
         .prompt-textarea::placeholder {
-          color: rgba(232, 232, 232, 0.35);
+          color: var(--surbee-fg-muted);
         }
 
         .prompt-textarea:focus {
-          border-color: rgba(232, 232, 232, 0.25);
+          border-color: var(--surbee-border-hover);
         }
 
         /* Main Content */
@@ -423,15 +423,16 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
           display: flex;
           flex: 1;
           min-height: 0;
-          border: 1px solid rgba(232, 232, 232, 0.08);
+          border: 1px solid var(--surbee-border-primary);
           border-radius: 8px;
           overflow: hidden;
+          background: var(--surbee-bg-secondary);
         }
 
         /* Left Panel - Jobs List */
         .jobs-panel {
           width: 50%;
-          border-right: 1px solid rgba(232, 232, 232, 0.08);
+          border-right: 1px solid var(--surbee-border-primary);
           display: flex;
           flex-direction: column;
         }
@@ -452,22 +453,22 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(255, 255, 255, 0.05);
+          background: var(--surbee-bg-tertiary);
           border-radius: 12px;
           margin-bottom: 16px;
-          color: rgba(232, 232, 232, 0.5);
+          color: var(--surbee-fg-muted);
         }
 
         .empty-title {
           font-size: 15px;
           font-weight: 500;
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--surbee-fg-primary);
           margin-bottom: 8px;
         }
 
         .empty-desc {
           font-size: 13px;
-          color: rgba(232, 232, 232, 0.5);
+          color: var(--surbee-fg-muted);
           max-width: 280px;
           line-height: 1.5;
           margin-bottom: 20px;
@@ -497,7 +498,7 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
         .instructions-title {
           font-size: 18px;
           font-weight: 600;
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--surbee-fg-primary);
           margin-bottom: 4px;
         }
 
@@ -513,22 +514,22 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(255, 255, 255, 0.08);
+          background: var(--surbee-bg-tertiary);
           border-radius: 50%;
           font-size: 12px;
           font-weight: 600;
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--surbee-fg-primary);
           flex-shrink: 0;
         }
 
         .instruction-text {
           font-size: 14px;
-          color: rgba(232, 232, 232, 0.7);
+          color: var(--surbee-fg-secondary);
           line-height: 1.6;
         }
 
         .instruction-text strong {
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--surbee-fg-primary);
           font-weight: 500;
         }
 
@@ -541,7 +542,7 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
 
         .progress-card {
           padding: 16px;
-          background: rgba(255, 255, 255, 0.03);
+          background: var(--surbee-bg-tertiary);
           border-radius: 8px;
           margin-bottom: 16px;
         }
@@ -551,13 +552,13 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
           align-items: center;
           gap: 10px;
           font-size: 13px;
-          color: rgba(232, 232, 232, 0.7);
+          color: var(--surbee-fg-secondary);
           margin-bottom: 12px;
         }
 
         .progress-bar {
           height: 4px;
-          background: rgba(232, 232, 232, 0.1);
+          background: var(--surbee-border-primary);
           border-radius: 2px;
           overflow: hidden;
         }
@@ -577,7 +578,7 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
 
         .result-item {
           padding: 14px 16px;
-          background: rgba(255, 255, 255, 0.02);
+          background: var(--surbee-bg-tertiary);
           border-radius: 6px;
           border-left: 3px solid transparent;
         }
@@ -596,17 +597,17 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
         .result-num {
           font-size: 11px;
           font-weight: 600;
-          color: rgba(232, 232, 232, 0.5);
+          color: var(--surbee-fg-muted);
         }
 
         .result-question {
           font-size: 12px;
-          color: rgba(232, 232, 232, 0.6);
+          color: var(--surbee-fg-secondary);
         }
 
         .result-answer {
           font-size: 14px;
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--surbee-fg-primary);
           margin-bottom: 6px;
         }
 
@@ -614,26 +615,26 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
           display: flex;
           gap: 12px;
           font-size: 11px;
-          color: rgba(232, 232, 232, 0.4);
+          color: var(--surbee-fg-muted);
         }
 
         /* Suggestions */
         .suggestions-section {
           margin-top: 24px;
           padding-top: 24px;
-          border-top: 1px solid rgba(232, 232, 232, 0.08);
+          border-top: 1px solid var(--surbee-border-primary);
         }
 
         .suggestions-title {
           font-size: 14px;
           font-weight: 500;
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--surbee-fg-primary);
           margin-bottom: 16px;
         }
 
         .suggestion-card {
           padding: 16px;
-          background: rgba(255, 255, 255, 0.02);
+          background: var(--surbee-bg-tertiary);
           border-radius: 8px;
           margin-bottom: 12px;
         }
@@ -654,17 +655,17 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
         .severity-dot.critical { background: #ef4444; }
         .severity-dot.high { background: #f59e0b; }
         .severity-dot.medium { background: #3b82f6; }
-        .severity-dot.low { background: rgba(232, 232, 232, 0.4); }
+        .severity-dot.low { background: var(--surbee-fg-muted); }
 
         .suggestion-title {
           font-size: 14px;
           font-weight: 500;
-          color: var(--surbee-fg-primary, #E8E8E8);
+          color: var(--surbee-fg-primary);
         }
 
         .suggestion-desc {
           font-size: 13px;
-          color: rgba(232, 232, 232, 0.6);
+          color: var(--surbee-fg-secondary);
           line-height: 1.5;
           margin-bottom: 12px;
         }
@@ -694,11 +695,11 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
 
         .sug-btn.dismiss {
           background: transparent;
-          color: rgba(232, 232, 232, 0.5);
+          color: var(--surbee-fg-muted);
         }
 
         .sug-btn.dismiss:hover {
-          color: rgba(232, 232, 232, 0.8);
+          color: var(--surbee-fg-secondary);
         }
 
         .sug-btn.applied {
@@ -767,7 +768,7 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
         }
 
         .success-state span {
-          color: rgba(232, 232, 232, 0.6);
+          color: var(--surbee-fg-secondary);
           font-size: 13px;
         }
       `}</style>
@@ -1065,7 +1066,7 @@ export const EvaluationTab: React.FC<EvaluationTabProps> = ({ projectId }) => {
                   Score: {result.overallScore || 0}/100
                 </span>
               </div>
-              <div style={{ fontSize: '13px', color: 'rgba(232, 232, 232, 0.6)', lineHeight: '1.6' }}>
+              <div style={{ fontSize: '13px', color: 'var(--surbee-fg-secondary)', lineHeight: '1.6' }}>
                 {result.reasoning || 'Evaluation completed successfully.'}
               </div>
             </div>

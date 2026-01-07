@@ -57,15 +57,15 @@ export default function ModelSelector({
           <ChevronDown size={14} style={{ color: 'var(--surbee-fg-secondary)' }} />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="rounded-lg border w-[120px]" style={{ borderColor: 'var(--surbee-sidebar-border)', backgroundColor: 'var(--surbee-sidebar-bg)' }}>
+      <DropdownMenuContent align="start" className="rounded-lg border w-[120px]" style={{ borderColor: 'var(--surbee-dropdown-border)', backgroundColor: 'var(--surbee-dropdown-bg)', backdropFilter: 'blur(12px)' }}>
         {models.map((model) => (
           <DropdownMenuItem
             key={model.id}
             onClick={() => onModelChange(model.id)}
             className="rounded-lg cursor-pointer"
-            style={{ color: 'var(--surbee-fg-primary)' }}
+            style={{ color: 'var(--surbee-dropdown-text)' }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+              e.currentTarget.style.backgroundColor = 'var(--surbee-dropdown-item-hover)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';

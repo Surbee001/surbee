@@ -14,7 +14,17 @@ export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { id: projectId } = await context.params
     const body = await request.json()
-    const { responses, completed_at, device_data, timing_data, is_preview, user_id } = body
+    const {
+      responses,
+      completed_at,
+      device_data,
+      timing_data,
+      mouse_data,
+      keystroke_data,
+      session_id,
+      is_preview,
+      user_id
+    } = body
 
     if (!responses) {
       return NextResponse.json({ error: 'Responses data is required' }, { status: 400 })
@@ -31,7 +41,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Survey not found' }, { status: 404 })
     }
 
-    // Insert the response
+    // Insert the response with behavioral metrics for Cipher fraud detection
     const { data: newResponse, error: insertError } = await supabaseAdmin
       .from('survey_responses')
       .insert({
@@ -41,8 +51,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
         completed_at: completed_at || new Date().toISOString(),
         device_data: device_data || null,
         timing_data: timing_data || null,
-        user_id: user_id || null, // Associate with user if logged in
-        is_preview: is_preview || false, // Mark as preview response
+        mouse_data: mouse_data || null,
+        keystroke_data: keystroke_data || null,
+        session_id: session_id || null,
+        user_id: user_id || null,
+        is_preview: is_preview || false,
         created_at: new Date().toISOString(),
       })
       .select()

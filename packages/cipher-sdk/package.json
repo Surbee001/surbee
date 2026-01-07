@@ -1,0 +1,45 @@
+{
+  "name": "@surbee/cipher",
+  "version": "0.1.0",
+  "description": "AI-powered survey response validation - detect fraud, bots, and low-quality responses",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "survey",
+    "fraud-detection",
+    "response-validation",
+    "quality-assurance",
+    "bot-detection",
+    "cipher",
+    "surbee"
+  ],
+  "author": "Surbee",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/surbee/cipher-sdk"
+  },
+  "homepage": "https://surbee.com/docs/cipher",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

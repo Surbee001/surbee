@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabase-server';
 
+// Normalize legacy plan names
+const LEGACY_PLAN_MAP: Record<string, string> = {
+  'free': 'free_user',
+  'pro': 'surbee_pro',
+  'max': 'surbee_max',
+  'enterprise': 'surbee_enterprise',
+};
+
 // Helper to get user from auth header (Bearer token)
 async function getUserFromRequest(req: NextRequest) {
   const authHeader = req.headers.get('Authorization');
@@ -45,8 +53,10 @@ export async function GET(req: NextRequest) {
       .from('user_subscriptions')
       .insert({
         user_id: user.id,
-        plan: 'free',
+        plan: 'free_user',
         status: 'active',
+        credits_remaining: 100,
+        monthly_credits: 100,
       })
       .select()
       .single();
@@ -56,7 +66,7 @@ export async function GET(req: NextRequest) {
       // Return default free plan if creation fails
       return NextResponse.json({
         subscription: {
-          plan: 'free',
+          plan: 'free_user',
           status: 'active',
         }
       });
@@ -65,9 +75,13 @@ export async function GET(req: NextRequest) {
     subscription = newSubscription;
   }
 
+  // Normalize plan name for consistency
+  const rawPlan = subscription.plan || 'free_user';
+  const normalizedPlan = LEGACY_PLAN_MAP[rawPlan] || rawPlan;
+
   return NextResponse.json({
     subscription: {
-      plan: subscription.plan,
+      plan: normalizedPlan,
       status: subscription.status,
       billingCycle: subscription.billing_cycle,
       currentPeriodEnd: subscription.current_period_end,
