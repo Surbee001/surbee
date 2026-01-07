@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase-server';
+import { supabaseAdmin } from '@/lib/supabase-server';
 
 /**
  * Cipher Validate Endpoint
@@ -33,8 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify API key against database
-    const supabase = await createClient();
-    const { data: keyData, error: keyError } = await supabase
+    const { data: keyData, error: keyError } = await supabaseAdmin
       .from('cipher_api_keys')
       .select('id, user_id, name, tier_limit, credits_remaining, rate_limit, last_used_at')
       .eq('key_hash', hashApiKey(apiKey))
@@ -77,12 +76,12 @@ export async function POST(request: NextRequest) {
       .update({
         credits_remaining: keyData.credits_remaining - 1,
         last_used_at: new Date().toISOString(),
-        total_requests: supabase.rpc('increment', { row_id: keyData.id }),
+        total_requests: supabaseAdmin.rpc('increment', { row_id: keyData.id }),
       })
       .eq('id', keyData.id);
 
     // Log the request
-    await supabase.from('cipher_requests').insert({
+    await supabaseAdmin.from('cipher_requests').insert({
       api_key_id: keyData.id,
       user_id: keyData.user_id,
       tier,
