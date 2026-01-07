@@ -64,58 +64,43 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper to check paddle demo mode synchronously
+const checkPaddleDemo = (): boolean => {
+  if (typeof window === 'undefined') return false;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const paddleLink = urlParams.get('paddlelink');
+
+  if (paddleLink === 'true') {
+    sessionStorage.setItem('surbee_paddle_demo', 'true');
+    // Remove the query param from URL for cleaner look
+    const url = new URL(window.location.href);
+    url.searchParams.delete('paddlelink');
+    window.history.replaceState({}, '', url.toString());
+    return true;
+  }
+
+  return sessionStorage.getItem('surbee_paddle_demo') === 'true';
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  // Check paddle demo synchronously during initial render
+  const initialPaddleDemo = typeof window !== 'undefined' ? checkPaddleDemo() : false;
+
+  const [user, setUser] = useState<User | null>(initialPaddleDemo ? PADDLE_DEMO_USER : null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialPaddleDemo); // Not loading if paddle demo
   const [error, setError] = useState<string | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(
+    initialPaddleDemo ? {
+      name: 'Paddle',
+      onboardingCompleted: false, // Start at onboarding
+      acceptedTermsAt: undefined,
+    } : null
+  );
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [recentAccounts, setRecentAccounts] = useState<RecentAccount[]>([]);
-  const [isPaddleDemo, setIsPaddleDemo] = useState(false);
-
-  // Check for Paddle demo mode on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const paddleLink = urlParams.get('paddlelink');
-
-      if (paddleLink === 'true') {
-        // Store paddle demo mode in sessionStorage so it persists during navigation
-        sessionStorage.setItem('surbee_paddle_demo', 'true');
-        setIsPaddleDemo(true);
-        setUser(PADDLE_DEMO_USER);
-        setUserProfile({
-          name: 'Paddle',
-          onboardingCompleted: true,
-          acceptedTermsAt: new Date().toISOString(),
-        });
-        setHasCompletedOnboarding(true);
-        setLoading(false);
-
-        // Remove the query param from URL for cleaner look
-        const url = new URL(window.location.href);
-        url.searchParams.delete('paddlelink');
-        window.history.replaceState({}, '', url.toString());
-        return;
-      }
-
-      // Check if paddle demo was previously set
-      const storedPaddleDemo = sessionStorage.getItem('surbee_paddle_demo');
-      if (storedPaddleDemo === 'true') {
-        setIsPaddleDemo(true);
-        setUser(PADDLE_DEMO_USER);
-        setUserProfile({
-          name: 'Paddle',
-          onboardingCompleted: true,
-          acceptedTermsAt: new Date().toISOString(),
-        });
-        setHasCompletedOnboarding(true);
-        setLoading(false);
-        return;
-      }
-    }
-  }, []);
+  const [isPaddleDemo, setIsPaddleDemo] = useState(initialPaddleDemo);
 
   // Load recent accounts from localStorage on mount
   useEffect(() => {
