@@ -5,11 +5,41 @@ import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 interface UserProfile {
-  name: string;
-  age: number;
-  interests: string[];
-  surveyPreference: 'research' | 'fast';
+  name?: string;
+  age?: number;
+  interests?: string[];
+  surveyPreference?: 'research' | 'fast';
+  // New onboarding fields
+  acceptedTermsAt?: string;
+  subscribedToEmails?: boolean;
+  onboardingCompleted?: boolean;
 }
+
+// Paddle demo user for testing
+const PADDLE_DEMO_USER = {
+  id: 'paddle-demo-user',
+  email: 'demo@paddle.com',
+  user_metadata: {
+    full_name: 'Paddle',
+    name: 'Paddle',
+  },
+  app_metadata: {
+    provider: 'demo',
+  },
+} as any;
+
+// Recent account for account switching
+export interface RecentAccount {
+  userId: string;
+  email: string;
+  displayName: string;
+  picture?: string;
+  provider: 'google' | 'github' | 'email';
+  lastUsed: number; // timestamp
+}
+
+const RECENT_ACCOUNTS_KEY = 'surbee_recent_accounts';
+const MAX_RECENT_ACCOUNTS = 5;
 
 interface AuthContextType {
   user: User | null;
@@ -18,13 +48,17 @@ interface AuthContextType {
   error: string | null;
   userProfile: UserProfile | null;
   hasCompletedOnboarding: boolean;
+  recentAccounts: RecentAccount[];
+  isPaddleDemo: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  signInWithOAuth: (provider: 'github' | 'google') => Promise<{ error: Error | null }>;
+  signInWithOAuth: (provider: 'github' | 'google', loginHint?: string) => Promise<{ error: Error | null }>;
   updateUserProfile: (profile: UserProfile) => Promise<void>;
   updatePassword: (password: string) => Promise<{ error: Error | null }>;
   deleteAccount: () => Promise<{ error: Error | null }>;
+  switchToAccount: (account: RecentAccount) => Promise<void>;
+  removeRecentAccount: (userId: string) => void;
   clearError: () => void;
 }
 
@@ -37,9 +71,98 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [recentAccounts, setRecentAccounts] = useState<RecentAccount[]>([]);
+  const [isPaddleDemo, setIsPaddleDemo] = useState(false);
+
+  // Check for Paddle demo mode on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paddleLink = urlParams.get('paddlelink');
+
+      if (paddleLink === 'true') {
+        // Store paddle demo mode in sessionStorage so it persists during navigation
+        sessionStorage.setItem('surbee_paddle_demo', 'true');
+        setIsPaddleDemo(true);
+        setUser(PADDLE_DEMO_USER);
+        setUserProfile({
+          name: 'Paddle',
+          onboardingCompleted: true,
+          acceptedTermsAt: new Date().toISOString(),
+        });
+        setHasCompletedOnboarding(true);
+        setLoading(false);
+
+        // Remove the query param from URL for cleaner look
+        const url = new URL(window.location.href);
+        url.searchParams.delete('paddlelink');
+        window.history.replaceState({}, '', url.toString());
+        return;
+      }
+
+      // Check if paddle demo was previously set
+      const storedPaddleDemo = sessionStorage.getItem('surbee_paddle_demo');
+      if (storedPaddleDemo === 'true') {
+        setIsPaddleDemo(true);
+        setUser(PADDLE_DEMO_USER);
+        setUserProfile({
+          name: 'Paddle',
+          onboardingCompleted: true,
+          acceptedTermsAt: new Date().toISOString(),
+        });
+        setHasCompletedOnboarding(true);
+        setLoading(false);
+        return;
+      }
+    }
+  }, []);
+
+  // Load recent accounts from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(RECENT_ACCOUNTS_KEY);
+      if (stored) {
+        const accounts = JSON.parse(stored) as RecentAccount[];
+        setRecentAccounts(accounts);
+      }
+    } catch (err) {
+      console.error('Error loading recent accounts:', err);
+    }
+  }, []);
+
+  // Save current user to recent accounts when they log in
+  useEffect(() => {
+    if (user?.id && user?.email) {
+      const provider = user.app_metadata?.provider as 'google' | 'github' | 'email' || 'email';
+      const displayName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User';
+      const picture = user.user_metadata?.picture || user.user_metadata?.avatar_url;
+
+      const newAccount: RecentAccount = {
+        userId: user.id,
+        email: user.email,
+        displayName,
+        picture,
+        provider,
+        lastUsed: Date.now(),
+      };
+
+      setRecentAccounts(prev => {
+        // Remove existing entry for this user
+        const filtered = prev.filter(a => a.userId !== user.id);
+        // Add to front
+        const updated = [newAccount, ...filtered].slice(0, MAX_RECENT_ACCOUNTS);
+        // Save to localStorage
+        localStorage.setItem(RECENT_ACCOUNTS_KEY, JSON.stringify(updated));
+        return updated;
+      });
+    }
+  }, [user?.id, user?.email]);
 
   // Initialize auth state from Supabase
   useEffect(() => {
+    // Skip if in Paddle demo mode
+    if (isPaddleDemo) return;
+
     const initAuth = async () => {
       try {
         // Get current session
@@ -55,9 +178,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initAuth();
 
-    // Listen for auth changes
+    // Listen for auth changes (only if not in demo mode)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event: AuthChangeEvent, session: Session | null) => {
+        if (isPaddleDemo) return;
         setSession(session);
         setUser(session?.user ?? null);
       }
@@ -66,7 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription?.unsubscribe();
     };
-  }, []);
+  }, [isPaddleDemo]);
 
   // Load user profile from database (with localStorage fallback)
   useEffect(() => {
@@ -99,12 +223,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 age: data.profile.age || 0,
                 interests: data.profile.interests || [],
                 surveyPreference: data.profile.survey_preference || 'fast',
+                acceptedTermsAt: data.profile.accepted_terms_at,
+                subscribedToEmails: data.profile.subscribed_to_emails,
+                onboardingCompleted: data.profile.onboarding_completed,
               };
               setUserProfile(profile);
-              setHasCompletedOnboarding(data.profile.onboarding_completed || false);
+              setHasCompletedOnboarding(data.profile.onboarding_completed || !!data.profile.accepted_terms_at);
               // Sync to localStorage
               localStorage.setItem('surbee_user_profile', JSON.stringify(profile));
-              if (data.profile.onboarding_completed) {
+              if (data.profile.onboarding_completed || data.profile.accepted_terms_at) {
                 localStorage.setItem('surbee_onboarding_completed', 'true');
               }
             }
@@ -156,6 +283,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      // Clear paddle demo mode if active
+      if (isPaddleDemo) {
+        sessionStorage.removeItem('surbee_paddle_demo');
+        setIsPaddleDemo(false);
+        setUser(null);
+        setUserProfile(null);
+        return;
+      }
+
       await supabase.auth.signOut();
       // Clear local storage preferences
       localStorage.removeItem('surbee_user_preferences');
@@ -212,14 +348,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signInWithOAuth = async (provider: 'github' | 'google') => {
+  const signInWithOAuth = async (provider: 'github' | 'google', loginHint?: string) => {
     try {
       setError(null);
+      const options: any = {
+        redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
+      };
+
+      // Add login_hint for faster account selection (works with Google)
+      if (loginHint && provider === 'google') {
+        options.queryParams = {
+          login_hint: loginHint,
+        };
+      }
+
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,
-        options: {
-          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
-        },
+        options,
       });
       if (oauthError) {
         setError(oauthError.message);
@@ -234,12 +379,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateUserProfile = async (profile: UserProfile) => {
     try {
+      // Merge with existing profile
+      const mergedProfile = { ...userProfile, ...profile };
+
       // Save to localStorage as backup
-      localStorage.setItem('surbee_user_profile', JSON.stringify(profile));
+      localStorage.setItem('surbee_user_profile', JSON.stringify(mergedProfile));
       localStorage.setItem('surbee_onboarding_completed', 'true');
 
       // Update state
-      setUserProfile(profile);
+      setUserProfile(mergedProfile);
       setHasCompletedOnboarding(true);
 
       // If user is logged in, save to database
@@ -254,7 +402,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               age: profile.age,
               interests: profile.interests,
               survey_preference: profile.surveyPreference,
-              onboarding_completed: true,
+              onboarding_completed: profile.onboardingCompleted ?? true,
+              accepted_terms_at: profile.acceptedTermsAt,
+              subscribed_to_emails: profile.subscribedToEmails,
             },
           }),
         });
@@ -287,6 +437,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
   };
 
+  // Switch to a different account
+  const switchToAccount = async (account: RecentAccount) => {
+    try {
+      // Sign out current user first
+      await supabase.auth.signOut();
+      localStorage.removeItem('surbee_user_preferences');
+
+      // Trigger re-authentication based on provider
+      if (account.provider === 'google') {
+        await signInWithOAuth('google', account.email);
+      } else if (account.provider === 'github') {
+        await signInWithOAuth('github');
+      } else {
+        // For email accounts, send a magic link
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email: account.email,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
+        });
+        if (otpError) {
+          setError(otpError.message);
+        }
+      }
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  // Remove an account from recent accounts list
+  const removeRecentAccount = (userId: string) => {
+    setRecentAccounts(prev => {
+      const updated = prev.filter(a => a.userId !== userId);
+      localStorage.setItem(RECENT_ACCOUNTS_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const value = {
     user,
     session,
@@ -294,6 +482,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     error,
     userProfile,
     hasCompletedOnboarding,
+    recentAccounts,
+    isPaddleDemo,
     signIn,
     signUp,
     signOut,
@@ -301,6 +491,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateUserProfile,
     updatePassword,
     deleteAccount,
+    switchToAccount,
+    removeRecentAccount,
     clearError,
   };
 
