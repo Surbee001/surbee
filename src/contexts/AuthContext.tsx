@@ -73,6 +73,10 @@ const checkPaddleDemo = (): boolean => {
 
   if (paddleLink === 'true') {
     sessionStorage.setItem('surbee_paddle_demo', 'true');
+    // Set dark mode for paddle demo
+    localStorage.setItem('surbee-theme', 'dark');
+    document.documentElement.classList.remove('light');
+    document.documentElement.classList.add('dark');
     // Remove the query param from URL for cleaner look
     const url = new URL(window.location.href);
     url.searchParams.delete('paddlelink');
