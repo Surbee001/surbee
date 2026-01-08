@@ -2,8 +2,6 @@
 import React from 'react'
 import superjson from 'superjson'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ClerkProvider } from '@clerk/nextjs'
-import { dark } from '@clerk/themes'
 import { api } from '@/lib/trpc/react'
 import { httpLink, loggerLink } from '@trpc/client'
 import { supabase } from '@/lib/supabase'
@@ -60,38 +58,32 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   )
 
   return (
-    <ClerkProvider
-      appearance={{
-        baseTheme: dark,
-      }}
-    >
-      <ErrorBoundary>
-        <CookieConsentProvider>
-          <AuthProvider>
-            <ErrorBoundary>
-              <RealtimeProvider>
-                <ThemeProvider>
-                  <UserPreferencesProvider>
-                    <SettingsProvider>
-                      <AnalyticsProvider>
-                        <api.Provider client={trpcClient} queryClient={queryClient}>
-                          <QueryClientProvider client={queryClient}>
-                            <ErrorBoundary>
-                              {children}
-                            </ErrorBoundary>
-                            <Toaster position="top-right" />
-                          </QueryClientProvider>
-                        </api.Provider>
-                      </AnalyticsProvider>
-                    </SettingsProvider>
-                  </UserPreferencesProvider>
-                </ThemeProvider>
-              </RealtimeProvider>
-            </ErrorBoundary>
-          </AuthProvider>
-        </CookieConsentProvider>
-      </ErrorBoundary>
-    </ClerkProvider>
+    <ErrorBoundary>
+      <CookieConsentProvider>
+        <AuthProvider>
+          <ErrorBoundary>
+            <RealtimeProvider>
+              <ThemeProvider>
+                <UserPreferencesProvider>
+                  <SettingsProvider>
+                    <AnalyticsProvider>
+                      <api.Provider client={trpcClient} queryClient={queryClient}>
+                        <QueryClientProvider client={queryClient}>
+                          <ErrorBoundary>
+                            {children}
+                          </ErrorBoundary>
+                          <Toaster position="top-right" />
+                        </QueryClientProvider>
+                      </api.Provider>
+                    </AnalyticsProvider>
+                  </SettingsProvider>
+                </UserPreferencesProvider>
+              </ThemeProvider>
+            </RealtimeProvider>
+          </ErrorBoundary>
+        </AuthProvider>
+      </CookieConsentProvider>
+    </ErrorBoundary>
   );
 }
 

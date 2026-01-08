@@ -1,4 +1,3 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
@@ -27,7 +26,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   // Content Security Policy - adjust as needed for your app
   response.headers.set(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://cdn.tailwindcss.com https://unpkg.com https://*.clerk.accounts.dev https://clerk.accounts.dev; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.surbee.dev https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://api.deepseek.com https://vercel.live https://*.clerk.accounts.dev https://clerk.accounts.dev; frame-src 'self' https://form.surbee.dev https://*.clerk.accounts.dev; frame-ancestors 'none';"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.surbee.dev https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://api.deepseek.com https://vercel.live; frame-src 'self' https://form.surbee.dev; frame-ancestors 'none';"
   );
 
   // Strict Transport Security (HTTPS only)
@@ -38,7 +37,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   return response;
 }
 
-export default clerkMiddleware(async (_auth, request: NextRequest) => {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get('host') || '';
 
@@ -119,7 +118,7 @@ export default clerkMiddleware(async (_auth, request: NextRequest) => {
   addSecurityHeaders(supabaseResponse);
 
   return supabaseResponse
-});
+}
 
 export const config = {
   matcher: [

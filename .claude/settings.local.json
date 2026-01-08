@@ -163,7 +163,8 @@
       "mcp__unframer__getSelectedNodesXml",
       "mcp__unframer__getCMSCollections",
       "mcp__supabase__get_project_url",
-      "mcp__supabase__get_publishable_keys"
+      "mcp__supabase__get_publishable_keys",
+      "Bash(git -c user.name=\"Hadi\" -c user.email=\"hadi@surbee.com\" commit -m \"$\\(cat <<''EOF''\nfeat: add new GPT models and remove Clerk auth\n\n- Add GPT-5.2, GPT-5 Mini, and Codex Max to model selector\n- Codex Max is now \"Max\" tier \\(not Pro\\)\n- Hide Lema model for now\n- Completely remove Clerk auth \\(only using Supabase Auth\\)\n- Remove Clerk middleware wrapper, use plain Next.js middleware\n- Remove Clerk packages from dependencies\n- Update model mapping in surbeeWorkflowV3\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ],
     "deny": [],
     "ask": [],

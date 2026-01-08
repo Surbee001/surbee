@@ -169,6 +169,19 @@ const getModelConfig = (modelName: string = 'gpt-5') => {
     console.log('✅ Returning MISTRAL model (Fine-tuned Mistral Medium - Surbee)');
     return mistral('ft:mistral-medium-latest:0684c8ef:20251105:324d634c');
   }
+  // GPT-5 variants
+  if (normalizedModel === 'gpt-5.2' || normalizedModel.includes('gpt-5.2')) {
+    console.log('✅ Returning OPENAI model (GPT-5.2)');
+    return openai('gpt-5.2-2025-12-11');
+  }
+  if (normalizedModel === 'gpt-5-mini' || normalizedModel.includes('gpt-5-mini')) {
+    console.log('✅ Returning OPENAI model (GPT-5 Mini)');
+    return openai('gpt-5-mini-2025-08-07');
+  }
+  if (normalizedModel === 'gpt-5.1-codex' || normalizedModel.includes('codex')) {
+    console.log('✅ Returning OPENAI model (GPT-5.1 Codex Max)');
+    return openai('gpt-5.1-codex-max');
+  }
   console.log('✅ Returning OPENAI model (GPT-5)');
   return openai('gpt-5');
 };

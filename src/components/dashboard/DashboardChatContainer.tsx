@@ -1389,7 +1389,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                       <div className="whitespace-nowrap">
                         <div className="flex flex-row items-center gap-1.5">
                           <span className="flex flex-row items-center truncate" style={{ color: isModelExplicitlySelected ? '#0285ff' : 'inherit' }}>
-                            {!isModelExplicitlySelected ? 'Model' : selectedModel === 'claude-haiku' ? 'Claude Haiku 4.5' : selectedModel === 'gpt-5' ? 'GPT-5' : selectedModel === 'mistral' ? 'Lema 0.1' : selectedModel}
+                            {!isModelExplicitlySelected ? 'Model' : selectedModel === 'claude-haiku' ? 'Claude Haiku 4.5' : selectedModel === 'gpt-5' ? 'GPT-5' : selectedModel === 'gpt-5.2' ? 'GPT-5.2' : selectedModel === 'gpt-5-mini' ? 'GPT-5 Mini' : selectedModel === 'gpt-5.1-codex' ? 'Codex Max' : selectedModel}
                           </span>
                           <div
                             className="flex-shrink-0 p-0.5 -mr-1 cursor-pointer hover:opacity-70 transition-all duration-300 ease-out"
@@ -1495,6 +1495,99 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                   </div>
                 </DropdownMenuItem>
 
+                {/* GPT-5.2 */}
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
+                  onSelect={() => {
+                    if (userPlan === 'free' || userPlan === 'free_user') {
+                      router.push('/home/pricing');
+                      setIsModelOpen(false);
+                    } else {
+                      handleModelChange('gpt-5.2');
+                      setIsModelExplicitlySelected(true);
+                      setIsModelOpen(false);
+                    }
+                  }}
+                >
+                  <div className="flex items-start gap-3 w-full">
+                    <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
+                      <svg height="18" width="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
+                        <path d="M20.247 10.277a4.68 4.68 0 0 0-.412-3.888c-1.05-1.805-3.163-2.734-5.226-2.297A4.83 4.83 0 0 0 10.991 2.5c-2.108-.005-3.98 1.335-4.628 3.314a4.8 4.8 0 0 0-3.208 2.297 4.74 4.74 0 0 0 .597 5.613 4.68 4.68 0 0 0 .412 3.888c1.051 1.805 3.163 2.734 5.226 2.297a4.82 4.82 0 0 0 3.618 1.59c2.11.006 3.981-1.334 4.63-3.316a4.8 4.8 0 0 0 3.208-2.296 4.74 4.74 0 0 0-.598-5.612v.002Zm-7.238 9.981a3.63 3.63 0 0 1-2.31-.824c.03-.015.08-.043.114-.063l3.834-2.185a.61.61 0 0 0 .316-.539v-5.334l1.62.924a.06.06 0 0 1 .031.043v4.418c-.002 1.964-1.614 3.556-3.605 3.56m-7.752-3.267a3.5 3.5 0 0 1-.43-2.386l.113.067 3.834 2.185a.63.63 0 0 0 .63 0l4.681-2.667v1.847a.06.06 0 0 1-.023.049l-3.875 2.208c-1.727.981-3.932.398-4.93-1.303m-1.01-8.259a3.6 3.6 0 0 1 1.878-1.56l-.001.13v4.37a.61.61 0 0 0 .314.538l4.681 2.667-1.62.923a.06.06 0 0 1-.055.005l-3.876-2.21a3.54 3.54 0 0 1-1.321-4.862Zm13.314 3.058-4.68-2.668L14.5 8.2a.06.06 0 0 1 .055-.005l3.876 2.208a3.536 3.536 0 0 1 1.32 4.865 3.6 3.6 0 0 1-1.877 1.56v-4.5a.61.61 0 0 0-.313-.538m1.613-2.396-.113-.067-3.835-2.185a.63.63 0 0 0-.63 0L9.916 9.81V7.963a.06.06 0 0 1 .022-.05l3.876-2.206c1.726-.983 3.933-.398 4.929 1.306.42.72.573 1.562.43 2.381zm-10.14 3.291-1.62-.923a.06.06 0 0 1-.032-.044V7.301C7.383 5.335 9 3.741 10.993 3.742c.843 0 1.659.292 2.307.824l-.114.064-3.834 2.185a.61.61 0 0 0-.315.538zv.002Zm.88-1.872L12 9.625l2.085 1.187v2.376L12 14.375l-2.085-1.187z" />
+                      </svg>
+                    </div>
+                    <div className="flex flex-col w-full">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-sm">GPT-5.2</p>
+                        {(userPlan === 'free' || userPlan === 'free_user') && (
+                          <span className="inline-flex items-center h-4 px-2 rounded-2xl text-[0.5625rem] font-medium uppercase" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
+                            Pro
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Latest GPT model with enhanced reasoning</p>
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+
+                {/* GPT-5 Mini */}
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
+                  onSelect={() => {
+                    handleModelChange('gpt-5-mini');
+                    setIsModelExplicitlySelected(true);
+                    setIsModelOpen(false);
+                  }}
+                >
+                  <div className="flex items-start gap-3 w-full">
+                    <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
+                      <svg height="18" width="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
+                        <path d="M20.247 10.277a4.68 4.68 0 0 0-.412-3.888c-1.05-1.805-3.163-2.734-5.226-2.297A4.83 4.83 0 0 0 10.991 2.5c-2.108-.005-3.98 1.335-4.628 3.314a4.8 4.8 0 0 0-3.208 2.297 4.74 4.74 0 0 0 .597 5.613 4.68 4.68 0 0 0 .412 3.888c1.051 1.805 3.163 2.734 5.226 2.297a4.82 4.82 0 0 0 3.618 1.59c2.11.006 3.981-1.334 4.63-3.316a4.8 4.8 0 0 0 3.208-2.296 4.74 4.74 0 0 0-.598-5.612v.002Zm-7.238 9.981a3.63 3.63 0 0 1-2.31-.824c.03-.015.08-.043.114-.063l3.834-2.185a.61.61 0 0 0 .316-.539v-5.334l1.62.924a.06.06 0 0 1 .031.043v4.418c-.002 1.964-1.614 3.556-3.605 3.56m-7.752-3.267a3.5 3.5 0 0 1-.43-2.386l.113.067 3.834 2.185a.63.63 0 0 0 .63 0l4.681-2.667v1.847a.06.06 0 0 1-.023.049l-3.875 2.208c-1.727.981-3.932.398-4.93-1.303m-1.01-8.259a3.6 3.6 0 0 1 1.878-1.56l-.001.13v4.37a.61.61 0 0 0 .314.538l4.681 2.667-1.62.923a.06.06 0 0 1-.055.005l-3.876-2.21a3.54 3.54 0 0 1-1.321-4.862Zm13.314 3.058-4.68-2.668L14.5 8.2a.06.06 0 0 1 .055-.005l3.876 2.208a3.536 3.536 0 0 1 1.32 4.865 3.6 3.6 0 0 1-1.877 1.56v-4.5a.61.61 0 0 0-.313-.538m1.613-2.396-.113-.067-3.835-2.185a.63.63 0 0 0-.63 0L9.916 9.81V7.963a.06.06 0 0 1 .022-.05l3.876-2.206c1.726-.983 3.933-.398 4.929 1.306.42.72.573 1.562.43 2.381zm-10.14 3.291-1.62-.923a.06.06 0 0 1-.032-.044V7.301C7.383 5.335 9 3.741 10.993 3.742c.843 0 1.659.292 2.307.824l-.114.064-3.834 2.185a.61.61 0 0 0-.315.538zv.002Zm.88-1.872L12 9.625l2.085 1.187v2.376L12 14.375l-2.085-1.187z" />
+                      </svg>
+                    </div>
+                    <div className="flex flex-col w-full">
+                      <p className="text-sm mb-0.5">GPT-5 Mini</p>
+                      <p className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Fast & affordable for simple tasks</p>
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+
+                {/* Codex Max */}
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
+                  onSelect={() => {
+                    if (userPlan === 'free' || userPlan === 'free_user' || userPlan === 'pro' || userPlan === 'surbee_pro') {
+                      router.push('/home/pricing');
+                      setIsModelOpen(false);
+                    } else {
+                      handleModelChange('gpt-5.1-codex');
+                      setIsModelExplicitlySelected(true);
+                      setIsModelOpen(false);
+                    }
+                  }}
+                >
+                  <div className="flex items-start gap-3 w-full">
+                    <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
+                      <svg height="18" width="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
+                        <path d="M20.247 10.277a4.68 4.68 0 0 0-.412-3.888c-1.05-1.805-3.163-2.734-5.226-2.297A4.83 4.83 0 0 0 10.991 2.5c-2.108-.005-3.98 1.335-4.628 3.314a4.8 4.8 0 0 0-3.208 2.297 4.74 4.74 0 0 0 .597 5.613 4.68 4.68 0 0 0 .412 3.888c1.051 1.805 3.163 2.734 5.226 2.297a4.82 4.82 0 0 0 3.618 1.59c2.11.006 3.981-1.334 4.63-3.316a4.8 4.8 0 0 0 3.208-2.296 4.74 4.74 0 0 0-.598-5.612v.002Zm-7.238 9.981a3.63 3.63 0 0 1-2.31-.824c.03-.015.08-.043.114-.063l3.834-2.185a.61.61 0 0 0 .316-.539v-5.334l1.62.924a.06.06 0 0 1 .031.043v4.418c-.002 1.964-1.614 3.556-3.605 3.56m-7.752-3.267a3.5 3.5 0 0 1-.43-2.386l.113.067 3.834 2.185a.63.63 0 0 0 .63 0l4.681-2.667v1.847a.06.06 0 0 1-.023.049l-3.875 2.208c-1.727.981-3.932.398-4.93-1.303m-1.01-8.259a3.6 3.6 0 0 1 1.878-1.56l-.001.13v4.37a.61.61 0 0 0 .314.538l4.681 2.667-1.62.923a.06.06 0 0 1-.055.005l-3.876-2.21a3.54 3.54 0 0 1-1.321-4.862Zm13.314 3.058-4.68-2.668L14.5 8.2a.06.06 0 0 1 .055-.005l3.876 2.208a3.536 3.536 0 0 1 1.32 4.865 3.6 3.6 0 0 1-1.877 1.56v-4.5a.61.61 0 0 0-.313-.538m1.613-2.396-.113-.067-3.835-2.185a.63.63 0 0 0-.63 0L9.916 9.81V7.963a.06.06 0 0 1 .022-.05l3.876-2.206c1.726-.983 3.933-.398 4.929 1.306.42.72.573 1.562.43 2.381zm-10.14 3.291-1.62-.923a.06.06 0 0 1-.032-.044V7.301C7.383 5.335 9 3.741 10.993 3.742c.843 0 1.659.292 2.307.824l-.114.064-3.834 2.185a.61.61 0 0 0-.315.538zv.002Zm.88-1.872L12 9.625l2.085 1.187v2.376L12 14.375l-2.085-1.187z" />
+                      </svg>
+                    </div>
+                    <div className="flex flex-col w-full">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-sm">Codex Max</p>
+                        {(userPlan === 'free' || userPlan === 'free_user' || userPlan === 'pro' || userPlan === 'surbee_pro') && (
+                          <span className="inline-flex items-center h-4 px-2 rounded-2xl text-[0.5625rem] font-medium uppercase" style={{ backgroundColor: 'rgba(251, 146, 60, 0.1)', color: '#fb923c' }}>
+                            Max
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Optimized for code and technical tasks</p>
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+
                 {/* Claude Haiku 4.5 */}
                 <DropdownMenuItem
                   className="cursor-pointer"
@@ -1514,40 +1607,6 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                   </div>
                 </DropdownMenuItem>
 
-                {/* Lema 0.1 */}
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '0' }}
-                  onSelect={() => {
-                    if (userPlan === 'free' || userPlan === 'free_user' || userPlan === 'pro' || userPlan === 'surbee_pro') {
-                      router.push('/home/pricing');
-                      setIsModelOpen(false);
-                    } else {
-                      handleModelChange('mistral');
-                      setIsModelExplicitlySelected(true);
-                      setIsModelOpen(false);
-                    }
-                  }}
-                >
-                  <div className="flex items-start gap-3 w-full">
-                    <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
-                      <svg height="18" width="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
-                        <path clipRule="evenodd" d="M11.2 18.1q.8 1.825.8 3.9a9.9 9.9 0 0 1 .775-3.9 10.3 10.3 0 0 1 2.15-3.175A9.9 9.9 0 0 1 18.1 12.8 9.6 9.6 0 0 1 22 12a9.9 9.9 0 0 1-3.9-.775 10.3 10.3 0 0 1-3.175-2.15q-1.35-1.35-2.15-3.175A9.9 9.9 0 0 1 12 2a9.6 9.6 0 0 1-.8 3.9 9.9 9.9 0 0 1-2.125 3.175q-1.35 1.35-3.175 2.15A9.9 9.9 0 0 1 2 12q2.075 0 3.9.8a9.9 9.9 0 0 1 3.175 2.125q1.35 1.35 2.125 3.175" fillRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="flex flex-col w-full">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <p className="text-sm">Lema 0.1</p>
-                        {(userPlan === 'free' || userPlan === 'free_user' || userPlan === 'pro' || userPlan === 'surbee_pro') && (
-                          <span className="inline-flex items-center h-4 px-2 rounded-2xl text-[0.5625rem] font-medium uppercase" style={{ backgroundColor: 'rgba(251, 146, 60, 0.1)', color: '#fb923c' }}>
-                            Max
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Surbee's survey-optimized model</p>
-                    </div>
-                  </div>
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             </div>

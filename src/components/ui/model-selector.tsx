@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export type AIModel = 'gpt-5' | 'claude-haiku' | 'mistral';
+export type AIModel = 'gpt-5' | 'gpt-5.2' | 'gpt-5-mini' | 'gpt-5.1-codex' | 'claude-haiku' | 'mistral';
 
 interface ModelSelectorProps {
   selectedModel: AIModel;
@@ -19,8 +19,10 @@ interface ModelSelectorProps {
 
 const models = [
   { id: 'gpt-5' as AIModel, name: 'GPT-5', provider: 'OpenAI' },
+  { id: 'gpt-5.2' as AIModel, name: 'GPT-5.2', provider: 'OpenAI' },
+  { id: 'gpt-5-mini' as AIModel, name: 'GPT-5 Mini', provider: 'OpenAI' },
+  { id: 'gpt-5.1-codex' as AIModel, name: 'Codex Max', provider: 'OpenAI' },
   { id: 'claude-haiku' as AIModel, name: 'Haiku 4.5', provider: 'Anthropic' },
-  { id: 'mistral' as AIModel, name: 'Lema 0.1', provider: 'Surbee' }
 ];
 
 export default function ModelSelector({
