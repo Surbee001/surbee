@@ -459,15 +459,13 @@ function PublishDropdown({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  const cleanId = projectId.replace(/^project_/, '');
-  const urlSlug = customSlug || cleanId.substring(0, 8);
+  // Use the actual published URL from database if available, otherwise show a preview slug
+  const urlSlug = publishedUrl || customSlug || projectId.replace(/^project_/, '').substring(0, 8);
   const displayUrl = `form.surbee.dev/${urlSlug}`;
 
   const copyUrl = async () => {
     try {
-      const cleanId = projectId.replace(/^project_/, '');
-      const slug = customSlug || cleanId.substring(0, 8);
-      const fullUrl = `https://form.surbee.dev/${slug}`;
+      const fullUrl = `https://form.surbee.dev/${urlSlug}`;
       await navigator.clipboard.writeText(fullUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -2342,11 +2340,44 @@ function ProjectPreviewOnly({
 
 // Wrapper component that can use useSandpack hook
 function SandpackPreviewWrapper() {
-  const { sandpack } = useSandpack();
+  const { sandpack, dispatch } = useSandpack();
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     console.log('[SandpackPreviewWrapper] Sandpack status:', sandpack.status, 'error:', sandpack.error);
+    // Detect timeout or connection errors
+    if (sandpack.error?.message?.includes('TIME_OUT') || sandpack.error?.message?.includes('connect')) {
+      setHasError(true);
+    }
   }, [sandpack.status, sandpack.error]);
+
+  const handleRetry = () => {
+    setHasError(false);
+    // Force Sandpack to reconnect
+    dispatch({ type: 'refresh' });
+  };
+
+  if (hasError || sandpack.error) {
+    return (
+      <div className="h-full w-full bg-[#0a0a0a] flex items-center justify-center">
+        <div className="text-center px-6">
+          <p className="text-sm mb-4" style={{ color: 'rgba(232, 232, 232, 0.6)' }}>
+            Preview connection timed out
+          </p>
+          <button
+            onClick={handleRetry}
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-90"
+            style={{
+              background: '#E8E8E8',
+              color: 'rgb(19, 19, 20)'
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full w-full bg-[#0a0a0a]">
