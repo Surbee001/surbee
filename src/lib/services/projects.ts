@@ -297,14 +297,14 @@ export class ProjectsService {
         return { data: null, error: checkError as any };
       }
 
-      const random = Math.random().toString(36).substring(2, 8);
-      const publishedUrl = `${projectId.substring(0, 8)}_${random}`;
+      // Preserve existing published_url if project is already published, otherwise generate new one
+      const publishedUrl = existingProject?.published_url || `${projectId.substring(0, 8)}_${Math.random().toString(36).substring(2, 8)}`;
 
       // Project exists, update it - preserve existing sandbox_bundle if not provided
       const updateData: any = {
         status: 'published',
         published_url: publishedUrl,
-        published_at: new Date().toISOString(),
+        published_at: existingProject?.published_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
       
