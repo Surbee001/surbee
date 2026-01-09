@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from 'framer-motion';
+import { useMemo } from 'react';
+import { cn } from '@/lib/utils';
 
 function getEditedFiles(output: any): string[] {
   if (!output) return [];
@@ -31,13 +33,31 @@ function getToolAction(toolName: string, isActive: boolean): { verb: string; ico
   return activeVerbs[toolName] || { verb: isActive ? 'Processing' : 'Processed', icon: 'default' };
 }
 
-// Shimmer text component for active state
+// Shimmer text component for active state - matches reasoning shimmer effect
 function ShimmerText({ children }: { children: string }) {
+  const dynamicSpread = useMemo(() => {
+    return children.length * 1.5;
+  }, [children]);
+
   return (
     <motion.span
-      className="inline-block bg-gradient-to-r from-muted-foreground via-foreground to-muted-foreground bg-[length:200%_100%] bg-clip-text text-transparent"
-      animate={{ backgroundPosition: ['100% 0%', '0% 0%'] }}
-      transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+      className={cn(
+        'relative inline-block bg-[length:250%_100%,auto] bg-clip-text',
+        'text-transparent [--base-color:#a1a1aa] [--base-gradient-color:#000]',
+        '[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))] [background-repeat:no-repeat,padding-box]',
+        'dark:[--base-color:#71717a] dark:[--base-gradient-color:#ffffff] dark:[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))]'
+      )}
+      initial={{ backgroundPosition: '100% center' }}
+      animate={{ backgroundPosition: '0% center' }}
+      transition={{
+        repeat: Infinity,
+        duration: 1.5,
+        ease: 'linear',
+      }}
+      style={{
+        '--spread': `${dynamicSpread}px`,
+        backgroundImage: `var(--bg), linear-gradient(var(--base-color), var(--base-color))`,
+      } as React.CSSProperties}
     >
       {children}
     </motion.span>

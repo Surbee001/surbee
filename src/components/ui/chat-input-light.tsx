@@ -71,6 +71,8 @@ interface ChatInputLightProps {
   onHasFilesChange?: (hasFiles: boolean) => void; // callback when files are added/removed
   placeholder?: string;
   className?: string;
+  solidBackground?: boolean; // if true, uses solid grey background instead of transparent
+  darkSolidBackground?: boolean; // if true with solidBackground, uses darker grey (#1a1a1a) instead of subtle
   isEditMode?: boolean;
   onToggleEditMode?: () => void;
   isAskMode?: boolean;
@@ -129,6 +131,8 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
   references = [],
   onRemoveReference,
   forceDarkStyle = false,
+  solidBackground = false,
+  darkSolidBackground = false,
 }, ref) {
   const [chatText, setChatText] = useState("");
   // Initialize theme by checking DOM immediately
@@ -492,8 +496,14 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
           borderRadius: borderRadius,
           border: shouldGlow
             ? '1px solid rgba(255, 255, 255, 0.8)'
-            : '1px solid var(--surbee-dropdown-border)',
-          backgroundColor: 'transparent',
+            : solidBackground
+              ? 'none'
+              : '1px solid var(--surbee-dropdown-border)',
+          backgroundColor: solidBackground
+            ? (detectedTheme === 'white'
+                ? 'rgba(0, 0, 0, 0.04)'
+                : (darkSolidBackground ? '#1a1a1a' : 'rgba(255, 255, 255, 0.06)'))
+            : 'transparent',
           boxShadow: shouldGlow ? '0 0 20px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.2)' : 'none'
         }}
         onDragOver={handleDragOver}

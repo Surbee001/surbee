@@ -43,11 +43,9 @@ export async function middleware(request: NextRequest) {
 
   // Handle form.surbee.dev subdomain - serve published surveys
   if (hostname.startsWith('form.') || hostname === 'form.surbee.dev' || hostname === 'form.localhost:3000') {
-    // Rewrite requests to the /s/[url] route
-    // form.surbee.dev/abc123 -> /s/abc123
+    // Root of form subdomain - redirect to main site
     if (pathname === '/' || pathname === '') {
-      // Root of form subdomain - could show a landing or 404
-      return NextResponse.rewrite(new URL('/s/index', request.url));
+      return NextResponse.redirect('https://surbee.dev');
     }
 
     // Skip static assets and API routes

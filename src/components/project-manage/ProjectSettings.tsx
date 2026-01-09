@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import {
   Shield, Eye, EyeOff, AlertTriangle, Trash2, Settings2,
-  Check, Copy, ExternalLink, Upload, Image, Lock, MessageSquare, ChevronDown, Info
+  Check, Copy, ExternalLink, Upload, Image, Lock, MessageSquare, ChevronDown, Info, X
 } from 'lucide-react';
 import { CipherTier, CIPHER_TIERS, CIPHER_CHECKS, getChecksForTier, CipherCheckId } from '@/lib/cipher/tier-config';
 
@@ -472,22 +472,23 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="settings-modal-backdrop"
-        onClick={onClose}
+        className="settings-fullscreen"
       >
-        <motion.div
-          className="settings-modal-content"
-          onClick={(e) => e.stopPropagation()}
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+        {/* Close button */}
+        <button
+          className="settings-close-btn"
+          onClick={onClose}
+          aria-label="Close settings"
         >
-    <div className="project-settings-root">
-      {/* Header */}
-      <header className="settings-header">
-        <h1 className="settings-title">Project settings</h1>
-      </header>
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="settings-scroll-container">
+          <div className="project-settings-root">
+            {/* Header */}
+            <header className="settings-header">
+              <h1 className="settings-title">Project settings</h1>
+            </header>
 
       {/* Tab Navigation */}
       <nav className="settings-tabs">
@@ -2414,9 +2415,54 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           scrollbar-color: rgba(232, 232, 232, 0.08) transparent;
         }
 
+        /* Full Screen Layout */
+        .settings-fullscreen {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          width: 100vw;
+          height: 100vh;
+          z-index: 99999;
+          background: var(--surbee-bg-primary, rgb(19, 19, 20));
+          overflow: hidden;
+        }
+
+        .settings-close-btn {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          z-index: 100000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          background: rgba(232, 232, 232, 0.06);
+          border: 1px solid rgba(232, 232, 232, 0.1);
+          border-radius: 10px;
+          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .settings-close-btn:hover {
+          background: rgba(232, 232, 232, 0.1);
+          color: var(--surbee-fg-primary, #E8E8E8);
+          border-color: rgba(232, 232, 232, 0.2);
+        }
+
+        .settings-scroll-container {
+          width: 100%;
+          height: 100%;
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(232, 232, 232, 0.08) transparent;
+        }
       `}</style>
-    </div>
-        </motion.div>
+          </div>
+        </div>
       </motion.div>
     </AnimatePresence>
   );

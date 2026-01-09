@@ -12,6 +12,7 @@ interface BundleVersion {
   };
   description: string;
   messageId?: string;
+  title?: string; // AI-generated checkpoint title
 }
 
 interface VersionHistoryProps {
@@ -83,11 +84,11 @@ export function VersionHistory({ versions, currentVersionId, onRestore }: Versio
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold" style={{ color: 'var(--surbee-fg-primary)' }}>
-                        Version {versionNumber}
+                      <span className="text-sm font-medium truncate" style={{ color: 'var(--surbee-fg-primary)' }}>
+                        {version.title || version.description || `Version ${versionNumber}`}
                       </span>
                       {isCurrentVersion && (
-                        <span className="px-2 py-0.5 text-xs rounded-full" style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' }}>
+                        <span className="px-2 py-0.5 text-xs rounded-full shrink-0" style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' }}>
                           Current
                         </span>
                       )}
@@ -95,10 +96,6 @@ export function VersionHistory({ versions, currentVersionId, onRestore }: Versio
 
                     <p className="text-xs mt-1" style={{ color: 'var(--surbee-fg-secondary)' }}>
                       {formatTimestamp(version.timestamp)}
-                    </p>
-
-                    <p className="text-xs mt-1.5" style={{ color: 'var(--surbee-fg-secondary)' }}>
-                      {Object.keys(version.bundle.files).length} files
                     </p>
                   </div>
 

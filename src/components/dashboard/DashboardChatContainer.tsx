@@ -43,6 +43,7 @@ interface DashboardChatContainerProps {
   userId: string;
   greeting: string;
   initialChatId?: string;
+  isChatPage?: boolean; // if true, uses solid grey chatbox background like project.id page
 }
 
 // Generate unique chat session ID
@@ -54,6 +55,7 @@ export function DashboardChatContainer({
   userId,
   greeting,
   initialChatId,
+  isChatPage = false,
 }: DashboardChatContainerProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -768,7 +770,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
         {hasStartedChat && !isBuildMode && (
           <motion.div
             ref={chatAreaRef}
-            className="flex-1 overflow-y-auto custom-scrollbar"
+            className="flex-1 overflow-y-auto custom-scrollbar px-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.2 }}
@@ -778,7 +780,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
             }}
           >
             <motion.div
-              className="mx-auto px-4 space-y-4"
+              className="mx-auto space-y-4"
               initial={{ maxWidth: '672px' }}
               animate={{ maxWidth: '820px' }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -920,52 +922,37 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
               >
-                {/* Plan pill with icon - shows for all users */}
-                <motion.div
-                  className="flex justify-center mb-8"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <div
-                    className="flex items-center gap-2 px-4 py-1.5 rounded-full text-sm"
-                    style={{
-                      backgroundColor: 'var(--surbee-accent-subtle)',
-                      color: 'var(--surbee-fg-secondary)',
-                    }}
+                {/* Plan pill - only shows for free plan users */}
+                {(userPlan === 'free' || userPlan === 'free_user' || !userPlan) && (
+                  <motion.div
+                    className="flex justify-center mb-8"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                   >
-                    <img
-                      src={
-                        userPlan === 'surbee_max' || userPlan === 'max' || userPlan === 'surbee_enterprise'
-                          ? 'https://ik.imagekit.io/on0moldgr/composition%20(2).svg'
-                          : userPlan === 'surbee_pro' || userPlan === 'pro'
-                            ? 'https://ik.imagekit.io/on0moldgr/composition%20(1).svg'
-                            : 'https://ik.imagekit.io/on0moldgr/composition.svg'
-                      }
-                      alt="Plan icon"
-                      className="w-4 h-4"
-                      style={{ filter: 'brightness(0) invert(0.9)' }}
-                    />
-                    <span>
-                      {userPlan === 'surbee_max' || userPlan === 'max' ? 'Max plan'
-                        : userPlan === 'surbee_enterprise' ? 'Enterprise plan'
-                        : userPlan === 'surbee_pro' || userPlan === 'pro' ? 'Pro plan'
-                        : 'Free plan'}
-                    </span>
-                    {(userPlan === 'free' || userPlan === 'free_user') && (
-                      <>
-                        <span style={{ color: 'var(--surbee-fg-muted)' }}>·</span>
-                        <button
-                          onClick={() => router.push('/home/pricing')}
-                          className="cursor-pointer transition-all duration-200 hover:underline hover:opacity-80"
-                          style={{ color: '#0285ff' }}
-                        >
-                          Upgrade
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </motion.div>
+                    <div
+                      className="flex items-center gap-2 px-4 py-1.5 rounded-full text-sm dark:bg-[var(--surbee-accent-subtle)] bg-black/8"
+                      style={{
+                        color: 'var(--surbee-fg-secondary)',
+                      }}
+                    >
+                      <img
+                        src="https://ik.imagekit.io/on0moldgr/composition.svg"
+                        alt="Plan icon"
+                        className="w-4 h-4 dark:invert-[0.9] invert-[0.3]"
+                      />
+                      <span>Free plan</span>
+                      <span style={{ color: 'var(--surbee-fg-muted)' }}>·</span>
+                      <button
+                        onClick={() => router.push('/home/pricing')}
+                        className="cursor-pointer transition-all duration-200 hover:underline hover:opacity-80"
+                        style={{ color: '#0285ff' }}
+                      >
+                        Upgrade
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
 
                 {/* Greeting text */}
                 <h1
@@ -1022,6 +1009,8 @@ Analyze the survey structure, questions, and design. Then help me build a simila
               references={references}
               onRemoveReference={handleRemoveReference}
               forceDarkStyle={true}
+              solidBackground={true}
+              darkSolidBackground={isChatPage}
             />
           </div>
 

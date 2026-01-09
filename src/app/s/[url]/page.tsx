@@ -281,20 +281,35 @@ export default function PublishedSurveyPage() {
   // Only show error if actually failed
   if (error || !survey) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+      <div
+        className="min-h-screen flex items-center justify-center p-6"
+        style={{
+          background: 'rgb(19, 19, 20)',
+          fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        }}
+      >
         <div className="text-center max-w-md mx-auto">
-          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <div className="w-8 h-8 border-2 border-slate-300 rounded"></div>
-          </div>
-          <h2 className="text-2xl font-semibold text-slate-800 mb-3">Survey Not Found</h2>
-          <p className="text-slate-600 mb-8 leading-relaxed">
+          <h2
+            className="text-2xl font-medium mb-4"
+            style={{ color: '#E8E8E8' }}
+          >
+            Survey not found
+          </h2>
+          <p
+            className="mb-8 leading-relaxed text-sm"
+            style={{ color: 'rgba(232, 232, 232, 0.6)' }}
+          >
             {error || 'This survey is not available. It may not be published yet or the link may be incorrect.'}
           </p>
           <a
-            href="/"
-            className="inline-block px-6 py-3 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors font-medium"
+            href="https://surbee.dev"
+            className="inline-block px-5 py-2.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-90"
+            style={{
+              background: '#E8E8E8',
+              color: 'rgb(19, 19, 20)'
+            }}
           >
-            Back to Home
+            Go to Surbee
           </a>
         </div>
       </div>

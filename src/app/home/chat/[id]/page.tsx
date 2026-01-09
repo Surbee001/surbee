@@ -38,6 +38,7 @@ function ChatContent() {
         userId={user.id}
         greeting=""
         initialChatId={chatId}
+        isChatPage={true}
       />
     </div>
   );

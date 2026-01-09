@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, useMemo, startTransition, useDeferredValue } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, useDeferredValue } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy, Hammer, Code, Terminal, AlertTriangle, Settings as SettingsIcon, Sun, Moon, Laptop, CheckCircle2, Coins } from "lucide-react";
 import UserNameBadge from "@/components/UserNameBadge";
@@ -564,13 +564,12 @@ function PublishDropdown({
                 overflow: "hidden",
                 borderRadius: "calc(0.5rem * 1.5)",
                 borderWidth: "1px",
-                borderColor: "hsl(60 3% 15%)",
-                backgroundColor: "hsl(0 0% 11%)",
+                borderColor: "rgba(232, 232, 232, 0.08)",
+                backgroundColor: "rgb(19, 19, 20)",
                 padding: "0px",
-                color: "hsl(45 40% 98%)",
-                boxShadow:
-                  "var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 4px 6px -1px rgb(0 0 0/0.1),0 2px 4px -2px rgb(0 0 0/0.1)",
-                maxWidth: "350px",
+                color: "#E8E8E8",
+                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
+                maxWidth: "380px",
                 animationName: "enter",
                 animationDuration: "0.15s",
                 outline: "none",
@@ -837,7 +836,7 @@ function PublishDropdown({
                                   color: "hsl(40 9% 75%)",
                                 }}
                               >
-                                surbee.dev/
+                                form.surbee.dev/
                               </span>
                               <input
                                 type="text"
@@ -860,7 +859,7 @@ function PublishDropdown({
                             </>
                           ) : (
                             <a
-                              href={`https://surbee.dev/${urlSlug}`}
+                              href={`https://form.surbee.dev/${urlSlug}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => {
@@ -888,7 +887,7 @@ function PublishDropdown({
                                   fontSynthesis: "none",
                                 }}
                               >
-                                surbee.dev/
+                                form.surbee.dev/
                               </span>
                               <span
                                 className="font-normal text-foreground"
@@ -2122,267 +2121,6 @@ function PublishDropdown({
                       </div>
                   </div>
                 </div>
-                <div
-                  className="md:px-4"
-                  style={{
-                    border: "0px solid rgb(229, 231, 235)",
-                    boxSizing: "border-box",
-                    borderColor: "hsl(60 3% 15%)",
-                    textRendering: "optimizelegibility",
-                    WebkitFontSmoothing: "antialiased",
-                    scrollbarWidth: "thin",
-                    scrollbarColor:
-                      "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
-                    paddingLeft: "1rem",
-                    paddingRight: "1rem",
-                    fontSynthesis: "none",
-                  }}
-                >
-                  <div
-                    className="flex flex-wrap items-center justify-between gap-2 md:flex-nowrap"
-                    style={{
-                      border: "0px solid rgb(229, 231, 235)",
-                      boxSizing: "border-box",
-                      borderColor: "hsl(60 3% 15%)",
-                      textRendering: "optimizelegibility",
-                      WebkitFontSmoothing: "antialiased",
-                      scrollbarWidth: "thin",
-                      scrollbarColor:
-                        "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: "0.5rem",
-                      flexWrap: "nowrap",
-                      fontSynthesis: "none",
-                    }}
-                  >
-                    <div
-                      className="flex items-center gap-2 text-base md:gap-1 md:text-sm"
-                      style={{
-                        border: "0px solid rgb(229, 231, 235)",
-                        boxSizing: "border-box",
-                        borderColor: "hsl(60 3% 15%)",
-                        textRendering: "optimizelegibility",
-                        WebkitFontSmoothing: "antialiased",
-                        scrollbarWidth: "thin",
-                        scrollbarColor:
-                          "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.25rem",
-                        fontSize: "0.875rem",
-                        fontSynthesis: "none",
-                      }}
-                    >
-                      <div
-                        className="flex w-7 items-center justify-center rounded-md bg-muted p-1 md:w-6"
-                        style={{
-                          border: "0px solid rgb(229, 231, 235)",
-                          boxSizing: "border-box",
-                          borderColor: "hsl(60 3% 15%)",
-                          textRendering: "optimizelegibility",
-                          WebkitFontSmoothing: "antialiased",
-                          scrollbarWidth: "thin",
-                          scrollbarColor:
-                            "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          borderRadius: "calc(0.5rem - 2px)",
-                          backgroundColor: "hsl(60 3% 15%)",
-                          padding: "0.25rem",
-                          width: "1.5rem",
-                          fontSynthesis: "none",
-                        }}
-                      >
-                        <svg
-                          className="shrink-0 h-4 w-4"
-                          height="100%"
-                          width="100%"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                          style={{
-                            border: "0px solid rgb(229, 231, 235)",
-                            boxSizing: "border-box",
-                            borderColor: "hsl(60 3% 15%)",
-                            textRendering: "optimizelegibility",
-                            WebkitFontSmoothing: "antialiased",
-                            scrollbarWidth: "thin",
-                            scrollbarColor:
-                              "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
-                            display: "block",
-                            verticalAlign: "middle",
-                            height: "1rem",
-                            width: "1rem",
-                            flexShrink: 0,
-                            fontSynthesis: "none",
-                          }}
-                        >
-                          <path
-                            d="M20.25 12c0-.425-.035-.843-.097-1.25h-3.517l-.333 1.992 1.727 1.728.068.076q.03.04.055.085l.915 1.622A8.2 8.2 0 0 0 20.25 12M12 3.75a8.2 8.2 0 0 0-4.176 1.135l.577.865h1.895A.747.747 0 0 1 11.75 6v.5a.75.75 0 0 1-.065.305l-2 4.5A.75.75 0 0 1 9 11.75H7.041l-.22.66 1.104 1.84H10.5a.75.75 0 0 1 .6.3l1.5 2a.75.75 0 0 1 .1.72l-1.15 2.966q.225.013.45.014a8.23 8.23 0 0 0 6.087-2.684l-1.192-2.11-1.925-1.926a.75.75 0 0 1-.21-.653l.5-3 .034-.13A.75.75 0 0 1 16 9.25h3.78A8.25 8.25 0 0 0 12 3.75M3.75 12a8.25 8.25 0 0 0 6.28 8.01l1.12-2.893-1.025-1.367H7.5a.75.75 0 0 1-.644-.364l-1.5-2.5a.75.75 0 0 1-.068-.623l.5-1.5a.75.75 0 0 1 .712-.513h2.013l1.333-3H8a.75.75 0 0 1-.624-.334l-.77-1.155A8.23 8.23 0 0 0 3.75 12m18 0a9.7 9.7 0 0 1-2.167 6.129A9.73 9.73 0 0 1 12 21.75a10 10 0 0 1-1.624-.135C5.764 20.842 2.25 16.832 2.25 12c0-5.385 4.365-9.75 9.75-9.75 4.641 0 8.523 3.242 9.509 7.584.158.697.241 1.422.241 2.166"
-                            fill="currentColor"
-                            style={{
-                              border: "0px solid rgb(229, 231, 235)",
-                              boxSizing: "border-box",
-                              borderColor: "hsl(60 3% 15%)",
-                              textRendering: "optimizelegibility",
-                              WebkitFontSmoothing: "antialiased",
-                              scrollbarWidth: "thin",
-                              scrollbarColor:
-                                "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
-                              fontSynthesis: "none",
-                            }}
-                          />
-                        </svg>
-                      </div>
-                      <span
-                        style={{
-                          border: "0px solid rgb(229, 231, 235)",
-                          boxSizing: "border-box",
-                          borderColor: "hsl(60 3% 15%)",
-                          textRendering: "optimizelegibility",
-                          WebkitFontSmoothing: "antialiased",
-                          scrollbarWidth: "thin",
-                          scrollbarColor:
-                            "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
-                          fontSynthesis: "none",
-                        }}
-                      >
-                        Who can access?
-                      </span>
-                    </div>
-                    <div
-                      className="flex items-center gap-2"
-                      style={{
-                        border: "0px solid rgb(229, 231, 235)",
-                        boxSizing: "border-box",
-                        borderColor: "hsl(60 3% 15%)",
-                        textRendering: "optimizelegibility",
-                        WebkitFontSmoothing: "antialiased",
-                        scrollbarWidth: "thin",
-                        scrollbarColor:
-                          "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                        fontSynthesis: "none",
-                      }}
-                    >
-                      <button
-                        className="flex items-center justify-between whitespace-nowrap border border-input bg-transparent text-sm shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span[data-radix-select-value]]:line-clamp-1 h-8 w-auto min-w-28 gap-2 rounded-md px-3 py-2 focus:ring-0 focus:ring-offset-0 md:h-7 md:gap-1.5 md:px-2"
-                        type="button"
-                        aria-autocomplete="none"
-                        aria-controls="radix-_r_ce_"
-                        aria-expanded="false"
-                        dir="ltr"
-                        role="combobox"
-                        style={{
-                          border: "0px solid rgb(229, 231, 235)",
-                          boxSizing: "border-box",
-                          textRendering: "optimizelegibility",
-                          WebkitFontSmoothing: "antialiased",
-                          scrollbarWidth: "thin",
-                          scrollbarColor:
-                            "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
-                          margin: "0px",
-                          padding: "0px",
-                          fontFamily: "inherit",
-                          fontFeatureSettings: "inherit",
-                          fontVariationSettings: "inherit",
-                          fontWeight: "inherit",
-                          lineHeight: "inherit",
-                          letterSpacing: "inherit",
-                          color: "inherit",
-                          textTransform: "none",
-                          appearance: "button",
-                          backgroundImage: "none",
-                          cursor: "pointer",
-                          display: "flex",
-                          width: "auto",
-                          minWidth: "7rem",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          whiteSpace: "nowrap",
-                          borderRadius: "calc(0.5rem - 2px)",
-                          borderWidth: "1px",
-                          borderColor: "hsl(60 1% 25%)",
-                          backgroundColor: "transparent",
-                          paddingTop: "0.5rem",
-                          paddingBottom: "0.5rem",
-                          fontSize: "0.875rem",
-                          boxShadow:
-                            "var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 1px 2px 0 rgb(0 0 0/0.05)",
-                          height: "1.75rem",
-                          gap: "0.375rem",
-                          paddingLeft: "0.5rem",
-                          paddingRight: "0.5rem",
-                          fontSynthesis: "none",
-                        }}
-                      >
-                        <span
-                          style={{
-                            border: "0px solid rgb(229, 231, 235)",
-                            boxSizing: "border-box",
-                            borderColor: "hsl(60 3% 15%)",
-                            textRendering: "optimizelegibility",
-                            WebkitFontSmoothing: "antialiased",
-                            scrollbarWidth: "thin",
-                            scrollbarColor:
-                              "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
-                            pointerEvents: "none",
-                            fontSynthesis: "none",
-                          }}
-                        >
-                          Anyone
-                        </span>
-                        <svg
-                          className="h-4 w-4 shrink-0 opacity-50"
-                          height="100%"
-                          width="100%"
-                          aria-hidden="true"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                          style={{
-                            border: "0px solid rgb(229, 231, 235)",
-                            boxSizing: "border-box",
-                            borderColor: "hsl(60 3% 15%)",
-                            textRendering: "optimizelegibility",
-                            WebkitFontSmoothing: "antialiased",
-                            scrollbarWidth: "thin",
-                            scrollbarColor:
-                              "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
-                            display: "block",
-                            verticalAlign: "middle",
-                            height: "1rem",
-                            width: "1rem",
-                            flexShrink: 0,
-                            opacity: 0.5,
-                            fontSynthesis: "none",
-                          }}
-                        >
-                          <path
-                            d="M11.526 15.582a.75.75 0 0 0 1.004-.052l5-5a.75.75 0 1 0-1.06-1.06L12 13.94 7.53 9.47a.75.75 0 1 0-1.06 1.06l5 5z"
-                            fill="currentColor"
-                            style={{
-                              border: "0px solid rgb(229, 231, 235)",
-                              boxSizing: "border-box",
-                              borderColor: "hsl(60 3% 15%)",
-                              textRendering: "optimizelegibility",
-                              WebkitFontSmoothing: "antialiased",
-                              scrollbarWidth: "thin",
-                              scrollbarColor:
-                                "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
-                              fontSynthesis: "none",
-                            }}
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
               </div>
               <div
                 className="flex-shrink-0"
@@ -2419,7 +2157,7 @@ function PublishDropdown({
                   }}
                 >
                   <div
-                    className="grid w-full grid-cols-2 gap-2"
+                    className="flex w-full"
                     style={{
                       border: "0px solid rgb(229, 231, 235)",
                       boxSizing: "border-box",
@@ -2429,71 +2167,18 @@ function PublishDropdown({
                       scrollbarWidth: "thin",
                       scrollbarColor:
                         "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
-                      display: "grid",
+                      display: "flex",
                       width: "100%",
-                      gridTemplateColumns: "repeat(2, minmax(0px, 1fr))",
-                      gap: "0.5rem",
                       fontSynthesis: "none",
                     }}
                   >
-                    <button
-                      className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none bg-secondary text-secondary-foreground shadow-sm hover:bg-muted-hover h-7 rounded-md px-3 py-2 w-full gap-1"
-                      style={{
-                        border: "0px solid rgb(229, 231, 235)",
-                        boxSizing: "border-box",
-                        borderColor: "hsl(60 3% 15%)",
-                        textRendering: "optimizelegibility",
-                        WebkitFontSmoothing: "antialiased",
-                        scrollbarWidth: "thin",
-                        scrollbarColor:
-                          "var(--scrollbar-thumb,initial) var(--scrollbar-track,initial)",
-                        margin: "0px",
-                        padding: "0px",
-                        fontFamily: "inherit",
-                        fontFeatureSettings: "inherit",
-                        fontVariationSettings: "inherit",
-                        lineHeight: "inherit",
-                        letterSpacing: "inherit",
-                        textTransform: "none",
-                        appearance: "button",
-                        backgroundImage: "none",
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        height: "1.75rem",
-                        width: "100%",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "0.25rem",
-                        whiteSpace: "nowrap",
-                        borderRadius: "calc(0.5rem - 2px)",
-                        backgroundColor: "hsl(60 3% 15%)",
-                        paddingLeft: "0.75rem",
-                        paddingRight: "0.75rem",
-                        paddingTop: "0.5rem",
-                        paddingBottom: "0.5rem",
-                        fontSize: "0.875rem",
-                        fontWeight: 480,
-                        color: "hsl(45 40% 98%)",
-                        boxShadow:
-                          "var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 1px 2px 0 rgb(0 0 0/0.05)",
-                        transitionProperty:
-                          "color, background-color, border-color, text-decoration-color, fill, stroke",
-                        transitionDuration: "0.1s",
-                        transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
-                        animationDuration: "0.1s",
-                        animationTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
-                        fontSynthesis: "none",
-                      }}
-                    >
-                      Review security
-                    </button>
                     <button
                       onClick={() => {
                         onPublish();
                         setIsOpen(false);
                       }}
                       disabled={isPublishing || !sandboxAvailable}
-                      className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none bg-affirmative-primary text-affirmative-primary-foreground hover:opacity-80 shadow-black/50 h-7 rounded-md px-3 py-2 gap-1.5 w-full"
+                      className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors duration-100 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none hover:opacity-90 h-8 rounded-md px-3 py-2 gap-1.5 w-full"
                       style={{
                         border: "0px solid rgb(229, 231, 235)",
                         boxSizing: "border-box",
@@ -2515,21 +2200,21 @@ function PublishDropdown({
                         backgroundImage: "none",
                         cursor: "pointer",
                         display: "inline-flex",
-                        height: "1.75rem",
+                        height: "2rem",
                         width: "100%",
                         alignItems: "center",
                         justifyContent: "center",
                         gap: "0.375rem",
                         whiteSpace: "nowrap",
                         borderRadius: "calc(0.5rem - 2px)",
-                        backgroundColor: "hsl(225 88% 53%)",
+                        backgroundColor: "#E8E8E8",
                         paddingLeft: "0.75rem",
                         paddingRight: "0.75rem",
                         paddingTop: "0.5rem",
                         paddingBottom: "0.5rem",
                         fontSize: "0.875rem",
-                        fontWeight: 480,
-                        color: "hsl(215 100% 97%)",
+                        fontWeight: 500,
+                        color: "rgb(19, 19, 20)",
                         transitionProperty:
                           "color, background-color, border-color, text-decoration-color, fill, stroke",
                         transitionDuration: "0.1s",
@@ -2635,13 +2320,16 @@ function createBundleKey(files: Record<string, any>, entry: string): string {
 // Simple preview-only component for main area (no code editor)
 function ProjectPreviewOnly({
   providerProps,
+  refreshKey = 0,
 }: {
   providerProps: SandboxProviderProps;
+  refreshKey?: number;
 }) {
-  // Create a stable key to force remount when files change
+  // Create a stable key to force remount when files change or refresh is triggered
   const bundleKey = useMemo(() => {
-    return createBundleKey(providerProps.files || {}, providerProps.activeFile || '');
-  }, [providerProps.files, providerProps.activeFile]);
+    const baseKey = createBundleKey(providerProps.files || {}, providerProps.activeFile || '');
+    return `${baseKey}-${refreshKey}`;
+  }, [providerProps.files, providerProps.activeFile, refreshKey]);
 
   console.log('[ProjectPreviewOnly] Bundle key:', bundleKey, 'Files:', Object.keys(providerProps.files || {}));
 
@@ -2885,6 +2573,7 @@ function ProjectSandboxView({
 const BASE_SANDBOX_DEPENDENCIES: Record<string, string> = {
   react: "18.2.0", // Use stable version instead of latest
   "react-dom": "18.2.0",
+  "framer-motion": "11.0.0", // Required for survey animations
   // Remove lucide-react for faster loading - use inline SVG instead
 };
 
@@ -3474,6 +3163,7 @@ interface BundleVersion {
   bundle: SandboxBundle;
   description: string;
   messageId?: string; // ID of the message that created this version
+  title?: string; // AI-generated checkpoint title
 }
 
 
@@ -4054,20 +3744,37 @@ export default function ProjectPage() {
 
               // Batch all state updates together to prevent cascading re-renders
               const versionId = `v${Date.now()}`;
-              startTransition(() => {
-                setSandboxBundle(bundle);
-                setBundleVersions(prev => {
-                  const newVersion: BundleVersion = {
-                    id: versionId,
-                    timestamp: Date.now(),
-                    bundle: bundle,
-                    description: `Version ${prev.length + 1}`,
-                    messageId: msg.id,
-                  };
-                  return [...prev, newVersion];
-                });
-                setCurrentVersionId(versionId);
+
+              // Extract checkpoint title from message parts
+              const checkpointPart = msg.parts?.find(
+                (p: any) => p.type === 'tool-set_checkpoint_title' && p.state === 'output-available'
+              );
+              let versionTitle = (checkpointPart as any)?.output?.checkpoint_title;
+
+              // Fallback: extract first few words from message text
+              if (!versionTitle) {
+                const textPart = msg.parts?.find((p: any) => p.type === 'text');
+                const messageText = (textPart as any)?.text || '';
+                const words = messageText.replace(/[#*\-\n]+/g, ' ').trim().split(/\s+/).slice(0, 5);
+                versionTitle = words.length > 0 && words[0] ? words.join(' ') : undefined;
+              }
+
+              // Update sandbox bundle immediately (no startTransition - we want this to render now)
+              setSandboxBundle(bundle);
+              setBundleVersions(prev => {
+                const newVersion: BundleVersion = {
+                  id: versionId,
+                  timestamp: Date.now(),
+                  bundle: bundle,
+                  description: `Version ${prev.length + 1}`,
+                  messageId: msg.id,
+                  title: versionTitle,
+                };
+                return [...prev, newVersion];
               });
+              setCurrentVersionId(versionId);
+              // Force sandbox refresh
+              setRendererKey(k => k + 1);
 
               // Extract and save questions asynchronously
               extractAndSaveQuestions();
@@ -5508,14 +5215,15 @@ Please make changes specifically to this element.`;
                           {(() => {
                             if (msg.role !== 'assistant') return null;
 
-                            const reasoningParts = msg.parts.filter(p => p.type === 'reasoning');
+                            // AI SDK uses 'reasoning' type, but Claude extended thinking uses 'thinking' type
+                            const reasoningParts = msg.parts.filter(p => p.type === 'reasoning' || p.type === 'thinking');
                             const hasReasoning = reasoningParts.length > 0;
                             const isLastMessage = idx === messages.length - 1;
 
                             // Check if there are any text or tool parts (means thinking is done)
                             const hasNonReasoningParts = msg.parts.some(p =>
                               p.type === 'text' || p.type.startsWith('tool-')
-                            );
+                            ) && !msg.parts.every(p => p.type === 'reasoning' || p.type === 'thinking');
 
                             // isThinking should be true only when:
                             // 1. It's the last message and still streaming
@@ -5525,9 +5233,10 @@ Please make changes specifically to this element.`;
                             if (!hasReasoning && !isThinking) return null;
 
                             // Convert reasoning parts to steps inline
+                            // AI SDK reasoning parts can have 'text', 'reasoning', or 'content' property
                             const steps = reasoningParts.map((part, partIdx) => ({
                               id: `${msg.id}-reasoning-${partIdx}`,
-                              content: part.text || '',
+                              content: (part as any).text || (part as any).reasoning || (part as any).content || '',
                               status: (isLastMessage && isThinking && partIdx === reasoningParts.length - 1) ? 'thinking' : 'complete'
                             }));
 
@@ -5640,57 +5349,6 @@ Please make changes specifically to this element.`;
                             </div>
                           )}
 
-                          {/* Version/Restore Point card - show if this message created a version */}
-                          {msg.role === 'assistant' && (() => {
-                            const versionIndex = bundleVersions.findIndex(v => v.messageId === msg.id);
-                            if (versionIndex === -1) return null;
-
-                            const version = bundleVersions[versionIndex];
-                            const versionNumber = versionIndex + 1;
-                            const isCurrentVersion = version.id === currentVersionId;
-
-                            // First check for AI-generated checkpoint title from set_checkpoint_title tool
-                            const checkpointPart = msg.parts?.find(
-                              (p: any) => p.type === 'tool-set_checkpoint_title' && p.state === 'output-available'
-                            );
-                            let title = (checkpointPart as any)?.output?.checkpoint_title;
-
-                            // Fallback to version description if available
-                            if (!title && version.description) {
-                              title = version.description;
-                            }
-
-                            // Final fallback: extract first few words from message text
-                            if (!title) {
-                              const textPart = msg.parts?.find(p => p.type === 'text');
-                              const messageText = textPart?.text || '';
-                              const words = messageText.replace(/[#*\-\n]+/g, ' ').trim().split(/\s+/).slice(0, 5);
-                              title = words.length > 0 ? words.join(' ') : `Version ${versionNumber}`;
-                            }
-
-                            return (
-                              <div className="flex items-start gap-1 mt-4 w-full max-w-xs">
-                                <button
-                                  onClick={() => !isCurrentVersion && handleRestoreVersion(version.id)}
-                                  className={`flex w-full gap-2 rounded-xl p-3 text-sm font-medium items-start border border-white/10 bg-white/5 transition-all duration-150 ${
-                                    isCurrentVersion ? 'cursor-default' : 'hover:border-white/20 hover:bg-white/10 cursor-pointer'
-                                  }`}
-                                >
-                                  <div className="flex w-full flex-col gap-1 overflow-hidden text-left">
-                                    <span className="truncate text-foreground">
-                                      {title}
-                                    </span>
-                                    <span className="truncate font-normal text-xs text-muted-foreground">
-                                      {isCurrentVersion ? 'Previewing latest version' : `Version ${versionNumber}`}
-                                    </span>
-                                  </div>
-                                  {!isCurrentVersion && (
-                                    <RotateCcw className="w-5 h-5 shrink-0 text-muted-foreground" />
-                                  )}
-                                </button>
-                              </div>
-                            );
-                          })()}
 
                           {/* Suggestion pills - show AI-provided suggestions on last assistant message */}
                           {idx === messages.length - 1 && status === 'ready' && msg.role === 'assistant' && (() => {
@@ -5784,6 +5442,7 @@ Please make changes specifically to this element.`;
                 onModelChange={handleModelChange}
                 isBusy={status === 'submitted' || status === 'streaming'}
                 onStop={stop}
+                solidBackground={true}
               />
             </div>
         </div>
@@ -6114,7 +5773,7 @@ Please make changes specifically to this element.`;
                 ) : sandboxAvailable ? (
                   /* Show React preview when sandbox bundle is available */
                   <div className={`${getDeviceStyles()} transition-all duration-300 mx-auto`}>
-                    <ProjectPreviewOnly providerProps={sandboxProviderProps} />
+                    <ProjectPreviewOnly providerProps={sandboxProviderProps} refreshKey={rendererKey} />
                   </div>
                 ) : (
                   /* Waiting for content */
