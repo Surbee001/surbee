@@ -43,6 +43,7 @@ import {
   SandpackPreview,
   useSandpack,
 } from "@codesandbox/sandpack-react";
+import { ModalSandboxPreview } from "@/components/sandbox/ModalSandboxPreview";
 
 interface ThinkingStep {
   id: string;
@@ -2316,25 +2317,65 @@ function createBundleKey(files: Record<string, any>, entry: string): string {
 }
 
 // Simple preview-only component for main area (no code editor)
+// Uses WebContainers exclusively
 function ProjectPreviewOnly({
-  providerProps,
   refreshKey = 0,
+  bundle,
+  projectId,
+  onPreviewUrlReady,
 }: {
-  providerProps: SandboxProviderProps;
+  providerProps?: SandboxProviderProps; // Keep for compatibility but not used
   refreshKey?: number;
+  bundle?: SandboxBundle | null;
+  projectId?: string;
+  onPreviewUrlReady?: (url: string) => void;
 }) {
-  // Create a stable key to force remount when files change or refresh is triggered
-  const bundleKey = useMemo(() => {
-    const baseKey = createBundleKey(providerProps.files || {}, providerProps.activeFile || '');
-    return `${baseKey}-${refreshKey}`;
-  }, [providerProps.files, providerProps.activeFile, refreshKey]);
+  console.log('[ProjectPreviewOnly] bundle:', !!bundle, 'projectId:', projectId);
 
-  console.log('[ProjectPreviewOnly] Bundle key:', bundleKey, 'Files:', Object.keys(providerProps.files || {}));
+  // Handle screenshot upload when Modal sandbox captures it
+  const handleScreenshotReady = useCallback(async (blob: Blob) => {
+    if (!projectId) return;
 
+    try {
+      const formData = new FormData();
+      formData.append('image', blob, 'screenshot.png');
+
+      const response = await fetch(`/api/projects/${projectId}/screenshot`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        console.log('✅ Screenshot uploaded successfully');
+      }
+    } catch (err) {
+      console.log('Screenshot upload failed:', err);
+    }
+  }, [projectId]);
+
+  // No bundle yet
+  if (!bundle) {
+    return (
+      <div className="h-full w-full bg-[#0a0a0a] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-xs" style={{ color: 'rgba(232, 232, 232, 0.5)' }}>
+            Waiting for survey content...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Use Modal Sandbox
   return (
-    <SandboxProvider key={bundleKey} {...providerProps}>
-      <SandpackPreviewWrapper />
-    </SandboxProvider>
+    <ModalSandboxPreview
+      bundle={bundle}
+      refreshKey={refreshKey}
+      className="h-full w-full"
+      onScreenshotReady={handleScreenshotReady}
+      onPreviewUrlReady={onPreviewUrlReady}
+      projectId={projectId}
+    />
   );
 }
 
@@ -3918,6 +3959,7 @@ export default function ProjectPage() {
   const [versionCounter, setVersionCounter] = useState(1);
   const [currentDevice, setCurrentDevice] = useState<'desktop' | 'tablet' | 'phone'>('desktop');
   const [previewUrl, setPreviewUrl] = useState('/');
+  const [sandboxPreviewUrl, setSandboxPreviewUrl] = useState<string | null>(null);
   const [isPageDropdownOpen, setIsPageDropdownOpen] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<string>('/');
   const [pages, setPages] = useState<{ path: string; title: string }[]>([{ path: '/', title: '/' }]);
@@ -5697,13 +5739,14 @@ Please make changes specifically to this element.`;
               {/* Action Buttons */}
               <div className="flex items-center gap-0.5">
                 <a
-                  href={`https://Surbee.dev/preview/${projectId}`}
+                  href={sandboxPreviewUrl || '#'}
                   target="_blank"
                   rel="noreferrer"
-                  className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
-                  title="Open preview in new tab"
+                  className={`aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center ${!sandboxPreviewUrl ? 'opacity-50 pointer-events-none' : ''}`}
+                  title={sandboxPreviewUrl ? "Open preview in new tab" : "Preview not ready yet"}
                   style={{ color: 'var(--surbee-fg-secondary)' }}
                   onMouseEnter={(e) => {
+                    if (!sandboxPreviewUrl) return;
                     const isDark = document.documentElement.classList.contains('dark');
                     e.currentTarget.style.backgroundColor = isDark ? 'rgba(113,113,122,0.3)' : 'rgba(0,0,0,0.05)';
                     e.currentTarget.style.color = 'var(--surbee-fg-primary)';
@@ -5809,7 +5852,7 @@ Please make changes specifically to this element.`;
                 ) : sandboxAvailable ? (
                   /* Show React preview when sandbox bundle is available */
                   <div className={`${getDeviceStyles()} transition-all duration-300 mx-auto`}>
-                    <ProjectPreviewOnly providerProps={sandboxProviderProps} refreshKey={rendererKey} />
+                    <ProjectPreviewOnly providerProps={sandboxProviderProps} refreshKey={rendererKey} bundle={sandboxBundle} projectId={projectId} onPreviewUrlReady={setSandboxPreviewUrl} />
                   </div>
                 ) : (
                   /* Waiting for content */
