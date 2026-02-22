@@ -24,6 +24,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 // Helper function to format relative time
 function formatRelativeTime(dateString: string): string {
@@ -470,38 +475,43 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
               />
             )}
             {onToggleCollapse && (
-              <button
-                onClick={onToggleCollapse}
-                className="sidebar-toggle-btn"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 40,
-                  height: 40,
-                  borderRadius: '0.38rem',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--surbee-fg-muted)',
-                  transition: 'background-color 0.15s ease-linear, color 0.15s ease-linear',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
-                  e.currentTarget.style.color = 'var(--surbee-fg-primary)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = 'var(--surbee-fg-muted)';
-                }}
-                aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              >
-                {isCollapsed ? (
-                  <PanelLeft className="w-5 h-5" />
-                ) : (
-                  <PanelLeftClose className="w-5 h-5" />
-                )}
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={onToggleCollapse}
+                    className="sidebar-toggle-btn"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 40,
+                      height: 40,
+                      borderRadius: '0.38rem',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--surbee-fg-muted)',
+                      transition: 'background-color 0.15s ease-linear, color 0.15s ease-linear',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+                      e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = 'var(--surbee-fg-muted)';
+                    }}
+                    aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                  >
+                    {isCollapsed ? (
+                      <PanelLeft className="w-5 h-5" />
+                    ) : (
+                      <PanelLeftClose className="w-5 h-5" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={4}>{isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}</TooltipContent>
+              </Tooltip>
             )}
           </div>
         </div>
@@ -703,51 +713,61 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
         <div className="sidebar-bottom">
           <div className="flex items-center justify-between w-full">
             {/* Profile Picture Button */}
-            <div
-              className="sidebar-bottom-btn"
-              onClick={() => setIsUserMenuOpen((v) => !v)}
-            >
-              <div
-                className="profile-circle"
-                style={{ width: 28, height: 28, overflow: 'hidden' }}
-              >
-                {user?.user_metadata?.picture ? (
-                  <img
-                    src={user.user_metadata.picture}
-                    alt={displayName}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  initialLetter
-                )}
-              </div>
-            </div>
+            <Tooltip open={isUserMenuOpen ? false : undefined}>
+              <TooltipTrigger asChild>
+                <div
+                  className="sidebar-bottom-btn"
+                  onClick={() => setIsUserMenuOpen((v) => !v)}
+                >
+                  <div
+                    className="profile-circle"
+                    style={{ width: 28, height: 28, overflow: 'hidden' }}
+                  >
+                    {user?.user_metadata?.picture ? (
+                      <img
+                        src={user.user_metadata.picture}
+                        alt={displayName}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      initialLetter
+                    )}
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side={isCollapsed ? 'right' : 'top'} sideOffset={4}>Account & settings</TooltipContent>
+            </Tooltip>
 
             {/* Inbox/Notification Button */}
-            <div
-              className="sidebar-bottom-btn"
-              onClick={() => setIsInboxOpen((v) => !v)}
-            >
-              <div className="relative flex items-center justify-center">
-                <Inbox className="w-5 h-5" style={{ color: 'var(--surbee-fg-primary)' }} />
-                {/* Notification badge - only show if there are unread notifications */}
-                {unreadCount > 0 && (
-                  <span
-                    className="absolute flex items-center justify-center text-[10px] font-medium text-white"
-                    style={{
-                      top: -6,
-                      right: -6,
-                      width: 14,
-                      height: 14,
-                      borderRadius: '50%',
-                      backgroundColor: '#ef4444',
-                    }}
-                  >
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </div>
-            </div>
+            <Tooltip open={isInboxOpen ? false : undefined}>
+              <TooltipTrigger asChild>
+                <div
+                  className="sidebar-bottom-btn"
+                  onClick={() => setIsInboxOpen((v) => !v)}
+                >
+                  <div className="relative flex items-center justify-center">
+                    <Inbox className="w-5 h-5" style={{ color: 'var(--surbee-fg-primary)' }} />
+                    {/* Notification badge - only show if there are unread notifications */}
+                    {unreadCount > 0 && (
+                      <span
+                        className="absolute flex items-center justify-center text-[10px] font-medium text-white"
+                        style={{
+                          top: -6,
+                          right: -6,
+                          width: 14,
+                          height: 14,
+                          borderRadius: '50%',
+                          backgroundColor: '#ef4444',
+                        }}
+                      >
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side={isCollapsed ? 'right' : 'top'} sideOffset={4}>Inbox & announcements</TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Overlay to close on outside click; high z-index */}
@@ -955,27 +975,42 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
                 <div className="user-menu-theme-section">
                   <div className="user-menu-theme-label">Theme</div>
                   <div className="user-menu-theme-toggle">
-                    <button
-                      className={`user-menu-theme-btn ${theme === 'light' ? 'active' : ''}`}
-                      onClick={() => setTheme('light')}
-                      aria-label="Light theme"
-                    >
-                      <Sun className="h-4 w-4" />
-                    </button>
-                    <button
-                      className={`user-menu-theme-btn ${theme === 'dark' ? 'active' : ''}`}
-                      onClick={() => setTheme('dark')}
-                      aria-label="Dark theme"
-                    >
-                      <Moon className="h-4 w-4" />
-                    </button>
-                    <button
-                      className={`user-menu-theme-btn ${theme === 'system' ? 'active' : ''}`}
-                      onClick={() => setTheme('system')}
-                      aria-label="System theme"
-                    >
-                      <Laptop className="h-4 w-4" />
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          className={`user-menu-theme-btn ${theme === 'light' ? 'active' : ''}`}
+                          onClick={() => setTheme('light')}
+                          aria-label="Light theme"
+                        >
+                          <Sun className="h-4 w-4" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" sideOffset={4}>Light</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          className={`user-menu-theme-btn ${theme === 'dark' ? 'active' : ''}`}
+                          onClick={() => setTheme('dark')}
+                          aria-label="Dark theme"
+                        >
+                          <Moon className="h-4 w-4" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" sideOffset={4}>Dark</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          className={`user-menu-theme-btn ${theme === 'system' ? 'active' : ''}`}
+                          onClick={() => setTheme('system')}
+                          aria-label="System theme"
+                        >
+                          <Laptop className="h-4 w-4" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" sideOffset={4}>System</TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
 
@@ -1210,6 +1245,7 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
               className="inbox-popup"
+              style={{ left: isCollapsed ? '68px' : undefined }}
             >
               <div className="inbox-popup-inner">
                 {/* Tab Container */}

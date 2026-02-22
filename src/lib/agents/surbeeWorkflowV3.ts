@@ -37,8 +37,6 @@ import {
   imagegenEditImage,
   surbeSaveChatImage,
   chatUploadedImages,
-  activeSandboxes,
-  startEagerSandboxCreation,
   projectFiles,
 } from './lovableTools';
 import { buildSurbeeSystemPrompt } from './surbeeSystemPrompt';
@@ -622,10 +620,6 @@ export function streamWorkflowV3({ messages: rawMessages, model = 'gpt-5', proje
   // Generate unique project name
   const projectName = `survey-${Date.now()}`;
 
-  // START SANDBOX IMMEDIATELY — boots in parallel with AI generation.
-  // By the time the AI calls surb_init_sandbox, the sandbox is already ready.
-  startEagerSandboxCreation(projectName);
-
   // Store uploaded images from messages in the shared chatUploadedImages map
   // This makes them accessible to the surbe_save_chat_image tool
   if (totalImages > 0) {
@@ -814,32 +808,4 @@ export function streamWorkflowV3({ messages: rawMessages, model = 'gpt-5', proje
   }
 
   return streamText(streamConfig);
-}
-// Cleanup Function
-// ============================================================================
-
-/**
- * Clean up old sandbox states (call periodically)
- */
-export async function cleanupSandboxes(olderThanMs: number = 3600000) {
-  const now = Date.now();
-  const toDelete: string[] = [];
-
-  activeSandboxes.forEach((_info, projectName) => {
-    const match = projectName.match(/survey-(\d+)/);
-    if (match) {
-      const timestamp = parseInt(match[1]);
-      if (now - timestamp > olderThanMs) {
-        toDelete.push(projectName);
-      }
-    }
-  });
-
-  for (const projectName of toDelete) {
-    activeSandboxes.delete(projectName);
-    projectFiles.delete(projectName);
-    console.log(`Cleaned up sandbox: ${projectName}`);
-  }
-
-  return toDelete.length;
 }

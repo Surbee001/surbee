@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { ModalSandboxPreview } from '@/components/sandbox/ModalSandboxPreview'
+import { WebContainerPreview } from '@/components/sandbox/WebContainerPreview'
 import type { CipherTier } from '@/lib/cipher/tier-config'
 import {
   subscribeToSettingsUpdates,
@@ -737,10 +737,10 @@ export default function PublishedSurveyPage() {
     )
   }
 
-  // Render survey using Modal Sandbox
+  // Render survey using WebContainer
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      <ModalSandboxPreview
+      <WebContainerPreview
         bundle={survey.sandbox_bundle}
         className="w-full h-full"
         projectId={survey.id}

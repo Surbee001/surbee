@@ -73,8 +73,6 @@ export async function POST(request: NextRequest) {
         .update({
           analytics_consent: consent,
           analytics_consent_asked_at: now,
-          analytics_consent_updated_at: now,
-          updated_at: now,
         })
         .eq('user_id', userId);
 
@@ -90,7 +88,6 @@ export async function POST(request: NextRequest) {
           user_id: userId,
           analytics_consent: consent,
           analytics_consent_asked_at: now,
-          analytics_consent_updated_at: now,
         });
 
       if (insertError) {
@@ -137,7 +134,6 @@ export async function PATCH(request: NextRequest) {
         .from('user_profiles')
         .update({
           analytics_consent_asked_at: now,
-          updated_at: now,
         })
         .eq('user_id', userId);
     } else {

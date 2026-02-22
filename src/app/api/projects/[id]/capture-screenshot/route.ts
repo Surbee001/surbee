@@ -22,8 +22,8 @@ function getImageKit(): ImageKit {
 
 /**
  * POST /api/projects/[id]/capture-screenshot
- * Captures a screenshot of the survey using the Modal sandbox or external service
- * Works for both draft and published surveys
+ * Captures a screenshot of the survey using an external screenshot service.
+ * Only works for published surveys with public URLs.
  */
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     console.log(`[CaptureScreenshot] Starting capture for project ${projectId}`);
 
-    // Get the project's sandbox bundle
+    // Get the project
     const { data: project, error: projectError } = await supabaseAdmin
       .from('projects')
       .select('sandbox_bundle, published_url')
@@ -48,53 +48,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'No sandbox bundle found' }, { status: 404 });
     }
 
-    const modalEndpoint = process.env.MODAL_SANDBOX_ENDPOINT;
     const effectivePublishedUrl = publishedUrl || project.published_url;
 
-    // Strategy 1: Try Modal sandbox screenshot endpoint first
-    if (modalEndpoint) {
-      try {
-        console.log('[CaptureScreenshot] Trying Modal sandbox screenshot...');
-        const screenshotResponse = await fetch(`${modalEndpoint}/api/sandbox/screenshot`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            files: project.sandbox_bundle.files,
-            sandbox_id: `screenshot-${projectId}-${Date.now()}`,
-          }),
-        });
-
-        if (screenshotResponse.ok) {
-          const screenshotData = await screenshotResponse.json();
-          if (screenshotData.screenshot_base64) {
-            // Upload base64 screenshot to ImageKit
-            const uploadResponse = await getImageKit().upload({
-              file: screenshotData.screenshot_base64,
-              fileName: `preview_${projectId}_${Date.now()}.png`,
-              folder: '/project-previews',
-            });
-
-            // Update project with new preview URL
-            await supabaseAdmin
-              .from('projects')
-              .update({
-                preview_image_url: uploadResponse.url,
-                last_preview_generated_at: new Date().toISOString(),
-              })
-              .eq('id', projectId);
-
-            console.log(`[CaptureScreenshot] Screenshot saved via Modal: ${uploadResponse.url}`);
-            return NextResponse.json({ success: true, previewUrl: uploadResponse.url });
-          }
-        } else {
-          console.log('[CaptureScreenshot] Modal screenshot endpoint returned:', screenshotResponse.status);
-        }
-      } catch (modalError) {
-        console.log('[CaptureScreenshot] Modal screenshot failed:', modalError);
-      }
-    }
-
-    // Strategy 2: Try external screenshot service (only if we have a published URL)
+    // Use external screenshot service (only works for published surveys with public URLs)
     if (effectivePublishedUrl) {
       console.log('[CaptureScreenshot] Trying external screenshot service...');
       const surveyUrl = `https://form.surbee.dev/${effectivePublishedUrl}`;
@@ -125,7 +81,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
             })
             .eq('id', projectId);
 
-          console.log(`[CaptureScreenshot] Screenshot saved via external service: ${uploadResponse.url}`);
+          console.log(`[CaptureScreenshot] Screenshot saved: ${uploadResponse.url}`);
           return NextResponse.json({ success: true, previewUrl: uploadResponse.url });
         } else {
           console.log('[CaptureScreenshot] External service returned:', externalResponse.status);
@@ -138,7 +94,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     // No screenshot method worked - return gracefully
-    console.log('[CaptureScreenshot] All screenshot methods failed, returning without screenshot');
+    console.log('[CaptureScreenshot] Screenshot capture not available, returning without screenshot');
     return NextResponse.json({
       success: false,
       message: 'Screenshot capture not available - will retry later'

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { ModalSandboxPreview } from '@/components/sandbox/ModalSandboxPreview';
+import { WebContainerPreview } from '@/components/sandbox/WebContainerPreview';
 
 interface PreviewPageProps {
   params: Promise<{
@@ -23,8 +23,6 @@ export default function PreviewPage({ params }: PreviewPageProps) {
   const { user } = useAuth();
 
   const [sandboxBundle, setSandboxBundle] = useState<SandboxBundle | null>(null);
-  const [sandboxPreviewUrl, setSandboxPreviewUrl] = useState<string | null>(null);
-  const [activeChatSessionId, setActiveChatSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -54,16 +52,8 @@ export default function PreviewPage({ params }: PreviewPageProps) {
 
         const data = await response.json();
 
-        // Use stored preview URL if available
-        if (data.project?.sandbox_preview_url) {
-          setSandboxPreviewUrl(data.project.sandbox_preview_url);
-        }
-
         if (data.project?.sandbox_bundle) {
           setSandboxBundle(data.project.sandbox_bundle);
-          if (data.project.active_chat_session_id) {
-            setActiveChatSessionId(data.project.active_chat_session_id);
-          }
         } else {
           setError('No survey generated yet. Please create a survey first.');
         }
@@ -144,7 +134,7 @@ export default function PreviewPage({ params }: PreviewPageProps) {
     );
   }
 
-  if (error || (!sandboxBundle && !sandboxPreviewUrl)) {
+  if (error || !sandboxBundle) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
         <div className="text-center max-w-md mx-auto">
@@ -176,8 +166,7 @@ export default function PreviewPage({ params }: PreviewPageProps) {
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      <ModalSandboxPreview
-        previewUrl={sandboxPreviewUrl}
+      <WebContainerPreview
         bundle={sandboxBundle}
         className="w-full h-full"
         projectId={projectId}

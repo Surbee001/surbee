@@ -180,6 +180,7 @@ export const ReasoningDisplay = memo(({
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [wasThinking, setWasThinking] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRAFRef = useRef<number | null>(null);
 
   // Auto-open when reasoning starts, keep open when it ends (don't auto-close)
   useEffect(() => {
@@ -192,11 +193,20 @@ export const ReasoningDisplay = memo(({
     }
   }, [isThinking, wasThinking]);
 
-  // Auto-scroll to bottom when content updates
+  // Auto-scroll to bottom when content updates (throttled with rAF)
   useEffect(() => {
     if (isOpen && scrollRef.current && isThinking) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      if (scrollRAFRef.current) cancelAnimationFrame(scrollRAFRef.current);
+      scrollRAFRef.current = requestAnimationFrame(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+        scrollRAFRef.current = null;
+      });
     }
+    return () => {
+      if (scrollRAFRef.current) cancelAnimationFrame(scrollRAFRef.current);
+    };
   }, [steps, isOpen, isThinking]);
 
   // Don't render if no steps and not thinking

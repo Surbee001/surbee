@@ -31,7 +31,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
 
-  // Fetch consent status when user logs in
+  // Fetch consent status from Supabase when user logs in
   useEffect(() => {
     const fetchConsent = async () => {
       // Don't do anything while auth is still loading
@@ -51,9 +51,11 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
           const data = await response.json();
           setConsent(data.consent);
           setLastAskedAt(data.lastAskedAt);
+        } else {
+          console.error('Analytics consent fetch failed:', response.status);
         }
-      } catch {
-        // Consent fetch failed, will use default
+      } catch (err) {
+        console.error('Error fetching analytics consent:', err);
       } finally {
         setIsLoading(false);
       }
@@ -105,9 +107,9 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     setConsent(newConsent);
     setShowModal(false);
 
-    // Make API call in background
+    // Persist to Supabase
     try {
-      await fetch('/api/analytics/consent', {
+      const response = await fetch('/api/analytics/consent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -115,8 +117,11 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
           consent: newConsent,
         }),
       });
-    } catch {
-      // Don't revert - keep the optimistic update to prevent modal from reappearing
+      if (!response.ok) {
+        console.error('Error saving analytics consent:', response.status);
+      }
+    } catch (err) {
+      console.error('Error saving analytics consent:', err);
     }
   }, [user?.id]);
 

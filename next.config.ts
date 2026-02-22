@@ -6,23 +6,15 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   // Required headers for WebContainers (SharedArrayBuffer support)
-  // Note: /project/ uses Modal sandboxes now, so COEP is only needed for /s/ routes
   async headers() {
+    const coopCoepHeaders = [
+      { key: 'Cross-Origin-Embedder-Policy', value: 'credentialless' },
+      { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+    ];
     return [
-      {
-        // Apply to shared survey pages (still uses WebContainers)
-        source: '/s/:path*',
-        headers: [
-          {
-            key: 'Cross-Origin-Embedder-Policy',
-            value: 'credentialless',
-          },
-          {
-            key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin',
-          },
-        ],
-      },
+      { source: '/s/:path*', headers: coopCoepHeaders },
+      { source: '/project/:path*', headers: coopCoepHeaders },
+      { source: '/projects/:path*', headers: coopCoepHeaders },
     ];
   },
   async redirects() {

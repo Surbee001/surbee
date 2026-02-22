@@ -52,7 +52,7 @@ interface CommunityProject {
 function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, userProfile, loading: authLoading, updateUserProfile } = useAuth();
+  const { user, userProfile, loading: authLoading, profileLoaded, updateUserProfile } = useAuth();
   const { onlineUsers, subscribeToUserProjects } = useRealtime();
   const [isLabOpen, setIsLabOpen] = useState(false);
   const [isPlanUsageOpen, setIsPlanUsageOpen] = useState(false);
@@ -142,7 +142,6 @@ function DashboardContent() {
     const evening = [ // 18-20
       `Good evening, ${firstName}.`,
       `Evening, ${firstName}.`,
-      `Winding down or ramping up, ${firstName}?`,
       `What's on your mind, ${firstName}?`,
     ];
     const lateEvening = [ // 21-23
@@ -189,6 +188,9 @@ function DashboardContent() {
   useEffect(() => {
     if (!user) return;
 
+    // Wait for profile to load from DB before deciding to redirect
+    if (!profileLoaded) return;
+
     // Redirect to onboarding if user hasn't accepted terms
     if (!userProfile?.acceptedTermsAt && !userProfile?.onboardingCompleted) {
       router.push('/onboarding');
@@ -218,7 +220,7 @@ function DashboardContent() {
       sessionStorage.setItem(slotKey, newGreeting);
       setGreeting(newGreeting);
     }
-  }, [user, userProfile, router]);
+  }, [user, userProfile, profileLoaded, router]);
 
   const knowledgeBaseElements = [
     {

@@ -33,7 +33,7 @@ import { AgentWorkflow, convertPartsToWorkflowBlocks } from '@/components/agent/
 import { VersionHistory } from '@/components/VersionHistory';
 import { Switch } from "@/components/ui/switch";
 import { ProjectSettings } from '@/components/project-manage/ProjectSettings';
-import { ModalSandboxPreview } from "@/components/sandbox/ModalSandboxPreview";
+import { WebContainerPreview } from "@/components/sandbox/WebContainerPreview";
 import { useUserStore } from "@/stores/userStore";
 
 interface ThinkingStep {
@@ -2291,18 +2291,12 @@ function ProjectPreviewOnly({
   refreshKey = 0,
   bundle,
   projectId,
-  previewUrl,
-  onPreviewUrlReady,
 }: {
   refreshKey?: number;
   bundle?: SandboxBundle | null;
   projectId?: string;
-  previewUrl?: string | null;
-  onPreviewUrlReady?: (url: string) => void;
 }) {
-  // If we have a previewUrl from the agent, use it directly
-  // Otherwise fall back to creating sandbox from bundle
-  if (!previewUrl && !bundle) {
+  if (!bundle) {
     return (
       <div className="h-full w-full flex items-center justify-center" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>
         <div className="text-center">
@@ -2315,12 +2309,10 @@ function ProjectPreviewOnly({
   }
 
   return (
-    <ModalSandboxPreview
-      previewUrl={previewUrl}
+    <WebContainerPreview
       bundle={bundle}
       refreshKey={refreshKey}
       className="h-full w-full"
-      onPreviewUrlReady={onPreviewUrlReady}
       projectId={projectId}
     />
   );
@@ -2575,8 +2567,7 @@ export default function ProjectPage() {
   const [rendererKey, setRendererKey] = useState(0);
   const [bundleVersions, setBundleVersions] = useState<BundleVersion[]>([]);
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
-  const [sandboxPreviewUrl, setSandboxPreviewUrl] = useState<string | null>(null);
-  const sandboxAvailable = Boolean(sandboxBundle || sandboxPreviewUrl);
+  const sandboxAvailable = Boolean(sandboxBundle);
 
   // Initialize selected model ONCE from sessionStorage
   const [selectedModel, setSelectedModel] = useState<AIModel>(() => {
@@ -2810,11 +2801,6 @@ export default function ProjectPage() {
       for (const part of msg.parts) {
         if (part.type.startsWith('tool-') && part.state === 'output-available') {
           const output = part.output as any;
-
-          // Extract preview_url from any tool result (sandbox init, write, build, etc.)
-          if (output?.preview_url && typeof output.preview_url === 'string') {
-            setSandboxPreviewUrl(output.preview_url);
-          }
 
           if (output?.source_files && Object.keys(output.source_files).length > 0) {
 
@@ -3151,10 +3137,6 @@ export default function ProjectPage() {
               setSandboxBundle(restoredBundle);
 
               // Restore sandbox preview URL if stored
-              if (data.project.sandbox_preview_url) {
-                setSandboxPreviewUrl(data.project.sandbox_preview_url);
-              }
-
               // Also add to version history
               const versionId = `restored-${Date.now()}`;
               setBundleVersions(prev => {
@@ -4078,11 +4060,9 @@ Please make changes specifically to this element.`;
       <div className="h-screen w-full bg-[#0a0a0a] text-white">
         {/* Show sandbox view only */}
         <div className="relative h-full w-full">
-          <ModalSandboxPreview
-            previewUrl={sandboxPreviewUrl}
+          <WebContainerPreview
             bundle={previewBundle}
             className="h-full w-full"
-            onPreviewUrlReady={setSandboxPreviewUrl}
             projectId={projectId}
           />
           {/* Overlay to capture clicks for element selection */}
@@ -4904,15 +4884,12 @@ Please make changes specifically to this element.`;
 
               {/* Action Buttons */}
               <div className="flex items-center gap-0.5">
-                <a
-                  href={sandboxPreviewUrl || '#'}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={`aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center ${!sandboxPreviewUrl ? 'opacity-50 pointer-events-none' : ''}`}
-                  title={sandboxPreviewUrl ? "Open preview in new tab" : "Preview not ready yet"}
+                <button
+                  onClick={() => setRendererKey((k) => k + 1)}
+                  className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
+                  title="Refresh preview"
                   style={{ color: 'var(--surbee-fg-secondary)' }}
                   onMouseEnter={(e) => {
-                    if (!sandboxPreviewUrl) return;
                     const isDark = document.documentElement.classList.contains('dark');
                     e.currentTarget.style.backgroundColor = isDark ? 'rgba(113,113,122,0.3)' : 'rgba(0,0,0,0.05)';
                     e.currentTarget.style.color = 'var(--surbee-fg-primary)';
@@ -4923,7 +4900,7 @@ Please make changes specifically to this element.`;
                   }}
                 >
                   <ExternalLink className="w-3 h-3" />
-                </a>
+                </button>
                 <button
                   onClick={() => setRendererKey((k) => k + 1)}
                   className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
@@ -5008,7 +4985,7 @@ Please make changes specifically to this element.`;
                 ) : sandboxAvailable ? (
                   /* Show React preview when sandbox is available */
                   <div className={`${getDeviceStyles()} transition-all duration-300 mx-auto`}>
-                    <ProjectPreviewOnly refreshKey={rendererKey} bundle={sandboxBundle} previewUrl={sandboxPreviewUrl} projectId={projectId} onPreviewUrlReady={setSandboxPreviewUrl} />
+                    <ProjectPreviewOnly refreshKey={rendererKey} bundle={sandboxBundle} projectId={projectId} />
                   </div>
                 ) : (
                   /* Waiting for content */

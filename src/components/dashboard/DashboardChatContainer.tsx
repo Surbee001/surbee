@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Copy, ThumbsUp, ThumbsDown, Search, ChevronRight, ChevronDown, CheckCircle2, Download, RotateCcw, Star, Pencil, Trash2 } from "lucide-react";
@@ -18,6 +18,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { SearchModal, ReferenceItem as SearchReferenceItem } from "./SearchModal";
 import { ImportSurveyModal } from "./ImportSurveyModal";
 import { useUserPreferences } from "@/contexts/UserPreferencesContext";
@@ -54,6 +59,227 @@ interface DashboardChatContainerProps {
 const generateChatSessionId = () => {
   return `${Date.now().toString(36)}${Math.random().toString(36).substr(2, 9)}`;
 };
+
+// Module-scope style constants (avoids creating new objects every render)
+const USER_BUBBLE_STYLE: React.CSSProperties = {
+  backgroundColor: "rgb(38, 38, 38)",
+  color: "#ffffff",
+  borderRadius: "18px",
+  maxWidth: "min(75%, 600px)",
+  wordBreak: "break-word",
+};
+
+const USER_TEXT_STYLE: React.CSSProperties = {
+  fontSize: "14px",
+  lineHeight: "1.5",
+  fontFamily: "'Opening Hours Sans', sans-serif",
+};
+
+const AI_RESPONSE_STYLE: React.CSSProperties = { fontSize: '16px' };
+
+// Default thinking steps when no real steps are available
+const DEFAULT_THINKING_STEPS: ThinkingStep[] = [
+  { id: 'thinking', content: 'Thinking...', status: 'thinking' as const }
+];
+
+// Memoized message row to prevent re-rendering all messages on every streaming token
+interface MemoizedMessageRowProps {
+  msg: Message;
+  idx: number;
+  isLastMessage: boolean;
+  isLoading: boolean;
+  isGeneratingChart: boolean;
+  currentIsThinking: boolean;
+  memoizedStreamingSteps: import("@/components/ai-elements/reasoning-display").ReasoningStep[];
+  thinkingDuration: number;
+  effectfulMessages: Record<string, boolean>;
+  copiedMessageId: string | null;
+  feedbackGiven: Record<string, "up" | "down">;
+  onCopy: (id: string, text: string) => void;
+  onFeedback: (id: string, type: "up" | "down") => void;
+  onRetry: (idx: number, content: string) => void;
+  onReload: () => void;
+}
+
+const MemoizedMessageRow = memo<MemoizedMessageRowProps>(({
+  msg,
+  idx,
+  isLastMessage,
+  isLoading,
+  isGeneratingChart,
+  currentIsThinking,
+  memoizedStreamingSteps,
+  thinkingDuration,
+  effectfulMessages,
+  copiedMessageId,
+  feedbackGiven,
+  onCopy,
+  onFeedback,
+  onRetry,
+  onReload,
+}) => {
+  // Memoize completed message reasoning steps
+  const completedReasoningSteps = useMemo(() => {
+    if (msg.reasoning && msg.reasoning.length > 0) {
+      return convertToReasoningSteps(msg.reasoning, false);
+    }
+    return null;
+  }, [msg.reasoning]);
+
+  if (msg.role === "user") {
+    return (
+      <div className="space-y-2 group/message">
+        <div className="flex flex-col items-end gap-1">
+          <div className="px-4 py-2.5 inline-block" style={USER_BUBBLE_STYLE}>
+            <p className="whitespace-pre-wrap" style={USER_TEXT_STYLE}>
+              {msg.content}
+            </p>
+          </div>
+          <div className="flex items-center gap-1 opacity-0 group-hover/message:opacity-100 transition-opacity">
+            <span className="text-xs text-muted-foreground mr-1">
+              {msg.createdAt ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(msg.createdAt) : ''}
+            </span>
+            <button
+              onClick={() => onRetry(idx, msg.content)}
+              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+              title="Retry"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+            <button
+              onClick={() => onCopy(msg.id, msg.content)}
+              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+              title={copiedMessageId === msg.id ? "Copied!" : "Copy"}
+            >
+              {copiedMessageId === msg.id ? (
+                <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+              ) : (
+                <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 group/message">
+      <div className="w-full space-y-3">
+        {/* For streaming message: show thinking steps */}
+        {isLastMessage && isLoading && !isGeneratingChart && (
+          <div className="mb-3">
+            <ReasoningDisplay
+              steps={memoizedStreamingSteps}
+              duration={thinkingDuration}
+              isThinking={currentIsThinking || !msg.content}
+              defaultOpen={true}
+            />
+          </div>
+        )}
+        {/* For completed messages: show msg.reasoning */}
+        {completedReasoningSteps && !(isLastMessage && isLoading) && (
+          <div className="mb-3">
+            <ReasoningDisplay
+              steps={completedReasoningSteps}
+              duration={msg.reasoningDuration || 0}
+              isThinking={false}
+            />
+          </div>
+        )}
+        {/* AI response with markdown rendering */}
+        <div className="w-full ai-response-markdown leading-relaxed text-[var(--surbee-fg-primary)]" style={AI_RESPONSE_STYLE}>
+          {effectfulMessages[msg.id] && !isLoading ? (
+            <TextGenerateEffect
+              words={msg.content}
+              className="text-[var(--surbee-fg-primary)] ai-response-markdown"
+              textClassName="leading-relaxed text-[var(--surbee-fg-primary)] break-words whitespace-pre-wrap"
+              style={AI_RESPONSE_STYLE}
+              duration={0.45}
+            />
+          ) : (
+            <MarkdownRenderer content={msg.content} />
+          )}
+        </div>
+
+        {/* Action buttons for AI messages - show on hover */}
+        {!isLoading && (
+          <div className="flex items-center gap-0.5 pt-2 opacity-0 group-hover/message:opacity-100 transition-opacity">
+            <button
+              onClick={() => onCopy(msg.id, msg.content)}
+              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+              title={copiedMessageId === msg.id ? "Copied!" : "Copy to clipboard"}
+            >
+              {copiedMessageId === msg.id ? (
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+              ) : (
+                <Copy className="w-4 h-4 text-muted-foreground" />
+              )}
+            </button>
+            <button
+              onClick={() => onFeedback(msg.id, "up")}
+              className={`p-1.5 rounded-lg hover:bg-white/10 transition-colors ${
+                feedbackGiven[msg.id] === "up" ? "bg-white/10" : ""
+              }`}
+              title="Good response"
+              disabled={!!feedbackGiven[msg.id]}
+            >
+              <ThumbsUp
+                className={`w-4 h-4 ${
+                  feedbackGiven[msg.id] === "up"
+                    ? "text-green-500"
+                    : "text-muted-foreground"
+                }`}
+              />
+            </button>
+            <button
+              onClick={() => onFeedback(msg.id, "down")}
+              className={`p-1.5 rounded-lg hover:bg-white/10 transition-colors ${
+                feedbackGiven[msg.id] === "down" ? "bg-white/10" : ""
+              }`}
+              title="Bad response"
+              disabled={!!feedbackGiven[msg.id]}
+            >
+              <ThumbsDown
+                className={`w-4 h-4 ${
+                  feedbackGiven[msg.id] === "down"
+                    ? "text-red-500"
+                    : "text-muted-foreground"
+                }`}
+              />
+            </button>
+            <button
+              onClick={() => onReload()}
+              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+              title="Regenerate response"
+            >
+              <RotateCcw className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}, (prev, next) => {
+  // Custom comparator: only re-render when this message's data changes
+  if (prev.msg.content !== next.msg.content) return false;
+  if (prev.msg.id !== next.msg.id) return false;
+  if (prev.copiedMessageId !== next.copiedMessageId &&
+      (prev.copiedMessageId === prev.msg.id || next.copiedMessageId === next.msg.id)) return false;
+  if (prev.feedbackGiven[prev.msg.id] !== next.feedbackGiven[next.msg.id]) return false;
+  if (prev.effectfulMessages[prev.msg.id] !== next.effectfulMessages[next.msg.id]) return false;
+  // Only re-render for streaming state if this is the last message
+  if (prev.isLastMessage || next.isLastMessage) {
+    if (prev.isLoading !== next.isLoading) return false;
+    if (prev.isGeneratingChart !== next.isGeneratingChart) return false;
+    if (prev.currentIsThinking !== next.currentIsThinking) return false;
+    if (prev.memoizedStreamingSteps !== next.memoizedStreamingSteps) return false;
+    if (prev.thinkingDuration !== next.thinkingDuration) return false;
+  }
+  if (prev.isLastMessage !== next.isLastMessage) return false;
+  return true;
+});
+MemoizedMessageRow.displayName = 'MemoizedMessageRow';
 
 export function DashboardChatContainer({
   userId,
@@ -231,24 +457,19 @@ export function DashboardChatContainer({
   } = useChat({
     transport: chatTransport,
     onError,
-    experimental_throttle: 50,
+    experimental_throttle: 100,
   });
 
-  // Track if a chart is currently being generated
-  const [isGeneratingChart, setIsGeneratingChart] = useState(false);
-
-  // Track thinking state
+  // Track thinking duration
   const [thinkingStartTime, setThinkingStartTime] = useState<number | null>(null);
   const [thinkingDuration, setThinkingDuration] = useState<number>(0);
   const [thinkingFinished, setThinkingFinished] = useState(false);
-  const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
-  const [isThinking, setIsThinking] = useState(false);
 
-  // Transform raw messages to our Message type and extract reasoning
-  const messages: Message[] = useMemo(() => {
+  // Transform raw messages to our Message type and extract reasoning/chart state (all derived, no setState)
+  const { messages, currentThinkingSteps, currentIsThinking, isGeneratingChart } = useMemo(() => {
     let chartToolCallActive = false;
-    let currentThinkingSteps: ThinkingStep[] = [];
-    let currentIsThinking = false;
+    let derivedThinkingSteps: ThinkingStep[] = [];
+    let derivedIsThinking = false;
 
     const transformed = rawMessages.map((m, msgIdx) => {
       // Extract content from various formats
@@ -328,13 +549,13 @@ export function DashboardChatContainer({
             p.type === 'text' || (typeof p.type === 'string' && p.type.startsWith('tool-'))
           );
 
-          currentIsThinking = (status === 'streaming' || status === 'submitted') && !hasNonReasoningParts;
+          derivedIsThinking = (status === 'streaming' || status === 'submitted') && !hasNonReasoningParts;
 
           if (reasoningParts.length > 0) {
-            currentThinkingSteps = reasoningParts.map((part, idx) => ({
+            derivedThinkingSteps = reasoningParts.map((part, idx) => ({
               id: `${m.id}-reasoning-${idx}`,
               content: part.text,
-              status: (currentIsThinking && idx === reasoningParts.length - 1) ? 'thinking' : 'complete'
+              status: (derivedIsThinking && idx === reasoningParts.length - 1) ? 'thinking' : 'complete'
             }));
           }
         }
@@ -368,19 +589,19 @@ export function DashboardChatContainer({
       };
     });
 
-    // Update thinking state
-    setThinkingSteps(currentThinkingSteps);
-    setIsThinking(currentIsThinking);
-
-    // Update chart generation state - show loading when Charts mode is active and streaming
+    // Derive chart generation state
     const isChartMode = selectedCreateType === 'Charts';
     const shouldShowChartLoading = (chartToolCallActive || (isChartMode && status === 'streaming')) && status !== 'ready';
-    setIsGeneratingChart(shouldShowChartLoading);
 
-    return transformed;
+    return {
+      messages: transformed,
+      currentThinkingSteps: derivedThinkingSteps,
+      currentIsThinking: derivedIsThinking,
+      isGeneratingChart: shouldShowChartLoading,
+    };
   }, [rawMessages, status, selectedCreateType]);
 
-  // Track thinking duration
+  // Track thinking duration using derived values
   useEffect(() => {
     if (status === 'streaming' || status === 'submitted') {
       if (!thinkingStartTime && !thinkingFinished) {
@@ -388,7 +609,7 @@ export function DashboardChatContainer({
         setThinkingFinished(false);
       }
       // Stop timer when thinking ends (text starts appearing)
-      if (thinkingStartTime && !isThinking && thinkingSteps.length > 0 && !thinkingFinished) {
+      if (thinkingStartTime && !currentIsThinking && currentThinkingSteps.length > 0 && !thinkingFinished) {
         const duration = Math.round((Date.now() - thinkingStartTime) / 1000);
         setThinkingDuration(duration);
         setThinkingFinished(true);
@@ -401,16 +622,52 @@ export function DashboardChatContainer({
       setThinkingStartTime(null);
       setThinkingFinished(false);
     }
-  }, [status, thinkingStartTime, thinkingFinished, isThinking, thinkingSteps.length]);
+  }, [status, thinkingStartTime, thinkingFinished, currentIsThinking, currentThinkingSteps.length]);
 
   // Check if AI is currently processing (submitted or streaming)
   const isLoading = status === 'streaming' || status === 'submitted';
 
-  // Auto-scroll on new messages and when loading state changes
+  // Memoize reasoning steps for the streaming message to avoid recreating arrays every render
+  const memoizedStreamingSteps = useMemo(() => {
+    if (currentThinkingSteps.length > 0) {
+      return convertToReasoningSteps(currentThinkingSteps, currentIsThinking);
+    }
+    return convertToReasoningSteps(DEFAULT_THINKING_STEPS, true);
+  }, [currentThinkingSteps, currentIsThinking]);
+
+  // Stable retry callback for MemoizedMessageRow
+  const handleRetry = useCallback((idx: number, content: string) => {
+    const previousMessages = rawMessages.slice(0, idx);
+    setMessages(previousMessages);
+    sendMessage({
+      message: content,
+      body: {
+        model: selectedModel,
+        ...(selectedCreateType && { createType: selectedCreateType }),
+      },
+    });
+  }, [rawMessages, setMessages, sendMessage, selectedModel, selectedCreateType]);
+
+  // Stable reload callback
+  const handleReload = useCallback(() => {
+    reload();
+  }, [reload]);
+
+  // Auto-scroll on new messages (throttled with rAF to avoid layout thrashing)
+  const scrollRAFRef = useRef<number | null>(null);
   useEffect(() => {
     if (chatAreaRef.current) {
-      chatAreaRef.current.scrollTop = chatAreaRef.current.scrollHeight;
+      if (scrollRAFRef.current) cancelAnimationFrame(scrollRAFRef.current);
+      scrollRAFRef.current = requestAnimationFrame(() => {
+        if (chatAreaRef.current) {
+          chatAreaRef.current.scrollTop = chatAreaRef.current.scrollHeight;
+        }
+        scrollRAFRef.current = null;
+      });
     }
+    return () => {
+      if (scrollRAFRef.current) cancelAnimationFrame(scrollRAFRef.current);
+    };
   }, [messages, isLoading]);
 
   // Handle copy event to strip formatting (copy as plain text only)
@@ -1065,164 +1322,24 @@ Analyze the survey structure, questions, and design. Then help me build a simila
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             >
               {messages.map((msg, idx) => (
-                <div key={msg.id} className="space-y-2 group/message">
-                  {msg.role === "user" ? (
-                    <div className="flex flex-col items-end gap-1">
-                      <div
-                        className="px-4 py-2.5 inline-block"
-                        style={{
-                          backgroundColor: "rgb(38, 38, 38)",
-                          color: "#ffffff",
-                          borderRadius: "18px",
-                          maxWidth: "min(75%, 600px)",
-                          wordBreak: "break-word",
-                        }}
-                      >
-                        <p
-                          className="whitespace-pre-wrap"
-                          style={{ fontSize: "14px", lineHeight: "1.5", fontFamily: "'Opening Hours Sans', sans-serif" }}
-                        >
-                          {msg.content}
-                        </p>
-                      </div>
-                      {/* User message actions - show on hover */}
-                      <div className="flex items-center gap-1 opacity-0 group-hover/message:opacity-100 transition-opacity">
-                        <span className="text-xs text-muted-foreground mr-1">
-                          {msg.createdAt ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(msg.createdAt) : ''}
-                        </span>
-                        <button
-                          onClick={() => {
-                            // Retry: resend this message to get a new AI response
-                            // Remove this user message and all messages after it, then resend
-                            const previousMessages = rawMessages.slice(0, idx);
-                            setMessages(previousMessages);
-                            // Resend the user message
-                            sendMessage({
-                              message: msg.content,
-                              body: {
-                                model: selectedModel,
-                                ...(selectedCreateType && { createType: selectedCreateType }),
-                              },
-                            });
-                          }}
-                          className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
-                          title="Retry"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5 text-muted-foreground" />
-                        </button>
-                        <button
-                          onClick={() => handleCopyMessage(msg.id, msg.content)}
-                          className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
-                          title={copiedMessageId === msg.id ? "Copied!" : "Copy"}
-                        >
-                          {copiedMessageId === msg.id ? (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-                          ) : (
-                            <Copy className="w-3.5 h-3.5 text-muted-foreground" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="w-full space-y-3">
-                      {/* Show reasoning/chain-of-thought for this message */}
-                      {/* For streaming message: show thinkingSteps from state (or default "Thinking...") */}
-                      {idx === messages.length - 1 && isLoading && !isGeneratingChart && (
-                        <div className="mb-3">
-                          <ReasoningDisplay
-                            steps={thinkingSteps.length > 0 
-                              ? convertToReasoningSteps(thinkingSteps, isThinking || !msg.content)
-                              : [{ id: 'thinking', content: 'Thinking...', status: 'thinking' as const }]
-                            }
-                            duration={thinkingDuration}
-                            isThinking={isThinking || !msg.content}
-                            defaultOpen={true}
-                          />
-                        </div>
-                      )}
-                      {/* For completed messages: show msg.reasoning */}
-                      {msg.reasoning && msg.reasoning.length > 0 && !(idx === messages.length - 1 && isLoading) && (
-                        <div className="mb-3">
-                          <ReasoningDisplay
-                            steps={convertToReasoningSteps(msg.reasoning, false)}
-                            duration={msg.reasoningDuration || 0}
-                            isThinking={false}
-                          />
-                        </div>
-                      )}
-                      {/* AI response with markdown rendering - use MarkdownRenderer for chart support */}
-                      <div className="w-full ai-response-markdown leading-relaxed text-[var(--surbee-fg-primary)]" style={{ fontSize: '16px' }}>
-                        {effectfulMessages[msg.id] ? (
-                          <TextGenerateEffect
-                            words={msg.content}
-                            className="text-[var(--surbee-fg-primary)] ai-response-markdown"
-                            textClassName="leading-relaxed text-[var(--surbee-fg-primary)] break-words whitespace-pre-wrap"
-                            style={{ fontSize: '16px' }}
-                            duration={0.45}
-                          />
-                        ) : (
-                          <MarkdownRenderer content={msg.content} />
-                        )}
-                      </div>
-
-                      {/* Action buttons for AI messages - show on hover */}
-                      {!isLoading && (
-                        <div className="flex items-center gap-0.5 pt-2 opacity-0 group-hover/message:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleCopyMessage(msg.id, msg.content)}
-                            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
-                            title={copiedMessageId === msg.id ? "Copied!" : "Copy to clipboard"}
-                          >
-                            {copiedMessageId === msg.id ? (
-                              <CheckCircle2 className="w-4 h-4 text-green-500" />
-                            ) : (
-                              <Copy className="w-4 h-4 text-muted-foreground" />
-                            )}
-                          </button>
-                          <button
-                            onClick={() => handleFeedback(msg.id, "up")}
-                            className={`p-1.5 rounded-lg hover:bg-white/10 transition-colors ${
-                              feedbackGiven[msg.id] === "up" ? "bg-white/10" : ""
-                            }`}
-                            title="Good response"
-                            disabled={!!feedbackGiven[msg.id]}
-                          >
-                            <ThumbsUp
-                              className={`w-4 h-4 ${
-                                feedbackGiven[msg.id] === "up"
-                                  ? "text-green-500"
-                                  : "text-muted-foreground"
-                              }`}
-                            />
-                          </button>
-                          <button
-                            onClick={() => handleFeedback(msg.id, "down")}
-                            className={`p-1.5 rounded-lg hover:bg-white/10 transition-colors ${
-                              feedbackGiven[msg.id] === "down" ? "bg-white/10" : ""
-                            }`}
-                            title="Bad response"
-                            disabled={!!feedbackGiven[msg.id]}
-                          >
-                            <ThumbsDown
-                              className={`w-4 h-4 ${
-                                feedbackGiven[msg.id] === "down"
-                                  ? "text-red-500"
-                                  : "text-muted-foreground"
-                              }`}
-                            />
-                          </button>
-                          <button
-                            onClick={() => reload()}
-                            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
-                            title="Regenerate response"
-                          >
-                            <RotateCcw className="w-4 h-4 text-muted-foreground" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <MemoizedMessageRow
+                  key={msg.id}
+                  msg={msg}
+                  idx={idx}
+                  isLastMessage={idx === messages.length - 1}
+                  isLoading={isLoading}
+                  isGeneratingChart={isGeneratingChart}
+                  currentIsThinking={currentIsThinking}
+                  memoizedStreamingSteps={memoizedStreamingSteps}
+                  thinkingDuration={thinkingDuration}
+                  effectfulMessages={effectfulMessages}
+                  copiedMessageId={copiedMessageId}
+                  feedbackGiven={feedbackGiven}
+                  onCopy={handleCopyMessage}
+                  onFeedback={handleFeedback}
+                  onRetry={handleRetry}
+                  onReload={handleReload}
+                />
               ))}
 
               {/* Loading indicator - show when loading and last message has no content yet */}
@@ -1231,14 +1348,11 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                   const lastAssistantMsg = messages.filter(m => m.role === 'assistant').pop();
                   const hasNoContent = !lastAssistantMsg || !lastAssistantMsg.content;
                   if (!hasNoContent) return null;
-                  
+
                   return (
                     <div className="flex flex-col items-start gap-3">
                       <ReasoningDisplay
-                        steps={thinkingSteps.length > 0 
-                          ? convertToReasoningSteps(thinkingSteps, true)
-                          : [{ id: 'thinking', content: 'Thinking...', status: 'thinking' as const }]
-                        }
+                        steps={memoizedStreamingSteps}
                         duration={thinkingDuration}
                         isThinking={true}
                         defaultOpen={true}
@@ -1386,6 +1500,8 @@ Analyze the survey structure, questions, and design. Then help me build a simila
               <DropdownMenu open={isCreateOpen} onOpenChange={(open) => {
                 if (!selectedCreateType) setIsCreateOpen(open);
               }}>
+                <Tooltip open={isCreateOpen || selectedCreateType ? false : undefined}>
+                <TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
                   <button
                     className={`flex flex-row justify-center items-center py-1.5 h-9 text-sm leading-5 whitespace-nowrap transition-all duration-200 relative gap-1.5 cursor-pointer rounded-full border border-transparent px-4 pl-3 font-normal ${
@@ -1448,6 +1564,9 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                     </div>
                   </button>
                 </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={4}>Choose what to create</TooltipContent>
+                </Tooltip>
               <DropdownMenuContent
                 align="start"
                 side="bottom"
@@ -1511,9 +1630,11 @@ Analyze the survey structure, questions, and design. Then help me build a simila
               setIsSourcesOpen(open);
               if (!open) setSourcesDropdownView('main');
             }}>
+              <Tooltip open={isSourcesOpen ? false : undefined}>
+              <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="flex h-9 items-center rounded-full pr-3.5 pl-3 font-normal text-sm transition-all duration-200 cursor-pointer bg-transparent hover:bg-[rgba(255,255,255,0.05)]"
+                  className="flex h-9 items-center rounded-full pr-3.5 pl-3 font-normal text-sm transition-all duration-200 cursor-pointer bg-transparent hover:bg-black/5 dark:hover:bg-white/5"
                   type="button"
                   style={{ color: 'var(--surbee-fg-primary)', fontFamily: "'Opening Hours Sans', sans-serif" }}
                 >
@@ -1525,6 +1646,9 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                   </div>
                 </button>
               </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={4}>Add references, files, or import surveys</TooltipContent>
+              </Tooltip>
               <DropdownMenuContent
                 align="start"
                 side="bottom"
@@ -1687,9 +1811,11 @@ Analyze the survey structure, questions, and design. Then help me build a simila
               setIsSourcesOpen(open);
               if (!open) setSourcesDropdownView('main'); // Reset view when closing
             }}>
+              <Tooltip open={isSourcesOpen ? false : undefined}>
+              <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="flex h-9 items-center rounded-full pr-3.5 pl-3 font-normal text-sm transition-all duration-200 cursor-pointer bg-transparent hover:bg-[rgba(255,255,255,0.05)]"
+                  className="flex h-9 items-center rounded-full pr-3.5 pl-3 font-normal text-sm transition-all duration-200 cursor-pointer bg-transparent hover:bg-black/5 dark:hover:bg-white/5"
                   type="button"
                   style={{ color: 'var(--surbee-fg-primary)', fontFamily: "'Opening Hours Sans', sans-serif" }}
                 >
@@ -1701,6 +1827,9 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                   </div>
                 </button>
               </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={4}>Add references, files, or import surveys</TooltipContent>
+              </Tooltip>
               <DropdownMenuContent
                 align="end"
                 side="bottom"
@@ -1896,6 +2025,8 @@ Analyze the survey structure, questions, and design. Then help me build a simila
               <DropdownMenu open={isModelOpen} onOpenChange={(open) => {
                 if (!isModelExplicitlySelected || open) setIsModelOpen(open);
               }}>
+                <Tooltip open={isModelOpen || isModelExplicitlySelected ? false : undefined}>
+                <TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
                   <button
                     className={`flex flex-row justify-center items-center py-1.5 h-9 text-sm leading-5 whitespace-nowrap transition-all duration-200 relative gap-1.5 cursor-pointer rounded-full border border-transparent px-4 pl-3 font-normal ${
@@ -1947,6 +2078,9 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                     </div>
                   </button>
                 </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={4}>Choose AI model</TooltipContent>
+                </Tooltip>
 
                 <DropdownMenuContent
                   align="end"
@@ -2151,29 +2285,33 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                 transition={{ duration: 0.3, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
               >
                 {[
-                  { label: 'Product feedback', prompt: 'Create a product feedback survey to understand what features users love, what frustrates them, and what improvements they\'d like to see in the next release.', build: true },
-                  { label: 'Analyze responses', prompt: 'Analyze my latest survey responses and summarize the key trends, common themes, and any notable outliers in the data.', build: false },
-                  { label: 'Customer satisfaction', prompt: 'Build a customer satisfaction (CSAT) survey that measures overall satisfaction, likelihood to recommend, and captures open-ended feedback on the experience.', build: true },
-                  { label: 'Improve questions', prompt: 'Review my most recent survey and suggest improvements to the questions — fix any leading or confusing wording and recommend better question types where appropriate.', build: false },
+                  { label: 'Product feedback', tooltip: 'Generate a product feedback survey', prompt: 'Create a product feedback survey to understand what features users love, what frustrates them, and what improvements they\'d like to see in the next release.', build: true },
+                  { label: 'Analyze responses', tooltip: 'Summarize trends in your survey data', prompt: 'Analyze my latest survey responses and summarize the key trends, common themes, and any notable outliers in the data.', build: false },
+                  { label: 'Customer satisfaction', tooltip: 'Build a CSAT survey', prompt: 'Build a customer satisfaction (CSAT) survey that measures overall satisfaction, likelihood to recommend, and captures open-ended feedback on the experience.', build: true },
+                  { label: 'Improve questions', tooltip: 'Get suggestions to improve your questions', prompt: 'Review my most recent survey and suggest improvements to the questions — fix any leading or confusing wording and recommend better question types where appropriate.', build: false },
                 ].map((suggestion) => (
-                  <button
-                    key={suggestion.label}
-                    type="button"
-                    onClick={() => {
-                      if (suggestion.build) {
-                        setSelectedCreateType('Survey');
-                        setIsBuildMode(true);
-                      }
-                      chatInputRef.current?.setText(suggestion.prompt);
-                    }}
-                    className="px-3.5 py-1.5 rounded-full text-sm transition-all duration-200 cursor-pointer border dark:border-white/10 border-black/10 dark:hover:bg-white/10 hover:bg-black/5 dark:hover:border-white/20 hover:border-black/20"
-                    style={{
-                      color: 'var(--surbee-fg-secondary)',
-                      fontFamily: "'Opening Hours Sans', sans-serif",
-                    }}
-                  >
-                    {suggestion.label}
-                  </button>
+                  <Tooltip key={suggestion.label}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (suggestion.build) {
+                            setSelectedCreateType('Survey');
+                            setIsBuildMode(true);
+                          }
+                          chatInputRef.current?.setText(suggestion.prompt);
+                        }}
+                        className="px-3.5 py-1.5 rounded-full text-sm transition-all duration-200 cursor-pointer border dark:border-white/10 border-black/10 dark:hover:bg-white/10 hover:bg-black/5 dark:hover:border-white/20 hover:border-black/20"
+                        style={{
+                          color: 'var(--surbee-fg-secondary)',
+                          fontFamily: "'Opening Hours Sans', sans-serif",
+                        }}
+                      >
+                        {suggestion.label}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={4}>{suggestion.tooltip}</TooltipContent>
+                  </Tooltip>
                 ))}
               </motion.div>
             )}

@@ -172,7 +172,7 @@ export default function ContactSalesPage() {
         </svg>
       </button>
 
-      <div className="mx-auto max-w-screen-2xl md:grid md:grid-cols-12 md:gap-x-6 md:px-8 relative z-10">
+      <div className="mx-auto max-w-screen-2xl md:grid md:grid-cols-12 md:gap-x-6 md:px-8 relative z-10 min-h-screen items-center">
         {/* Left Column - Info */}
         <section className="md:col-span-4 md:col-start-2 mt-10 sm:mt-20">
           <div className="w-full max-md:max-w-[calc(100%-3rem)] max-md:mx-auto flex flex-col gap-5 items-start">

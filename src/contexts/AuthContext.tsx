@@ -45,6 +45,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  profileLoaded: boolean;
   error: string | null;
   userProfile: UserProfile | null;
   hasCompletedOnboarding: boolean;
@@ -103,6 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } : null
   );
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(initialPaddleDemo); // Already "loaded" for paddle demo
   const [recentAccounts, setRecentAccounts] = useState<RecentAccount[]>([]);
   const [isPaddleDemo, setIsPaddleDemo] = useState(initialPaddleDemo);
 
@@ -227,7 +229,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         } catch (error) {
           console.error('Error loading user profile from database:', error);
+        } finally {
+          setProfileLoaded(true);
         }
+      } else {
+        setProfileLoaded(true);
       }
     };
 
@@ -468,6 +474,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     session,
     loading,
+    profileLoaded,
     error,
     userProfile,
     hasCompletedOnboarding,

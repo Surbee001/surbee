@@ -702,10 +702,10 @@ export default function ProjectManagePage() {
   // Handle back button click with animation
   const handleBack = () => {
     setIsExiting(true);
-    // Wait for animation to complete before navigating
+    // Wait for header collapse animation to complete before navigating
     setTimeout(() => {
       router.push('/projects');
-    }, 300); // Match transition duration
+    }, 350);
   };
 
   // Remove exit animation on mount - we want smooth entry only
@@ -856,9 +856,9 @@ export default function ProjectManagePage() {
 
   return (
             <ComponentRegistryProvider>
-              <div 
-                className="flex flex-col h-full" 
-                style={{ 
+              <div
+                className="flex flex-col h-full"
+                style={{
                   backgroundColor: 'var(--surbee-sidebar-bg)',
                   padding: '16px',
                   width: '100%',
@@ -866,16 +866,27 @@ export default function ProjectManagePage() {
                 }}
               >
                             {/* Header (Back Button and Tabs) - OUTSIDE the window */}
-                            <div
+                            <motion.div
+                              initial={{ height: 0, marginBottom: 0, opacity: 0 }}
+                              animate={{
+                                height: isExiting ? 0 : 32,
+                                marginBottom: isExiting ? 0 : 16,
+                                opacity: isExiting ? 0 : 1,
+                              }}
+                              transition={{
+                                height: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+                                marginBottom: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+                                opacity: { duration: 0.25, ease: [0.4, 0, 0.2, 1], delay: isExiting ? 0 : 0.1 },
+                              }}
                               style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
                                 padding: '0 4px',
-                                marginBottom: 16,
                                 flexShrink: 0,
                                 position: 'relative',
-                                zIndex: 0
+                                zIndex: 0,
+                                overflow: 'hidden',
                               }}
                             >
                               {/* Back Button */}
@@ -1175,8 +1186,8 @@ export default function ProjectManagePage() {
                                       Continue Editing
                                     </button>
                               </nav>
-                            </div>
-                
+                            </motion.div>
+
                 {/* Split Panel Container */}
                 <div
                   style={{
@@ -1188,25 +1199,15 @@ export default function ProjectManagePage() {
                   }}
                 >
                   {/* Main Content Window */}
-                  <motion.div
+                  <div
                     ref={containerRef}
                     className="flex flex-col overflow-hidden no-scrollbar rounded-xl shadow-sm"
-                    initial={{ y: -20, opacity: 1 }}
-                    animate={{
-                      y: isExiting ? -20 : 0,
-                      opacity: 1
-                    }}
-                    transition={{
-                      duration: 0.3,
-                      ease: [0.2, 0.8, 0.2, 1]
-                    }}
                     style={{
                       backgroundColor: 'var(--surbee-bg-primary)',
                       scrollbarWidth: 'none',
                       msOverflowStyle: 'none',
                       flex: 1,
                       minWidth: 0,
-                      willChange: 'transform',
                       boxSizing: 'border-box',
                       position: 'relative',
                       zIndex: 10,
@@ -1233,7 +1234,7 @@ export default function ProjectManagePage() {
           )}
 
           {/* Ask Surbee Component - Hidden */}
-        </motion.div>
+        </div>
 
         {/* Agent Panel */}
         {isAgentOpen && (
