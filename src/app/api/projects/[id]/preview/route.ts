@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-server';
 
 // Helper to trigger screenshot capture in background
-async function triggerScreenshotCapture(projectId: string, userId: string) {
+async function triggerScreenshotCapture(projectId: string, publishedUrl?: string) {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://surbee.com';
     // Fire and forget - don't wait for screenshot to complete
-    fetch(`${baseUrl}/api/projects/${projectId}/screenshot`, {
+    // Call the capture-screenshot endpoint which does server-side screenshot capture
+    fetch(`${baseUrl}/api/projects/${projectId}/capture-screenshot`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({ publishedUrl }),
     }).catch(err => console.log('Screenshot capture initiated:', err?.message || 'success'));
   } catch (err) {
     console.log('Could not trigger screenshot:', err);
@@ -49,7 +50,7 @@ export async function POST(
     if (existingProject && sandboxBundle) {
       console.log('[Preview API] Successfully updated project with sandbox:', projectId);
       // Capture screenshot asynchronously (don't block response)
-      triggerScreenshotCapture(projectId, userId);
+      triggerScreenshotCapture(projectId, existingProject.published_url);
 
       return NextResponse.json({
         success: true,
@@ -109,7 +110,7 @@ export async function POST(
 
       // Trigger screenshot capture for new project
       if (sandboxBundle) {
-        triggerScreenshotCapture(projectId, userId);
+        triggerScreenshotCapture(projectId);
       }
 
       console.log('[Preview API] Successfully created project:', projectId);

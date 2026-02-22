@@ -1,15 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
-@source "../node_modules/streamdown/dist/index.js";
+@source "../node_modules/streamdown/dist/*.js";
 
-/* Kalice Font from ImageKit */
+/* Kalice Font from ImageKit CDN */
 @font-face {
   font-family: 'Kalice-Trial-Regular';
   src: url('https://ik.imagekit.io/on0moldgr/Kalice-Trial-Regular.otf') format('opentype');
-  font-weight: normal;
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 /* Opening Hours Sans Font from ImageKit */
@@ -100,30 +101,34 @@ body {
 
 /* AI Response Markdown Styling (Streamdown) */
 .ai-response-markdown {
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.6;
   color: var(--surbee-fg-primary);
+  font-family: 'Opening Hours Sans', sans-serif;
 }
 
 .ai-response-markdown h1 {
-  font-size: 16px;
-  font-weight: 600;
+  font-family: 'Kalice-Trial-Regular', 'Opening Hours Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 400;
   margin-top: 1.25rem;
   margin-bottom: 0.75rem;
   line-height: 1.2;
 }
 
 .ai-response-markdown h2 {
-  font-size: 15px;
-  font-weight: 600;
+  font-family: 'Kalice-Trial-Regular', 'Opening Hours Sans', sans-serif;
+  font-size: 18px;
+  font-weight: 400;
   margin-top: 1rem;
   margin-bottom: 0.625rem;
   line-height: 1.3;
 }
 
 .ai-response-markdown h3 {
-  font-size: 14px;
-  font-weight: 600;
+  font-family: 'Kalice-Trial-Regular', 'Opening Hours Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
   margin-top: 0.875rem;
   margin-bottom: 0.5rem;
   line-height: 1.4;
@@ -146,9 +151,9 @@ body {
 
 .ai-response-markdown ul,
 .ai-response-markdown ol {
-  margin-top: 0.75rem;
-  margin-bottom: 1rem;
-  padding-left: 1.5rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+  padding-left: 1.25rem;
 }
 
 .ai-response-markdown ul {
@@ -160,16 +165,16 @@ body {
 }
 
 .ai-response-markdown li {
-  margin-bottom: 0.5rem;
-  line-height: 1.6;
+  margin-bottom: 0.125rem;
+  line-height: 1.5;
 }
 
 .ai-response-markdown li > p {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.125rem;
 }
 
 .ai-response-markdown code {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--surbee-accent-subtle);
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
   font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
@@ -177,7 +182,8 @@ body {
 }
 
 .ai-response-markdown pre {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--surbee-bg-secondary);
+  border: 1px solid var(--surbee-border-secondary);
   padding: 1rem;
   border-radius: 0.5rem;
   overflow-x: auto;
@@ -192,7 +198,7 @@ body {
 }
 
 .ai-response-markdown blockquote {
-  border-left: 3px solid rgba(255, 255, 255, 0.3);
+  border-left: 3px solid var(--surbee-border-primary);
   padding-left: 1rem;
   margin: 1rem 0;
   font-style: italic;
@@ -201,7 +207,7 @@ body {
 
 .ai-response-markdown hr {
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid var(--surbee-border-secondary);
   margin: 1.5rem 0;
 }
 
@@ -393,9 +399,9 @@ body {
   font-display: swap;
 }
 
-/* Inter font family definitions */
+/* Primary font family definitions */
 :root {
-  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  --font-inter: 'Opening Hours Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 /* Theme System - Professional Light/Dark Mode */
@@ -437,9 +443,9 @@ body {
   --sidebar-ring: oklch(0.708 0 0);
 
   /* White Theme Variables (Default) */
-  --surbee-bg-primary: #FFFFFF;
-  --surbee-bg-secondary: #F9F9F9;
-  --surbee-bg-tertiary: #F2F2F2;
+  --surbee-bg-primary: #F4F4F4;
+  --surbee-bg-secondary: #EDEDED;
+  --surbee-bg-tertiary: #E6E6E6;
   --surbee-bg-elevated: #FFFFFF;
 
   --surbee-fg-primary: #0a0a0a;
@@ -447,17 +453,17 @@ body {
   --surbee-fg-muted: #6b7280;
   --surbee-fg-inverse: #ffffff;
 
-  --surbee-border-primary: #E5E5E5;
-  --surbee-border-secondary: #F2F2F2;
+  --surbee-border-primary: #DEDEDE;
+  --surbee-border-secondary: #E6E6E6;
   --surbee-border-focus: #0a0a0a;
 
-  --surbee-card-bg: #F2F2F2;
-  --surbee-card-border: #E5E5E5;
-  --surbee-card-hover: #EBEBEB;
+  --surbee-card-bg: #EBEBEB;
+  --surbee-card-border: #DEDEDE;
+  --surbee-card-hover: #E3E3E3;
 
   --surbee-accent-primary: #0a0a0a;
   --surbee-accent-hover: #1a1a1a;
-  --surbee-accent-subtle: #F9F9F9;
+  --surbee-accent-subtle: #EDEDED;
 
   --surbee-success: #10b981;
   --surbee-success-subtle: #ecfdf5;
@@ -473,10 +479,10 @@ body {
   --surbee-input-placeholder: #9ca3af;
   --surbee-input-focus: #0a0a0a;
 
-  --surbee-sidebar-bg: #F2F2F2;
-  --surbee-sidebar-hover: #EBEBEB;
-  --surbee-sidebar-active: #E5E5E5;
-  --surbee-sidebar-border: #E5E5E5;
+  --surbee-sidebar-bg: #EBEBEB;
+  --surbee-sidebar-hover: #E3E3E3;
+  --surbee-sidebar-active: #DBDBDB;
+  --surbee-sidebar-border: #DEDEDE;
 
   /* Sidebar text - stays light since sidebar is always dark */
   --surbee-sidebar-text-primary: #E8E8E8;
@@ -493,12 +499,6 @@ body {
   --surbee-dropdown-text: rgb(10, 18, 23);
   --surbee-dropdown-text-muted: rgba(10, 18, 23, 0.6);
   --surbee-dropdown-separator: rgba(10, 18, 23, 0.08);
-
-  /* Morning sunrise gradient for light mode */
-  --surbee-gradient-start: #FFF8F0;
-  --surbee-gradient-mid: #FFEEE0;
-  --surbee-gradient-end: #FFE4D4;
-  --surbee-chat-gradient: linear-gradient(to bottom, transparent 0%, #FCFBF8 35%, #FCFBF8 100%);
 
   /* Button styling - always dark for primary actions */
   --surbee-button-primary-bg: #171717;
@@ -616,11 +616,6 @@ body {
   --surbee-dropdown-separator: rgba(232, 232, 232, 0.08);
 
   /* Dark gradient */
-  --surbee-gradient-start: #131314;
-  --surbee-gradient-mid: #1a1a1b;
-  --surbee-gradient-end: #131314;
-  --surbee-chat-gradient: linear-gradient(to bottom, transparent 0%, #131314 35%, #131314 100%);
-
   /* Button styling - same in dark mode */
   --surbee-button-primary-bg: #ffffff;
   --surbee-button-primary-fg: #171717;
@@ -1791,21 +1786,23 @@ body {
 
 .feedback-modal-input-wrapper {
   position: fixed;
-  left: 12px;
-  bottom: 80px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 2600;
   display: flex;
   flex-direction: column;
-  background: hsl(0, 0%, 16%);
+  background: var(--surbee-card-bg, hsl(0, 0%, 16%));
+  border: 1px solid var(--surbee-border-primary);
   backdrop-filter: blur(32px) saturate(180%);
   -webkit-backdrop-filter: blur(32px) saturate(180%);
   -webkit-font-smoothing: antialiased;
   border-radius: 1rem;
-  padding: 0.75rem;
-  padding-bottom: 3rem;
-  width: 20rem;
-  min-height: 150px;
-  box-shadow: none;
+  padding: 1rem;
+  padding-bottom: 3.5rem;
+  width: 28rem;
+  min-height: 200px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .feedback-modal-textarea-container {
@@ -1820,54 +1817,54 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  height: 20px;
+  height: 12px;
   pointer-events: none;
   z-index: 1;
 }
 
 .feedback-modal-textarea-container::before {
   top: 0;
-  background: linear-gradient(to bottom, hsl(0, 0%, 16%) 0%, transparent 100%);
+  background: linear-gradient(to bottom, var(--surbee-card-bg, hsl(0, 0%, 16%)) 0%, transparent 100%);
 }
 
 .feedback-modal-textarea-container::after {
   bottom: 0;
-  background: linear-gradient(to top, hsl(0, 0%, 16%) 0%, transparent 100%);
+  background: linear-gradient(to top, var(--surbee-card-bg, hsl(0, 0%, 16%)) 0%, transparent 100%);
 }
 
 .feedback-modal-textarea {
   width: 100%;
   height: 100%;
-  min-height: 100px;
+  min-height: 140px;
   max-height: 300px;
   border: none;
   background: transparent;
-  color: #E8E8E8;
-  font-size: 0.875rem;
+  color: var(--surbee-fg-primary, #E8E8E8);
+  font-size: 0.9375rem;
   font-weight: 456;
-  line-height: 1.43;
+  line-height: 1.5;
   letter-spacing: 0.014em;
   resize: none;
   font-family: inherit;
   -webkit-font-smoothing: antialiased;
   outline: none;
-  padding: 0.25rem 0;
+  padding: 0.5rem 0;
   overflow-y: auto;
 }
 
 .feedback-modal-textarea::placeholder {
-  color: hsl(0, 0%, 68%);
+  color: var(--surbee-fg-muted, hsl(0, 0%, 68%));
 }
 
 .feedback-modal-send-btn {
   position: absolute;
-  right: 0.75rem;
-  bottom: 0.75rem;
-  background: #ffffff;
-  color: #000000;
+  right: 1rem;
+  bottom: 1rem;
+  background: var(--surbee-button-primary-bg, #ffffff);
+  color: var(--surbee-button-primary-fg, #000000);
   border: none;
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.375rem;
+  padding: 0.4375rem 1rem;
+  border-radius: 9999px;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -1876,11 +1873,11 @@ body {
 }
 
 .feedback-modal-send-btn:hover {
-  background: rgba(255, 255, 255, 0.9);
+  opacity: 0.9;
 }
 
 .feedback-modal-send-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
   transform: none;
 }
@@ -3924,6 +3921,11 @@ body {
   animation: fade-in-placeholder 0.3s ease-out;
 }
 
+/* Typing indicator dots */
+@keyframes typingPulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
 
 /* Custom scrollbar for dashboard chat */
 .custom-scrollbar {

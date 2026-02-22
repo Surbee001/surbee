@@ -14,6 +14,8 @@ import type {
   GeoLocation,
   HeatmapCell,
   QuestionStats,
+  SourceData,
+  BrowserData,
   InsightsData,
   TimePeriod,
 } from './types';
@@ -34,7 +36,7 @@ function generateMockData(): { responses: Response[]; questions: Question[] } {
     { question_id: 'q6', question_text: 'Any additional feedback?', question_type: 'text' },
   ];
 
-  const devices: ('desktop' | 'mobile' | 'tablet')[] = ['desktop', 'mobile', 'tablet'];
+  const devices: ('desktop' | 'laptop' | 'mobile' | 'tablet')[] = ['desktop', 'desktop', 'laptop', 'mobile', 'tablet'];
   const statuses: ('completed' | 'partial' | 'abandoned')[] = ['completed', 'completed', 'completed', 'partial', 'abandoned'];
 
   const mockResponses: Response[] = Array.from({ length: 47 }, (_, i) => {
@@ -203,7 +205,7 @@ export function useInsightsData(
         acc[r.deviceType] = (acc[r.deviceType] || 0) + 1;
         return acc;
       },
-      { desktop: 0, mobile: 0, tablet: 0 } as Record<string, number>
+      { desktop: 0, laptop: 0, mobile: 0, tablet: 0 } as Record<string, number>
     );
 
     // Calculate week over week change
@@ -228,6 +230,7 @@ export function useInsightsData(
       avgQuality: Math.round(avgQuality),
       devices: {
         desktop: deviceCounts.desktop || 0,
+        laptop: deviceCounts.laptop || 0,
         mobile: deviceCounts.mobile || 0,
         tablet: deviceCounts.tablet || 0,
       },
@@ -343,6 +346,32 @@ export function useInsightsData(
     return cells;
   }, [responses]);
 
+  // Source data (mock - survey distribution channels)
+  const sourceData = useMemo((): SourceData[] => {
+    const total = responses.length;
+    return [
+      { name: 'Direct Link', count: Math.floor(total * 0.412), color: '#3ECC8C' },
+      { name: 'Email', count: Math.floor(total * 0.254), color: '#2970FF' },
+      { name: 'Social Media', count: Math.floor(total * 0.152), color: '#F79009' },
+      { name: 'QR Code', count: Math.floor(total * 0.096), color: '#F04438' },
+      { name: 'Embedded', count: Math.floor(total * 0.055), color: '#7A5AF8' },
+      { name: 'Other', count: Math.max(0, total - Math.floor(total * 0.969)), color: '#667085' },
+    ].filter(s => s.count > 0);
+  }, [responses.length]);
+
+  // Browser data (mock)
+  const browserData = useMemo((): BrowserData[] => {
+    const total = responses.length;
+    return [
+      { name: 'Chrome', count: Math.floor(total * 0.646), color: '#3ECC8C' },
+      { name: 'Safari', count: Math.floor(total * 0.205), color: '#2970FF' },
+      { name: 'Firefox', count: Math.floor(total * 0.083), color: '#F79009' },
+      { name: 'Opera', count: Math.floor(total * 0.032), color: '#F04438' },
+      { name: 'Edge', count: Math.floor(total * 0.022), color: '#7A5AF8' },
+      { name: 'Other', count: Math.max(0, total - Math.floor(total * 0.988)), color: '#667085' },
+    ].filter(b => b.count > 0);
+  }, [responses.length]);
+
   // Question performance stats
   const questionStats = useMemo((): QuestionStats[] => {
     return questions.map((q, idx) => {
@@ -382,6 +411,8 @@ export function useInsightsData(
     geoData,
     heatmapData,
     questionStats,
+    sourceData,
+    browserData,
     loading,
     error,
   };

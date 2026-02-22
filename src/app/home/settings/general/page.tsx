@@ -308,18 +308,18 @@ export default function GeneralSettingsPage() {
           font-weight: 500;
           color: var(--surbee-fg-primary, #E8E8E8);
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.1);
+          border: 1px solid var(--surbee-border-primary, rgba(232, 232, 232, 0.1));
           border-radius: 9999px;
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
         .settings-tab:hover {
-          border-color: rgba(232, 232, 232, 0.2);
+          border-color: var(--surbee-border-primary, rgba(232, 232, 232, 0.2));
         }
 
         .settings-tab.active {
-          background: rgba(232, 232, 232, 0.05);
+          background: var(--surbee-accent-subtle, rgba(232, 232, 232, 0.05));
           border-color: transparent;
         }
 
@@ -341,7 +341,7 @@ export default function GeneralSettingsPage() {
           margin: 32px 0;
           width: 100%;
           height: 1px;
-          background-color: rgba(232, 232, 232, 0.08);
+          background-color: var(--surbee-border-secondary, rgba(232, 232, 232, 0.08));
         }
 
         /* Form Fields */
@@ -379,13 +379,13 @@ export default function GeneralSettingsPage() {
           font-size: 14px;
           color: var(--surbee-fg-primary, #E8E8E8);
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.15);
+          border: 1px solid var(--surbee-input-border, rgba(232, 232, 232, 0.15));
           transition: all 0.2s ease;
         }
 
         .field-input:focus {
           outline: none;
-          border-color: rgba(232, 232, 232, 0.3);
+          border-color: var(--surbee-border-primary, rgba(232, 232, 232, 0.3));
         }
 
         .field-input::placeholder {
@@ -400,7 +400,7 @@ export default function GeneralSettingsPage() {
           line-height: 1.5;
           color: var(--surbee-fg-primary, #E8E8E8);
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.15);
+          border: 1px solid var(--surbee-input-border, rgba(232, 232, 232, 0.15));
           resize: vertical;
           min-height: 100px;
           transition: all 0.2s ease;
@@ -409,7 +409,7 @@ export default function GeneralSettingsPage() {
 
         .field-textarea:focus {
           outline: none;
-          border-color: rgba(232, 232, 232, 0.3);
+          border-color: var(--surbee-border-primary, rgba(232, 232, 232, 0.3));
         }
 
         .field-textarea::placeholder {
@@ -427,13 +427,13 @@ export default function GeneralSettingsPage() {
           font-size: 14px;
           color: var(--surbee-fg-primary, #E8E8E8);
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.15);
+          border: 1px solid var(--surbee-input-border, rgba(232, 232, 232, 0.15));
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
         .field-select-btn:hover {
-          border-color: rgba(232, 232, 232, 0.25);
+          border-color: var(--surbee-border-primary, rgba(232, 232, 232, 0.25));
         }
 
         /* Avatar */
@@ -469,7 +469,7 @@ export default function GeneralSettingsPage() {
           font-size: 14px;
           font-weight: 500;
           border-radius: 9999px;
-          border: 1px solid rgba(232, 232, 232, 0.15);
+          border: 1px solid var(--surbee-input-border, rgba(232, 232, 232, 0.15));
           background: transparent;
           color: var(--surbee-fg-primary, #E8E8E8);
           cursor: pointer;
@@ -477,7 +477,7 @@ export default function GeneralSettingsPage() {
         }
 
         .tone-btn:hover {
-          border-color: rgba(232, 232, 232, 0.3);
+          border-color: var(--surbee-border-primary, rgba(232, 232, 232, 0.3));
         }
 
         .tone-btn.active {
@@ -505,7 +505,7 @@ export default function GeneralSettingsPage() {
           width: 44px;
           height: 24px;
           border-radius: 12px;
-          background: rgba(232, 232, 232, 0.12);
+          background: var(--surbee-accent-subtle, rgba(232, 232, 232, 0.12));
           border: none;
           cursor: pointer;
           transition: all 0.2s ease;
@@ -535,7 +535,7 @@ export default function GeneralSettingsPage() {
         .save-section {
           margin-top: 40px;
           padding-top: 24px;
-          border-top: 1px solid rgba(232, 232, 232, 0.08);
+          border-top: 1px solid var(--surbee-border-secondary);
         }
 
         .save-btn {
@@ -557,14 +557,14 @@ export default function GeneralSettingsPage() {
         .save-btn.disabled {
           opacity: 0.4;
           cursor: not-allowed;
-          background: rgba(232, 232, 232, 0.08);
+          background: var(--surbee-accent-subtle);
           color: var(--surbee-fg-muted, rgba(232, 232, 232, 0.4));
         }
 
         /* Dropdown styling */
         :global(.dropdown-content) {
           background: var(--surbee-bg-primary, rgb(19, 19, 20)) !important;
-          border: 1px solid rgba(232, 232, 232, 0.1) !important;
+          border: 1px solid var(--surbee-border-primary) !important;
           border-radius: 12px !important;
         }
 
@@ -575,7 +575,7 @@ export default function GeneralSettingsPage() {
         }
 
         :global(.dropdown-item:hover) {
-          background: rgba(232, 232, 232, 0.05) !important;
+          background: var(--surbee-accent-subtle) !important;
         }
       `}</style>
     </div>

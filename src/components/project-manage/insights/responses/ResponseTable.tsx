@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   Monitor, Smartphone, Tablet, ChevronDown, ChevronUp, Check, AlertTriangle, X,
-  Download, ChevronLeft, ChevronRight, Search, Filter, Clock, Award
+  Download, ChevronLeft, ChevronRight, Search, Filter, Clock, Award, ThumbsUp, ThumbsDown
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,9 @@ interface ResponseTableProps {
   responses: Response[];
   pageSize?: number;
   onExport?: () => void;
+  projectId?: string;
+  userId?: string;
+  onLabelResponse?: (responseId: string, isFraud: boolean) => Promise<void>;
 }
 
 type StatusFilter = 'all' | 'completed' | 'partial' | 'abandoned';
@@ -294,7 +297,13 @@ function ExportModal({ isOpen, onClose, responses }: ExportModalProps) {
   );
 }
 
-export function ResponseTable({ responses, pageSize: initialPageSize = 15 }: ResponseTableProps) {
+export function ResponseTable({
+  responses,
+  pageSize: initialPageSize = 15,
+  projectId,
+  userId,
+  onLabelResponse
+}: ResponseTableProps) {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -302,6 +311,50 @@ export function ResponseTable({ responses, pageSize: initialPageSize = 15 }: Res
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [qualityFilter, setQualityFilter] = useState<QualityFilter>('all');
   const [showExportModal, setShowExportModal] = useState(false);
+  const [labeledResponses, setLabeledResponses] = useState<Record<string, { isFraud: boolean; loading: boolean }>>({});
+
+  // Handle labeling a response
+  const handleLabel = async (responseId: string, isFraud: boolean, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!projectId || !userId) {
+      console.warn('Cannot label: missing projectId or userId');
+      return;
+    }
+
+    setLabeledResponses(prev => ({
+      ...prev,
+      [responseId]: { isFraud, loading: true }
+    }));
+
+    try {
+      if (onLabelResponse) {
+        await onLabelResponse(responseId, isFraud);
+      } else {
+        // Default API call
+        const response = await fetch(`/api/projects/${projectId}/responses/${responseId}/label`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isFraud, userId }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to label response');
+        }
+      }
+
+      setLabeledResponses(prev => ({
+        ...prev,
+        [responseId]: { isFraud, loading: false }
+      }));
+    } catch (error) {
+      console.error('Error labeling response:', error);
+      setLabeledResponses(prev => {
+        const { [responseId]: _, ...rest } = prev;
+        return rest;
+      });
+    }
+  };
 
   // Filter responses
   const filteredResponses = useMemo(() => {
@@ -532,6 +585,84 @@ export function ResponseTable({ responses, pageSize: initialPageSize = 15 }: Res
                         }}>
                           {response.flagReasons.join(', ')}
                         </span>
+                      )}
+
+                      {/* ML Feedback Buttons */}
+                      {projectId && userId && (
+                        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {labeledResponses[response.id] ? (
+                            <span style={{
+                              fontSize: 11,
+                              color: labeledResponses[response.id].isFraud ? 'var(--insights-danger)' : 'var(--insights-success)',
+                              padding: '4px 10px',
+                              background: labeledResponses[response.id].isFraud ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
+                              borderRadius: 6,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}>
+                              {labeledResponses[response.id].loading ? (
+                                'Saving...'
+                              ) : labeledResponses[response.id].isFraud ? (
+                                <>
+                                  <ThumbsDown size={12} />
+                                  Marked suspicious
+                                </>
+                              ) : (
+                                <>
+                                  <ThumbsUp size={12} />
+                                  Marked legitimate
+                                </>
+                              )}
+                            </span>
+                          ) : (
+                            <>
+                              <span style={{ fontSize: 11, color: 'var(--insights-fg-muted)', marginRight: 4 }}>
+                                Train ML:
+                              </span>
+                              <button
+                                onClick={(e) => handleLabel(response.id, false, e)}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  padding: '4px 10px',
+                                  background: 'rgba(34, 197, 94, 0.1)',
+                                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                                  borderRadius: 6,
+                                  color: 'var(--insights-success)',
+                                  fontSize: 11,
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease'
+                                }}
+                                title="Mark this response as legitimate (helps train ML model)"
+                              >
+                                <ThumbsUp size={12} />
+                                Legitimate
+                              </button>
+                              <button
+                                onClick={(e) => handleLabel(response.id, true, e)}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  padding: '4px 10px',
+                                  background: 'rgba(239, 68, 68, 0.1)',
+                                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                                  borderRadius: 6,
+                                  color: 'var(--insights-danger)',
+                                  fontSize: 11,
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease'
+                                }}
+                                title="Mark this response as suspicious/fraud (helps train ML model)"
+                              >
+                                <ThumbsDown size={12} />
+                                Suspicious
+                              </button>
+                            </>
+                          )}
+                        </div>
                       )}
                     </div>
 

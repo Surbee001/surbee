@@ -25,25 +25,16 @@ import { useDashboardChat } from '@/hooks/useDashboardChat';
 import { ThinkingDisplay } from '../../../../components/ThinkingUi/components/thinking-display';
 import { ToolCall } from '../../../../components/ThinkingUi/components/tool-call';
 import { AILoader } from '@/components/ai-loader';
+import ProjectLoader from '@/components/ui/project-loader';
 import { cn } from "@/lib/utils";
 import { Response } from '@/components/ai-elements/response';
 import { ToolCallTree } from '@/components/ToolCallTree';
+import { AgentWorkflow, convertPartsToWorkflowBlocks } from '@/components/agent/AgentWorkflow';
 import { VersionHistory } from '@/components/VersionHistory';
 import { Switch } from "@/components/ui/switch";
 import { ProjectSettings } from '@/components/project-manage/ProjectSettings';
-import {
-  SandboxProvider,
-  SandboxLayout,
-  type SandboxProviderProps,
-} from "@/components/kibo-ui/sandbox";
-import {
-  SandpackCodeEditor,
-  SandpackConsole,
-  SandpackFileExplorer,
-  SandpackPreview,
-  useSandpack,
-} from "@codesandbox/sandpack-react";
 import { ModalSandboxPreview } from "@/components/sandbox/ModalSandboxPreview";
+import { useUserStore } from "@/stores/userStore";
 
 interface ThinkingStep {
   id: string;
@@ -2295,70 +2286,27 @@ body {
   );
 }
 
-// Helper to create a stable bundle key for forcing Sandpack remounts
-function createBundleKey(files: Record<string, any>, entry: string): string {
-  if (!files || Object.keys(files).length === 0) return "empty";
-
-  // Create a hash from file paths and content lengths to detect changes
-  const fileSignature = Object.entries(files)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([path, file]) => `${path}:${file.code?.length || 0}`)
-    .join('|');
-
-  // Use a simple hash to keep key shorter
-  let hash = 0;
-  for (let i = 0; i < fileSignature.length; i++) {
-    const char = fileSignature.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-
-  return `${entry}-${Math.abs(hash)}`;
-}
-
-// Simple preview-only component for main area (no code editor)
-// Uses WebContainers exclusively
+// Simple preview-only component for main area
 function ProjectPreviewOnly({
   refreshKey = 0,
   bundle,
   projectId,
+  previewUrl,
   onPreviewUrlReady,
 }: {
-  providerProps?: SandboxProviderProps; // Keep for compatibility but not used
   refreshKey?: number;
   bundle?: SandboxBundle | null;
   projectId?: string;
+  previewUrl?: string | null;
   onPreviewUrlReady?: (url: string) => void;
 }) {
-  console.log('[ProjectPreviewOnly] bundle:', !!bundle, 'projectId:', projectId);
-
-  // Handle screenshot upload when Modal sandbox captures it
-  const handleScreenshotReady = useCallback(async (blob: Blob) => {
-    if (!projectId) return;
-
-    try {
-      const formData = new FormData();
-      formData.append('image', blob, 'screenshot.png');
-
-      const response = await fetch(`/api/projects/${projectId}/screenshot`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        console.log('✅ Screenshot uploaded successfully');
-      }
-    } catch (err) {
-      console.log('Screenshot upload failed:', err);
-    }
-  }, [projectId]);
-
-  // No bundle yet
-  if (!bundle) {
+  // If we have a previewUrl from the agent, use it directly
+  // Otherwise fall back to creating sandbox from bundle
+  if (!previewUrl && !bundle) {
     return (
-      <div className="h-full w-full bg-[#0a0a0a] flex items-center justify-center">
+      <div className="h-full w-full flex items-center justify-center" style={{ backgroundColor: 'var(--surbee-bg-primary)' }}>
         <div className="text-center">
-          <p className="text-xs" style={{ color: 'rgba(232, 232, 232, 0.5)' }}>
+          <p className="text-xs" style={{ color: 'var(--surbee-fg-muted)' }}>
             Waiting for survey content...
           </p>
         </div>
@@ -2366,829 +2314,17 @@ function ProjectPreviewOnly({
     );
   }
 
-  // Use Modal Sandbox
   return (
     <ModalSandboxPreview
+      previewUrl={previewUrl}
       bundle={bundle}
       refreshKey={refreshKey}
       className="h-full w-full"
-      onScreenshotReady={handleScreenshotReady}
       onPreviewUrlReady={onPreviewUrlReady}
       projectId={projectId}
     />
   );
 }
-
-// Wrapper component that can use useSandpack hook
-function SandpackPreviewWrapper() {
-  const { sandpack, dispatch } = useSandpack();
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    console.log('[SandpackPreviewWrapper] Sandpack status:', sandpack.status, 'error:', sandpack.error);
-    // Detect timeout or connection errors
-    if (sandpack.error?.message?.includes('TIME_OUT') || sandpack.error?.message?.includes('connect')) {
-      setHasError(true);
-    }
-  }, [sandpack.status, sandpack.error]);
-
-  const handleRetry = () => {
-    setHasError(false);
-    // Force Sandpack to reconnect
-    dispatch({ type: 'refresh' });
-  };
-
-  if (hasError || sandpack.error) {
-    return (
-      <div className="h-full w-full bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-center px-6">
-          <p className="text-sm mb-4" style={{ color: 'rgba(232, 232, 232, 0.6)' }}>
-            Preview connection timed out
-          </p>
-          <button
-            onClick={handleRetry}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-90"
-            style={{
-              background: '#E8E8E8',
-              color: 'rgb(19, 19, 20)'
-            }}
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="h-full w-full bg-[#0a0a0a]">
-      <SandpackPreview
-        className="h-full w-full"
-        showRefreshButton={false}
-        showNavigator={false}
-        showOpenInCodeSandbox={false}
-        style={{ backgroundColor: "#0a0a0a" }}
-      />
-    </div>
-  );
-}
-
-
-function ProjectSandboxView({
-  showConsole,
-  providerProps,
-  onFixError,
-  bundle,
-  viewMode = 'code',
-}: {
-  showConsole: boolean;
-  providerProps: SandboxProviderProps;
-  onFixError: (errorMessage: string) => void;
-  bundle: SandboxBundle | null;
-  viewMode?: 'code' | 'console';
-}) {
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
-  const downloadMenuRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    if (!downloadMenuOpen) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (downloadMenuRef.current && !downloadMenuRef.current.contains(e.target as Node)) {
-        setDownloadMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [downloadMenuOpen]);
-
-  const handleDownloadAll = useCallback(async () => {
-    if (!bundle) return;
-    setIsDownloading(true);
-    setDownloadMenuOpen(false);
-    try {
-      const JSZip = (await import("jszip")).default;
-      const { saveAs } = await import("file-saver");
-      const zip = new JSZip();
-      Object.entries(bundle.files).forEach(([filePath, contents]) => {
-        zip.file(filePath, contents ?? "");
-      });
-      const blob = await zip.generateAsync({ type: "blob" });
-      saveAs(blob, "surbee-survey-artifacts.zip");
-    } catch (error) {
-      console.error("[Sandbox] Failed to download bundle", error);
-    } finally {
-      setIsDownloading(false);
-    }
-  }, [bundle]);
-
-  const handleDownloadCurrentFile = useCallback(async () => {
-    if (!bundle) return;
-    const activeFile = Object.entries(bundle.files).find(([path]) =>
-      path === providerProps.files?.[path]?.active || path === bundle.entry
-    );
-    if (!activeFile) return;
-
-    setIsDownloading(true);
-    setDownloadMenuOpen(false);
-    try {
-      const { saveAs } = await import("file-saver");
-      const [filePath, contents] = activeFile;
-      const fileName = filePath.split('/').pop() || 'file.txt';
-      const blob = new Blob([contents ?? ""], { type: "text/plain;charset=utf-8" });
-      saveAs(blob, fileName);
-    } catch (error) {
-      console.error("[Sandbox] Failed to download file", error);
-    } finally {
-      setIsDownloading(false);
-    }
-  }, [bundle, providerProps.files]);
-
-  const dependencySummary = useMemo(() => {
-    if (!bundle) {
-      return "Bundle output will appear here as soon as SurbeeBuilder delivers a project.";
-    }
-    const deps = [...(bundle.dependencies ?? []), ...(bundle.devDependencies ?? [])];
-    const summaryParts = [`Entry file: ${bundle.entry}`];
-    if (deps.length > 0) {
-      summaryParts.push(`Requires: ${deps.join(", ")}`);
-    } else {
-      summaryParts.push("Requires: default React/Tailwind runtime only");
-    }
-    summaryParts.push("Global stylesheet: src/styles/survey.css");
-    return summaryParts.join(" | ");
-  }, [bundle]);
-
-  // Create a stable key based on bundle content to force remount on changes
-  const bundleKey = useMemo(() => {
-    if (!bundle) return "placeholder-project";
-    return createBundleKey(providerProps.files || {}, bundle.entry);
-  }, [bundle, providerProps.files]);
-
-  return (
-    <SandboxProvider key={bundleKey} {...providerProps}>
-      <SandboxLayout className="flex flex-col h-full min-h-0 overflow-hidden !bg-[#0a0a0a] !border-none !rounded-none">
-        {/* Top bar with info and download */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
-          <span className="text-xs text-zinc-400 leading-relaxed">{dependencySummary}</span>
-
-          {viewMode === 'code' ? (
-            // Download dropdown for code view
-            <div className="relative" ref={downloadMenuRef}>
-              <button
-                type="button"
-                onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
-                disabled={!bundle || isDownloading}
-                className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {isDownloading ? "Preparing..." : "Download"}
-                <ChevronDown className="w-3 h-3" />
-              </button>
-
-              {downloadMenuOpen && (
-                <div className="absolute right-0 top-full mt-1 w-48 rounded-md border border-zinc-700 shadow-lg z-10" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
-                  <button
-                    onClick={handleDownloadCurrentFile}
-                    className="w-full px-3 py-2 text-left text-xs text-zinc-300 hover:bg-white/10 transition-colors"
-                  >
-                    Download Current File
-                  </button>
-                  <button
-                    onClick={handleDownloadAll}
-                    className="w-full px-3 py-2 text-left text-xs text-zinc-300 hover:bg-white/10 transition-colors border-t border-zinc-700"
-                  >
-                    Download All Files (ZIP)
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            // Simple download button for console view
-            <button
-              type="button"
-              onClick={handleDownloadAll}
-              disabled={!bundle || isDownloading}
-              className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {isDownloading ? "Preparing..." : "Download ZIP"}
-            </button>
-          )}
-        </div>
-
-        {/* Main Content Area */}
-        {viewMode === 'code' ? (
-          // Code view: File tree on left, code editor on right (no preview)
-          <div className="flex-1 flex overflow-hidden min-h-0">
-            {/* File Explorer */}
-            <SandpackFileExplorer className="w-64 shrink-0 border-r border-zinc-800 text-sm text-zinc-200" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }} />
-
-            {/* Code Editor - Full width */}
-            <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
-              <SandpackCodeEditor
-                className="h-full w-full"
-                showLineNumbers
-                showInlineErrors
-                wrapContent
-                style={{ fontSize: 14, backgroundColor: '#0a0a0a' }}
-              />
-            </div>
-          </div>
-        ) : (
-          // Console view: File tree, code editor, and preview
-          <div className="flex-1 flex overflow-hidden min-h-0">
-            {/* File Explorer */}
-            <SandpackFileExplorer className="w-56 shrink-0 border-r border-zinc-800 text-xs text-zinc-200" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }} />
-
-            {/* Code Editor */}
-            <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
-              <SandpackCodeEditor
-                className="h-full w-full"
-                showLineNumbers
-                showInlineErrors
-                wrapContent
-                style={{ fontSize: 14, backgroundColor: '#0a0a0a' }}
-              />
-            </div>
-
-            {/* Preview */}
-            <div className="flex-1 border-l border-zinc-800 bg-[#0a0a0a]">
-              <SandpackPreview
-                className="h-full w-full"
-                showRefreshButton
-                showNavigator={false}
-                showOpenInCodeSandbox={false}
-                style={{ backgroundColor: "#0a0a0a" }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Console Panel at Bottom */}
-        {showConsole && (
-          <div className="h-48 border-t border-zinc-800 p-3" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
-            <SandpackConsole
-              className="h-full overflow-y-auto text-xs leading-relaxed text-emerald-100 [&>*]:font-mono"
-              style={{ backgroundColor: '#0a0a0a' }}
-            />
-          </div>
-        )}
-
-        <SandboxErrorPanel isVisible onFix={onFixError} />
-      </SandboxLayout>
-    </SandboxProvider>
-  );
-}
-
-const BASE_SANDBOX_DEPENDENCIES: Record<string, string> = {
-  react: "18.2.0", // Use stable version instead of latest
-  "react-dom": "18.2.0",
-  "framer-motion": "11.0.0", // Required for survey animations
-  // Remove lucide-react for faster loading - use inline SVG instead
-};
-
-function deriveSandboxConfig(bundle: SandboxBundle | null): {
-  files: SandboxProviderProps["files"];
-  activeFile: string;
-  dependencies: Record<string, string>;
-} {
-  if (!bundle) {
-    return createDefaultSandboxConfig();
-  }
-
-  const files: SandboxProviderProps["files"] = {};
-  const normalizedEntry = normalizeSandboxPath(bundle.entry);
-  const dependencies = buildSandboxDependencies(bundle);
-  let entryExists = false;
-
-  // Process all files - they should already be normalized from the useEffect
-  for (const [filePath, contents] of Object.entries(bundle.files)) {
-    const normalizedPath = normalizeSandboxPath(filePath);
-    const code = typeof contents === "string" ? contents : "";
-    files[normalizedPath] = {
-      code,
-      active: normalizedPath === normalizedEntry,
-    };
-    if (normalizedPath === normalizedEntry) {
-      entryExists = true;
-    }
-  }
-
-  if (!entryExists) {
-    files[normalizedEntry] = {
-      code: `export default function GeneratedSurvey() {
-  return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
-      <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-10 text-center">
-        <h1 className="text-2xl font-semibold">Entry component missing</h1>
-        <p className="mt-3 text-sm text-zinc-300">
-          The survey builder did not provide the file referenced in the tool call (\`${bundle.entry}\`).
-          Update the build output and retry.
-        </p>
-      </div>
-    </main>
-  );
-}
-`,
-      active: true,
-    };
-  }
-
-  const importSpecifier = toImportSpecifier(normalizedEntry);
-
-  // Debug: Log the import specifier and verify file exists
-  console.log('[deriveSandboxConfig] Entry:', normalizedEntry, 'Import:', importSpecifier);
-  console.log('[deriveSandboxConfig] Entry exists:', entryExists);
-  console.log('[deriveSandboxConfig] Available files:', Object.keys(files));
-
-  // Collect all CSS imports
-  const cssImports: string[] = ["./tailwind.css"];
-
-  // Find all CSS files and import them
-  Object.keys(files).forEach(filePath => {
-    if (filePath.endsWith('.css') && filePath !== '/tailwind.css') {
-      // Import CSS files with relative paths
-      const importPath = filePath.startsWith('/') ? `.${filePath}` : `./${filePath}`;
-      console.log('[deriveSandboxConfig] Found CSS file:', filePath, '-> import:', importPath);
-      cssImports.push(importPath);
-    }
-  });
-
-  console.log('[deriveSandboxConfig] Total CSS imports:', cssImports);
-
-  // Always recreate index.tsx to ensure import path matches current entry
-  // Includes visual edit helper for cross-origin iframe communication
-  files["/index.tsx"] = {
-    code: `import React from "react";
-import { createRoot } from "react-dom/client";
-import SurveyExperience from "${importSpecifier}";
-${cssImports.map(css => `import "${css}";`).join('\n')}
-
-// Visual Edit Helper - communicates with parent window via postMessage
-(function initVisualEditHelper() {
-  let isEditMode = false;
-  let highlightOverlay: HTMLDivElement | null = null;
-
-  const createHighlight = () => {
-    if (!highlightOverlay) {
-      highlightOverlay = document.createElement('div');
-      highlightOverlay.id = 'visual-edit-highlight';
-      highlightOverlay.style.cssText = \`
-        position: fixed;
-        pointer-events: none;
-        border: 2px solid #3b82f6;
-        background: rgba(59, 130, 246, 0.1);
-        border-radius: 4px;
-        z-index: 999999;
-        transition: all 0.1s ease;
-        display: none;
-      \`;
-      document.body.appendChild(highlightOverlay);
-    }
-    return highlightOverlay;
-  };
-
-  const findEditableParent = (el: HTMLElement): HTMLElement | null => {
-    let current: HTMLElement | null = el;
-    while (current && current !== document.body) {
-      const style = window.getComputedStyle(current);
-      const hasBackground = style.backgroundColor !== 'rgba(0, 0, 0, 0)' && style.backgroundColor !== 'transparent';
-      const hasBorder = style.border !== 'none' && style.borderWidth !== '0px';
-      const hasMinSize = current.offsetWidth > 50 && current.offsetHeight > 30;
-      const isInteractive = ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT', 'IMG', 'H1', 'H2', 'H3', 'P', 'SPAN', 'DIV', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER', 'NAV', 'FORM'].includes(current.tagName);
-      if ((hasBackground || hasBorder || isInteractive) && hasMinSize) {
-        return current;
-      }
-      current = current.parentElement;
-    }
-    return null;
-  };
-
-  const getSelector = (el: HTMLElement): string => {
-    if (el.id) return \`#\${el.id}\`;
-    if (el.className && typeof el.className === 'string') {
-      const classes = el.className.split(' ').filter(c => c && !c.startsWith('hover') && c.length < 30).slice(0, 2).join('.');
-      if (classes) return \`\${el.tagName.toLowerCase()}.\${classes}\`;
-    }
-    return el.tagName.toLowerCase();
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isEditMode) return;
-    const target = e.target as HTMLElement;
-    const editable = findEditableParent(target);
-    if (editable) {
-      const highlight = createHighlight();
-      const rect = editable.getBoundingClientRect();
-      highlight.style.top = \`\${rect.top}px\`;
-      highlight.style.left = \`\${rect.left}px\`;
-      highlight.style.width = \`\${rect.width}px\`;
-      highlight.style.height = \`\${rect.height}px\`;
-      highlight.style.display = 'block';
-    } else if (highlightOverlay) {
-      highlightOverlay.style.display = 'none';
-    }
-  };
-
-  const handleClick = (e: MouseEvent) => {
-    if (!isEditMode) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const target = e.target as HTMLElement;
-    const editable = findEditableParent(target);
-    if (editable) {
-      const selector = getSelector(editable);
-      const outerHTML = editable.outerHTML.slice(0, 2000);
-      const textContent = (editable.textContent || '').slice(0, 200);
-      window.parent.postMessage({
-        type: 'visual-edit-select',
-        element: { selector, outerHTML, textContent }
-      }, '*');
-    }
-  };
-
-  // Listen for messages from parent window
-  window.addEventListener('message', (e) => {
-    if (e.data?.type === 'visual-edit-mode') {
-      isEditMode = e.data.enabled;
-      if (!isEditMode && highlightOverlay) {
-        highlightOverlay.style.display = 'none';
-      }
-      if (isEditMode) {
-        document.body.style.cursor = 'crosshair';
-      } else {
-        document.body.style.cursor = '';
-      }
-    }
-  });
-
-  document.addEventListener('mousemove', handleMouseMove);
-  document.addEventListener('click', handleClick, true);
-})();
-
-const container = document.getElementById("root");
-
-if (container) {
-  const root = createRoot(container);
-  root.render(
-    <React.StrictMode>
-      <SurveyExperience />
-    </React.StrictMode>
-  );
-}
-`,
-  };
-
-  // Add tailwind.css file if it doesn't exist
-  if (!files["/tailwind.css"]) {
-    files["/tailwind.css"] = {
-      code: "/* Tailwind styles are provided via CDN in public/index.html */",
-      hidden: true,
-    };
-  }
-
-  // Add styles/survey.css file if it doesn't exist (AI agents often reference this)
-  if (!files["/styles/survey.css"]) {
-    files["/styles/survey.css"] = {
-      code: `/* Survey styles - Tailwind provided via CDN in public/index.html */
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}`,
-      hidden: true,
-    };
-  }
-
-  // Only create public/index.html if it doesn't exist
-  if (!files["/public/index.html"]) {
-    files["/public/index.html"] = {
-      code: `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Survey Preview</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font-family: 'Inter', sans-serif; }
-    </style>
-  </head>
-  <body class="bg-slate-950 text-slate-100">
-    <div id="root"></div>
-  </body>
-</html>
-`,
-      hidden: true,
-    };
-  }
-
-  if (!files["/package.json"]) {
-    files["/package.json"] = {
-      code: JSON.stringify(
-        {
-          name: "surbee-sandbox",
-          version: "1.0.0",
-          private: true,
-          main: "index.tsx",
-          dependencies,
-        },
-        null,
-       2
-      ),
-      hidden: true,
-    };
-  }
-
-  return {
-    files,
-    activeFile: normalizedEntry,
-    dependencies,
-  };
-}
-
-function createDefaultSandboxConfig(): {
-  files: SandboxProviderProps["files"];
-  activeFile: string;
-  dependencies: Record<string, string>;
-} {
-  const dependencies = { ...BASE_SANDBOX_DEPENDENCIES };
-  const files: SandboxProviderProps["files"] = {
-    "/App.tsx": {
-      code: `import { Calendar, Smile } from "lucide-react";
-
-interface SurveyQuestion {
-  id: string;
-  label: string;
-  type: "multiple-choice" | "rating" | "open-ended";
-  options?: string[];
-}
-
-const QUESTIONS: SurveyQuestion[] = [
-  {
-    id: "sentiment",
-    label: "How satisfied are you with your onboarding experience so far?",
-    type: "rating",
-    options: ["1", "2", "3", "4", "5"],
-  },
-  {
-    id: "channels",
-    label: "Which communication channels do you prefer?",
-    type: "multiple-choice",
-    options: ["Email", "SMS", "Slack", "Teams", "Phone"],
-  },
-  {
-    id: "insights",
-    label: "Share any ideas or questions you have for the team.",
-    type: "open-ended",
-  },
-];
-
-export default function App() {
-  return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-12">
-        <header className="flex flex-col gap-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-wider text-white/70">
-            <Calendar className="h-3 w-3" />
-            Customer Discovery Pulse
-          </div>
-          <h1 className="text-3xl font-semibold">
-            Tell us about your first impressions
-          </h1>
-          <p className="text-sm text-white/70">
-            Your answers help us tailor the onboarding journey to what matters most for your team.
-          </p>
-        </header>
-
-        <section className="space-y-6">
-          {QUESTIONS.map((question) => (
-            <article
-              key={question.id}
-              className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-white/5"
-            >
-              <h2 className="text-lg font-medium text-white/90">{question.label}</h2>
-              <div className="mt-4">
-                {question.type === "rating" && question.options && (
-                  <div className="flex items-center gap-1">
-                    {question.options.map((option) => (
-                      <button
-                        key={option}
-                        className="h-10 w-10 rounded-full border border-white/10 bg-white/10 text-sm text-white/80 transition hover:bg-white/20"
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {question.type === "multiple-choice" && question.options && (
-                  <div className="flex flex-wrap gap-2">
-                    {question.options.map((option) => (
-                      <label
-                        key={option}
-                        className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 transition hover:bg-white/10"
-                      >
-                        <input type="checkbox" className="accent-white/80" /> {option}
-                      </label>
-                    ))}
-                  </div>
-                )}
-                {question.type === "open-ended" && (
-                  <div className="relative">
-                    <textarea
-                      className="mt-2 block w-full resize-y rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/90 placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
-                      rows={4}
-                      placeholder="Drop your thoughts here..."
-                    />
-                    <Smile className="absolute bottom-4 right-4 h-4 w-4 text-white/40" />
-                  </div>
-                )}
-              </div>
-            </article>
-          ))}
-        </section>
-
-        <footer className="flex flex-col gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6 text-sm text-emerald-100">
-          <p>
-            We read every response. Your insights directly inform how we design product tours, playbooks,
-            and success metrics.
-          </p>
-          <button className="inline-flex w-fit items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-400">
-            Submit responses
-          </button>
-        </footer>
-      </div>
-    </main>
-  );
-}
-`,
-      active: true,
-    },
-    "/index.tsx": {
-      code: `import React from "react";
-import { createRoot } from "react-dom/client";
-import Survey from "./Survey";
-import "./tailwind.css";
-
-const container = document.getElementById("root");
-
-if (container) {
-  const root = createRoot(container);
-  root.render(
-    <React.StrictMode>
-      <Survey />
-    </React.StrictMode>
-  );
-}
-`,
-    },
-    "/tailwind.css": {
-      code: "/* Tailwind styles are provided via CDN in public/index.html for the default sandbox. */",
-      hidden: true,
-    },
-    "/public/index.html": {
-      code: `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Surbee Sandbox</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-  </head>
-  <body class="bg-slate-950 text-slate-100">
-    <div id="root"></div>
-  </body>
-</html>
-`,
-      hidden: true,
-    },
-    "/package.json": {
-      code: JSON.stringify(
-        {
-          name: "surbee-sandbox",
-          version: "1.0.0",
-          private: true,
-          main: "index.tsx",
-          dependencies,
-        },
-        null,
-        2
-      ),
-      hidden: true,
-    },
-  };
-
-  return {
-    files,
-    activeFile: "/App.tsx",
-    dependencies,
-  };
-}
-
-function normalizeSandboxPath(filePath: string): string {
-  const trimmed = filePath.replace(/^\.\//, "").replace(/\\/g, "/");
-  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-}
-
-function toImportSpecifier(normalizedPath: string): string {
-  const withoutExtension = normalizedPath.replace(/\.[tj]sx?$/, "");
-  return withoutExtension.startsWith("/")
-    ? `.${withoutExtension}`
-    : `./${withoutExtension}`;
-}
-
-function buildSandboxDependencies(bundle: SandboxBundle | null): Record<string, string> {
-  const dependencies: Record<string, string> = { ...BASE_SANDBOX_DEPENDENCIES };
-
-  const mergeSpecs = (specs?: string[]) => {
-    specs?.forEach((spec) => {
-      const parsed = parseDependencySpec(spec);
-      if (parsed) {
-        dependencies[parsed.name] = parsed.version;
-      }
-    });
-  };
-
-  mergeSpecs(bundle?.dependencies);
-  mergeSpecs(bundle?.devDependencies);
-
-  return dependencies;
-}
-
-function parseDependencySpec(spec: string): { name: string; version: string } | null {
-  const trimmed = spec.trim();
-  if (!trimmed) return null;
-
-  if (trimmed.startsWith("@")) {
-    const atIndex = trimmed.indexOf("@", 1);
-    if (atIndex !== -1) {
-      return {
-        name: trimmed.slice(0, atIndex),
-        version: trimmed.slice(atIndex + 1) || "latest",
-      };
-    }
-    return { name: trimmed, version: "latest" };
-  }
-
-  const lastAt = trimmed.lastIndexOf("@");
-  if (lastAt > 0) {
-    return {
-      name: trimmed.slice(0, lastAt),
-      version: trimmed.slice(lastAt + 1) || "latest",
-    };
-  }
-
-  return { name: trimmed, version: "latest" };
-}
-
-function SandboxErrorPanel({
-  isVisible,
-  onFix,
-}: {
-  isVisible: boolean;
-  onFix: (error: string) => void;
-}) {
-  const { sandpack } = useSandpack();
-  const errorMessage = useMemo(() => {
-    if (!isVisible) return null;
-    const errors = sandpack?.bundlerState?.errors ?? {};
-    const firstError = Object.values(errors)[0] as any;
-    if (!firstError) return null;
-    if (typeof firstError === "string") return firstError;
-    return firstError?.message || firstError?.stack || JSON.stringify(firstError);
-  }, [isVisible, sandpack?.bundlerState]);
-
-  if (!isVisible || !errorMessage) {
-    return null;
-  }
-
-  return (
-    <div className="pointer-events-auto absolute bottom-4 right-4 max-w-xs rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-3 text-sm shadow-lg backdrop-blur">
-      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-red-200">
-        Runtime error
-      </div>
-      <p className="text-sm text-red-100/90 whitespace-pre-wrap">
-        {errorMessage}
-      </p>
-      <button
-        type="button"
-        onClick={() => onFix(errorMessage)}
-        className="mt-2 inline-flex items-center justify-center gap-1 rounded-md bg-red-500/80 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-500"
-      >
-        Fix it
-      </button>
-    </div>
-  );
-}
-
 
 interface Project {
   id: string;
@@ -3439,32 +2575,8 @@ export default function ProjectPage() {
   const [rendererKey, setRendererKey] = useState(0);
   const [bundleVersions, setBundleVersions] = useState<BundleVersion[]>([]);
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
-  const sandboxConfig = useMemo(() => {
-    return deriveSandboxConfig(sandboxBundle);
-  }, [sandboxBundle]);
-
-  const sandboxProviderProps = useMemo<SandboxProviderProps>(() => ({
-    template: "react-ts",
-    theme: "dark",
-    files: sandboxConfig.files,
-    customSetup: {
-      entry: "/index.tsx",
-      main: "/index.tsx",
-      dependencies: sandboxConfig.dependencies,
-      environment: "create-react-app",
-    },
-    options: {
-      activeFile: sandboxConfig.activeFile,
-      autorun: true,
-      recompileMode: "delayed", // Changed from "immediate" to "delayed" for better performance
-      recompileDelay: 500, // Increased delay to reduce compilation frequency
-      externalResources: [
-        "https://cdn.tailwindcss.com?plugins=forms", // Removed typography plugin for faster loading
-        "https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap", // Only load regular weight
-      ],
-    },
-  }), [sandboxConfig]);
-  const sandboxAvailable = Boolean(sandboxBundle);
+  const [sandboxPreviewUrl, setSandboxPreviewUrl] = useState<string | null>(null);
+  const sandboxAvailable = Boolean(sandboxBundle || sandboxPreviewUrl);
 
   // Initialize selected model ONCE from sessionStorage
   const [selectedModel, setSelectedModel] = useState<AIModel>(() => {
@@ -3623,24 +2735,25 @@ export default function ProjectPage() {
     }
   }, [searchParams, user?.id, loadChatContext, clearChatContext, setMessages, dashboardContextLoaded]);
 
-  // No debouncing needed - we render directly from messages
-
-  // Save chat messages to session whenever they change
+  // Save chat messages to session only when streaming completes (not during streaming)
+  const prevSavedLengthRef = useRef(0);
   useEffect(() => {
-    if (messages.length > 0 && user?.id && !isSandboxPreview) {
-      // Convert messages to the format expected by saveChatMessages
-      const messagesToSave = messages.map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'assistant',
-        content: msg.text || msg.content || '',
-        ...msg // Include any other properties
-      }));
+    if (status !== 'ready') return;
+    if (messages.length === 0 || !user?.id || isSandboxPreview) return;
+    // Skip if we already saved this exact message count
+    if (messages.length === prevSavedLengthRef.current) return;
+    prevSavedLengthRef.current = messages.length;
 
-      // Save to database with the auto-generated title if available
-      saveChatMessages(messagesToSave as any, autoGeneratedTitle || undefined).catch(err => {
-        console.error('Failed to save chat messages:', err);
-      });
-    }
-  }, [messages, user?.id, saveChatMessages, isSandboxPreview, autoGeneratedTitle]);
+    const messagesToSave = messages.map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'assistant',
+      content: msg.text || msg.content || '',
+      ...msg
+    }));
+
+    saveChatMessages(messagesToSave as any, autoGeneratedTitle || undefined).catch(err => {
+      console.error('Failed to save chat messages:', err);
+    });
+  }, [status, messages, user?.id, saveChatMessages, isSandboxPreview, autoGeneratedTitle]);
 
   // Save sandbox bundle and trigger screenshot capture via API
   useEffect(() => {
@@ -3651,10 +2764,6 @@ export default function ProjectPage() {
         // Wait for questions to be saved first
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        console.log('📸 Saving sandbox bundle and triggering screenshot capture...');
-
-        // Save sandbox bundle - the preview API will trigger the screenshot API
-        // which uses Microlink to capture the actual published survey
         const response = await fetch(`/api/projects/${projectId}/preview`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -3664,9 +2773,7 @@ export default function ProjectPage() {
           }),
         });
 
-        if (response.ok) {
-          console.log('✅ Sandbox saved, screenshot capture triggered in background');
-        } else {
+        if (!response.ok) {
           console.error('Failed to save project:', await response.text());
         }
       } catch (error) {
@@ -3693,19 +2800,23 @@ export default function ProjectPage() {
 
     messagesLengthRef.current = messages.length;
 
-    console.log('[Bundle Extraction] Checking for source_files, messages:', messages.length, 'status:', status);
 
     // Look through all assistant messages for any tool that returns source_files
     for (let i = messages.length - 1; i >= 0; i--) {
       const msg = messages[i];
       if (msg.role !== 'assistant') continue;
 
-      // Check ALL tool parts for source_files
+      // Check ALL tool parts for source_files and preview_url
       for (const part of msg.parts) {
         if (part.type.startsWith('tool-') && part.state === 'output-available') {
           const output = part.output as any;
+
+          // Extract preview_url from any tool result (sandbox init, write, build, etc.)
+          if (output?.preview_url && typeof output.preview_url === 'string') {
+            setSandboxPreviewUrl(output.preview_url);
+          }
+
           if (output?.source_files && Object.keys(output.source_files).length > 0) {
-            console.log('[Bundle Extraction] Found source_files in tool output!');
 
             // Helper function to fix common syntax errors in generated code
             const fixSyntaxIssues = (code: string): string => {
@@ -3781,7 +2892,6 @@ export default function ProjectPage() {
             if (bundleStr !== prevBundleRef.current) {
               prevBundleRef.current = bundleStr;
 
-              console.log('[Bundle Extraction] New bundle detected! Updating sandbox...');
 
               // Extract and save questions from the generated survey
               const extractAndSaveQuestions = async () => {
@@ -3791,7 +2901,6 @@ export default function ProjectPage() {
                   const questions = extractQuestionsFromSourceFiles(normalizedFiles);
 
                   if (questions.length > 0) {
-                    console.log('[Questions] Extracted', questions.length, 'questions from survey');
 
                     // Save questions to database
                     const response = await fetch(`/api/projects/${projectId}/questions`, {
@@ -3804,7 +2913,6 @@ export default function ProjectPage() {
                     });
 
                     if (response.ok) {
-                      console.log('[Questions] Successfully saved questions to database');
                     } else {
                       console.error('[Questions] Failed to save questions:', await response.text());
                     }
@@ -3856,7 +2964,6 @@ export default function ProjectPage() {
                 if (!projectId || !user?.id) return;
 
                 try {
-                  console.log('[Project Save] Saving project with sandbox bundle');
                   
                   // First ensure project exists (create as draft if needed)
                   // Don't update status if project is already published - avoid race condition with publish
@@ -3889,7 +2996,6 @@ export default function ProjectPage() {
                   });
 
                   if (previewResponse.ok) {
-                    console.log('[Project Save] ✅ Project saved with sandbox bundle');
                     // Update local project state if we have it
                     const previewData = await previewResponse.json();
                     if (previewData.project) {
@@ -3906,7 +3012,6 @@ export default function ProjectPage() {
               // Save project asynchronously
               saveProjectWithBundle();
             } else {
-              console.log('[Bundle Extraction] Bundle unchanged, skipping update');
             }
             return; // Use the most recent source_files found
           }
@@ -3914,7 +3019,6 @@ export default function ProjectPage() {
       }
     }
 
-    console.log('[Bundle Extraction] No source_files found in messages');
   }, [messages, status]); // Also depend on status to re-check when streaming finishes
 
   // Track thinking duration
@@ -3959,7 +3063,6 @@ export default function ProjectPage() {
   const [versionCounter, setVersionCounter] = useState(1);
   const [currentDevice, setCurrentDevice] = useState<'desktop' | 'tablet' | 'phone'>('desktop');
   const [previewUrl, setPreviewUrl] = useState('/');
-  const [sandboxPreviewUrl, setSandboxPreviewUrl] = useState<string | null>(null);
   const [isPageDropdownOpen, setIsPageDropdownOpen] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<string>('/');
   const [pages, setPages] = useState<{ path: string; title: string }[]>([{ path: '/', title: '/' }]);
@@ -3998,7 +3101,6 @@ export default function ProjectPage() {
           if (!res.ok) {
             // Project doesn't exist yet (404) - create it as a draft
             if (res.status === 404) {
-              console.log('Project not found, creating as draft');
               // Create project as draft via updateProject (which creates if doesn't exist)
               return fetch(`/api/projects/${projectId}`, {
                 method: 'PATCH',
@@ -4040,7 +3142,6 @@ export default function ProjectPage() {
             // CRITICAL: Restore sandbox_bundle from database if available
             // This ensures the survey content persists across page navigations
             if (data.project.sandbox_bundle && !sandboxBundle) {
-              console.log('📦 Restoring sandbox_bundle from database');
               const restoredBundle: SandboxBundle = {
                 files: data.project.sandbox_bundle.files || {},
                 entry: data.project.sandbox_bundle.entry || '/App.tsx',
@@ -4048,7 +3149,12 @@ export default function ProjectPage() {
                 devDependencies: data.project.sandbox_bundle.devDependencies || [],
               };
               setSandboxBundle(restoredBundle);
-              
+
+              // Restore sandbox preview URL if stored
+              if (data.project.sandbox_preview_url) {
+                setSandboxPreviewUrl(data.project.sandbox_preview_url);
+              }
+
               // Also add to version history
               const versionId = `restored-${Date.now()}`;
               setBundleVersions(prev => {
@@ -4245,7 +3351,6 @@ export default function ProjectPage() {
       return;
     }
 
-    console.log('[Version History] Restoring version:', versionId);
     setSandboxBundle(version.bundle);
     setCurrentVersionId(versionId);
     setSidebarView('chat'); // Switch back to chat view after restore
@@ -4307,7 +3412,6 @@ export default function ProjectPage() {
                 })
                   .then((res) => {
                     if (res.ok) {
-                      console.log('✅ Title saved to database:', generatedTitle);
                     }
                   })
                   .catch((err) => console.error('Failed to save title:', err));
@@ -4444,12 +3548,33 @@ Please make changes specifically to this element.`;
         setPublishSuccess(project?.status === 'published' ? 'Survey updated successfully!' : 'Survey published successfully!');
 
         // Update project status and store the full project
-        setProject(data.project || {
+        const updatedProject = data.project || {
           id: projectId,
           status: 'published',
           published_url: data.publishedUrl,
           user_id: user.id
-        } as any);
+        };
+        setProject(updatedProject as any);
+
+        // Update the projects cache in userStore
+        const { updateProject: updateStoreProject, projects: cachedProjects } = useUserStore.getState();
+        // If project exists in cache, update it; otherwise it will be fetched next time
+        if (cachedProjects.some(p => p.id === projectId)) {
+          updateStoreProject(projectId, {
+            status: 'published',
+            published_url: data.publishedUrl,
+            updated_at: new Date().toISOString(),
+          });
+        }
+
+        // Trigger screenshot capture after publishing (server-side)
+        try {
+          fetch(`/api/projects/${projectId}/capture-screenshot`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ publishedUrl: data.publishedUrl })
+          }).catch(() => {}); // Fire and forget
+        } catch {}
 
         setTimeout(() => setPublishSuccess(null), 3000);
       } else {
@@ -4635,10 +3760,31 @@ Please make changes specifically to this element.`;
     }
   }, [messages]);
 
+  // Handle copy event to strip formatting (copy as plain text only)
+  useEffect(() => {
+    const chatArea = chatAreaRef.current;
+    if (!chatArea) return;
+
+    const handleCopy = (e: ClipboardEvent) => {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return;
+
+      // Get plain text only
+      const plainText = selection.toString();
+
+      // Set clipboard to plain text only
+      e.clipboardData?.setData('text/plain', plainText);
+      e.preventDefault();
+    };
+
+    chatArea.addEventListener('copy', handleCopy);
+    return () => chatArea.removeEventListener('copy', handleCopy);
+  }, []);
+
   // Visual Edit mode - uses postMessage to communicate with cross-origin sandbox iframe
   useEffect(() => {
     // Find the Sandpack preview iframe
-    const iframe = document.querySelector('.sp-preview-iframe') as HTMLIFrameElement;
+    const iframe = document.querySelector('iframe[title="Survey Preview"]') as HTMLIFrameElement;
 
     // Send edit mode state to iframe via postMessage
     if (iframe?.contentWindow) {
@@ -4672,7 +3818,7 @@ Please make changes specifically to this element.`;
     if (!isEditMode) return;
 
     // Find the Sandpack preview iframe via DOM query
-    const iframe = document.querySelector('.sp-preview-iframe') as HTMLIFrameElement;
+    const iframe = document.querySelector('iframe[title="Survey Preview"]') as HTMLIFrameElement;
     if (!iframe) return;
 
     // Try to access iframe document - may fail due to cross-origin restrictions
@@ -4932,23 +4078,12 @@ Please make changes specifically to this element.`;
       <div className="h-screen w-full bg-[#0a0a0a] text-white">
         {/* Show sandbox view only */}
         <div className="relative h-full w-full">
-          <ProjectSandboxView
-            showConsole={false}
-            providerProps={{
-              ...sandboxProviderProps,
-              files: previewBundle.files as any,
-              customSetup: {
-                ...sandboxProviderProps.customSetup,
-                dependencies: {
-                  react: "19.1.0",
-                  "react-dom": "19.1.0",
-                  "lucide-react": "^0.454.0",
-                  ...previewBundle.dependencies?.reduce((acc: Record<string, string>, dep: string) => ({ ...acc, [dep]: "latest" }), {}),
-                },
-              },
-            }}
-            onFixError={handleSandboxFixRequest}
+          <ModalSandboxPreview
+            previewUrl={sandboxPreviewUrl}
             bundle={previewBundle}
+            className="h-full w-full"
+            onPreviewUrlReady={setSandboxPreviewUrl}
+            projectId={projectId}
           />
           {/* Overlay to capture clicks for element selection */}
           <div
@@ -4981,22 +4116,26 @@ Please make changes specifically to this element.`;
       <div className={`flex flex-col transition-all duration-300 ${
         isChatHidden ? 'w-0 opacity-0 pointer-events-none' : (isSidebarCollapsed ? 'w-16' : 'w-140')
       }`} style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
-        {/* Profile Section at Top (match dashboard UserMenu) */}
-        <div className="profile-section relative h-14 flex items-center px-3">
-          <div className="sidebar-item w-full" onClick={() => setIsUserMenuOpen((v) => !v)} style={{ cursor: 'pointer' }}>
-            <span className="sidebar-item-label">
-              <span className="flex items-center gap-1">
-                {isTitleGenerating ? (
-                  <span className="h-5 w-32 rounded bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_100%] animate-shimmer" />
-                ) : (
-                  <span style={{ fontWeight: 600, color: 'var(--surbee-fg-primary)' }}>
-                    {autoGeneratedTitle || 'Untitled Survey'}
-                  </span>
-                )}
-                {isUserMenuOpen ? <ChevronUp className="h-3 w-3" style={{ opacity: 0.6, color: 'var(--surbee-fg-primary)' }} /> : <ChevronDown className="h-3 w-3" style={{ opacity: 0.6, color: 'var(--surbee-fg-primary)' }} />}
+        {/* Profile Section at Top - aligned with right header buttons */}
+        <div className="relative flex items-center px-3 pt-3 pb-0">
+          <button
+            onClick={() => setIsUserMenuOpen((v) => !v)}
+            className="flex items-center gap-1.5 rounded-md transition-colors hover:bg-white/5"
+            style={{
+              cursor: 'pointer',
+              padding: '8px 12px',
+              fontFamily: 'FK Grotesk, sans-serif'
+            }}
+          >
+            {isTitleGenerating ? (
+              <span className="h-4 w-28 rounded bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_100%] animate-shimmer" />
+            ) : (
+              <span className="text-sm font-semibold truncate max-w-[180px]" style={{ color: 'var(--surbee-fg-primary)' }}>
+                {autoGeneratedTitle || 'Untitled Survey'}
               </span>
-            </span>
-          </div>
+            )}
+            {isUserMenuOpen ? <ChevronUp className="h-3 w-3 flex-shrink-0" style={{ opacity: 0.6, color: 'var(--surbee-fg-primary)' }} /> : <ChevronDown className="h-3 w-3 flex-shrink-0" style={{ opacity: 0.6, color: 'var(--surbee-fg-primary)' }} />}
+          </button>
 
           {/* Overlay to close on outside click */}
           {isUserMenuOpen && (
@@ -5010,26 +4149,8 @@ Please make changes specifically to this element.`;
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 6, scale: 0.98 }}
                 transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-                style={{
-                  position: 'absolute',
-                  left: '16px',
-                  top: '60px',
-                  zIndex: 1200,
-                  border: 'none',
-                  background: 'hsl(0, 0%, 16%)',
-                  color: 'hsl(0, 0%, 100%)',
-                  borderRadius: '0.75rem',
-                  minWidth: '8rem',
-                  width: '17rem',
-                  padding: '0.5rem',
-                  boxShadow: 'none',
-                  backdropFilter: 'blur(32px) saturate(180%)',
-                  WebkitBackdropFilter: 'blur(32px) saturate(180%)',
-                  WebkitFontSmoothing: 'antialiased',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.25rem'
-                }}
+                className="user-menu-panel"
+                style={{ position: 'absolute', left: '16px', top: '60px', bottom: 'auto' }}
                 role="menu"
               >
                 {/* User info header */}
@@ -5039,22 +4160,22 @@ Please make changes specifically to this element.`;
                 </div>
 
                 {/* Credits Section */}
-                <div className="flex flex-col gap-2 px-3 py-3" style={{ color: 'rgb(153, 153, 153)' }}>
+                <div className="flex flex-col gap-2 px-3 py-3" style={{ color: 'var(--surbee-sidebar-text-muted)' }}>
                   <div className="flex items-center justify-between">
-                    <h5 className="text-xs font-medium flex items-center gap-1.5" style={{ color: 'var(--surbee-fg-muted)' }}>
+                    <h5 className="text-xs font-medium flex items-center gap-1.5" style={{ color: 'var(--surbee-sidebar-text-muted)' }}>
                       <Coins className="w-3 h-3" />
                       Credits
                     </h5>
                     <span className="text-xs">
                       {creditsLoading ? (
-                        <span style={{ color: 'var(--surbee-fg-secondary)' }}>Loading...</span>
+                        <span style={{ color: 'var(--surbee-sidebar-text-secondary)' }}>Loading...</span>
                       ) : credits ? (
                         <>
-                          <span style={{ color: 'var(--surbee-fg-muted)' }}>{credits.creditsRemaining.toLocaleString()}</span>
-                          <span style={{ color: 'var(--surbee-fg-secondary)' }}> / {credits.monthlyCredits.toLocaleString()}</span>
+                          <span style={{ color: 'var(--surbee-sidebar-text-muted)' }}>{credits.creditsRemaining.toLocaleString()}</span>
+                          <span style={{ color: 'var(--surbee-sidebar-text-secondary)' }}> / {credits.monthlyCredits.toLocaleString()}</span>
                         </>
                       ) : (
-                        <span style={{ color: 'var(--surbee-fg-secondary)' }}>--</span>
+                        <span style={{ color: 'var(--surbee-sidebar-text-secondary)' }}>--</span>
                       )}
                     </span>
                   </div>
@@ -5071,13 +4192,13 @@ Please make changes specifically to this element.`;
                       <div
                         className="h-full w-full flex-1 transition-all rounded-full"
                         style={{
-                          backgroundColor: percentUsed > 80 ? '#ef4444' : percentUsed > 50 ? '#eab308' : '#a855f7',
+                          backgroundColor: percentUsed > 80 ? '#ef4444' : percentUsed > 50 ? '#eab308' : '#3b82f6',
                           width: `${100 - percentUsed}%`,
                         }}
                       />
                     </div>
                   </div>
-                  <p className="text-xs leading-4" style={{ color: 'var(--surbee-fg-secondary)' }}>
+                  <p className="text-xs leading-4" style={{ color: 'var(--surbee-sidebar-text-secondary)' }}>
                     {credits?.plan === 'enterprise' ? (
                       'Unlimited credits on Enterprise plan.'
                     ) : daysUntilReset !== null ? (
@@ -5090,7 +4211,7 @@ Please make changes specifically to this element.`;
                               className="hover:underline cursor-pointer"
                               type="button"
                               onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/pricing'); }}
-                              style={{ color: 'var(--surbee-fg-muted)' }}
+                              style={{ color: 'var(--surbee-sidebar-text-muted)' }}
                             >
                               Upgrade
                             </button>
@@ -5107,7 +4228,7 @@ Please make changes specifically to this element.`;
                               className="hover:underline cursor-pointer"
                               type="button"
                               onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/pricing'); }}
-                              style={{ color: 'var(--surbee-fg-muted)' }}
+                              style={{ color: 'var(--surbee-sidebar-text-muted)' }}
                             >
                               Upgrade
                             </button>
@@ -5234,7 +4355,7 @@ Please make changes specifically to this element.`;
               </div>
             ) : (
               /* Chat Messages View */
-              <div className="flex-1 overflow-y-auto pl-4 pr-2 py-6 thin-scrollbar" ref={chatAreaRef}>
+              <div className="flex-1 overflow-y-auto pl-4 pr-2 pt-6 thin-scrollbar" style={{ paddingBottom: '80px' }} ref={chatAreaRef}>
                 <div className="space-y-4">
                   {messages?.map((msg, idx) => (
                     <div key={msg.id} className="space-y-2">
@@ -5277,11 +4398,11 @@ Please make changes specifically to this element.`;
                           {/* User prompt bubble */}
                           <div
                             className="flex flex-col max-w-[80%] rounded-[20px] px-4 py-3"
-                            style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+                            style={{ backgroundColor: 'var(--surbee-bg-tertiary)', color: 'var(--surbee-fg-primary)' }}
                           >
                             <div
-                              className="text-[14px] leading-[1.5] text-foreground whitespace-pre-wrap"
-                              style={{ wordBreak: 'break-word' }}
+                              className="text-[14px] leading-[1.5] whitespace-pre-wrap"
+                              style={{ wordBreak: 'break-word', color: 'inherit' }}
                             >
                               {msg.parts?.find(p => p.type === 'text')?.text || ''}
                             </div>
@@ -5289,87 +4410,108 @@ Please make changes specifically to this element.`;
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {/* Show thinking display first - show immediately when assistant is responding */}
+                          {/* Progressive rendering - interleave workflow blocks with text */}
                           {(() => {
-                            if (msg.role !== 'assistant') return null;
+                            if (msg.role !== 'assistant') return msg.parts.map((part, partIdx) => {
+                              if (part.type === 'text') {
+                                return (
+                                  <motion.div
+                                    key={`text-${partIdx}`}
+                                    className="max-w-none ai-response-markdown leading-relaxed text-[var(--surbee-fg-primary)]"
+                                    style={{ fontSize: '16px' }}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.3, ease: "easeOut" }}
+                                  >
+                                    <Response>{part.text}</Response>
+                                  </motion.div>
+                                );
+                              }
+                              return null;
+                            });
 
-                            // AI SDK uses 'reasoning' type, but Claude extended thinking uses 'thinking' type
-                            const reasoningParts = msg.parts.filter(p => p.type === 'reasoning' || p.type === 'thinking');
-                            const hasReasoning = reasoningParts.length > 0;
                             const isLastMessage = idx === messages.length - 1;
+                            const isMessageStreaming = isLastMessage && status !== 'ready';
+                            const hiddenTools = new Set(['suggest_followups', 'save_survey_questions']);
 
-                            // Check if there are any text or tool parts (means thinking is done)
-                            const hasNonReasoningParts = msg.parts.some(p =>
-                              p.type === 'text' || p.type.startsWith('tool-')
-                            ) && !msg.parts.every(p => p.type === 'reasoning' || p.type === 'thinking');
+                            // Build progressive segments: group consecutive non-text parts
+                            // into workflow blocks, with text parts between them
+                            type Segment =
+                              | { kind: 'workflow'; parts: any[] }
+                              | { kind: 'text'; text: string; partIdx: number };
 
-                            // isThinking should be true only when:
-                            // 1. It's the last message and still streaming
-                            // 2. AND there are no text/tool parts yet (reasoning is still happening)
-                            const isThinking = isLastMessage && status !== 'ready' && !hasNonReasoningParts;
+                            const segments: Segment[] = [];
+                            let currentWorkflowParts: any[] = [];
 
-                            if (!hasReasoning && !isThinking) return null;
+                            for (let i = 0; i < msg.parts.length; i++) {
+                              const part = msg.parts[i];
 
-                            // Convert reasoning parts to steps inline
-                            // AI SDK reasoning parts can have 'text', 'reasoning', or 'content' property
-                            const steps = reasoningParts.map((part, partIdx) => ({
-                              id: `${msg.id}-reasoning-${partIdx}`,
-                              content: (part as any).text || (part as any).reasoning || (part as any).content || '',
-                              status: (isLastMessage && isThinking && partIdx === reasoningParts.length - 1) ? 'thinking' : 'complete'
-                            }));
+                              if (part.type === 'text') {
+                                // Flush any accumulated workflow parts
+                                if (currentWorkflowParts.length > 0) {
+                                  segments.push({ kind: 'workflow', parts: [...currentWorkflowParts] });
+                                  currentWorkflowParts = [];
+                                }
+                                if ((part as any).text?.trim()) {
+                                  segments.push({ kind: 'text', text: (part as any).text, partIdx: i });
+                                }
+                              } else if (part.type === 'reasoning') {
+                                currentWorkflowParts.push({
+                                  type: 'reasoning' as const,
+                                  reasoning: (part as any).text || (part as any).reasoning || (part as any).content || '',
+                                });
+                              } else if (part.type.startsWith('tool-') || (part as any).type === 'dynamic-tool') {
+                                const toolName = (part as any).type === 'dynamic-tool'
+                                  ? (part as any).toolName
+                                  : part.type.replace('tool-', '');
+                                if (!hiddenTools.has(toolName)) {
+                                  currentWorkflowParts.push({
+                                    type: 'tool-invocation' as const,
+                                    toolName,
+                                    input: (part as any).input || (part as any).args,
+                                    result: (part as any).output,
+                                    state: (part as any).state === 'output-available' ? 'result' : 'pending',
+                                  });
+                                }
+                              }
+                            }
 
-                            return (
-                              <div className="pl-0">
-                                <ThinkingDisplay
-                                  steps={steps}
-                                  duration={thinkingDuration}
-                                  isThinking={isThinking}
-                                />
-                              </div>
-                            );
+                            // Flush remaining workflow parts
+                            if (currentWorkflowParts.length > 0) {
+                              segments.push({ kind: 'workflow', parts: currentWorkflowParts });
+                            }
+
+                            if (segments.length === 0 && !isMessageStreaming) return null;
+
+                            return segments.map((segment, segIdx) => {
+                              if (segment.kind === 'workflow') {
+                                const workflowBlocks = convertPartsToWorkflowBlocks(segment.parts, isMessageStreaming);
+                                if (workflowBlocks.length === 0) return null;
+                                return (
+                                  <AgentWorkflow
+                                    key={`workflow-${segIdx}`}
+                                    blocks={workflowBlocks}
+                                    isStreaming={isMessageStreaming && segIdx === segments.length - 1}
+                                  />
+                                );
+                              }
+                              if (segment.kind === 'text') {
+                                return (
+                                  <motion.div
+                                    key={`text-${segment.partIdx}`}
+                                    className="max-w-none ai-response-markdown leading-relaxed text-[var(--surbee-fg-primary)]"
+                                    style={{ fontSize: '16px' }}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.3, ease: "easeOut" }}
+                                  >
+                                    <Response>{segment.text}</Response>
+                                  </motion.div>
+                                );
+                              }
+                              return null;
+                            });
                           })()}
-
-                          {/* Show all parts in chronological order (tool calls and text interleaved) */}
-                          {msg.parts.map((part, partIdx) => {
-                            // Render tool calls with tree structure
-                            if (part.type.startsWith('tool-')) {
-                              const toolName = part.type.replace('tool-', '');
-                              const isActive = part.state === 'input-streaming' || part.state === 'input-available';
-                              const output = part.state === 'output-available' ? part.output : null;
-
-                              // Extract file name from input for active tools
-                              const input = (part as any).input;
-                              const fileName = input?.file_path || input?.path || input?.filename || input?.target_file;
-
-                              return (
-                                <ToolCallTree
-                                  key={`tool-${partIdx}`}
-                                  toolName={toolName}
-                                  output={output}
-                                  isActive={isActive}
-                                  fileName={fileName}
-                                />
-                              );
-                            }
-
-                            // Render text content with markdown
-                            if (part.type === 'text') {
-                              return (
-                                <motion.div
-                                  key={`text-${partIdx}`}
-                                  className="max-w-none ai-response-markdown"
-                                  initial={{ opacity: 0 }}
-                                  animate={{ opacity: 1 }}
-                                  transition={{ duration: 0.3, ease: "easeOut" }}
-                                >
-                                  <Response>{part.text}</Response>
-                                </motion.div>
-                              );
-                            }
-
-                            // Skip other part types (reasoning, image, etc.)
-                            return null;
-                          })}
 
                           {/* Action buttons - only show when message is complete */}
                           {idx === messages.length - 1 && status === 'ready' && msg.parts.some(p => p.type === 'text') && (
@@ -5470,13 +4612,36 @@ Please make changes specifically to this element.`;
                       )}
                     </div>
                   ))}
+
+                  {/* Typing indicator — shown while waiting for first AI token */}
+                  {status === 'submitted' && (
+                    <div className="flex items-start gap-2 py-2">
+                      <div
+                        className="flex items-center gap-1.5 rounded-[20px] px-4 py-3"
+                        style={{ backgroundColor: 'var(--surbee-bg-tertiary)' }}
+                      >
+                        {[0, 0.2, 0.4].map((delay, i) => (
+                          <span
+                            key={i}
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{
+                              backgroundColor: 'var(--surbee-fg-muted)',
+                              animation: `typingPulse 1.4s ease-in-out ${delay}s infinite`,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
           </div>
 
-        {/* Chat Input */}
-        <div className="pl-4 pr-2 pb-3">
+        {/* Chat Input - overlaps messages area for scroll-behind effect */}
+        <div className="pl-4 pr-2 pb-3 relative z-20" style={{ backgroundColor: 'var(--surbee-sidebar-bg)', marginTop: '-64px' }}>
+          {/* Gradient fade above chatbox */}
+          <div className="absolute left-0 right-0 pointer-events-none" style={{ top: '-40px', height: '40px', background: 'linear-gradient(to bottom, transparent, var(--surbee-sidebar-bg))' }} />
           <div className="relative ml-0 mr-0">
             {/* Selected Element Indicator - matches agent reference pill style */}
             {visualEditElement && (
@@ -5521,6 +4686,7 @@ Please make changes specifically to this element.`;
                 isBusy={status === 'submitted' || status === 'streaming'}
                 onStop={stop}
                 solidBackground={true}
+                userPlan={credits?.plan || 'free_user'}
               />
             </div>
         </div>
@@ -5530,7 +4696,7 @@ Please make changes specifically to this element.`;
       {/* Right Side - Preview */}
       <div className="flex-1 flex flex-col relative overflow-hidden" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
         {/* Header */}
-        <div className="h-14 flex items-center justify-between pl-2 pr-4" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
+        <div className="flex items-center justify-between pl-2 pr-3 pt-3 pb-0" style={{ backgroundColor: 'var(--surbee-sidebar-bg)' }}>
           {/* Left Section */}
           <div className="flex items-center gap-2">
             {/* Collapse/Expand Chat */}
@@ -5827,32 +4993,22 @@ Please make changes specifically to this element.`;
                   <div
                     className="flex-1 flex flex-col relative rounded-[0.625rem] mt-3 mr-3 mb-3 ml-2 overflow-hidden"
                     style={{
-                      backgroundColor: isDarkMode ? '#242424' : '#F8F8F8',
-                      border: isDarkMode ? 'none' : '1px solid rgba(0, 0, 0, 0.1)'
+                      backgroundColor: isDarkMode ? '#242424' : '#EBEBEB',
                     }}
                   >
-                    {/* Show Sandbox View when code or console mode is active */}            {(sidebarView === 'code' || sidebarView === 'console') && sandboxAvailable ? (
-              <ProjectSandboxView
-                showConsole={sidebarView === 'console'}
-                viewMode={sidebarView === 'code' ? 'code' : 'console'}
-                providerProps={sandboxProviderProps}
-                onFixError={handleSandboxFixRequest}
-                bundle={sandboxBundle}
-              />
-            ) : (
-              <div
-                className="flex-1 overflow-hidden flex items-center justify-center"
+                    <div
+                className="flex-1 overflow-hidden relative flex items-center justify-center"
                 style={{
-                  backgroundColor: isDarkMode ? '#242424' : '#F8F8F8'
+                  backgroundColor: isDarkMode ? '#242424' : '#EBEBEB'
                 }}
               >
                 {/* Show loading animation while AI is working */}
                 {(status === 'submitted' || status === 'streaming') && !sandboxAvailable ? (
-                  <AILoader text="Building" size={120} />
+                  <ProjectLoader isDark={isDarkMode} text="Building" />
                 ) : sandboxAvailable ? (
-                  /* Show React preview when sandbox bundle is available */
+                  /* Show React preview when sandbox is available */
                   <div className={`${getDeviceStyles()} transition-all duration-300 mx-auto`}>
-                    <ProjectPreviewOnly providerProps={sandboxProviderProps} refreshKey={rendererKey} bundle={sandboxBundle} projectId={projectId} onPreviewUrlReady={setSandboxPreviewUrl} />
+                    <ProjectPreviewOnly refreshKey={rendererKey} bundle={sandboxBundle} previewUrl={sandboxPreviewUrl} projectId={projectId} onPreviewUrlReady={setSandboxPreviewUrl} />
                   </div>
                 ) : (
                   /* Waiting for content */
@@ -5861,7 +5017,6 @@ Please make changes specifically to this element.`;
                   </div>
                 )}
               </div>
-            )}
           </div>
         </div>
       </div>

@@ -5,7 +5,7 @@ export function surveySpecToHtml(spec: SurveySpec): string {
   const theme = spec.theme || {};
   const accent = theme.accent || "#2563eb";
   const bg = theme.bg || "#0f172a";
-  const font = theme.font || '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  const font = theme.font || '"Opening Hours Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
   const layoutClass = theme.layout === "cardless-typeform" ? "typeform" : "full-bleed";
 
   // Ensure we have pages array
@@ -378,7 +378,7 @@ function generateErrorHtml(message: string): string {
       body {
         margin: 0;
         min-height: 100vh;
-        font-family: Inter, sans-serif;
+        font-family: 'Opening Hours Sans', Inter, sans-serif;
         background: #0f172a;
         color: #f8fafc;
         display: flex;

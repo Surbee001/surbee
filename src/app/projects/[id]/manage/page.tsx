@@ -1228,16 +1228,11 @@ export default function ProjectManagePage() {
             <div className="flex-1 overflow-auto" style={{ padding: '24px' }}>
               {activeTab === 'preview' && <PreviewTab projectId={projectId} sandboxBundle={sandboxBundle} activeChatSessionId={activeChatSessionId} />}
               {activeTab === 'share' && <ShareTab projectId={projectId} publishedUrl={publishedUrl} />}
-              {activeTab === 'settings' && <ProjectSettings projectId={projectId} onClose={() => setActiveTab('preview')} />}
+              {activeTab === 'settings' && <ProjectSettings projectId={projectId} />}
             </div>
           )}
 
-          {/* Ask Surbee Component - Inside container at bottom - Hidden for Preview, Insights, Evaluation, Cipher, and Settings Tabs */}
-          {activeTab !== 'preview' && activeTab !== 'insights' && activeTab !== 'evaluation' && activeTab !== 'cipher' && activeTab !== 'settings' && !isAgentOpen && (
-            <div className="ask-surbee-container">
-              <AskSurbeeComponent activeTab={activeTab} projectId={projectId} />
-            </div>
-          )}
+          {/* Ask Surbee Component - Hidden */}
         </motion.div>
 
         {/* Agent Panel */}

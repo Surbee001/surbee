@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Copy, ThumbsUp, ThumbsDown, Search, ChevronRight, CheckCircle2, Download } from "lucide-react";
+import { Copy, ThumbsUp, ThumbsDown, Search, ChevronRight, ChevronDown, CheckCircle2, Download, RotateCcw, Star, Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useCredits } from "@/hooks/useCredits";
 import ChatInputLight, { ReferenceItem, ChatInputLightRef } from "@/components/ui/chat-input-light";
@@ -26,6 +26,7 @@ import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { ChartLoadingSpinner } from "@/components/ui/chart-loading-animation";
 import { ThinkingDisplay } from "../../../components/ThinkingUi/components/thinking-display";
+import { ReasoningDisplay, convertToReasoningSteps } from "@/components/ai-elements/reasoning-display";
 
 interface ThinkingStep {
   id: string;
@@ -37,6 +38,9 @@ interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  reasoning?: ThinkingStep[];
+  reasoningDuration?: number;
+  createdAt?: Date;
 }
 
 interface DashboardChatContainerProps {
@@ -82,6 +86,12 @@ export function DashboardChatContainer({
   const [references, setReferences] = useState<ReferenceItem[]>([]);
   const [hasAttachedFiles, setHasAttachedFiles] = useState(false);
   const chatInputRef = useRef<ChatInputLightRef>(null);
+  const [surveyTitle, setSurveyTitle] = useState("Untitled Survey");
+  const [previousTitle, setPreviousTitle] = useState("Untitled Survey");
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [isStarred, setIsStarred] = useState(false);
+  const [isTitleDropdownOpen, setIsTitleDropdownOpen] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   // Design system color themes
   const DESIGN_THEMES = useMemo(() => [
@@ -211,12 +221,13 @@ export function DashboardChatContainer({
   }, []);
 
   // Use Vercel AI SDK useChat hook - same pattern as project page
-  const { 
-    messages: rawMessages, 
-    sendMessage, 
-    status, 
-    stop, 
+  const {
+    messages: rawMessages,
+    sendMessage,
+    status,
+    stop,
     setMessages,
+    reload,
   } = useChat({
     transport: chatTransport,
     onError,
@@ -329,11 +340,31 @@ export function DashboardChatContainer({
         }
       }
 
+      // Extract reasoning for this message (not just last one)
+      let messageReasoning: ThinkingStep[] = [];
+      if (m.role === 'assistant' && m.parts && Array.isArray(m.parts)) {
+        const msgReasoningParts: { text: string }[] = [];
+        m.parts.forEach((p: any) => {
+          if (p.type === 'reasoning') {
+            msgReasoningParts.push({ text: p.text || '' });
+          }
+        });
+        if (msgReasoningParts.length > 0) {
+          messageReasoning = msgReasoningParts.map((part, idx) => ({
+            id: `${m.id}-reasoning-${idx}`,
+            content: part.text,
+            status: 'complete' as const
+          }));
+        }
+      }
+
       return {
         id: m.id,
         role: m.role as "user" | "assistant",
         content,
         hasChartToolCall,
+        reasoning: messageReasoning.length > 0 ? messageReasoning : undefined,
+        createdAt: m.createdAt ? new Date(m.createdAt) : new Date(),
       };
     });
 
@@ -382,6 +413,27 @@ export function DashboardChatContainer({
     }
   }, [messages, isLoading]);
 
+  // Handle copy event to strip formatting (copy as plain text only)
+  useEffect(() => {
+    const chatArea = chatAreaRef.current;
+    if (!chatArea) return;
+
+    const handleCopy = (e: ClipboardEvent) => {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return;
+
+      // Get plain text only
+      const plainText = selection.toString();
+
+      // Set clipboard to plain text only
+      e.clipboardData?.setData('text/plain', plainText);
+      e.preventDefault();
+    };
+
+    chatArea.addEventListener('copy', handleCopy);
+    return () => chatArea.removeEventListener('copy', handleCopy);
+  }, []);
+
   useEffect(() => {
     return () => {
       Object.values(effectTimeoutsRef.current).forEach((timeout) => {
@@ -393,6 +445,117 @@ export function DashboardChatContainer({
   // Track generated title for the current session
   const [generatedTitle, setGeneratedTitle] = useState<string | null>(null);
   const titleGeneratedRef = useRef(false);
+
+  // Focus title input when editing starts
+  useEffect(() => {
+    if (isEditingTitle && titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.select();
+    }
+  }, [isEditingTitle]);
+
+  // Update survey title when generated title is set
+  useEffect(() => {
+    if (generatedTitle) {
+      setSurveyTitle(generatedTitle);
+      setPreviousTitle(generatedTitle);
+    }
+  }, [generatedTitle]);
+
+  // Load chat session from database when chatSessionId is available
+  useEffect(() => {
+    const loadChatSession = async () => {
+      if (!chatSessionId) return;
+
+      try {
+        const response = await fetch(`/api/dashboard/chat-session?sessionId=${chatSessionId}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.session) {
+            setSurveyTitle(data.session.title || 'Untitled Survey');
+            setPreviousTitle(data.session.title || 'Untitled Survey');
+            setIsStarred(data.session.is_starred || false);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading chat session:', error);
+      }
+    };
+
+    loadChatSession();
+  }, [chatSessionId]);
+
+  // Save title to database
+  const saveTitleToDatabase = useCallback(async (newTitle: string) => {
+    if (!chatSessionId) return;
+
+    try {
+      await fetch('/api/dashboard/chat-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: chatSessionId,
+          title: newTitle,
+        }),
+      });
+    } catch (error) {
+      console.error('Error saving title:', error);
+    }
+  }, [chatSessionId]);
+
+  // Toggle star status
+  const toggleStar = useCallback(async () => {
+    if (!chatSessionId) return;
+
+    const newStarred = !isStarred;
+    setIsStarred(newStarred);
+
+    try {
+      await fetch('/api/dashboard/chat-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: chatSessionId,
+          is_starred: newStarred,
+        }),
+      });
+    } catch (error) {
+      console.error('Error toggling star:', error);
+      setIsStarred(!newStarred); // Revert on error
+    }
+  }, [chatSessionId, isStarred]);
+
+  // Delete chat session
+  const deleteChat = useCallback(async () => {
+    if (!chatSessionId) return;
+
+    try {
+      const response = await fetch(`/api/dashboard/chat-session?sessionId=${chatSessionId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Navigate back to home
+        router.push('/home');
+      }
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+    }
+  }, [chatSessionId, router]);
+
+  // Handle title change with validation
+  const handleTitleChange = useCallback((newTitle: string) => {
+    const trimmedTitle = newTitle.trim();
+    if (trimmedTitle === '') {
+      // Revert to previous title if empty
+      setSurveyTitle(previousTitle);
+    } else {
+      setSurveyTitle(trimmedTitle);
+      setPreviousTitle(trimmedTitle);
+      saveTitleToDatabase(trimmedTitle);
+    }
+    setIsEditingTitle(false);
+  }, [previousTitle, saveTitleToDatabase]);
 
   // Generate title using AI (same as project page)
   const generateTitle = useCallback(async (prompt: string): Promise<string> => {
@@ -765,18 +928,134 @@ Analyze the survey structure, questions, and design. Then help me build a simila
 
   return (
     <div className="w-full h-full flex flex-col relative">
+      {/* Top Bar with Survey Title - appears when chat starts */}
+      {hasStartedChat && !isBuildMode && (
+        <div
+          className="sticky top-0 z-10 px-2 py-1"
+          style={{ backgroundColor: 'var(--surbee-bg-primary)' }}
+        >
+          <div className="flex items-center gap-1">
+            {/* Star indicator */}
+            {isStarred && (
+              <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+            )}
+
+            {isEditingTitle ? (
+              <input
+                ref={titleInputRef}
+                type="text"
+                value={surveyTitle}
+                onChange={(e) => setSurveyTitle(e.target.value)}
+                onBlur={() => handleTitleChange(surveyTitle)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleTitleChange(surveyTitle);
+                  }
+                  if (e.key === 'Escape') {
+                    setSurveyTitle(previousTitle);
+                    setIsEditingTitle(false);
+                  }
+                }}
+                className="text-[14px] font-medium bg-[var(--surbee-bg-secondary)] px-2 py-1 rounded-md border-none outline-none text-[var(--surbee-fg-primary)] underline underline-offset-2"
+                style={{ caretColor: 'var(--surbee-fg-primary)', minWidth: '200px' }}
+              />
+            ) : (
+              <DropdownMenu open={isTitleDropdownOpen} onOpenChange={setIsTitleDropdownOpen}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="flex h-8 items-center rounded-full px-3 font-normal text-sm transition-all duration-200 cursor-pointer bg-transparent hover:bg-[rgba(255,255,255,0.05)]"
+                    type="button"
+                    onDoubleClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsTitleDropdownOpen(false);
+                      setIsEditingTitle(true);
+                    }}
+                    style={{ color: 'var(--surbee-fg-primary)', fontFamily: "'Opening Hours Sans', sans-serif" }}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[14px]">{surveyTitle}</span>
+                      <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--surbee-fg-muted)' }} />
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  side="bottom"
+                  style={{
+                    borderRadius: '24px',
+                    padding: '8px',
+                    border: '1px solid var(--surbee-dropdown-border)',
+                    backgroundColor: 'var(--surbee-dropdown-bg)',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: 'rgba(0, 0, 0, 0.2) 0px 7px 16px',
+                    width: '200px',
+                    fontFamily: "'Opening Hours Sans', sans-serif",
+                  }}
+                >
+                  <DropdownMenuItem
+                    onClick={toggleStar}
+                    className="cursor-pointer"
+                    style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      <Star className={`w-4 h-4 ${isStarred ? 'text-yellow-500 fill-yellow-500' : ''}`} style={{ color: isStarred ? undefined : 'var(--surbee-dropdown-text-muted)' }} />
+                      <span className="text-sm">{isStarred ? 'Unstar' : 'Star'}</span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setIsTitleDropdownOpen(false);
+                      setIsEditingTitle(true);
+                    }}
+                    className="cursor-pointer"
+                    style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      <Pencil className="w-4 h-4" style={{ color: 'var(--surbee-dropdown-text-muted)' }} />
+                      <span className="text-sm">Rename</span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator style={{ backgroundColor: 'var(--surbee-dropdown-border)', margin: '4px 0' }} />
+                  <DropdownMenuItem
+                    onClick={deleteChat}
+                    className="cursor-pointer"
+                    style={{ borderRadius: '18px', padding: '10px 14px', color: 'rgb(239, 68, 68)', marginBottom: '1px' }}
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      <Trash2 className="w-4 h-4" style={{ color: 'rgb(239, 68, 68)' }} />
+                      <span className="text-sm">Delete</span>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+          {/* Fade gradient below top bar - hidden */}
+          {/* <div
+            className="absolute left-0 right-0 h-6 pointer-events-none"
+            style={{
+              top: '100%',
+              background: 'linear-gradient(to bottom, var(--surbee-bg-primary), transparent)'
+            }}
+          /> */}
+        </div>
+      )}
+
       {/* Messages Area - appears when chat starts */}
       <AnimatePresence>
         {hasStartedChat && !isBuildMode && (
           <motion.div
             ref={chatAreaRef}
-            className="flex-1 overflow-y-auto custom-scrollbar px-4"
+            className="absolute left-0 right-0 overflow-y-auto custom-scrollbar px-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.2 }}
             style={{
-              paddingTop: '0px',
-              paddingBottom: '200px',
+              top: '56px',
+              bottom: '100px',
+              paddingTop: '16px',
+              paddingBottom: '100px',
             }}
           >
             <motion.div
@@ -786,9 +1065,9 @@ Analyze the survey structure, questions, and design. Then help me build a simila
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             >
               {messages.map((msg, idx) => (
-                <div key={msg.id} className="space-y-2">
+                <div key={msg.id} className="space-y-2 group/message">
                   {msg.role === "user" ? (
-                    <div className="flex justify-end">
+                    <div className="flex flex-col items-end gap-1">
                       <div
                         className="px-4 py-2.5 inline-block"
                         style={{
@@ -801,20 +1080,84 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                       >
                         <p
                           className="whitespace-pre-wrap"
-                          style={{ fontSize: "14px", lineHeight: "1.5" }}
+                          style={{ fontSize: "14px", lineHeight: "1.5", fontFamily: "'Opening Hours Sans', sans-serif" }}
                         >
                           {msg.content}
                         </p>
                       </div>
+                      {/* User message actions - show on hover */}
+                      <div className="flex items-center gap-1 opacity-0 group-hover/message:opacity-100 transition-opacity">
+                        <span className="text-xs text-muted-foreground mr-1">
+                          {msg.createdAt ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(msg.createdAt) : ''}
+                        </span>
+                        <button
+                          onClick={() => {
+                            // Retry: resend this message to get a new AI response
+                            // Remove this user message and all messages after it, then resend
+                            const previousMessages = rawMessages.slice(0, idx);
+                            setMessages(previousMessages);
+                            // Resend the user message
+                            sendMessage({
+                              message: msg.content,
+                              body: {
+                                model: selectedModel,
+                                ...(selectedCreateType && { createType: selectedCreateType }),
+                              },
+                            });
+                          }}
+                          className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                          title="Retry"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
+                        <button
+                          onClick={() => handleCopyMessage(msg.id, msg.content)}
+                          className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                          title={copiedMessageId === msg.id ? "Copied!" : "Copy"}
+                        >
+                          {copiedMessageId === msg.id ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="w-full space-y-3">
-                      <div className="w-full ai-response-markdown leading-relaxed text-[var(--surbee-fg-primary)]">
+                      {/* Show reasoning/chain-of-thought for this message */}
+                      {/* For streaming message: show thinkingSteps from state (or default "Thinking...") */}
+                      {idx === messages.length - 1 && isLoading && !isGeneratingChart && (
+                        <div className="mb-3">
+                          <ReasoningDisplay
+                            steps={thinkingSteps.length > 0 
+                              ? convertToReasoningSteps(thinkingSteps, isThinking || !msg.content)
+                              : [{ id: 'thinking', content: 'Thinking...', status: 'thinking' as const }]
+                            }
+                            duration={thinkingDuration}
+                            isThinking={isThinking || !msg.content}
+                            defaultOpen={true}
+                          />
+                        </div>
+                      )}
+                      {/* For completed messages: show msg.reasoning */}
+                      {msg.reasoning && msg.reasoning.length > 0 && !(idx === messages.length - 1 && isLoading) && (
+                        <div className="mb-3">
+                          <ReasoningDisplay
+                            steps={convertToReasoningSteps(msg.reasoning, false)}
+                            duration={msg.reasoningDuration || 0}
+                            isThinking={false}
+                          />
+                        </div>
+                      )}
+                      {/* AI response with markdown rendering - use MarkdownRenderer for chart support */}
+                      <div className="w-full ai-response-markdown leading-relaxed text-[var(--surbee-fg-primary)]" style={{ fontSize: '16px' }}>
                         {effectfulMessages[msg.id] ? (
                           <TextGenerateEffect
                             words={msg.content}
                             className="text-[var(--surbee-fg-primary)] ai-response-markdown"
                             textClassName="leading-relaxed text-[var(--surbee-fg-primary)] break-words whitespace-pre-wrap"
+                            style={{ fontSize: '16px' }}
                             duration={0.45}
                           />
                         ) : (
@@ -822,12 +1165,12 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                         )}
                       </div>
 
-                      {/* Action buttons for last message */}
-                      {idx === messages.length - 1 && !isLoading && (
-                        <div className="flex items-center gap-0.5 pt-2">
+                      {/* Action buttons for AI messages - show on hover */}
+                      {!isLoading && (
+                        <div className="flex items-center gap-0.5 pt-2 opacity-0 group-hover/message:opacity-100 transition-opacity">
                           <button
                             onClick={() => handleCopyMessage(msg.id, msg.content)}
-                            className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
                             title={copiedMessageId === msg.id ? "Copied!" : "Copy to clipboard"}
                           >
                             {copiedMessageId === msg.id ? (
@@ -838,7 +1181,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                           </button>
                           <button
                             onClick={() => handleFeedback(msg.id, "up")}
-                            className={`p-1.5 rounded-md hover:bg-white/10 transition-colors ${
+                            className={`p-1.5 rounded-lg hover:bg-white/10 transition-colors ${
                               feedbackGiven[msg.id] === "up" ? "bg-white/10" : ""
                             }`}
                             title="Good response"
@@ -852,6 +1195,29 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                               }`}
                             />
                           </button>
+                          <button
+                            onClick={() => handleFeedback(msg.id, "down")}
+                            className={`p-1.5 rounded-lg hover:bg-white/10 transition-colors ${
+                              feedbackGiven[msg.id] === "down" ? "bg-white/10" : ""
+                            }`}
+                            title="Bad response"
+                            disabled={!!feedbackGiven[msg.id]}
+                          >
+                            <ThumbsDown
+                              className={`w-4 h-4 ${
+                                feedbackGiven[msg.id] === "down"
+                                  ? "text-red-500"
+                                  : "text-muted-foreground"
+                              }`}
+                            />
+                          </button>
+                          <button
+                            onClick={() => reload()}
+                            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                            title="Regenerate response"
+                          >
+                            <RotateCcw className="w-4 h-4 text-muted-foreground" />
+                          </button>
                         </div>
                       )}
                     </div>
@@ -859,38 +1225,37 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                 </div>
               ))}
 
-              {/* Loading indicator with ThinkingDisplay */}
-              {isLoading && (
+              {/* Loading indicator - show when loading and last message has no content yet */}
+              {isLoading && !isGeneratingChart && (
+                (() => {
+                  const lastAssistantMsg = messages.filter(m => m.role === 'assistant').pop();
+                  const hasNoContent = !lastAssistantMsg || !lastAssistantMsg.content;
+                  if (!hasNoContent) return null;
+                  
+                  return (
+                    <div className="flex flex-col items-start gap-3">
+                      <ReasoningDisplay
+                        steps={thinkingSteps.length > 0 
+                          ? convertToReasoningSteps(thinkingSteps, true)
+                          : [{ id: 'thinking', content: 'Thinking...', status: 'thinking' as const }]
+                        }
+                        duration={thinkingDuration}
+                        isThinking={true}
+                        defaultOpen={true}
+                      />
+                    </div>
+                  );
+                })()
+              )}
+              {isLoading && isGeneratingChart && (
                 <div className="flex flex-col items-start gap-3">
-                  {isGeneratingChart ? (
-                    <ChartLoadingSpinner size="md" />
-                  ) : (
-                    <ThinkingDisplay
-                      steps={thinkingSteps}
-                      duration={thinkingDuration}
-                      isThinking={isThinking || (isLoading && thinkingSteps.length === 0)}
-                    />
-                  )}
+                  <ChartLoadingSpinner size="md" />
                 </div>
               )}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Fade overlay behind chatbox - only shows after chat starts */}
-      {hasStartedChat && (
-        <div
-          className="absolute left-0 pointer-events-none"
-          style={{
-            bottom: '-18px',
-            right: '8px',
-            height: '220px',
-            background: 'var(--surbee-chat-gradient)',
-            zIndex: 4,
-          }}
-        />
-      )}
 
       {/* Chat Input Container - centered initially, animates to bottom after chat starts */}
       <div
@@ -988,7 +1353,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
             )}
           </AnimatePresence>
 
-          <div className="w-full">
+          <div className="w-full mt-4">
             <ChatInputLight
               ref={chatInputRef}
               onSendMessage={handleSendMessage}
@@ -1008,9 +1373,9 @@ Analyze the survey structure, questions, and design. Then help me build a simila
               compact={hasStartedChat}
               references={references}
               onRemoveReference={handleRemoveReference}
-              forceDarkStyle={true}
               solidBackground={true}
               darkSolidBackground={isChatPage}
+              userPlan={userPlan}
             />
           </div>
 
@@ -1026,7 +1391,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                     className={`flex flex-row justify-center items-center py-1.5 h-9 text-sm leading-5 whitespace-nowrap transition-all duration-200 relative gap-1.5 cursor-pointer rounded-full border border-transparent px-4 pl-3 font-normal ${
                       selectedCreateType
                         ? 'bg-[#0285ff11] hover:!bg-[#0285ff11] focus:!bg-[#0285ff11] active:!bg-[#0285ff11] data-[state=open]:!bg-[#0285ff11]'
-                        : 'bg-transparent hover:bg-[rgba(255,255,255,0.05)]'
+                        : 'bg-transparent hover:bg-black/5 dark:hover:bg-white/5'
                     }`}
                     type="button"
                     style={{ color: selectedCreateType ? '#0285ff' : 'var(--surbee-fg-primary)', fontFamily: "'Opening Hours Sans', sans-serif" }}
@@ -1140,7 +1505,184 @@ Analyze the survey structure, questions, and design. Then help me build a simila
             </DropdownMenu>
             </div>
 
-            {/* Sources button with dropdown */}
+            {/* Sources button - next to Create on /home */}
+            {!isChatPage && (
+            <DropdownMenu open={isSourcesOpen} onOpenChange={(open) => {
+              setIsSourcesOpen(open);
+              if (!open) setSourcesDropdownView('main');
+            }}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="flex h-9 items-center rounded-full pr-3.5 pl-3 font-normal text-sm transition-all duration-200 cursor-pointer bg-transparent hover:bg-[rgba(255,255,255,0.05)]"
+                  type="button"
+                  style={{ color: 'var(--surbee-fg-primary)', fontFamily: "'Opening Hours Sans', sans-serif" }}
+                >
+                  <div className="flex items-center gap-2">
+                    <svg height="16" width="16" viewBox="0 0 16 16" style={{ color: 'var(--surbee-fg-muted)' }}>
+                      <path d="M3.085 7.81c0 .328.275.596.596.596h3.533v3.533c0 .321.268.596.596.596s.602-.275.602-.596V8.406h3.526a.6.6 0 0 0 .596-.596.607.607 0 0 0-.596-.602H8.412V3.682a.61.61 0 0 0-.602-.596.6.6 0 0 0-.596.596v3.526H3.68a.61.61 0 0 0-.596.602" fill="currentColor" />
+                    </svg>
+                    <span>Sources</span>
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                side="bottom"
+                style={{
+                  borderRadius: '24px',
+                  padding: '8px',
+                  border: `1px solid var(--surbee-dropdown-border)`,
+                  backgroundColor: 'var(--surbee-dropdown-bg)',
+                  backdropFilter: 'blur(12px)',
+                  boxShadow: 'rgba(0, 0, 0, 0.2) 0px 7px 16px',
+                  width: '280px',
+                  fontFamily: "'Opening Hours Sans', sans-serif",
+                }}
+              >
+                {sourcesDropdownView === 'main' ? (
+                  <>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
+                      onSelect={() => {
+                        setIsSearchModalOpen(true);
+                        setIsSourcesOpen(false);
+                      }}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
+                          <path d="M1.719 6.484a5.35 5.35 0 0 0 5.344 5.344 5.3 5.3 0 0 0 3.107-1.004l3.294 3.301a.8.8 0 0 0 .57.228c.455 0 .77-.342.77-.79a.77.77 0 0 0-.221-.55L11.308 9.72a5.28 5.28 0 0 0 1.098-3.235 5.35 5.35 0 0 0-5.344-5.343A5.35 5.35 0 0 0 1.72 6.484m1.145 0a4.2 4.2 0 0 1 4.199-4.198 4.2 4.2 0 0 1 4.198 4.198 4.2 4.2 0 0 1-4.198 4.199 4.2 4.2 0 0 1-4.2-4.199" />
+                        </svg>
+                        <span className="text-sm">Reference surveys or chats</span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
+                      onSelect={() => {
+                        setIsImportModalOpen(true);
+                        setIsSourcesOpen(false);
+                      }}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <Download size={16} style={{ color: 'var(--surbee-dropdown-text-muted)' }} />
+                        <span className="text-sm">Import survey</span>
+                        <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-md" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', color: 'rgb(96, 165, 250)' }}>NEW</span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
+                      onSelect={() => {
+                        chatInputRef.current?.triggerFileInput();
+                        setIsSourcesOpen(false);
+                      }}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
+                          <path d="M12.405 8.789 8.17 13.024c-1.43 1.436-3.352 1.294-4.579.052-1.234-1.227-1.377-3.135.052-4.571l5.608-5.6c.86-.861 2.125-.98 2.948-.165.816.83.696 2.087-.157 2.948l-5.436 5.435c-.366.382-.815.27-1.07.015-.254-.261-.359-.695.008-1.077l3.86-3.846c.225-.232.24-.561.023-.778-.217-.21-.546-.194-.77.03L4.78 9.343c-.763.763-.734 1.93-.06 2.603.733.734 1.84.719 2.61-.052l5.467-5.466c1.399-1.399 1.339-3.24.12-4.459-1.19-1.19-3.06-1.28-4.46.12L2.813 7.742C.965 9.59 1.107 12.23 2.776 13.899c1.668 1.661 4.309 1.803 6.157-.037l4.272-4.273c.217-.217.217-.613-.007-.815-.217-.232-.569-.202-.793.015" />
+                        </svg>
+                        <span className="text-sm">Upload files</span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator style={{ borderColor: 'var(--surbee-dropdown-separator)', margin: '4px 0' }} />
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-dropdown-text)' }}
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setSearchWebEnabled(!searchWebEnabled);
+                      }}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <Search size={16} style={{ color: 'var(--surbee-dropdown-text-muted)' }} />
+                        <span className="text-sm">Search web</span>
+                        <div className="ml-auto w-8 h-5 rounded-full relative transition-colors duration-200" style={{ backgroundColor: searchWebEnabled ? '#0285ff' : 'var(--surbee-border-primary)' }}>
+                          <div className="absolute w-4 h-4 bg-white rounded-full top-0.5 transition-all duration-200" style={{ left: searchWebEnabled ? '14px' : '2px' }} />
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      style={{ borderRadius: '100px', padding: '10px 14px', color: 'var(--surbee-dropdown-text)' }}
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setSourcesDropdownView('themes');
+                      }}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <div className="relative grid grid-cols-2 shrink-0 overflow-hidden w-4 h-4 rounded-sm">
+                          {currentDesignThemeData.colors.slice(0, 4).map((color, i) => (
+                            <div key={i} className="w-2 h-2" style={{ backgroundColor: color }} />
+                          ))}
+                          <div className="absolute inset-0 border pointer-events-none rounded-sm" style={{ borderColor: 'rgba(255,255,255,0.1)' }} />
+                        </div>
+                        <span className="text-sm">Color Theme</span>
+                        <ChevronRight size={14} className="ml-auto" style={{ color: 'var(--surbee-fg-muted)' }} />
+                      </div>
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSourcesDropdownView('main');
+                      }}
+                      className="w-full px-3 py-2 flex items-center gap-2 hover:bg-[rgba(255,255,255,0.05)] rounded-full transition-colors mb-1"
+                    >
+                      <svg height="14" width="14" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
+                        <path d="M10.5 3.5L5.5 8l5 4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <span className="text-sm font-medium" style={{ color: 'var(--surbee-fg-primary)' }}>Color Theme</span>
+                    </button>
+                    <DropdownMenuSeparator style={{ borderColor: 'var(--surbee-dropdown-separator)', margin: '4px 0' }} />
+                    <div className="overflow-y-auto" style={{ maxHeight: '180px', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.2) transparent' }}>
+                      {DESIGN_THEMES.map((theme) => (
+                        <DropdownMenuItem
+                          key={theme.id}
+                          className="cursor-pointer"
+                          style={{ borderRadius: '100px', padding: '8px 14px', color: 'var(--surbee-fg-primary)', backgroundColor: selectedDesignTheme === theme.id ? 'rgba(255, 255, 255, 0.05)' : 'transparent' }}
+                          onSelect={() => handleDesignThemeChange(theme.id)}
+                        >
+                          <div className="flex items-center gap-2.5 w-full">
+                            <div className="relative grid grid-cols-2 shrink-0 overflow-hidden w-4 h-4 rounded-sm">
+                              {theme.colors.slice(0, 4).map((color, i) => (
+                                <div key={i} className="w-2 h-2" style={{ backgroundColor: color }} />
+                              ))}
+                              <div className="absolute inset-0 border pointer-events-none rounded-sm" style={{ borderColor: 'rgba(255,255,255,0.1)' }} />
+                            </div>
+                            <span className="text-sm truncate max-w-[150px]">{theme.name}</span>
+                            {selectedDesignTheme === theme.id && (
+                              <CheckCircle2 size={14} className="ml-auto" style={{ color: '#0285ff' }} />
+                            )}
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            )}
+
+            {/* Disclaimer text - centered */}
+            {hasStartedChat && (
+              <p
+                className="flex-1 text-center"
+                style={{
+                  fontSize: '11px',
+                  color: 'var(--surbee-fg-muted)',
+                }}
+              >
+                Surbee can make mistakes. Double check important info.
+              </p>
+            )}
+            {!hasStartedChat && <div className="flex-1" />}
+
+            {/* Sources button with dropdown - only on /chat (on /home it's next to Create) */}
+            {isChatPage && (
             <DropdownMenu open={isSourcesOpen} onOpenChange={(open) => {
               setIsSourcesOpen(open);
               if (!open) setSourcesDropdownView('main'); // Reset view when closing
@@ -1160,7 +1702,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                align="start"
+                align="end"
                 side="bottom"
                 style={{
                   borderRadius: '24px',
@@ -1346,14 +1888,12 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
+            )}
 
-            {/* Spacer */}
-            <div className="flex-1" />
-
-            {/* Model selector button */}
+            {/* Model selector button - only on /home, not /chat */}
+            {!isChatPage && (
             <div className="flex items-center">
               <DropdownMenu open={isModelOpen} onOpenChange={(open) => {
-                // Only allow opening if not clicking the reset button (handled by logic below)
                 if (!isModelExplicitlySelected || open) setIsModelOpen(open);
               }}>
                 <DropdownMenuTrigger asChild>
@@ -1361,7 +1901,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                     className={`flex flex-row justify-center items-center py-1.5 h-9 text-sm leading-5 whitespace-nowrap transition-all duration-200 relative gap-1.5 cursor-pointer rounded-full border border-transparent px-4 pl-3 font-normal ${
                       isModelExplicitlySelected
                         ? 'bg-[#0285ff11] hover:!bg-[#0285ff11] focus:!bg-[#0285ff11] active:!bg-[#0285ff11] data-[state=open]:!bg-[#0285ff11]'
-                        : 'bg-transparent hover:bg-[rgba(255,255,255,0.05)]'
+                        : 'bg-transparent hover:bg-black/5 dark:hover:bg-white/5'
                     }`}
                     type="button"
                     style={{ color: isModelExplicitlySelected ? '#0285ff' : 'var(--surbee-fg-primary)', fontFamily: "'Opening Hours Sans', sans-serif" }}
@@ -1372,9 +1912,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                     <svg height="16" width="16" viewBox="0 0 20 20" fill="currentColor" style={{ color: isModelExplicitlySelected ? '#0285ff' : 'var(--surbee-dropdown-text-muted)' }}>
                       <path d="M1.43 12.628c0 .402.268.678.67.678h.862v2.78c0 .401.268.66.67.66h2.77v.863c0 .401.276.67.678.67s.67-.268.67-.67v-.862h1.43v.862c0 .401.268.67.67.67s.678-.268.678-.67v-.862h1.423v.862c0 .401.268.67.67.67.41 0 .678-.268.678-.67v-.862h2.77c.402 0 .67-.26.67-.662v-2.787h.862c.402 0 .67-.276.67-.678s-.268-.67-.67-.67h-.862v-1.43h.862c.402 0 .67-.268.67-.67 0-.401-.268-.678-.67-.678h-.862V7.748h.862c.402 0 .67-.276.67-.678s-.268-.67-.67-.67h-.862V3.639c0-.401-.268-.67-.67-.67H13.3v-.853c0-.402-.268-.678-.678-.678-.402 0-.67.276-.67.678v.854h-1.423v-.854c0-.402-.276-.678-.678-.678s-.67.276-.67.678v.854H7.75v-.854c0-.402-.268-.678-.67-.678s-.678.276-.678.678v.854h-2.77c-.402 0-.67.268-.67.67v2.77H2.1c-.402 0-.67.268-.67.67 0 .401.268.678.67.678h.862V9.18H2.1c-.402 0-.67.276-.67.678 0 .401.268.67.67.67h.862v1.43H2.1c-.402 0-.67.268-.67.67m2.88 2.528V4.567c0-.184.067-.25.242-.25H15.15c.175 0 .242.066.242.25v10.59c0 .183-.067.242-.242.242H4.551c-.175 0-.242-.059-.242-.243m2.435-1.548h6.228c.427 0 .628-.201.628-.645v-6.21c0-.436-.201-.637-.628-.637H6.745c-.426 0-.636.2-.636.636v6.211c0 .444.21.645.636.645m.46-1.298V7.413c0-.125.085-.2.202-.2h4.897c.125 0 .2.075.2.2v4.897c0 .117-.075.201-.2.201H7.406a.193.193 0 0 1-.201-.2" />
                     </svg>
-                    <div
-                      className="flex flex-row items-center overflow-hidden transition-all duration-300 ease-out"
-                    >
+                    <div className="flex flex-row items-center overflow-hidden transition-all duration-300 ease-out">
                       <div className="whitespace-nowrap">
                         <div className="flex flex-row items-center gap-1.5">
                           <span className="flex flex-row items-center truncate" style={{ color: isModelExplicitlySelected ? '#0285ff' : 'inherit' }}>
@@ -1410,209 +1948,236 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                   </button>
                 </DropdownMenuTrigger>
 
-              <DropdownMenuContent
-                align="end"
-                side="bottom"
-                style={{
-                  borderRadius: '24px',
-                  padding: '8px',
-                  border: `1px solid var(--surbee-dropdown-border)`,
-                  backgroundColor: 'var(--surbee-dropdown-bg)',
-                  backdropFilter: 'blur(12px)',
-                  boxShadow: 'rgba(0, 0, 0, 0.2) 0px 7px 16px',
-                  width: '300px',
-                  maxHeight: '315px',
-                  overflowY: 'auto',
-                  fontFamily: "'Opening Hours Sans', sans-serif",
-                }}
-              >
-                {/* Best option (auto-selected default) */}
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
-                  onSelect={() => { handleModelChange('claude-haiku'); setIsModelExplicitlySelected(false); setIsModelOpen(false); }}
+                <DropdownMenuContent
+                  align="end"
+                  side="bottom"
+                  style={{
+                    borderRadius: '24px',
+                    padding: '8px',
+                    border: `1px solid var(--surbee-dropdown-border)`,
+                    backgroundColor: 'var(--surbee-dropdown-bg)',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: 'rgba(0, 0, 0, 0.2) 0px 7px 16px',
+                    width: '300px',
+                    maxHeight: '315px',
+                    overflowY: 'auto',
+                    fontFamily: "'Opening Hours Sans', sans-serif",
+                  }}
                 >
-                  <div className="flex items-center gap-3 w-full">
-                    <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
-                      <svg height="18" width="18" viewBox="0 0 20 20" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
-                        <path d="M1.43 12.628c0 .402.268.678.67.678h.862v2.78c0 .401.268.66.67.66h2.77v.863c0 .401.276.67.678.67s.67-.268.67-.67v-.862h1.43v.862c0 .401.268.67.67.67s.678-.268.678-.67v-.862h1.423v.862c0 .401.268.67.67.67.41 0 .678-.268.678-.67v-.862h2.77c.402 0 .67-.26.67-.662v-2.787h.862c.402 0 .67-.276.67-.678s-.268-.67-.67-.67h-.862v-1.43h.862c.402 0 .67-.268.67-.67 0-.401-.268-.678-.67-.678h-.862V7.748h.862c.402 0 .67-.276.67-.678s-.268-.67-.67-.67h-.862V3.639c0-.401-.268-.67-.67-.67H13.3v-.853c0-.402-.268-.678-.678-.678-.402 0-.67.276-.67.678v.854h-1.423v-.854c0-.402-.276-.678-.678-.678s-.67.276-.67.678v.854H7.75v-.854c0-.402-.268-.678-.67-.678s-.678.276-.678.678v.854h-2.77c-.402 0-.67.268-.67.67v2.77H2.1c-.402 0-.67.268-.67.67 0 .401.268.678.67.678h.862V9.18H2.1c-.402 0-.67.276-.67.678 0 .401.268.67.67.67h.862v1.43H2.1c-.402 0-.67.268-.67.67m2.88 2.528V4.567c0-.184.067-.25.242-.25H15.15c.175 0 .242.066.242.25v10.59c0 .183-.067.242-.242.242H4.551c-.175 0-.242-.059-.242-.243m2.435-1.548h6.228c.427 0 .628-.201.628-.645v-6.21c0-.436-.201-.637-.628-.637H6.745c-.426 0-.636.2-.636.636v6.211c0 .444.21.645.636.645m.46-1.298V7.413c0-.125.085-.2.202-.2h4.897c.125 0 .2.075.2.2v4.897c0 .117-.075.201-.2.201H7.406a.193.193 0 0 1-.201-.2" />
-                      </svg>
+                  {/* Best option (auto-selected default) */}
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
+                    onSelect={() => { handleModelChange('claude-haiku'); setIsModelExplicitlySelected(false); setIsModelOpen(false); }}
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
+                        <svg height="18" width="18" viewBox="0 0 20 20" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
+                          <path d="M1.43 12.628c0 .402.268.678.67.678h.862v2.78c0 .401.268.66.67.66h2.77v.863c0 .401.276.67.678.67s.67-.268.67-.67v-.862h1.43v.862c0 .401.268.67.67.67s.678-.268.678-.67v-.862h1.423v.862c0 .401.268.67.67.67.41 0 .678-.268.678-.67v-.862h2.77c.402 0 .67-.26.67-.662v-2.787h.862c.402 0 .67-.276.67-.678s-.268-.67-.67-.67h-.862v-1.43h.862c.402 0 .67-.268.67-.67 0-.401-.268-.678-.67-.678h-.862V7.748h.862c.402 0 .67-.276.67-.678s-.268-.67-.67-.67h-.862V3.639c0-.401-.268-.67-.67-.67H13.3v-.853c0-.402-.268-.678-.678-.678-.402 0-.67.276-.67.678v.854h-1.423v-.854c0-.402-.276-.678-.678-.678s-.67.276-.67.678v.854H7.75v-.854c0-.402-.268-.678-.67-.678s-.678.276-.678.678v.854h-2.77c-.402 0-.67.268-.67.67v2.77H2.1c-.402 0-.67.268-.67.67 0 .401.268.678.67.678h.862V9.18H2.1c-.402 0-.67.276-.67.678 0 .401.268.67.67.67h.862v1.43H2.1c-.402 0-.67.268-.67.67m2.88 2.528V4.567c0-.184.067-.25.242-.25H15.15c.175 0 .242.066.242.25v10.59c0 .183-.067.242-.242.242H4.551c-.175 0-.242-.059-.242-.243m2.435-1.548h6.228c.427 0 .628-.201.628-.645v-6.21c0-.436-.201-.637-.628-.637H6.745c-.426 0-.636.2-.636.636v6.211c0 .444.21.645.636.645m.46-1.298V7.413c0-.125.085-.2.202-.2h4.897c.125 0 .2.075.2.2v4.897c0 .117-.075.201-.2.201H7.406a.193.193 0 0 1-.201-.2" />
+                        </svg>
+                      </div>
+                      <div className="flex flex-col w-full">
+                        <p className="text-sm">Best</p>
+                      </div>
+                      {!isModelExplicitlySelected && (
+                        <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
+                          <path d="M7.23 11.72c.22 0 .41-.1.55-.3l4.2-5.97c.07-.13.16-.28.16-.43 0-.3-.27-.5-.55-.5-.17 0-.33.12-.46.31l-3.92 5.6-1.9-2.28c-.15-.21-.3-.26-.49-.26a.52.52 0 0 0-.52.53c0 .14.07.28.16.41l2.2 2.58c.17.22.35.32.57.32Z" />
+                        </svg>
+                      )}
                     </div>
-                    <div className="flex flex-col w-full">
-                      <p className="text-sm">Best</p>
-                    </div>
-                    {!isModelExplicitlySelected && (
-                      <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
-                        <path d="M7.23 11.72c.22 0 .41-.1.55-.3l4.2-5.97c.07-.13.16-.28.16-.43 0-.3-.27-.5-.55-.5-.17 0-.33.12-.46.31l-3.92 5.6-1.9-2.28c-.15-.21-.3-.26-.49-.26a.52.52 0 0 0-.52.53c0 .14.07.28.16.41l2.2 2.58c.17.22.35.32.57.32Z" />
-                      </svg>
-                    )}
-                  </div>
-                </DropdownMenuItem>
+                  </DropdownMenuItem>
 
-                {/* GPT-5 */}
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
-                  onSelect={() => {
-                    if (userPlan === 'free' || userPlan === 'free_user') {
-                      router.push('/home/pricing');
-                      setIsModelOpen(false);
-                    } else {
-                      handleModelChange('gpt-5');
+                  {/* GPT-5 */}
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
+                    onSelect={() => {
+                      if (userPlan === 'free' || userPlan === 'free_user') {
+                        router.push('/home/pricing');
+                        setIsModelOpen(false);
+                      } else {
+                        handleModelChange('gpt-5');
+                        setIsModelExplicitlySelected(true);
+                        setIsModelOpen(false);
+                      }
+                    }}
+                  >
+                    <div className="flex items-start gap-3 w-full">
+                      <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
+                        <svg height="18" width="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
+                          <path d="M20.247 10.277a4.68 4.68 0 0 0-.412-3.888c-1.05-1.805-3.163-2.734-5.226-2.297A4.83 4.83 0 0 0 10.991 2.5c-2.108-.005-3.98 1.335-4.628 3.314a4.8 4.8 0 0 0-3.208 2.297 4.74 4.74 0 0 0 .597 5.613 4.68 4.68 0 0 0 .412 3.888c1.051 1.805 3.163 2.734 5.226 2.297a4.82 4.82 0 0 0 3.618 1.59c2.11.006 3.981-1.334 4.63-3.316a4.8 4.8 0 0 0 3.208-2.296 4.74 4.74 0 0 0-.598-5.612v.002Zm-7.238 9.981a3.63 3.63 0 0 1-2.31-.824c.03-.015.08-.043.114-.063l3.834-2.185a.61.61 0 0 0 .316-.539v-5.334l1.62.924a.06.06 0 0 1 .031.043v4.418c-.002 1.964-1.614 3.556-3.605 3.56m-7.752-3.267a3.5 3.5 0 0 1-.43-2.386l.113.067 3.834 2.185a.63.63 0 0 0 .63 0l4.681-2.667v1.847a.06.06 0 0 1-.023.049l-3.875 2.208c-1.727.981-3.932.398-4.93-1.303m-1.01-8.259a3.6 3.6 0 0 1 1.878-1.56l-.001.13v4.37a.61.61 0 0 0 .314.538l4.681 2.667-1.62.923a.06.06 0 0 1-.055.005l-3.876-2.21a3.54 3.54 0 0 1-1.321-4.862Zm13.314 3.058-4.68-2.668L14.5 8.2a.06.06 0 0 1 .055-.005l3.876 2.208a3.536 3.536 0 0 1 1.32 4.865 3.6 3.6 0 0 1-1.877 1.56v-4.5a.61.61 0 0 0-.313-.538m1.613-2.396-.113-.067-3.835-2.185a.63.63 0 0 0-.63 0L9.916 9.81V7.963a.06.06 0 0 1 .022-.05l3.876-2.206c1.726-.983 3.933-.398 4.929 1.306.42.72.573 1.562.43 2.381zm-10.14 3.291-1.62-.923a.06.06 0 0 1-.032-.044V7.301C7.383 5.335 9 3.741 10.993 3.742c.843 0 1.659.292 2.307.824l-.114.064-3.834 2.185a.61.61 0 0 0-.315.538zv.002Zm.88-1.872L12 9.625l2.085 1.187v2.376L12 14.375l-2.085-1.187z" />
+                        </svg>
+                      </div>
+                      <div className="flex flex-col w-full">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="text-sm">GPT-5</p>
+                          {(userPlan === 'free' || userPlan === 'free_user') && (
+                            <span className="inline-flex items-center h-4 px-2 rounded-2xl text-[0.5625rem] font-medium uppercase" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
+                              Pro
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Flagship GPT model for complex tasks</p>
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+
+                  {/* GPT-5.2 */}
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
+                    onSelect={() => {
+                      if (userPlan === 'free' || userPlan === 'free_user') {
+                        router.push('/home/pricing');
+                        setIsModelOpen(false);
+                      } else {
+                        handleModelChange('gpt-5.2');
+                        setIsModelExplicitlySelected(true);
+                        setIsModelOpen(false);
+                      }
+                    }}
+                  >
+                    <div className="flex items-start gap-3 w-full">
+                      <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
+                        <svg height="18" width="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
+                          <path d="M20.247 10.277a4.68 4.68 0 0 0-.412-3.888c-1.05-1.805-3.163-2.734-5.226-2.297A4.83 4.83 0 0 0 10.991 2.5c-2.108-.005-3.98 1.335-4.628 3.314a4.8 4.8 0 0 0-3.208 2.297 4.74 4.74 0 0 0 .597 5.613 4.68 4.68 0 0 0 .412 3.888c1.051 1.805 3.163 2.734 5.226 2.297a4.82 4.82 0 0 0 3.618 1.59c2.11.006 3.981-1.334 4.63-3.316a4.8 4.8 0 0 0 3.208-2.296 4.74 4.74 0 0 0-.598-5.612v.002Zm-7.238 9.981a3.63 3.63 0 0 1-2.31-.824c.03-.015.08-.043.114-.063l3.834-2.185a.61.61 0 0 0 .316-.539v-5.334l1.62.924a.06.06 0 0 1 .031.043v4.418c-.002 1.964-1.614 3.556-3.605 3.56m-7.752-3.267a3.5 3.5 0 0 1-.43-2.386l.113.067 3.834 2.185a.63.63 0 0 0 .63 0l4.681-2.667v1.847a.06.06 0 0 1-.023.049l-3.875 2.208c-1.727.981-3.932.398-4.93-1.303m-1.01-8.259a3.6 3.6 0 0 1 1.878-1.56l-.001.13v4.37a.61.61 0 0 0 .314.538l4.681 2.667-1.62.923a.06.06 0 0 1-.055.005l-3.876-2.21a3.54 3.54 0 0 1-1.321-4.862Zm13.314 3.058-4.68-2.668L14.5 8.2a.06.06 0 0 1 .055-.005l3.876 2.208a3.536 3.536 0 0 1 1.32 4.865 3.6 3.6 0 0 1-1.877 1.56v-4.5a.61.61 0 0 0-.313-.538m1.613-2.396-.113-.067-3.835-2.185a.63.63 0 0 0-.63 0L9.916 9.81V7.963a.06.06 0 0 1 .022-.05l3.876-2.206c1.726-.983 3.933-.398 4.929 1.306.42.72.573 1.562.43 2.381zm-10.14 3.291-1.62-.923a.06.06 0 0 1-.032-.044V7.301C7.383 5.335 9 3.741 10.993 3.742c.843 0 1.659.292 2.307.824l-.114.064-3.834 2.185a.61.61 0 0 0-.315.538zv.002Zm.88-1.872L12 9.625l2.085 1.187v2.376L12 14.375l-2.085-1.187z" />
+                        </svg>
+                      </div>
+                      <div className="flex flex-col w-full">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="text-sm">GPT-5.2</p>
+                          {(userPlan === 'free' || userPlan === 'free_user') && (
+                            <span className="inline-flex items-center h-4 px-2 rounded-2xl text-[0.5625rem] font-medium uppercase" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
+                              Pro
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Latest GPT model with enhanced reasoning</p>
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+
+                  {/* GPT-5 Mini */}
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
+                    onSelect={() => {
+                      handleModelChange('gpt-5-mini');
                       setIsModelExplicitlySelected(true);
                       setIsModelOpen(false);
-                    }
-                  }}
-                >
-                  <div className="flex items-start gap-3 w-full">
-                    <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
-                      <svg height="18" width="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
-                        <path d="M20.247 10.277a4.68 4.68 0 0 0-.412-3.888c-1.05-1.805-3.163-2.734-5.226-2.297A4.83 4.83 0 0 0 10.991 2.5c-2.108-.005-3.98 1.335-4.628 3.314a4.8 4.8 0 0 0-3.208 2.297 4.74 4.74 0 0 0 .597 5.613 4.68 4.68 0 0 0 .412 3.888c1.051 1.805 3.163 2.734 5.226 2.297a4.82 4.82 0 0 0 3.618 1.59c2.11.006 3.981-1.334 4.63-3.316a4.8 4.8 0 0 0 3.208-2.296 4.74 4.74 0 0 0-.598-5.612v.002Zm-7.238 9.981a3.63 3.63 0 0 1-2.31-.824c.03-.015.08-.043.114-.063l3.834-2.185a.61.61 0 0 0 .316-.539v-5.334l1.62.924a.06.06 0 0 1 .031.043v4.418c-.002 1.964-1.614 3.556-3.605 3.56m-7.752-3.267a3.5 3.5 0 0 1-.43-2.386l.113.067 3.834 2.185a.63.63 0 0 0 .63 0l4.681-2.667v1.847a.06.06 0 0 1-.023.049l-3.875 2.208c-1.727.981-3.932.398-4.93-1.303m-1.01-8.259a3.6 3.6 0 0 1 1.878-1.56l-.001.13v4.37a.61.61 0 0 0 .314.538l4.681 2.667-1.62.923a.06.06 0 0 1-.055.005l-3.876-2.21a3.54 3.54 0 0 1-1.321-4.862Zm13.314 3.058-4.68-2.668L14.5 8.2a.06.06 0 0 1 .055-.005l3.876 2.208a3.536 3.536 0 0 1 1.32 4.865 3.6 3.6 0 0 1-1.877 1.56v-4.5a.61.61 0 0 0-.313-.538m1.613-2.396-.113-.067-3.835-2.185a.63.63 0 0 0-.63 0L9.916 9.81V7.963a.06.06 0 0 1 .022-.05l3.876-2.206c1.726-.983 3.933-.398 4.929 1.306.42.72.573 1.562.43 2.381zm-10.14 3.291-1.62-.923a.06.06 0 0 1-.032-.044V7.301C7.383 5.335 9 3.741 10.993 3.742c.843 0 1.659.292 2.307.824l-.114.064-3.834 2.185a.61.61 0 0 0-.315.538zv.002Zm.88-1.872L12 9.625l2.085 1.187v2.376L12 14.375l-2.085-1.187z" />
-                      </svg>
-                    </div>
-                    <div className="flex flex-col w-full">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <p className="text-sm">GPT-5</p>
-                        {(userPlan === 'free' || userPlan === 'free_user') && (
-                          <span className="inline-flex items-center h-4 px-2 rounded-2xl text-[0.5625rem] font-medium uppercase" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
-                            Pro
-                          </span>
-                        )}
+                    }}
+                  >
+                    <div className="flex items-start gap-3 w-full">
+                      <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
+                        <svg height="18" width="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
+                          <path d="M20.247 10.277a4.68 4.68 0 0 0-.412-3.888c-1.05-1.805-3.163-2.734-5.226-2.297A4.83 4.83 0 0 0 10.991 2.5c-2.108-.005-3.98 1.335-4.628 3.314a4.8 4.8 0 0 0-3.208 2.297 4.74 4.74 0 0 0 .597 5.613 4.68 4.68 0 0 0 .412 3.888c1.051 1.805 3.163 2.734 5.226 2.297a4.82 4.82 0 0 0 3.618 1.59c2.11.006 3.981-1.334 4.63-3.316a4.8 4.8 0 0 0 3.208-2.296 4.74 4.74 0 0 0-.598-5.612v.002Zm-7.238 9.981a3.63 3.63 0 0 1-2.31-.824c.03-.015.08-.043.114-.063l3.834-2.185a.61.61 0 0 0 .316-.539v-5.334l1.62.924a.06.06 0 0 1 .031.043v4.418c-.002 1.964-1.614 3.556-3.605 3.56m-7.752-3.267a3.5 3.5 0 0 1-.43-2.386l.113.067 3.834 2.185a.63.63 0 0 0 .63 0l4.681-2.667v1.847a.06.06 0 0 1-.023.049l-3.875 2.208c-1.727.981-3.932.398-4.93-1.303m-1.01-8.259a3.6 3.6 0 0 1 1.878-1.56l-.001.13v4.37a.61.61 0 0 0 .314.538l4.681 2.667-1.62.923a.06.06 0 0 1-.055.005l-3.876-2.21a3.54 3.54 0 0 1-1.321-4.862Zm13.314 3.058-4.68-2.668L14.5 8.2a.06.06 0 0 1 .055-.005l3.876 2.208a3.536 3.536 0 0 1 1.32 4.865 3.6 3.6 0 0 1-1.877 1.56v-4.5a.61.61 0 0 0-.313-.538m1.613-2.396-.113-.067-3.835-2.185a.63.63 0 0 0-.63 0L9.916 9.81V7.963a.06.06 0 0 1 .022-.05l3.876-2.206c1.726-.983 3.933-.398 4.929 1.306.42.72.573 1.562.43 2.381zm-10.14 3.291-1.62-.923a.06.06 0 0 1-.032-.044V7.301C7.383 5.335 9 3.741 10.993 3.742c.843 0 1.659.292 2.307.824l-.114.064-3.834 2.185a.61.61 0 0 0-.315.538zv.002Zm.88-1.872L12 9.625l2.085 1.187v2.376L12 14.375l-2.085-1.187z" />
+                        </svg>
                       </div>
-                      <p className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Flagship GPT model for complex tasks</p>
-                    </div>
-                  </div>
-                </DropdownMenuItem>
-
-                {/* GPT-5.2 */}
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
-                  onSelect={() => {
-                    if (userPlan === 'free' || userPlan === 'free_user') {
-                      router.push('/home/pricing');
-                      setIsModelOpen(false);
-                    } else {
-                      handleModelChange('gpt-5.2');
-                      setIsModelExplicitlySelected(true);
-                      setIsModelOpen(false);
-                    }
-                  }}
-                >
-                  <div className="flex items-start gap-3 w-full">
-                    <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
-                      <svg height="18" width="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
-                        <path d="M20.247 10.277a4.68 4.68 0 0 0-.412-3.888c-1.05-1.805-3.163-2.734-5.226-2.297A4.83 4.83 0 0 0 10.991 2.5c-2.108-.005-3.98 1.335-4.628 3.314a4.8 4.8 0 0 0-3.208 2.297 4.74 4.74 0 0 0 .597 5.613 4.68 4.68 0 0 0 .412 3.888c1.051 1.805 3.163 2.734 5.226 2.297a4.82 4.82 0 0 0 3.618 1.59c2.11.006 3.981-1.334 4.63-3.316a4.8 4.8 0 0 0 3.208-2.296 4.74 4.74 0 0 0-.598-5.612v.002Zm-7.238 9.981a3.63 3.63 0 0 1-2.31-.824c.03-.015.08-.043.114-.063l3.834-2.185a.61.61 0 0 0 .316-.539v-5.334l1.62.924a.06.06 0 0 1 .031.043v4.418c-.002 1.964-1.614 3.556-3.605 3.56m-7.752-3.267a3.5 3.5 0 0 1-.43-2.386l.113.067 3.834 2.185a.63.63 0 0 0 .63 0l4.681-2.667v1.847a.06.06 0 0 1-.023.049l-3.875 2.208c-1.727.981-3.932.398-4.93-1.303m-1.01-8.259a3.6 3.6 0 0 1 1.878-1.56l-.001.13v4.37a.61.61 0 0 0 .314.538l4.681 2.667-1.62.923a.06.06 0 0 1-.055.005l-3.876-2.21a3.54 3.54 0 0 1-1.321-4.862Zm13.314 3.058-4.68-2.668L14.5 8.2a.06.06 0 0 1 .055-.005l3.876 2.208a3.536 3.536 0 0 1 1.32 4.865 3.6 3.6 0 0 1-1.877 1.56v-4.5a.61.61 0 0 0-.313-.538m1.613-2.396-.113-.067-3.835-2.185a.63.63 0 0 0-.63 0L9.916 9.81V7.963a.06.06 0 0 1 .022-.05l3.876-2.206c1.726-.983 3.933-.398 4.929 1.306.42.72.573 1.562.43 2.381zm-10.14 3.291-1.62-.923a.06.06 0 0 1-.032-.044V7.301C7.383 5.335 9 3.741 10.993 3.742c.843 0 1.659.292 2.307.824l-.114.064-3.834 2.185a.61.61 0 0 0-.315.538zv.002Zm.88-1.872L12 9.625l2.085 1.187v2.376L12 14.375l-2.085-1.187z" />
-                      </svg>
-                    </div>
-                    <div className="flex flex-col w-full">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <p className="text-sm">GPT-5.2</p>
-                        {(userPlan === 'free' || userPlan === 'free_user') && (
-                          <span className="inline-flex items-center h-4 px-2 rounded-2xl text-[0.5625rem] font-medium uppercase" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
-                            Pro
-                          </span>
-                        )}
+                      <div className="flex flex-col w-full">
+                        <p className="text-sm mb-0.5">GPT-5 Mini</p>
+                        <p className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Fast & affordable for simple tasks</p>
                       </div>
-                      <p className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Latest GPT model with enhanced reasoning</p>
                     </div>
-                  </div>
-                </DropdownMenuItem>
+                  </DropdownMenuItem>
 
-                {/* GPT-5 Mini */}
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
-                  onSelect={() => {
-                    handleModelChange('gpt-5-mini');
-                    setIsModelExplicitlySelected(true);
-                    setIsModelOpen(false);
-                  }}
-                >
-                  <div className="flex items-start gap-3 w-full">
-                    <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
-                      <svg height="18" width="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
-                        <path d="M20.247 10.277a4.68 4.68 0 0 0-.412-3.888c-1.05-1.805-3.163-2.734-5.226-2.297A4.83 4.83 0 0 0 10.991 2.5c-2.108-.005-3.98 1.335-4.628 3.314a4.8 4.8 0 0 0-3.208 2.297 4.74 4.74 0 0 0 .597 5.613 4.68 4.68 0 0 0 .412 3.888c1.051 1.805 3.163 2.734 5.226 2.297a4.82 4.82 0 0 0 3.618 1.59c2.11.006 3.981-1.334 4.63-3.316a4.8 4.8 0 0 0 3.208-2.296 4.74 4.74 0 0 0-.598-5.612v.002Zm-7.238 9.981a3.63 3.63 0 0 1-2.31-.824c.03-.015.08-.043.114-.063l3.834-2.185a.61.61 0 0 0 .316-.539v-5.334l1.62.924a.06.06 0 0 1 .031.043v4.418c-.002 1.964-1.614 3.556-3.605 3.56m-7.752-3.267a3.5 3.5 0 0 1-.43-2.386l.113.067 3.834 2.185a.63.63 0 0 0 .63 0l4.681-2.667v1.847a.06.06 0 0 1-.023.049l-3.875 2.208c-1.727.981-3.932.398-4.93-1.303m-1.01-8.259a3.6 3.6 0 0 1 1.878-1.56l-.001.13v4.37a.61.61 0 0 0 .314.538l4.681 2.667-1.62.923a.06.06 0 0 1-.055.005l-3.876-2.21a3.54 3.54 0 0 1-1.321-4.862Zm13.314 3.058-4.68-2.668L14.5 8.2a.06.06 0 0 1 .055-.005l3.876 2.208a3.536 3.536 0 0 1 1.32 4.865 3.6 3.6 0 0 1-1.877 1.56v-4.5a.61.61 0 0 0-.313-.538m1.613-2.396-.113-.067-3.835-2.185a.63.63 0 0 0-.63 0L9.916 9.81V7.963a.06.06 0 0 1 .022-.05l3.876-2.206c1.726-.983 3.933-.398 4.929 1.306.42.72.573 1.562.43 2.381zm-10.14 3.291-1.62-.923a.06.06 0 0 1-.032-.044V7.301C7.383 5.335 9 3.741 10.993 3.742c.843 0 1.659.292 2.307.824l-.114.064-3.834 2.185a.61.61 0 0 0-.315.538zv.002Zm.88-1.872L12 9.625l2.085 1.187v2.376L12 14.375l-2.085-1.187z" />
-                      </svg>
-                    </div>
-                    <div className="flex flex-col w-full">
-                      <p className="text-sm mb-0.5">GPT-5 Mini</p>
-                      <p className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Fast & affordable for simple tasks</p>
-                    </div>
-                  </div>
-                </DropdownMenuItem>
-
-                {/* Codex Max */}
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
-                  onSelect={() => {
-                    if (userPlan === 'free' || userPlan === 'free_user' || userPlan === 'pro' || userPlan === 'surbee_pro') {
-                      router.push('/home/pricing');
-                      setIsModelOpen(false);
-                    } else {
-                      handleModelChange('gpt-5.1-codex');
-                      setIsModelExplicitlySelected(true);
-                      setIsModelOpen(false);
-                    }
-                  }}
-                >
-                  <div className="flex items-start gap-3 w-full">
-                    <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
-                      <svg height="18" width="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
-                        <path d="M20.247 10.277a4.68 4.68 0 0 0-.412-3.888c-1.05-1.805-3.163-2.734-5.226-2.297A4.83 4.83 0 0 0 10.991 2.5c-2.108-.005-3.98 1.335-4.628 3.314a4.8 4.8 0 0 0-3.208 2.297 4.74 4.74 0 0 0 .597 5.613 4.68 4.68 0 0 0 .412 3.888c1.051 1.805 3.163 2.734 5.226 2.297a4.82 4.82 0 0 0 3.618 1.59c2.11.006 3.981-1.334 4.63-3.316a4.8 4.8 0 0 0 3.208-2.296 4.74 4.74 0 0 0-.598-5.612v.002Zm-7.238 9.981a3.63 3.63 0 0 1-2.31-.824c.03-.015.08-.043.114-.063l3.834-2.185a.61.61 0 0 0 .316-.539v-5.334l1.62.924a.06.06 0 0 1 .031.043v4.418c-.002 1.964-1.614 3.556-3.605 3.56m-7.752-3.267a3.5 3.5 0 0 1-.43-2.386l.113.067 3.834 2.185a.63.63 0 0 0 .63 0l4.681-2.667v1.847a.06.06 0 0 1-.023.049l-3.875 2.208c-1.727.981-3.932.398-4.93-1.303m-1.01-8.259a3.6 3.6 0 0 1 1.878-1.56l-.001.13v4.37a.61.61 0 0 0 .314.538l4.681 2.667-1.62.923a.06.06 0 0 1-.055.005l-3.876-2.21a3.54 3.54 0 0 1-1.321-4.862Zm13.314 3.058-4.68-2.668L14.5 8.2a.06.06 0 0 1 .055-.005l3.876 2.208a3.536 3.536 0 0 1 1.32 4.865 3.6 3.6 0 0 1-1.877 1.56v-4.5a.61.61 0 0 0-.313-.538m1.613-2.396-.113-.067-3.835-2.185a.63.63 0 0 0-.63 0L9.916 9.81V7.963a.06.06 0 0 1 .022-.05l3.876-2.206c1.726-.983 3.933-.398 4.929 1.306.42.72.573 1.562.43 2.381zm-10.14 3.291-1.62-.923a.06.06 0 0 1-.032-.044V7.301C7.383 5.335 9 3.741 10.993 3.742c.843 0 1.659.292 2.307.824l-.114.064-3.834 2.185a.61.61 0 0 0-.315.538zv.002Zm.88-1.872L12 9.625l2.085 1.187v2.376L12 14.375l-2.085-1.187z" />
-                      </svg>
-                    </div>
-                    <div className="flex flex-col w-full">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <p className="text-sm">Codex Max</p>
-                        {(userPlan === 'free' || userPlan === 'free_user' || userPlan === 'pro' || userPlan === 'surbee_pro') && (
-                          <span className="inline-flex items-center h-4 px-2 rounded-2xl text-[0.5625rem] font-medium uppercase" style={{ backgroundColor: 'rgba(251, 146, 60, 0.1)', color: '#fb923c' }}>
-                            Max
-                          </span>
-                        )}
+                  {/* Codex Max */}
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
+                    onSelect={() => {
+                      if (userPlan === 'free' || userPlan === 'free_user' || userPlan === 'pro' || userPlan === 'surbee_pro') {
+                        router.push('/home/pricing');
+                        setIsModelOpen(false);
+                      } else {
+                        handleModelChange('gpt-5.1-codex');
+                        setIsModelExplicitlySelected(true);
+                        setIsModelOpen(false);
+                      }
+                    }}
+                  >
+                    <div className="flex items-start gap-3 w-full">
+                      <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
+                        <svg height="18" width="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
+                          <path d="M20.247 10.277a4.68 4.68 0 0 0-.412-3.888c-1.05-1.805-3.163-2.734-5.226-2.297A4.83 4.83 0 0 0 10.991 2.5c-2.108-.005-3.98 1.335-4.628 3.314a4.8 4.8 0 0 0-3.208 2.297 4.74 4.74 0 0 0 .597 5.613 4.68 4.68 0 0 0 .412 3.888c1.051 1.805 3.163 2.734 5.226 2.297a4.82 4.82 0 0 0 3.618 1.59c2.11.006 3.981-1.334 4.63-3.316a4.8 4.8 0 0 0 3.208-2.296 4.74 4.74 0 0 0-.598-5.612v.002Zm-7.238 9.981a3.63 3.63 0 0 1-2.31-.824c.03-.015.08-.043.114-.063l3.834-2.185a.61.61 0 0 0 .316-.539v-5.334l1.62.924a.06.06 0 0 1 .031.043v4.418c-.002 1.964-1.614 3.556-3.605 3.56m-7.752-3.267a3.5 3.5 0 0 1-.43-2.386l.113.067 3.834 2.185a.63.63 0 0 0 .63 0l4.681-2.667v1.847a.06.06 0 0 1-.023.049l-3.875 2.208c-1.727.981-3.932.398-4.93-1.303m-1.01-8.259a3.6 3.6 0 0 1 1.878-1.56l-.001.13v4.37a.61.61 0 0 0 .314.538l4.681 2.667-1.62.923a.06.06 0 0 1-.055.005l-3.876-2.21a3.54 3.54 0 0 1-1.321-4.862Zm13.314 3.058-4.68-2.668L14.5 8.2a.06.06 0 0 1 .055-.005l3.876 2.208a3.536 3.536 0 0 1 1.32 4.865 3.6 3.6 0 0 1-1.877 1.56v-4.5a.61.61 0 0 0-.313-.538m1.613-2.396-.113-.067-3.835-2.185a.63.63 0 0 0-.63 0L9.916 9.81V7.963a.06.06 0 0 1 .022-.05l3.876-2.206c1.726-.983 3.933-.398 4.929 1.306.42.72.573 1.562.43 2.381zm-10.14 3.291-1.62-.923a.06.06 0 0 1-.032-.044V7.301C7.383 5.335 9 3.741 10.993 3.742c.843 0 1.659.292 2.307.824l-.114.064-3.834 2.185a.61.61 0 0 0-.315.538zv.002Zm.88-1.872L12 9.625l2.085 1.187v2.376L12 14.375l-2.085-1.187z" />
+                        </svg>
                       </div>
-                      <p className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Optimized for code and technical tasks</p>
+                      <div className="flex flex-col w-full">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="text-sm">Codex Max</p>
+                          {(userPlan === 'free' || userPlan === 'free_user' || userPlan === 'pro' || userPlan === 'surbee_pro') && (
+                            <span className="inline-flex items-center h-4 px-2 rounded-2xl text-[0.5625rem] font-medium uppercase" style={{ backgroundColor: 'rgba(251, 146, 60, 0.1)', color: '#fb923c' }}>
+                              Max
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Optimized for code and technical tasks</p>
+                      </div>
                     </div>
-                  </div>
-                </DropdownMenuItem>
+                  </DropdownMenuItem>
 
-                {/* Claude Haiku 4.5 */}
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
-                  onSelect={() => { handleModelChange('claude-haiku'); setIsModelExplicitlySelected(true); setIsModelOpen(false); }}
-                >
-                  <div className="flex items-start gap-3 w-full">
-                    <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
-                      <svg height="18" width="18" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
-                        <path d="m4.35 9.87 2.37-1.33.03-.11-.03-.07H6.6l-.4-.02-1.35-.04-1.16-.05-1.14-.06-.28-.06L2 7.78l.03-.18.24-.16.34.03.76.06 1.14.07.82.05 1.23.13h.2l.02-.08-.06-.05-.06-.05-1.18-.8-1.27-.84-.67-.49-.36-.24L3 5l-.08-.5.33-.37.44.03.1.03.45.35.96.74 1.24.91.18.15.08-.05v-.03l-.08-.14-.67-1.22-.72-1.25-.32-.52-.09-.3a1.4 1.4 0 0 1-.05-.37l.37-.5.2-.07.5.06.21.18.32.71.5 1.12.77 1.51.23.46.12.41.05.13h.08v-.08l.06-.85.12-1.05.11-1.35.04-.37.2-.46.37-.25.29.14.24.34-.03.23-.15.92-.27 1.45-.19.98h.1l.13-.13.5-.65.82-1.03.36-.41.43-.45.27-.22h.52l.38.56-.17.59-.53.67-.44.57-.64.85-.39.68.04.06h.09l1.43-.32.77-.13.92-.16.42.2.04.2-.16.4-.99.23-1.15.24-1.72.4-.02.02.02.03.78.07.33.02h.8l1.52.12.4.25.23.32-.04.25-.6.3-.83-.19-1.91-.45-.65-.17h-.1v.06l.55.53 1 .9 1.26 1.17.06.3-.16.22-.17-.02-1.1-.83-.43-.38-.96-.8h-.07v.08l.23.32 1.17 1.76.06.55-.09.17-.3.1-.33-.05-.7-.97-.7-1.08-.57-.98-.07.04-.34 3.63-.16.19-.36.14-.3-.23-.17-.37.16-.74.2-.97.15-.76.15-.95.08-.32v-.02l-.07.01-.72.98L6.08 12l-.86.92L5 13l-.36-.18.04-.34.2-.29 1.19-1.52.72-.94.46-.54V9.1h-.03l-3.17 2.06-.56.08-.25-.23.03-.38.12-.12.95-.65Z" />
-                      </svg>
+                  {/* Claude Haiku 4.5 */}
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
+                    onSelect={() => { handleModelChange('claude-haiku'); setIsModelExplicitlySelected(true); setIsModelOpen(false); }}
+                  >
+                    <div className="flex items-start gap-3 w-full">
+                      <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
+                        <svg height="18" width="18" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
+                          <path d="m4.35 9.87 2.37-1.33.03-.11-.03-.07H6.6l-.4-.02-1.35-.04-1.16-.05-1.14-.06-.28-.06L2 7.78l.03-.18.24-.16.34.03.76.06 1.14.07.82.05 1.23.13h.2l.02-.08-.06-.05-.06-.05-1.18-.8-1.27-.84-.67-.49-.36-.24L3 5l-.08-.5.33-.37.44.03.1.03.45.35.96.74 1.24.91.18.15.08-.05v-.03l-.08-.14-.67-1.22-.72-1.25-.32-.52-.09-.3a1.4 1.4 0 0 1-.05-.37l.37-.5.2-.07.5.06.21.18.32.71.5 1.12.77 1.51.23.46.12.41.05.13h.08v-.08l.06-.85.12-1.05.11-1.35.04-.37.2-.46.37-.25.29.14.24.34-.03.23-.15.92-.27 1.45-.19.98h.1l.13-.13.5-.65.82-1.03.36-.41.43-.45.27-.22h.52l.38.56-.17.59-.53.67-.44.57-.64.85-.39.68.04.06h.09l1.43-.32.77-.13.92-.16.42.2.04.2-.16.4-.99.23-1.15.24-1.72.4-.02.02.02.03.78.07.33.02h.8l1.52.12.4.25.23.32-.04.25-.6.3-.83-.19-1.91-.45-.65-.17h-.1v.06l.55.53 1 .9 1.26 1.17.06.3-.16.22-.17-.02-1.1-.83-.43-.38-.96-.8h-.07v.08l.23.32 1.17 1.76.06.55-.09.17-.3.1-.33-.05-.7-.97-.7-1.08-.57-.98-.07.04-.34 3.63-.16.19-.36.14-.3-.23-.17-.37.16-.74.2-.97.15-.76.15-.95.08-.32v-.02l-.07.01-.72.98L6.08 12l-.86.92L5 13l-.36-.18.04-.34.2-.29 1.19-1.52.72-.94.46-.54V9.1h-.03l-3.17 2.06-.56.08-.25-.23.03-.38.12-.12.95-.65Z" />
+                        </svg>
+                      </div>
+                      <div className="flex flex-col w-full">
+                        <p className="text-sm mb-0.5">Claude Haiku 4.5</p>
+                        <p className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Fast responses with near-frontier intelligence</p>
+                      </div>
                     </div>
-                    <div className="flex flex-col w-full">
-                      <p className="text-sm mb-0.5">Claude Haiku 4.5</p>
-                      <p className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Fast responses with near-frontier intelligence</p>
-                    </div>
-                  </div>
-                </DropdownMenuItem>
+                  </DropdownMenuItem>
 
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
+            )}
           </div>
 
-          {/* Disclaimer text - only shows after chat starts */}
-          {hasStartedChat && (
-            <p
-              className="text-center mt-2"
-              style={{
-                fontSize: '11px',
-                color: 'var(--surbee-fg-muted)',
-              }}
-            >
-              Surbee can make mistakes. Double check important info.
-            </p>
-          )}
+          {/* Quick suggestions - only before chat starts */}
+          <AnimatePresence>
+            {!hasStartedChat && (
+              <motion.div
+                className="flex flex-wrap gap-2.5 mt-2 w-full justify-between"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.3, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {[
+                  { label: 'Product feedback', prompt: 'Create a product feedback survey to understand what features users love, what frustrates them, and what improvements they\'d like to see in the next release.', build: true },
+                  { label: 'Analyze responses', prompt: 'Analyze my latest survey responses and summarize the key trends, common themes, and any notable outliers in the data.', build: false },
+                  { label: 'Customer satisfaction', prompt: 'Build a customer satisfaction (CSAT) survey that measures overall satisfaction, likelihood to recommend, and captures open-ended feedback on the experience.', build: true },
+                  { label: 'Improve questions', prompt: 'Review my most recent survey and suggest improvements to the questions — fix any leading or confusing wording and recommend better question types where appropriate.', build: false },
+                ].map((suggestion) => (
+                  <button
+                    key={suggestion.label}
+                    type="button"
+                    onClick={() => {
+                      if (suggestion.build) {
+                        setSelectedCreateType('Survey');
+                        setIsBuildMode(true);
+                      }
+                      chatInputRef.current?.setText(suggestion.prompt);
+                    }}
+                    className="px-3.5 py-1.5 rounded-full text-sm transition-all duration-200 cursor-pointer border dark:border-white/10 border-black/10 dark:hover:bg-white/10 hover:bg-black/5 dark:hover:border-white/20 hover:border-black/20"
+                    style={{
+                      color: 'var(--surbee-fg-secondary)',
+                      fontFamily: "'Opening Hours Sans', sans-serif",
+                    }}
+                  >
+                    {suggestion.label}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

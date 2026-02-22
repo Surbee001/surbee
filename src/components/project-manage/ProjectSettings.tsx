@@ -6,9 +6,33 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import {
   Shield, Eye, EyeOff, AlertTriangle, Trash2, Settings2,
-  Check, Copy, ExternalLink, Upload, Image, Lock, MessageSquare, ChevronDown, Info, X
+  Check, Copy, ExternalLink, Upload, Image, Lock, MessageSquare, ChevronDown, Info, X, Crown, Sparkles
 } from 'lucide-react';
 import { CipherTier, CIPHER_TIERS, CIPHER_CHECKS, getChecksForTier, CipherCheckId } from '@/lib/cipher/tier-config';
+import { broadcastSettingsUpdate } from '@/lib/survey-bridge';
+import { useCredits } from '@/hooks/useCredits';
+
+// Tier plan requirements
+const TIER_PLAN_REQUIREMENTS: Record<CipherTier, 'free' | 'pro' | 'max' | null> = {
+  1: null,  // Available to all
+  2: null,  // Available to all
+  3: 'pro', // Pro or Max
+  4: 'max', // Max only
+  5: 'max', // Max only
+};
+
+// Check if user can access a tier
+function canAccessTier(tier: CipherTier, userPlan: string): boolean {
+  const requirement = TIER_PLAN_REQUIREMENTS[tier];
+  if (!requirement) return true;
+
+  const planHierarchy = ['free', 'pro', 'max', 'enterprise'];
+  const normalizedPlan = userPlan.replace('surbee_', '').replace('_user', '');
+  const userLevel = planHierarchy.indexOf(normalizedPlan);
+  const requiredLevel = planHierarchy.indexOf(requirement);
+
+  return userLevel >= requiredLevel;
+}
 
 interface ProjectSettingsProps {
   projectId: string;
@@ -82,6 +106,8 @@ function ProBadge({ className = '', isPro, onClick }: { className?: string; isPr
 export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
   const { user } = useAuth();
   const router = useRouter();
+  const { credits } = useCredits();
+  const userPlan = credits?.plan || 'free_user';
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -89,7 +115,6 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState('');
   const [copiedUrl, setCopiedUrl] = useState(false);
-  const [userPlan, setUserPlan] = useState<SubscriptionPlan>('free');
 
   // File upload refs
   const iconFileInputRef = useRef<HTMLInputElement>(null);
@@ -100,7 +125,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
   const [shareSettings, setShareSettings] = useState<ShareSettings>({});
 
   // Check if user is Pro or higher
-  const isPro = userPlan !== 'free';
+  const isPro = !userPlan.includes('free');
   const goToPricing = useCallback(() => window.open('/home/pricing', '_blank'), []);
   const [formData, setFormData] = useState({
     // General
@@ -166,13 +191,18 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
 
   // Handle tier change - reset overrides
   const handleTierChange = useCallback((tier: CipherTier) => {
+    // Check if user has access to this tier
+    if (!canAccessTier(tier, userPlan)) {
+      router.push('/home/pricing');
+      return;
+    }
     setFormData(prev => ({
       ...prev,
       cipherTier: tier,
       cipherCheckOverrides: {}, // Reset overrides when tier changes
     }));
     setHasChanges(true);
-  }, []);
+  }, [userPlan, router]);
 
   // Handle individual check toggle
   const handleCheckToggle = useCallback((checkId: string, enabled: boolean) => {
@@ -183,6 +213,34 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         [checkId]: enabled,
       },
     }));
+    setHasChanges(true);
+  }, []);
+
+  // Handle select all checks globally
+  const handleSelectAllChecks = useCallback((selectAll: boolean) => {
+    const newOverrides: Record<string, boolean> = {};
+    Object.keys(CIPHER_CHECKS).forEach(checkId => {
+      newOverrides[checkId] = selectAll;
+    });
+    setFormData(prev => ({
+      ...prev,
+      cipherCheckOverrides: newOverrides,
+    }));
+    setHasChanges(true);
+  }, []);
+
+  // Handle select all checks in a category
+  const handleSelectCategoryChecks = useCallback((categoryChecks: Array<{ id: string }>, selectAll: boolean) => {
+    setFormData(prev => {
+      const newOverrides = { ...prev.cipherCheckOverrides };
+      categoryChecks.forEach(check => {
+        newOverrides[check.id] = selectAll;
+      });
+      return {
+        ...prev,
+        cipherCheckOverrides: newOverrides,
+      };
+    });
     setHasChanges(true);
   }, []);
 
@@ -276,27 +334,6 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
     fetchProject();
   }, [projectId, user?.id]);
 
-  // Fetch user subscription
-  useEffect(() => {
-    const fetchSubscription = async () => {
-      try {
-        const { data: { session } } = await (await import('@/lib/supabase')).supabase.auth.getSession();
-        if (!session?.access_token) return;
-
-        const res = await fetch('/api/user/subscription', {
-          headers: { 'Authorization': `Bearer ${session.access_token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setUserPlan(data.subscription?.plan || 'free');
-        }
-      } catch (err) {
-        console.error('Error fetching subscription:', err);
-      }
-    };
-    fetchSubscription();
-  }, []);
-
   // Track changes
   const handleFormChange = useCallback((field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -386,6 +423,12 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
               randomizeQuestions: formData.randomizeQuestions,
               randomizeOptions: formData.randomizeOptions,
             },
+            cipher: {
+              enabled: formData.cipherEnabled,
+              tier: formData.cipherTier,
+              advancedMode: Object.keys(formData.cipherCheckOverrides).length > 0,
+              advancedChecks: formData.cipherCheckOverrides,
+            },
           },
         }),
       });
@@ -398,6 +441,14 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           body: JSON.stringify({ customSlug: formData.customSlug }),
         });
       }
+
+      // Broadcast cipher settings update to any open surveys (Phase 5)
+      // This allows real-time settings propagation without page refresh
+      broadcastSettingsUpdate(projectId, {
+        enabled: formData.cipherEnabled,
+        tier: formData.cipherTier,
+        advancedChecks: formData.cipherCheckOverrides,
+      });
 
       setHasChanges(false);
     } catch (err) {
@@ -446,21 +497,22 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="settings-modal-backdrop"
-          onClick={onClose}
+          className="settings-fullscreen"
         >
-          <motion.div
-            className="settings-modal-content"
-            onClick={(e) => e.stopPropagation()}
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          >
+          {onClose && (
+            <button
+              className="settings-close-btn"
+              onClick={onClose}
+              aria-label="Close settings"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+          <div className="settings-scroll-container">
             <div className="settings-loading">
               <div className="settings-loader" />
             </div>
-          </motion.div>
+          </div>
         </motion.div>
       </AnimatePresence>
     );
@@ -475,15 +527,17 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         className="settings-fullscreen"
       >
         {/* Close button */}
-        <button
-          className="settings-close-btn"
-          onClick={onClose}
-          aria-label="Close settings"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
+        {onClose && (
+          <button
+            className="settings-close-btn"
+            onClick={onClose}
+            aria-label="Close settings"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
         <div className="settings-scroll-container">
+
           <div className="project-settings-root">
             {/* Header */}
             <header className="settings-header">
@@ -661,70 +715,6 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
             <div className="form-field">
               <label className="toggle-field">
                 <div className="toggle-info">
-                  <span className="field-label">Show Progress Bar</span>
-                  <span className="field-description">Display survey progress to respondents</span>
-                </div>
-                <button
-                  type="button"
-                  className={`toggle-btn ${formData.showProgressBar ? 'active' : ''}`}
-                  onClick={() => handleFormChange('showProgressBar', !formData.showProgressBar)}
-                >
-                  <div className="toggle-thumb" />
-                </button>
-              </label>
-            </div>
-
-            <div className="form-field">
-              <label className="toggle-field">
-                <div className="toggle-info">
-                  <span className="field-label">Show Question Numbers</span>
-                  <span className="field-description">Display "1 of 10" style progress</span>
-                </div>
-                <button
-                  type="button"
-                  className={`toggle-btn ${formData.showQuestionNumbers ? 'active' : ''}`}
-                  onClick={() => handleFormChange('showQuestionNumbers', !formData.showQuestionNumbers)}
-                >
-                  <div className="toggle-thumb" />
-                </button>
-              </label>
-            </div>
-
-            <div className="form-field">
-              <label className="toggle-field">
-                <div className="toggle-info">
-                  <span className="field-label">Randomize Questions</span>
-                  <span className="field-description">Show questions in random order</span>
-                </div>
-                <button
-                  type="button"
-                  className={`toggle-btn ${formData.randomizeQuestions ? 'active' : ''}`}
-                  onClick={() => handleFormChange('randomizeQuestions', !formData.randomizeQuestions)}
-                >
-                  <div className="toggle-thumb" />
-                </button>
-              </label>
-            </div>
-
-            <div className="form-field">
-              <label className="toggle-field">
-                <div className="toggle-info">
-                  <span className="field-label">Randomize Options</span>
-                  <span className="field-description">Randomize answer choice order</span>
-                </div>
-                <button
-                  type="button"
-                  className={`toggle-btn ${formData.randomizeOptions ? 'active' : ''}`}
-                  onClick={() => handleFormChange('randomizeOptions', !formData.randomizeOptions)}
-                >
-                  <div className="toggle-thumb" />
-                </button>
-              </label>
-            </div>
-
-            <div className="form-field">
-              <label className="toggle-field">
-                <div className="toggle-info">
                   <span className="field-label">
                     Hide Surbee Badge
                     <ProBadge className="ml-2" isPro={isPro} onClick={goToPricing} />
@@ -789,55 +779,6 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
               </div>
             )}
 
-            <div className="form-field">
-              <label className="toggle-field">
-                <div className="toggle-info">
-                  <span className="field-label">Collect IP Addresses</span>
-                  <span className="field-description">Store respondent IP addresses for fraud detection</span>
-                </div>
-                <button
-                  type="button"
-                  className={`toggle-btn ${formData.collectIpAddresses ? 'active' : ''}`}
-                  onClick={() => handleFormChange('collectIpAddresses', !formData.collectIpAddresses)}
-                >
-                  <div className="toggle-thumb" />
-                </button>
-              </label>
-            </div>
-
-            <div className="divider" />
-
-            <h2 className="section-title">Notifications</h2>
-
-            <div className="form-field">
-              <label className="toggle-field">
-                <div className="toggle-info">
-                  <span className="field-label">Email on new response</span>
-                  <span className="field-description">Receive an email when someone completes your survey</span>
-                </div>
-                <button
-                  type="button"
-                  className={`toggle-btn ${formData.emailOnResponse ? 'active' : ''}`}
-                  onClick={() => handleFormChange('emailOnResponse', !formData.emailOnResponse)}
-                >
-                  <div className="toggle-thumb" />
-                </button>
-              </label>
-            </div>
-
-            <div className="form-field">
-              <label className="field-label">Email Digest</label>
-              <p className="field-description">Receive a summary of responses</p>
-              <select
-                className="field-select"
-                value={formData.emailDigest}
-                onChange={(e) => handleFormChange('emailDigest', e.target.value)}
-              >
-                <option value="none">Never</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-              </select>
-            </div>
           </div>
         )}
 
@@ -951,40 +892,115 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
                   <p className="cipher-field-description">Higher tiers unlock deeper analysis and AI-powered verification</p>
 
                   <div className="cipher-tier-radio-group">
-                    {([1, 2, 3, 4, 5] as CipherTier[]).map((tier) => (
-                      <label key={tier} className="cipher-radio-label">
-                        <button
-                          type="button"
-                          className={`cipher-radio ${formData.cipherTier === tier ? 'checked' : ''}`}
-                          onClick={() => handleTierChange(tier)}
-                          role="radio"
-                          aria-checked={formData.cipherTier === tier}
-                        >
-                          {formData.cipherTier === tier && <span className="cipher-radio-dot" />}
-                        </button>
-                        <div className="cipher-radio-content">
-                          <span className="cipher-radio-title">Tier {tier} - {CIPHER_TIERS[tier].name}</span>
-                          <span className="cipher-radio-desc">
-                            {CIPHER_TIERS[tier].description}
-                            {CIPHER_TIERS[tier].estimatedCostPerResponse > 0 && (
-                              <> · ~${CIPHER_TIERS[tier].estimatedCostPerResponse.toFixed(3)}/response</>
-                            )}
-                          </span>
-                        </div>
-                      </label>
-                    ))}
+                    {([1, 2, 3, 4, 5] as CipherTier[]).map((tier) => {
+                      const tierRequirement = TIER_PLAN_REQUIREMENTS[tier];
+                      const isAccessible = canAccessTier(tier, userPlan);
+                      const isSelected = formData.cipherTier === tier;
+
+                      return (
+                        <label key={tier} className={`cipher-radio-label ${!isAccessible ? 'locked' : ''}`}>
+                          <button
+                            type="button"
+                            className={`cipher-radio ${isSelected ? 'checked' : ''} ${!isAccessible ? 'locked' : ''}`}
+                            onClick={() => handleTierChange(tier)}
+                            role="radio"
+                            aria-checked={isSelected}
+                          >
+                            {isSelected && <span className="cipher-radio-dot" />}
+                            {!isAccessible && !isSelected && <Lock className="w-3 h-3 text-zinc-500" />}
+                          </button>
+                          <div className="cipher-radio-content">
+                            <div className="cipher-radio-title-row">
+                              <span className={`cipher-radio-title ${!isAccessible ? 'text-zinc-500' : ''}`}>
+                                Tier {tier} - {CIPHER_TIERS[tier].name}
+                              </span>
+                              {/* Show PRO badge only if tier requires pro AND user is not pro or higher */}
+                              {tierRequirement === 'pro' && !isPro && (
+                                <div className="cipher-tier-badges">
+                                  <span className="cipher-badge pro">
+                                    <Sparkles className="w-2.5 h-2.5" /> PRO
+                                  </span>
+                                </div>
+                              )}
+                              {/* Show MAX badge only if tier requires max AND user is not max */}
+                              {tierRequirement === 'max' && !userPlan.includes('max') && !userPlan.includes('enterprise') && (
+                                <div className="cipher-tier-badges">
+                                  <span className="cipher-badge max">
+                                    <Crown className="w-2.5 h-2.5" /> MAX
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <span className={`cipher-radio-desc ${!isAccessible ? 'text-zinc-600' : ''}`}>
+                              {CIPHER_TIERS[tier].description}
+                              {CIPHER_TIERS[tier].estimatedCostPerResponse > 0 && (
+                                <> · ~${CIPHER_TIERS[tier].estimatedCostPerResponse.toFixed(3)}/response</>
+                              )}
+                            </span>
+                          </div>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
 
                 <div className="cipher-divider" />
 
+                {/* Global Select All */}
+                <div className="cipher-form-field">
+                  <div className="cipher-select-all-header">
+                    <div>
+                      <p className="cipher-field-label">Individual signals</p>
+                      <p className="cipher-field-description">
+                        {Object.values(activeChecks).filter(Boolean).length} of {Object.keys(CIPHER_CHECKS).length} active
+                      </p>
+                    </div>
+                    <div className="cipher-select-all-buttons">
+                      <button
+                        type="button"
+                        className="cipher-select-all-btn"
+                        onClick={() => handleSelectAllChecks(true)}
+                      >
+                        Select all
+                      </button>
+                      <button
+                        type="button"
+                        className="cipher-deselect-all-btn"
+                        onClick={() => handleSelectAllChecks(false)}
+                      >
+                        Deselect all
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 {Object.entries(checksByCategory).map(([category, checks]) => (
                   checks.length > 0 && (
                     <div key={category} className="cipher-form-field">
-                      <p className="cipher-field-label">{category.charAt(0).toUpperCase() + category.slice(1)} signals</p>
-                      <p className="cipher-field-description">
-                        {checks.filter(c => activeChecks[c.id]).length} of {checks.length} active
-                      </p>
+                      <div className="cipher-category-header-row">
+                        <div>
+                          <p className="cipher-field-label">{category.charAt(0).toUpperCase() + category.slice(1)} signals</p>
+                          <p className="cipher-field-description">
+                            {checks.filter(c => activeChecks[c.id]).length} of {checks.length} active
+                          </p>
+                        </div>
+                        <div className="cipher-select-all-buttons">
+                          <button
+                            type="button"
+                            className="cipher-select-all-btn small"
+                            onClick={() => handleSelectCategoryChecks(checks, true)}
+                          >
+                            Select all
+                          </button>
+                          <button
+                            type="button"
+                            className="cipher-deselect-all-btn small"
+                            onClick={() => handleSelectCategoryChecks(checks, false)}
+                          >
+                            Deselect
+                          </button>
+                        </div>
+                      </div>
 
                       <div className="cipher-checks-group">
                         {checks.map((check) => (
@@ -1079,21 +1095,72 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
       {/* Save Footer */}
       {activeTab !== 'danger' && (
         <div className="settings-footer">
-          <button
-            className={`save-btn ${hasChanges ? '' : 'disabled'}`}
-            onClick={handleSave}
-            disabled={!hasChanges || saving}
-          >
-            {saving ? 'Saving...' : 'Save changes'}
-          </button>
+          <div className="settings-footer-content">
+            <button
+              className={`save-btn ${hasChanges ? '' : 'disabled'}`}
+              onClick={handleSave}
+              disabled={!hasChanges || saving}
+            >
+              {saving ? 'Saving...' : 'Save changes'}
+            </button>
+          </div>
         </div>
       )}
 
       <style jsx>{`
+        /* Modal Styles */
+        :global(.settings-modal-backdrop) {
+          position: fixed;
+          inset: 0;
+          z-index: 99999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(0, 0, 0, 0.7);
+          backdrop-filter: blur(4px);
+        }
+
+        :global(.settings-modal-content) {
+          position: relative;
+          width: 90%;
+          max-width: 700px;
+          max-height: 85vh;
+          background: var(--surbee-bg-primary, rgb(19, 19, 20));
+          border: 1px solid rgba(232, 232, 232, 0.1);
+          border-radius: 16px;
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(232, 232, 232, 0.08) transparent;
+        }
+
+        :global(.settings-modal-close-btn) {
+          position: absolute;
+          top: 16px;
+          right: 16px;
+          z-index: 10;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          background: rgba(232, 232, 232, 0.06);
+          border: 1px solid rgba(232, 232, 232, 0.1);
+          border-radius: 8px;
+          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        :global(.settings-modal-close-btn:hover) {
+          background: rgba(232, 232, 232, 0.1);
+          color: var(--surbee-fg-primary, #E8E8E8);
+          border-color: rgba(232, 232, 232, 0.2);
+        }
+
         .project-settings-root {
-          max-width: 800px;
+          max-width: 700px;
           margin: 0 auto;
-          padding: 48px 32px 120px;
+          padding: 32px 24px 100px;
           color: var(--surbee-fg-primary, #E8E8E8);
         }
 
@@ -1792,12 +1859,18 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           left: 0;
           right: 0;
           display: flex;
-          justify-content: flex-start;
+          justify-content: center;
           padding: 24px 32px;
           border-top: 1px solid rgba(232, 232, 232, 0.05);
           background-color: var(--surbee-bg-primary, rgb(19, 19, 20));
           z-index: 10;
-          max-width: 900px;
+        }
+
+        .settings-footer-content {
+          width: 100%;
+          max-width: 800px;
+          display: flex;
+          justify-content: flex-start;
         }
 
         .save-btn {
@@ -2378,6 +2451,122 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           font-size: 13px;
           color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.5));
           line-height: 1.4;
+        }
+
+        .cipher-radio-title-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .cipher-tier-badges {
+          display: inline-flex;
+          gap: 4px;
+        }
+
+        .cipher-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 10px;
+          font-weight: 600;
+          letter-spacing: 0.02em;
+        }
+
+        .cipher-badge.pro {
+          background: rgba(99, 102, 241, 0.2);
+          color: #818cf8;
+        }
+
+        .cipher-badge.max {
+          background: rgba(245, 158, 11, 0.2);
+          color: #fbbf24;
+        }
+
+        .cipher-radio-label.locked {
+          opacity: 0.7;
+        }
+
+        .cipher-radio-label.locked:hover {
+          background: rgba(232, 232, 232, 0.04);
+        }
+
+        .cipher-radio.locked {
+          border-style: dashed;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        /* Cipher Select All Header */
+        .cipher-select-all-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 8px;
+        }
+
+        .cipher-category-header-row {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 12px;
+        }
+
+        .cipher-select-all-buttons {
+          display: flex;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+
+        .cipher-select-all-btn {
+          padding: 6px 14px;
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          background: rgba(232, 232, 232, 0.06);
+          border: 1px solid rgba(232, 232, 232, 0.15);
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .cipher-select-all-btn:hover {
+          background: rgba(232, 232, 232, 0.1);
+          border-color: rgba(232, 232, 232, 0.2);
+        }
+
+        .cipher-select-all-btn.small {
+          padding: 4px 10px;
+          font-size: 12px;
+        }
+
+        .cipher-deselect-all-btn {
+          padding: 6px 14px;
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          background: transparent;
+          border: 1px solid rgba(232, 232, 232, 0.1);
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .cipher-deselect-all-btn:hover {
+          background: rgba(232, 232, 232, 0.04);
+          color: var(--surbee-fg-primary, #E8E8E8);
+          border-color: rgba(232, 232, 232, 0.15);
+        }
+
+        .cipher-deselect-all-btn.small {
+          padding: 4px 10px;
+          font-size: 12px;
         }
 
         /* Cipher Checks Group - Rounded container like Sana */

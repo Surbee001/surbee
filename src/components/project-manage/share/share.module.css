@@ -1,52 +1,34 @@
-/* Share Page - Professional Design System */
-/* Matches Insights page aesthetic with CSS variables */
+/* Share Page - Matches Project Settings Dark Theme */
+/* Uses consistent Surbee design system */
 
-/* CSS Variables */
-:root {
-  --share-bg-primary: #ffffff;
-  --share-bg-secondary: #fafafa;
-  --share-bg-card: #ffffff;
-  --share-bg-card-hover: #f5f5f5;
-  --share-fg-primary: #0a0a0a;
-  --share-fg-secondary: #525252;
-  --share-fg-tertiary: #a3a3a3;
-  --share-border: #e5e5e5;
-  --share-border-hover: #d4d4d4;
-  --share-accent: #0a0a0a;
-  --share-accent-secondary: #525252;
+/* Container - Dark theme by default */
+.shareContainer {
+  --share-bg-primary: rgb(19, 19, 20);
+  --share-bg-secondary: rgba(232, 232, 232, 0.02);
+  --share-bg-card: rgba(232, 232, 232, 0.02);
+  --share-bg-card-hover: rgba(232, 232, 232, 0.04);
+  --share-fg-primary: #E8E8E8;
+  --share-fg-secondary: rgba(232, 232, 232, 0.6);
+  --share-fg-tertiary: rgba(232, 232, 232, 0.4);
+  --share-border: rgba(232, 232, 232, 0.08);
+  --share-border-hover: rgba(232, 232, 232, 0.15);
+  --share-accent: #E8E8E8;
+  --share-accent-secondary: rgba(232, 232, 232, 0.6);
   --share-success: #22c55e;
   --share-success-bg: rgba(34, 197, 94, 0.1);
   --share-info: #3b82f6;
   --share-info-bg: rgba(59, 130, 246, 0.1);
   --share-warning: #f59e0b;
   --share-purple: #a855f7;
-}
 
-/* Dark mode - scoped to container */
-.shareContainer[data-theme="dark"],
-:global([data-theme="dark"]) .shareContainer {
-  --share-bg-primary: #0a0a0a;
-  --share-bg-secondary: #141414;
-  --share-bg-card: #1a1a1a;
-  --share-bg-card-hover: #262626;
-  --share-fg-primary: #fafafa;
-  --share-fg-secondary: #a3a3a3;
-  --share-fg-tertiary: #737373;
-  --share-border: #262626;
-  --share-border-hover: #404040;
-  --share-accent: #fafafa;
-  --share-accent-secondary: #a3a3a3;
-}
-
-/* Container */
-.shareContainer {
   width: 100%;
-  padding: 32px;
+  padding: 48px 32px;
   min-height: 100%;
+  background: var(--share-bg-primary);
 }
 
 .shareContent {
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -56,8 +38,7 @@
 /* Hero Card - Survey Link */
 .heroCard {
   background: var(--share-bg-card);
-  border: 1px solid var(--share-border);
-  border-radius: 12px;
+  border-radius: 20px;
   padding: 24px;
   display: flex;
   align-items: center;
@@ -111,19 +92,19 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
+  padding: 8px 16px;
   background: var(--share-fg-primary);
   color: var(--share-bg-primary);
   border: none;
   border-radius: 9999px;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .copyBtn:hover {
-  opacity: 0.9;
+  background: rgba(232, 232, 232, 0.9);
 }
 
 .copyBtnSuccess {
@@ -134,19 +115,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: var(--share-bg-card);
-  color: var(--share-fg-primary);
-  border: 1px solid var(--share-border);
+  width: 36px;
+  height: 36px;
+  background: rgba(232, 232, 232, 0.06);
+  color: var(--share-fg-secondary);
+  border: 1px solid rgba(232, 232, 232, 0.15);
   border-radius: 9999px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .openBtn:hover {
-  background: var(--share-bg-card-hover);
-  border-color: var(--share-border-hover);
+  background: rgba(232, 232, 232, 0.1);
+  color: var(--share-fg-primary);
+  border-color: rgba(232, 232, 232, 0.2);
 }
 
 /* Stats Strip */
@@ -158,8 +140,7 @@
 
 .statCard {
   background: var(--share-bg-card);
-  border: 1px solid var(--share-border);
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -207,23 +188,22 @@
 /* Card Base */
 .card {
   background: var(--share-bg-card);
-  border: 1px solid var(--share-border);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 20px;
+  padding: 20px 24px;
 }
 
 .cardTitle {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--share-fg-primary);
   margin-bottom: 16px;
 }
 
 .cardTitle svg {
-  color: var(--share-fg-tertiary);
+  color: var(--share-fg-secondary);
 }
 
 /* Custom URL Card */
@@ -268,20 +248,20 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 10px;
-  background: transparent;
+  padding: 10px 16px;
+  background: rgba(232, 232, 232, 0.06);
   color: var(--share-fg-primary);
-  border: 1px solid var(--share-border);
-  border-radius: 8px;
-  font-size: 13px;
+  border: 1px solid rgba(232, 232, 232, 0.15);
+  border-radius: 9999px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .customizeBtn:hover {
-  background: var(--share-bg-card-hover);
-  border-color: var(--share-border-hover);
+  background: rgba(232, 232, 232, 0.1);
+  border-color: rgba(232, 232, 232, 0.2);
 }
 
 .btnRow {
@@ -291,35 +271,36 @@
 
 .saveBtn {
   flex: 1;
-  padding: 10px;
+  padding: 8px 16px;
   background: var(--share-fg-primary);
   color: var(--share-bg-primary);
   border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .saveBtn:hover {
-  opacity: 0.9;
+  background: rgba(232, 232, 232, 0.9);
 }
 
 .cancelBtn {
   flex: 1;
-  padding: 10px;
-  background: var(--share-bg-card);
-  color: var(--share-fg-tertiary);
-  border: 1px solid var(--share-border);
-  border-radius: 8px;
-  font-size: 13px;
+  padding: 8px 16px;
+  background: rgba(232, 232, 232, 0.06);
+  color: var(--share-fg-secondary);
+  border: 1px solid rgba(232, 232, 232, 0.15);
+  border-radius: 9999px;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .cancelBtn:hover {
-  background: var(--share-bg-card-hover);
+  background: rgba(232, 232, 232, 0.1);
+  color: var(--share-fg-primary);
 }
 
 /* QR Code Card */
@@ -331,9 +312,8 @@
 .qrCodeWrapper {
   width: 120px;
   height: 120px;
-  background: var(--share-bg-primary);
-  border: 1px solid var(--share-border);
-  border-radius: 10px;
+  background: white;
+  border-radius: 12px;
   padding: 10px;
   flex-shrink: 0;
   display: flex;
@@ -365,21 +345,21 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 16px;
-  background: transparent;
+  padding: 8px 16px;
+  background: rgba(232, 232, 232, 0.06);
   color: var(--share-fg-primary);
-  border: 1px solid var(--share-border);
-  border-radius: 8px;
-  font-size: 13px;
+  border: 1px solid rgba(232, 232, 232, 0.15);
+  border-radius: 9999px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   margin-top: 12px;
 }
 
 .downloadBtn:hover {
-  background: var(--share-bg-card-hover);
-  border-color: var(--share-border-hover);
+  background: rgba(232, 232, 232, 0.1);
+  border-color: rgba(232, 232, 232, 0.2);
 }
 
 /* Embed Code Card */
@@ -408,20 +388,20 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
-  background: transparent;
+  padding: 8px 16px;
+  background: rgba(232, 232, 232, 0.06);
   color: var(--share-fg-primary);
-  border: 1px solid var(--share-border);
-  border-radius: 8px;
-  font-size: 13px;
+  border: 1px solid rgba(232, 232, 232, 0.15);
+  border-radius: 9999px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .copyCodeBtn:hover {
-  background: var(--share-bg-card-hover);
-  border-color: var(--share-border-hover);
+  background: rgba(232, 232, 232, 0.1);
+  border-color: rgba(232, 232, 232, 0.2);
 }
 
 .copyCodeBtnSuccess {
@@ -445,21 +425,20 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
-  background: var(--share-bg-card-hover);
+  padding: 8px 16px;
+  background: rgba(232, 232, 232, 0.04);
   color: var(--share-fg-primary);
-  border: 1px solid var(--share-border);
-  border-radius: 8px;
-  font-size: 12px;
+  border: 1px solid rgba(232, 232, 232, 0.1);
+  border-radius: 9999px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .socialBtn:hover {
-  background: var(--share-bg-card);
-  border-color: var(--share-border-hover);
-  transform: translateY(-1px);
+  background: rgba(232, 232, 232, 0.08);
+  border-color: rgba(232, 232, 232, 0.15);
 }
 
 .socialBtn svg {
@@ -502,35 +481,35 @@
 
 .toggle {
   position: relative;
-  width: 44px;
-  height: 24px;
-  background: var(--share-bg-card-hover);
-  border: 1px solid var(--share-border);
-  border-radius: 9999px;
+  width: 40px;
+  height: 22px;
+  background: rgba(232, 232, 232, 0.12);
+  border: none;
+  border-radius: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 .toggle::after {
   content: '';
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 18px;
-  height: 18px;
-  background: var(--share-fg-tertiary);
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: var(--share-bg-primary);
   border-radius: 50%;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease;
 }
 
 .toggleActive {
-  background: var(--share-success);
-  border-color: var(--share-success);
+  background: var(--share-fg-primary);
 }
 
 .toggleActive::after {
-  left: 22px;
-  background: white;
+  transform: translateX(18px);
 }
 
 /* Responsive */

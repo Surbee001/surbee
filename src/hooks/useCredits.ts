@@ -2,15 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserStore, useHasHydrated, UserCredits } from '@/stores/userStore';
 
-export interface UserCredits {
-  creditsRemaining: number;
-  monthlyCredits: number;
-  apiCreditsRemaining: number;
-  apiCreditsMonthly: number;
-  creditsResetAt: string;
-  plan: 'free_user' | 'surbee_pro' | 'surbee_max' | 'surbee_enterprise';
-}
+export type { UserCredits } from '@/stores/userStore';
 
 export interface UsageStats {
   totalUsed: number;
@@ -36,6 +30,7 @@ function getEndOfMonth(): string {
   return endOfMonth.toISOString();
 }
 
+// Default credits are only used as absolute fallback - never override fetched data
 const DEFAULT_CREDITS: UserCredits = {
   creditsRemaining: 100,
   monthlyCredits: 100,
@@ -45,19 +40,38 @@ const DEFAULT_CREDITS: UserCredits = {
   plan: 'free_user',
 };
 
+// Always accept fresh data from the database - it's the source of truth
+// The previous logic that blocked "downgrades" was causing the opposite problem:
+// It was blocking legitimate data from the database and showing stale cache instead
+function shouldUpdateCredits(newCredits: UserCredits, cachedCredits: UserCredits | null): boolean {
+  // Always trust fresh data from the API - it comes directly from the database
+  return true;
+}
+
 export function useCredits(): UseCreditsReturn {
   const { user } = useAuth();
-  const [credits, setCredits] = useState<UserCredits | null>(null);
-  const [usage, setUsage] = useState<UsageStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const hasHydrated = useHasHydrated();
 
-  const fetchCredits = useCallback(async () => {
+  // Use Zustand store for cached credits
+  const {
+    credits: cachedCredits,
+    setCredits,
+  } = useUserStore();
+
+  const [usage, setUsage] = useState<UsageStats | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasFetched, setHasFetched] = useState(false);
+
+  const fetchCredits = useCallback(async (force = false) => {
     if (!user?.id) {
       setCredits(DEFAULT_CREDITS);
-      setLoading(false);
       return;
     }
+
+    // Always fetch from database on mount to ensure we have the latest data
+    // Cache is only used to show data immediately while we fetch fresh data
+    // This ensures database is always the source of truth for plan info
 
     try {
       setLoading(true);
@@ -70,9 +84,18 @@ export function useCredits(): UseCreditsReturn {
 
       if (creditsRes.ok) {
         const creditsData = await creditsRes.json();
-        setCredits(creditsData);
+        // Only update if it's a legitimate change (not a false downgrade)
+        if (shouldUpdateCredits(creditsData, cachedCredits)) {
+          setCredits(creditsData);
+        } else {
+          console.log('[useCredits] Keeping cached credits, fetch returned suspicious downgrade');
+        }
       } else {
-        setCredits(DEFAULT_CREDITS);
+        // Only set default if we don't have cached data
+        if (!cachedCredits) {
+          setCredits(DEFAULT_CREDITS);
+        }
+        console.warn('[useCredits] Credits fetch failed:', creditsRes.status);
       }
 
       if (usageRes.ok) {
@@ -82,22 +105,36 @@ export function useCredits(): UseCreditsReturn {
     } catch (err) {
       console.error('Error fetching credits:', err);
       setError('Failed to load credit information');
-      setCredits(DEFAULT_CREDITS);
+      // Only set default if we don't have cached data
+      if (!cachedCredits) {
+        setCredits(DEFAULT_CREDITS);
+      }
     } finally {
       setLoading(false);
+      setHasFetched(true);
+    }
+  }, [user?.id, cachedCredits, setCredits]);
+
+  // Initial fetch - always fetch from database after hydration to get fresh data
+  useEffect(() => {
+    if (hasHydrated && !hasFetched) {
+      fetchCredits();
+    }
+  }, [fetchCredits, hasFetched, hasHydrated]);
+
+  // Re-fetch when user changes
+  useEffect(() => {
+    if (user?.id) {
+      setHasFetched(false);
     }
   }, [user?.id]);
-
-  useEffect(() => {
-    fetchCredits();
-  }, [fetchCredits]);
 
   // Listen for credit updates from API responses
   useEffect(() => {
     const handleCreditUpdate = (event: CustomEvent<{ remaining: number }>) => {
-      if (credits) {
+      if (cachedCredits) {
         setCredits({
-          ...credits,
+          ...cachedCredits,
           creditsRemaining: event.detail.remaining,
         });
       }
@@ -107,7 +144,10 @@ export function useCredits(): UseCreditsReturn {
     return () => {
       window.removeEventListener('creditUpdate', handleCreditUpdate as EventListener);
     };
-  }, [credits]);
+  }, [cachedCredits, setCredits]);
+
+  // Use cached credits - only fall back to default after hydration if no cached data
+  const credits = cachedCredits || (hasHydrated ? DEFAULT_CREDITS : null);
 
   const hasEnoughCredits = useCallback(
     (required: number): boolean => {
@@ -135,9 +175,9 @@ export function useCredits(): UseCreditsReturn {
   return {
     credits,
     usage,
-    loading,
+    loading: !hasHydrated || (loading && !cachedCredits), // Show loading until hydrated or while fetching without cache
     error,
-    refresh: fetchCredits,
+    refresh: () => fetchCredits(true),
     hasEnoughCredits,
     percentUsed,
     isLow,

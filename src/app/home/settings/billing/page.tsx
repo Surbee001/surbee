@@ -241,7 +241,13 @@ export default function BillingSettingsPage() {
                     {currentPlan === 'surbee_max' || currentPlan === 'max' ? 'Max plan' : currentPlan === 'surbee_pro' || currentPlan === 'pro' ? 'Pro plan' : currentPlan === 'surbee_enterprise' || currentPlan === 'enterprise' ? 'Enterprise plan' : 'Free plan'}
                   </h2>
                   <p className="plan-description">
-                    {currentPlan === 'max' ? '5x more usage than Pro' : currentPlan === 'pro' ? '20x more usage than Free' : currentPlan === 'enterprise' ? 'Unlimited usage with API access' : 'Get started with Surbee'}
+                    {currentPlan === 'surbee_max' || currentPlan === 'max'
+                      ? '5x more usage than Pro'
+                      : currentPlan === 'surbee_pro' || currentPlan === 'pro'
+                        ? '20x more usage than Free'
+                        : currentPlan === 'surbee_enterprise' || currentPlan === 'enterprise'
+                          ? 'Unlimited usage with API access'
+                          : 'Get started with Surbee'}
                   </p>
                   <p className="plan-renewal">
                     {credits?.creditsResetAt ? `Credits reset on ${new Date(credits.creditsResetAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : 'Monthly credits included'}
@@ -249,7 +255,9 @@ export default function BillingSettingsPage() {
                 </div>
               </div>
               <button className="adjust-plan-btn" onClick={handleUpgrade}>
-                {currentPlan === 'free' ? 'Upgrade' : 'Adjust plan'}
+                {(currentPlan === 'surbee_max' || currentPlan === 'max' || currentPlan === 'surbee_enterprise' || currentPlan === 'enterprise')
+                  ? 'Adjust plan'
+                  : 'Upgrade'}
               </button>
             </div>
           </div>
@@ -467,18 +475,18 @@ export default function BillingSettingsPage() {
           font-weight: 500;
           color: var(--surbee-fg-primary, #E8E8E8);
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.1);
+          border: 1px solid var(--surbee-border-primary, rgba(232, 232, 232, 0.1));
           border-radius: 9999px;
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
         .settings-tab:hover {
-          border-color: rgba(232, 232, 232, 0.2);
+          border-color: var(--surbee-border-primary, rgba(232, 232, 232, 0.2));
         }
 
         .settings-tab.active {
-          background: rgba(232, 232, 232, 0.05);
+          background: var(--surbee-accent-subtle, rgba(232, 232, 232, 0.05));
           border-color: transparent;
         }
 
@@ -511,7 +519,7 @@ export default function BillingSettingsPage() {
           margin: 32px 0;
           width: 100%;
           height: 1px;
-          background-color: rgba(232, 232, 232, 0.08);
+          background-color: var(--surbee-border-secondary, rgba(232, 232, 232, 0.08));
         }
 
         /* Plan Section - Claude.ai style */
@@ -593,8 +601,8 @@ export default function BillingSettingsPage() {
         .usage-analytics {
           padding: 24px;
           border-radius: 12px;
-          background: rgba(232, 232, 232, 0.025);
-          border: 1px solid rgba(232, 232, 232, 0.06);
+          background: var(--surbee-accent-subtle, rgba(232, 232, 232, 0.025));
+          border: 1px solid var(--surbee-border-secondary, rgba(232, 232, 232, 0.06));
         }
 
         .analytics-header {
@@ -616,14 +624,14 @@ export default function BillingSettingsPage() {
           font-size: 12px;
           color: var(--surbee-fg-primary, #E8E8E8);
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.08);
+          border: 1px solid var(--surbee-border-secondary, rgba(232, 232, 232, 0.08));
           border-radius: 6px;
           cursor: pointer;
           transition: all 0.15s ease;
         }
 
         .date-range-btn:hover {
-          border-color: rgba(232, 232, 232, 0.15);
+          border-color: var(--surbee-input-border, rgba(232, 232, 232, 0.15));
         }
 
         .date-range-btn svg {
@@ -642,7 +650,7 @@ export default function BillingSettingsPage() {
           min-width: 40px;
           font-size: 13px;
           font-weight: 500;
-          color: rgba(232, 232, 232, 0.6);
+          color: var(--surbee-fg-muted);
           background: transparent;
           border: none;
           border-radius: 6px;
@@ -655,7 +663,7 @@ export default function BillingSettingsPage() {
         }
 
         .period-btn.active {
-          background: rgba(255, 255, 255, 0.1);
+          background: var(--surbee-accent-subtle);
           color: var(--surbee-fg-primary, #E8E8E8);
         }
 
@@ -686,11 +694,11 @@ export default function BillingSettingsPage() {
         }
 
         .analytics-tile:hover {
-          background: rgba(232, 232, 232, 0.04);
+          background: var(--surbee-accent-subtle, rgba(232, 232, 232, 0.04));
         }
 
         .analytics-tile.active {
-          background: rgba(232, 232, 232, 0.06);
+          background: var(--surbee-accent-subtle, rgba(232, 232, 232, 0.06));
         }
 
         .tile-label {
@@ -698,7 +706,7 @@ export default function BillingSettingsPage() {
           align-items: center;
           gap: 6px;
           font-size: 12px;
-          color: rgba(232, 232, 232, 0.6);
+          color: var(--surbee-fg-muted);
           margin-bottom: 4px;
           white-space: nowrap;
           overflow: hidden;
@@ -724,7 +732,7 @@ export default function BillingSettingsPage() {
 
         .tile-total {
           font-size: 12px;
-          color: rgba(232, 232, 232, 0.4);
+          color: var(--surbee-fg-muted);
           font-variant-numeric: tabular-nums;
         }
 
@@ -752,8 +760,8 @@ export default function BillingSettingsPage() {
           justify-content: space-between;
           padding: 16px;
           border-radius: 12px;
-          background: rgba(232, 232, 232, 0.03);
-          border: 1px solid rgba(232, 232, 232, 0.08);
+          background: var(--surbee-accent-subtle, rgba(232, 232, 232, 0.03));
+          border: 1px solid var(--surbee-border-secondary, rgba(232, 232, 232, 0.08));
           margin-bottom: 12px;
         }
 
@@ -894,7 +902,7 @@ export default function BillingSettingsPage() {
           grid-template-columns: 1fr 1fr 1fr 80px;
           gap: 16px;
           padding-bottom: 12px;
-          border-bottom: 1px solid rgba(232, 232, 232, 0.08);
+          border-bottom: 1px solid var(--surbee-border-secondary);
           font-size: 12px;
           font-weight: 500;
           color: var(--surbee-fg-muted, rgba(232, 232, 232, 0.4));
@@ -907,7 +915,7 @@ export default function BillingSettingsPage() {
           grid-template-columns: 1fr 1fr 1fr 80px;
           gap: 16px;
           padding: 16px 0;
-          border-bottom: 1px solid rgba(232, 232, 232, 0.05);
+          border-bottom: 1px solid var(--surbee-border-secondary);
           align-items: center;
         }
 

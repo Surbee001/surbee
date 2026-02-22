@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     if (!user) return errorResponse;
 
     const body = await request.json();
-    const { sessionId, title, messages } = body;
+    const { sessionId, title, messages, is_starred } = body;
 
     if (!sessionId) {
       return NextResponse.json({ error: 'Session ID required' }, { status: 400 });
@@ -68,14 +68,17 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (existingSession) {
-      // Update existing session
+      // Update existing session - only update fields that are provided
+      const updateData: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+      };
+      if (title !== undefined) updateData.title = title || 'Untitled Chat';
+      if (messages !== undefined) updateData.messages = messages;
+      if (is_starred !== undefined) updateData.is_starred = is_starred;
+
       const { data: session, error } = await supabase
         .from('dashboard_chat_sessions')
-        .update({
-          title: title || 'Untitled Chat',
-          messages: messages || [],
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', sessionId)
         .eq('user_id', user.id)
         .select()
@@ -96,6 +99,7 @@ export async function POST(request: NextRequest) {
           user_id: user.id,
           title: title || 'Untitled Chat',
           messages: messages || [],
+          is_starred: is_starred || false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })

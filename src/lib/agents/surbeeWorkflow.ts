@@ -246,7 +246,7 @@ const DEFAULT_SURVEY_CSS = `@tailwind base;
 
 :root {
   color-scheme: dark;
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Opening Hours Sans", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background-color: #0b0e14;
   color: #f5f7fa;
 }

@@ -4,6 +4,7 @@ import React from 'react';
 import { ResponsesSummary } from './ResponsesSummary';
 import { ResponseTable } from './ResponseTable';
 import type { InsightsData } from '../types';
+import styles from '../insights.module.css';
 
 interface ResponsesTabProps {
   data: InsightsData;
@@ -14,7 +15,7 @@ export function ResponsesTab({ data, onExport }: ResponsesTabProps) {
   const { stats, responses } = data;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div className={styles.dashboardContainer}>
       {/* Summary Strip */}
       <ResponsesSummary stats={stats} />
 

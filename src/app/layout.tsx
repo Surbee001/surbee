@@ -8,7 +8,7 @@ import Providers from './providers'
 const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500"],
-  variable: "--font-inter",
+  variable: "--font-inter-base",
 });
 
 export const metadata: Metadata = {
@@ -46,6 +46,14 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth dark">
       <head>
+        {/* Preload Kalice font from ImageKit CDN */}
+        <link
+          rel="preload"
+          href="https://ik.imagekit.io/on0moldgr/Kalice-Trial-Regular.otf"
+          as="font"
+          type="font/otf"
+          crossOrigin="anonymous"
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `

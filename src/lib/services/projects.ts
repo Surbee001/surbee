@@ -83,6 +83,24 @@ export class ProjectsService {
     updates: Partial<Pick<Project, 'title' | 'description' | 'status'>>
   ): Promise<{ data: Project | null; error: Error | null }> {
     try {
+      // If status is being set to 'draft', first check if project is published
+      // This prevents race conditions where auto-save could revert a published project
+      if (updates.status === 'draft') {
+        const { data: currentProject } = await supabaseAdmin
+          .from('projects')
+          .select('status')
+          .eq('id', projectId)
+          .eq('user_id', userId)
+          .single();
+
+        if (currentProject?.status === 'published') {
+          console.log('[ProjectsService.updateProject] Protecting published status - not reverting to draft');
+          // Remove status from updates to preserve published status
+          const { status, ...updatesWithoutStatus } = updates;
+          updates = updatesWithoutStatus;
+        }
+      }
+
       // First try to update
       const { data: existingProject, error: updateError } = await supabaseAdmin
         .from('projects')
@@ -283,6 +301,8 @@ export class ProjectsService {
     sandboxBundle?: any
   ): Promise<{ data: Project | null; error: Error | null }> {
     try {
+      console.log('[ProjectsService.publishProject] Starting publish:', { projectId, userId, hasSandboxBundle: !!sandboxBundle });
+
       // Use admin client to bypass RLS policies for server-side operations
       // First, check if the project exists
       const { data: existingProject, error: checkError } = await supabaseAdmin
@@ -294,6 +314,7 @@ export class ProjectsService {
 
       if (checkError && checkError.code !== 'PGRST116') {
         // Error other than "no rows returned"
+        console.error('[ProjectsService.publishProject] Error checking existing project:', checkError);
         return { data: null, error: checkError as any };
       }
 
@@ -307,7 +328,7 @@ export class ProjectsService {
         published_at: existingProject?.published_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      
+
       // Update title if it's still the generic one or missing
       if (existingProject && (existingProject.title === `Project ${projectId.substring(0, 8)}` || !existingProject.title)) {
         try {
@@ -357,20 +378,25 @@ export class ProjectsService {
           .select()
           .single();
 
-        if (createError) return { data: null, error: createError as any };
+        if (createError) {
+          console.error('[ProjectsService.publishProject] Error creating project:', createError);
+          return { data: null, error: createError as any };
+        }
+
+        console.log('[ProjectsService.publishProject] Created new project with published status');
         return { data: newProject as Project, error: null };
       }
-      
+
       // Only update survey_schema if provided
       if (surveySchema !== undefined) {
         updateData.survey_schema = surveySchema;
       }
-      
+
       // Only update sandbox_bundle if provided, otherwise keep existing
       if (sandboxBundle !== undefined) {
         updateData.sandbox_bundle = sandboxBundle;
       }
-      
+
       const { data: project, error } = await supabaseAdmin
         .from('projects')
         .update(updateData)
@@ -379,15 +405,44 @@ export class ProjectsService {
         .select()
         .single();
 
-      if (error) return { data: null, error: error as any };
+      if (error) {
+        console.error('[ProjectsService.publishProject] Error updating project:', error);
+        return { data: null, error: error as any };
+      }
+
+      // Verify the publish succeeded by re-fetching
+      const { data: verifyProject, error: verifyError } = await supabaseAdmin
+        .from('projects')
+        .select('id, status, published_url, sandbox_bundle')
+        .eq('id', projectId)
+        .single();
+
+      if (verifyError || verifyProject?.status !== 'published') {
+        console.error('[ProjectsService.publishProject] Verification failed:', {
+          verifyError,
+          actualStatus: verifyProject?.status,
+          expectedStatus: 'published'
+        });
+        // Don't fail, but log the issue
+      } else {
+        console.log('[ProjectsService.publishProject] Publish verified successfully:', {
+          status: verifyProject.status,
+          publishedUrl: verifyProject.published_url,
+          hasSandboxBundle: !!verifyProject.sandbox_bundle
+        });
+      }
+
       return { data: project as Project, error: null };
     } catch (error) {
+      console.error('[ProjectsService.publishProject] Unexpected error:', error);
       return { data: null, error: error as Error };
     }
   }
 
   static async getPublishedProject(publishedUrl: string): Promise<{ data: Project | null; error: Error | null }> {
     try {
+      console.log('[ProjectsService.getPublishedProject] Looking up:', publishedUrl);
+
       // Use admin client to bypass RLS - published surveys should be publicly accessible
       // First try by custom slug from project_share_settings
       const { data: shareSettings } = await supabaseAdmin
@@ -397,6 +452,7 @@ export class ProjectsService {
         .single();
 
       if (shareSettings?.project_id) {
+        console.log('[ProjectsService.getPublishedProject] Found custom slug, project_id:', shareSettings.project_id);
         const { data: project, error } = await supabaseAdmin
           .from('projects')
           .select('*')
@@ -405,7 +461,20 @@ export class ProjectsService {
           .single();
 
         if (project) {
+          console.log('[ProjectsService.getPublishedProject] Found via custom slug');
           return { data: project as Project, error: null };
+        }
+
+        // Check if project exists but isn't published
+        if (error?.code === 'PGRST116') {
+          const { data: unpubProject } = await supabaseAdmin
+            .from('projects')
+            .select('id, status')
+            .eq('id', shareSettings.project_id)
+            .single();
+          if (unpubProject) {
+            console.warn('[ProjectsService.getPublishedProject] Project found via custom slug but status is:', unpubProject.status);
+          }
         }
       }
 
@@ -418,6 +487,7 @@ export class ProjectsService {
         .single();
 
       if (project) {
+        console.log('[ProjectsService.getPublishedProject] Found via published_url');
         return { data: project as Project, error: null };
       }
 
@@ -431,6 +501,7 @@ export class ProjectsService {
           .single();
 
         if (projectById) {
+          console.log('[ProjectsService.getPublishedProject] Found via project ID');
           return { data: projectById as Project, error: null };
         }
 
@@ -445,24 +516,33 @@ export class ProjectsService {
 
           if (unpublishedProject) {
             // Project exists but isn't published - return specific error
+            console.warn('[ProjectsService.getPublishedProject] Project exists but not published:', {
+              id: unpublishedProject.id,
+              status: unpublishedProject.status,
+              hasSandboxBundle: !!unpublishedProject.sandbox_bundle
+            });
             const errorMsg = unpublishedProject.status === 'draft'
               ? 'This survey has not been published yet'
               : 'This survey is not currently available';
             return { data: null, error: new Error(errorMsg) };
           }
+          console.log('[ProjectsService.getPublishedProject] No project found for:', publishedUrl);
           return { data: null, error: null };
         }
         if (idError) {
+          console.error('[ProjectsService.getPublishedProject] Error looking up by ID:', idError);
           return { data: null, error: idError as any };
         }
       }
 
       if (error && error.code !== 'PGRST116') {
+        console.error('[ProjectsService.getPublishedProject] Error:', error);
         return { data: null, error: error as any };
       }
 
       return { data: null, error: null };
     } catch (error) {
+      console.error('[ProjectsService.getPublishedProject] Unexpected error:', error);
       return { data: null, error: error as Error };
     }
   }

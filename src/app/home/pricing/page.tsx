@@ -486,16 +486,16 @@ function PricingTier({
 
   const getCardStyle = () => {
     const base: React.CSSProperties = {
-      backgroundColor: "var(--surbee-card-bg)",
+      backgroundColor: isDark ? "var(--surbee-card-bg)" : "#FFFFFF",
     };
 
-    if (tierStyle === "highlighted") {
-      base.backgroundColor = "var(--surbee-bg-tertiary)";
-      base.border = "1px solid var(--surbee-border-accent)";
-    } else if (tierStyle === "glow") {
-      base.backgroundColor = "var(--surbee-bg-tertiary)";
-      base.boxShadow = "0 0 40px rgba(59, 130, 246, 0.15), 0 0 80px rgba(59, 130, 246, 0.1)";
-      base.border = "1px solid rgba(59, 130, 246, 0.3)";
+    if (tierStyle === "glow") {
+      base.boxShadow = isDark
+        ? "0 0 40px rgba(59, 130, 246, 0.15), 0 0 80px rgba(59, 130, 246, 0.08)"
+        : "0 0 30px rgba(59, 130, 246, 0.12), 0 0 60px rgba(59, 130, 246, 0.06)";
+      if (!isDark) {
+        base.backgroundColor = "#FAFCFF";
+      }
     }
 
     return base;

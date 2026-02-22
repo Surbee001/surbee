@@ -20,7 +20,6 @@ export function InsightsTab({ projectId }: InsightsTabProps) {
   const data = useInsightsData(projectId, { timePeriod });
 
   const handleExport = () => {
-    // Export responses as CSV
     if (data.responses.length === 0) return;
 
     const headers = ['ID', 'Submitted', 'Device', 'Duration (min)', 'Status', 'Quality'];
@@ -45,26 +44,38 @@ export function InsightsTab({ projectId }: InsightsTabProps) {
 
   if (data.loading) {
     return (
-      <div className={styles.loadingWrapper}>
-        <div className={styles.loader} />
+      <div className={styles.insightsContainer}>
+        <div className={styles.insightsContent}>
+          <div className={styles.loadingWrapper}>
+            <div className={styles.loader} />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={styles.insightsRoot}>
-      <InsightsHeader
-        activeView={activeView}
-        timePeriod={timePeriod}
-        onViewChange={setActiveView}
-        onTimePeriodChange={setTimePeriod}
-      />
+    <div className={styles.insightsContainer}>
+      <div className={styles.insightsContent}>
+        <InsightsHeader
+          activeView={activeView}
+          timePeriod={timePeriod}
+          onViewChange={setActiveView}
+          onTimePeriodChange={setTimePeriod}
+        />
 
-      {activeView === 'overview' && <OverviewTab data={data} timePeriod={timePeriod} />}
+        {activeView === 'overview' && (
+          <OverviewTab
+            data={data}
+            timePeriod={timePeriod}
+            onTimePeriodChange={setTimePeriod}
+          />
+        )}
 
-      {activeView === 'responses' && <ResponsesTab data={data} onExport={handleExport} />}
+        {activeView === 'responses' && <ResponsesTab data={data} onExport={handleExport} />}
 
-      {activeView === 'funnel' && <FunnelTab data={data} />}
+        {activeView === 'funnel' && <FunnelTab data={data} />}
+      </div>
     </div>
   );
 }

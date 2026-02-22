@@ -102,7 +102,7 @@ const defaultSettings: ProjectSettings = {
     customLogo: null,
     primaryColor: "#6366f1",
     backgroundColor: "#ffffff",
-    fontFamily: "Inter",
+    fontFamily: "Opening Hours Sans",
   },
   domains: {
     customDomain: null,

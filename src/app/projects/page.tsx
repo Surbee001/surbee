@@ -32,6 +32,7 @@ import type { Project } from '@/types/database';
 import { ProjectCard } from '@/components/project-card/ProjectCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/lib/supabase';
+import { useUserStore, useHasHydrated, CachedProject } from '@/stores/userStore';
 
 interface ProjectWithStats extends Project {
   responseCount?: number;
@@ -337,6 +338,16 @@ const OldProjectCard: React.FC<{
 export default function ProjectsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const hasHydrated = useHasHydrated();
+
+  // Get cached projects from store
+  const cachedProjects = useUserStore((state) => state.projects);
+  const setStoreProjects = useUserStore((state) => state.setProjects);
+  const updateStoreProject = useUserStore((state) => state.updateProject);
+  const addStoreProject = useUserStore((state) => state.addProject);
+  const removeStoreProject = useUserStore((state) => state.removeProject);
+  const isProjectsCacheStale = useUserStore((state) => state.isProjectsCacheStale);
+
   const [projects, setProjects] = useState<ProjectWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
@@ -345,6 +356,7 @@ export default function ProjectsPage() {
   const [sortBy, setSortBy] = useState<'updated' | 'created' | 'title' | 'responses'>('updated');
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const itemsPerLoad = 8;
+  const hasFetchedRef = useRef(false);
 
   // Dropdown options
 
@@ -355,13 +367,29 @@ export default function ProjectsPage() {
     { value: 'responses', label: 'Responses' }
   ];
 
+  // Initialize from cache when hydrated
+  useEffect(() => {
+    if (hasHydrated && cachedProjects.length > 0 && projects.length === 0) {
+      setProjects(cachedProjects as ProjectWithStats[]);
+      // If we have cached data, don't show loading state
+      if (!isProjectsCacheStale()) {
+        setLoading(false);
+      }
+    }
+  }, [hasHydrated, cachedProjects]);
+
   // Fetch real projects from Supabase
   useEffect(() => {
     const fetchProjects = async () => {
-      if (!user) return;
+      if (!user || hasFetchedRef.current) return;
+
+      // Only show loading if we don't have cached data
+      if (cachedProjects.length === 0) {
+        setLoading(true);
+      }
 
       try {
-        setLoading(true);
+        hasFetchedRef.current = true;
 
         // Get auth token
         const { data: { session } } = await supabase.auth.getSession();
@@ -378,7 +406,10 @@ export default function ProjectsPage() {
 
         if (response.ok) {
           const data = await response.json();
-          setProjects(data.projects || []);
+          const fetchedProjects = data.projects || [];
+          setProjects(fetchedProjects);
+          // Update cache
+          setStoreProjects(fetchedProjects);
         } else {
           console.error('Failed to fetch projects:', response.status);
         }
@@ -389,10 +420,15 @@ export default function ProjectsPage() {
       }
     };
 
-    if (user && !authLoading) {
-      fetchProjects();
+    if (user && !authLoading && hasHydrated) {
+      // Fetch if cache is stale or empty
+      if (isProjectsCacheStale() || cachedProjects.length === 0) {
+        fetchProjects();
+      } else {
+        setLoading(false);
+      }
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, hasHydrated]);
 
   // Load pinned projects from localStorage
   useEffect(() => {
@@ -490,6 +526,8 @@ export default function ProjectsPage() {
         setProjects(prev => prev.map(p =>
           p.id === projectId ? { ...p, title: newTitle } : p
         ));
+        // Update cache
+        updateStoreProject(projectId, { title: newTitle });
       }
     } catch (error) {
       console.error('Failed to rename project:', error);
@@ -506,6 +544,8 @@ export default function ProjectsPage() {
       if (response.ok) {
         const data = await response.json();
         setProjects(prev => [data.project, ...prev]);
+        // Add to cache
+        addStoreProject(data.project);
       }
     } catch (error) {
       console.error('Failed to duplicate project:', error);
@@ -522,6 +562,8 @@ export default function ProjectsPage() {
       });
       if (response.ok) {
         setProjects(prev => prev.filter(p => p.id !== projectId));
+        // Remove from cache
+        removeStoreProject(projectId);
       }
     } catch (error) {
       console.error('Failed to delete project:', error);
@@ -546,14 +588,16 @@ export default function ProjectsPage() {
         setProjects(prev => prev.map(p =>
           p.id === projectId ? { ...p, status: newStatus } : p
         ));
+        // Update cache
+        updateStoreProject(projectId, { status: newStatus });
       }
     } catch (error) {
       console.error('Failed to archive project:', error);
     }
   };
 
-  // Show loading state while authenticating
-  if (authLoading || loading) {
+  // Show loading state while authenticating (only if no cached data)
+  if (authLoading || (loading && projects.length === 0)) {
     return (
       <ImageKitProvider urlEndpoint="https://ik.imagekit.io/on0moldgr">
         <div className="flex flex-col h-full">

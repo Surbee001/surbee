@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Monitor, Smartphone, Tablet } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import type { DeviceStats } from '../types';
 import styles from '../insights.module.css';
 
@@ -11,36 +11,61 @@ interface DeviceBreakdownProps {
 }
 
 const deviceConfig = [
-  { key: 'desktop' as const, label: 'Desktop', icon: Monitor },
-  { key: 'mobile' as const, label: 'Mobile', icon: Smartphone },
-  { key: 'tablet' as const, label: 'Tablet', icon: Tablet },
+  { key: 'desktop' as const, label: 'Desktop', color: '#3ECC8C' },
+  { key: 'laptop' as const, label: 'Laptop', color: '#0BA5EC' },
+  { key: 'mobile' as const, label: 'Mobile', color: '#F79009' },
+  { key: 'tablet' as const, label: 'Tablet', color: '#667085' },
 ];
 
 export function DeviceBreakdown({ devices, total }: DeviceBreakdownProps) {
-  return (
-    <div className={styles.deviceCard}>
-      <div className={styles.cardTitle}>Devices</div>
-      <div className={styles.deviceList}>
-        {deviceConfig.map(({ key, label, icon: Icon }) => {
-          const count = devices[key] || 0;
-          const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+  const chartData = deviceConfig
+    .map(({ key, label, color }) => ({
+      name: label,
+      value: devices[key] || 0,
+      color,
+    }))
+    .filter((d) => d.value > 0);
 
-          return (
-            <div key={key} className={styles.deviceItem}>
-              <span className={styles.deviceIcon}>
-                <Icon size={16} strokeWidth={1.5} />
-              </span>
-              <span className={styles.deviceName}>{label}</span>
-              <div className={styles.deviceBar}>
-                <div
-                  className={styles.deviceBarFill}
-                  style={{ width: `${pct}%` }}
-                />
+  return (
+    <div className={styles.devicesCard}>
+      <div className={styles.analyticsCardTitle}>Devices</div>
+      <div className={styles.devicesLayout}>
+        <div className={styles.devicesDonutWrapper}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={chartData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                innerRadius="60%"
+                outerRadius="90%"
+                strokeWidth={0}
+                paddingAngle={2}
+              >
+                {chartData.map((entry, idx) => (
+                  <Cell key={idx} fill={entry.color} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className={styles.devicesLegend}>
+          {deviceConfig.map(({ key, label, color }) => {
+            const count = devices[key] || 0;
+            if (count === 0) return null;
+            const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
+            return (
+              <div key={key} className={styles.devicesLegendItem}>
+                <span className={styles.devicesLegendDot} style={{ backgroundColor: color }} />
+                <span className={styles.devicesLegendName}>{label}</span>
+                <span className={styles.devicesLegendCount}>{count.toLocaleString()}</span>
+                <span className={styles.devicesLegendPercent}>{pct}%</span>
               </div>
-              <span className={styles.devicePercent}>{pct}%</span>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

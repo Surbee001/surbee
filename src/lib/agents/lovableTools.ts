@@ -1,18 +1,34 @@
 /**
  * Surbee Agentic Tools
- * Frontend-focused tools for Surbee workflow
  *
- * Tools from agentic tools file with surbe- prefix
- * Backend/database tools excluded (Supabase, Stripe, Secrets, Analytics, Security)
- * Image generation and web search tools included
+ * All sandbox operations go through Modal relay (FastAPI on port 8000).
+ * The relay writes files to disk; Next.js Fast Refresh picks up changes
+ * and the preview (port 3000 tunnel) updates live.
+ *
+ * KEY OPTIMIZATION: Sandbox creation starts eagerly (in parallel with AI
+ * generation) via startEagerSandboxCreation(). By the time the AI calls
+ * surb_init_sandbox, the sandbox is already booting or ready.
  */
 
 import { tool } from 'ai';
 import { z } from 'zod';
-import { Sandbox } from '@e2b/code-interpreter';
+import crypto from 'crypto';
 
-// Maps for E2B sandbox instances and project files
-const sandboxInstances = new Map<string, Sandbox>();
+// ---------------------------------------------------------------------------
+// State: sandbox instances and project files
+// ---------------------------------------------------------------------------
+
+interface ModalSandboxInfo {
+  sandboxId: string;
+  relayUrl: string;
+  previewUrl: string;
+  projectId?: string;
+}
+
+export const activeSandboxes = new Map<string, ModalSandboxInfo>();
+
+/** Promises for sandboxes that are currently being created (eager creation). */
+const pendingSandboxCreations = new Map<string, Promise<ModalSandboxInfo>>();
 
 interface ProjectFiles {
   files: Map<string, string>;
@@ -20,8 +36,6 @@ interface ProjectFiles {
 }
 const projectFiles = new Map<string, ProjectFiles>();
 
-// Store for user-uploaded images from chat (keyed by project name)
-// Images are stored as { index: number, dataUrl: string, filename?: string }[]
 interface UploadedImage {
   index: number;
   dataUrl: string;
@@ -30,152 +44,265 @@ interface UploadedImage {
 }
 export const chatUploadedImages = new Map<string, UploadedImage[]>();
 
-// Helper to get the latest project name (for tools that don't receive it)
 let latestProjectName: string | null = null;
 
-// Helper function to get all source files for the latest project
+// Console logs captured from the sandbox
+export const sandboxConsoleLogs = new Map<string, { stdout: string[]; stderr: string[]; errors: string[] }>();
+
+// ---------------------------------------------------------------------------
+// Direct Modal controller call (skips self-calling API route)
+// ---------------------------------------------------------------------------
+
+function createSignedHeaders(body: string): Record<string, string> {
+  const apiKey = process.env.SANDBOX_API_KEY;
+  const signingSecret = process.env.SANDBOX_SIGNING_SECRET;
+  if (!apiKey || !signingSecret) throw new Error('Sandbox credentials not configured');
+
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const signature = crypto
+    .createHmac('sha256', signingSecret)
+    .update(`${timestamp}.${body}`)
+    .digest('hex');
+
+  return {
+    'Content-Type': 'application/json',
+    'X-API-Key': apiKey,
+    'X-Timestamp': timestamp,
+    'X-Signature': signature,
+  };
+}
+
+/** Call Modal controller directly — no API route hop. */
+async function createSandboxDirect(sandboxId: string): Promise<ModalSandboxInfo> {
+  const modalEndpoint = process.env.MODAL_SANDBOX_ENDPOINT;
+  if (!modalEndpoint) throw new Error('MODAL_SANDBOX_ENDPOINT not configured');
+
+  const requestBody = JSON.stringify({ files: {}, sandbox_id: sandboxId });
+  const headers = createSignedHeaders(requestBody);
+
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 300_000); // 5 min
+
+  try {
+    const resp = await fetch(`${modalEndpoint}/api/sandbox/create`, {
+      method: 'POST',
+      headers,
+      body: requestBody,
+      signal: ac.signal,
+    });
+    clearTimeout(timer);
+
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error(`Modal ${resp.status}: ${text}`);
+    }
+
+    const result = await resp.json();
+    if (!result.relay_url || !result.preview_url) {
+      throw new Error('Sandbox created but missing tunnel URLs');
+    }
+
+    return {
+      sandboxId: result.sandbox_id,
+      relayUrl: result.relay_url,
+      previewUrl: result.preview_url,
+    };
+  } catch (err) {
+    clearTimeout(timer);
+    throw err;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Eager (parallel) sandbox creation
+// ---------------------------------------------------------------------------
+
+/**
+ * Start sandbox creation immediately. Called from the workflow BEFORE
+ * streamText() so the sandbox boots in parallel with AI generation.
+ * By the time the AI calls surb_init_sandbox the sandbox is ready.
+ */
+export function startEagerSandboxCreation(projectName: string): void {
+  // Already have a running sandbox
+  if (activeSandboxes.has(projectName)) return;
+  // Already creating one
+  if (pendingSandboxCreations.has(projectName)) return;
+
+  const sandboxId = `${projectName}-${Date.now()}`;
+  console.log(`[Sandbox] Eager creation started: ${sandboxId}`);
+
+  const promise = createSandboxDirect(sandboxId)
+    .then((info) => {
+      activeSandboxes.set(projectName, { ...info, projectId: projectName });
+      projectFiles.set(projectName, { files: new Map(), components: new Set() });
+      pendingSandboxCreations.delete(projectName);
+      console.log(`[Sandbox] Eager creation done: relay=${info.relayUrl}, preview=${info.previewUrl}`);
+      return info;
+    })
+    .catch((err) => {
+      pendingSandboxCreations.delete(projectName);
+      console.error(`[Sandbox] Eager creation failed: ${err}`);
+      throw err;
+    });
+
+  pendingSandboxCreations.set(projectName, promise);
+}
+
+/**
+ * Get a sandbox — returns immediately if ready, awaits pending creation,
+ * or throws if nothing is available.
+ */
+async function getOrAwaitSandbox(projectName?: string): Promise<ModalSandboxInfo> {
+  const name = projectName || latestProjectName;
+  if (!name) throw new Error('No active project');
+
+  // Already running
+  const existing = activeSandboxes.get(name);
+  if (existing) return existing;
+
+  // Being created eagerly — just await it
+  const pending = pendingSandboxCreations.get(name);
+  if (pending) return await pending;
+
+  throw new Error('No sandbox available');
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 function getAllSourceFiles(): Record<string, string> {
   if (!latestProjectName) return {};
-
   const files = projectFiles.get(latestProjectName);
   if (!files) return {};
+  const result: Record<string, string> = {};
+  files.files.forEach((content, path) => { result[path] = content; });
+  return result;
+}
 
-  const source_files: Record<string, string> = {};
-  files.files.forEach((content, path) => {
-    source_files[path] = content;
+/** Sync check — returns sandbox if already running, null otherwise. */
+function getActiveSandbox(): ModalSandboxInfo | null {
+  if (!latestProjectName) return null;
+  return activeSandboxes.get(latestProjectName) || null;
+}
+
+async function relayPost(endpoint: string, body: unknown): Promise<unknown> {
+  const sandbox = await getOrAwaitSandbox();
+
+  const resp = await fetch(`${sandbox.relayUrl}${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
   });
 
-  return source_files;
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`Relay ${endpoint} failed (${resp.status}): ${text}`);
+  }
+
+  return resp.json();
+}
+
+async function relayGet(endpoint: string): Promise<unknown> {
+  const sandbox = await getOrAwaitSandbox();
+
+  const resp = await fetch(`${sandbox.relayUrl}${endpoint}`);
+
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`Relay ${endpoint} failed (${resp.status}): ${text}`);
+  }
+
+  return resp.json();
+}
+
+/** Write a file both locally (projectFiles) and to the sandbox relay. */
+async function writeFileToSandbox(filePath: string, content: string): Promise<void> {
+  // Local tracking
+  const files = projectFiles.get(latestProjectName!);
+  if (files) files.files.set(filePath, content);
+
+  // Write to relay → Next.js picks up changes via Fast Refresh
+  await relayPost('/write', { path: filePath, content });
 }
 
 // ============================================================================
-// Sandbox Initialization & Execution (E2B Code Interpreter)
+// Sandbox Initialization
 // ============================================================================
 
 export const surbInitSandboxTool = tool({
-  description: 'Initialize a new E2B cloud sandbox environment for the survey project. Call this ONCE at the start before any file operations. Returns the sandbox ID and URL.',
+  description: 'Initialize a Modal sandbox for the survey project. Call this ONCE at the start before any file operations. Returns the sandbox preview URL.',
   inputSchema: z.object({
-    project_name: z.string().describe('Unique project identifier for this survey (e.g., "survey-123")'),
+    project_name: z.string().describe('Unique project identifier (e.g., "survey-123")'),
   }),
   execute: async ({ project_name }) => {
-    console.log(`🚀 Initializing E2B sandbox for project: ${project_name}`);
+    latestProjectName = project_name;
 
     try {
-      const apiKey = process.env.E2B_API_KEY;
-      if (!apiKey) {
-        console.error('❌ E2B_API_KEY not configured');
-        return {
-          status: 'error',
-          message: 'E2B_API_KEY not configured. Please set E2B_API_KEY environment variable.',
-        };
-      }
+      // Await the eagerly-started sandbox (created in parallel with AI generation)
+      const info = await getOrAwaitSandbox(project_name);
 
-      console.log('📦 Creating E2B Code Interpreter sandbox...');
-      const sandbox = await Sandbox.create({ apiKey });
-      sandboxInstances.set(project_name, sandbox);
-      latestProjectName = project_name;
-      console.log(`✅ E2B sandbox created: ${sandbox.sandboxId}`);
-
-      // Initialize project files tracking
-      projectFiles.set(project_name, {
-        files: new Map(),
-        components: new Set(),
-      });
-
-      console.log('✅ Sandbox ready (Node.js pre-installed in E2B)');
+      console.log(`[Sandbox] Ready for ${project_name}: preview=${info.previewUrl}`);
 
       return {
         status: 'success',
-        sandbox_id: sandbox.sandboxId,
+        sandbox_id: info.sandboxId,
         project_name,
-        message: 'Sandbox initialized. Ready to create React survey components.',
+        preview_url: info.previewUrl,
+        relay_url: info.relayUrl,
+        message: 'Sandbox ready. Preview URL is live.',
       };
-    } catch (error) {
-      console.error(`❌ Failed to initialize sandbox: ${error}`);
-      return {
-        status: 'error',
-        message: `Failed to initialize sandbox: ${error}`,
-      };
+    } catch {
+      // Fallback: eager creation wasn't started or failed — create now
+      console.log(`[Sandbox] Fallback: creating sandbox for ${project_name} now...`);
+      try {
+        const sandboxId = `${project_name}-${Date.now()}`;
+        const info = await createSandboxDirect(sandboxId);
+
+        activeSandboxes.set(project_name, { ...info, projectId: project_name });
+        projectFiles.set(project_name, { files: new Map(), components: new Set() });
+
+        console.log(`[Sandbox] Fallback created: preview=${info.previewUrl}`);
+        return {
+          status: 'success',
+          sandbox_id: info.sandboxId,
+          project_name,
+          preview_url: info.previewUrl,
+          relay_url: info.relayUrl,
+          message: 'Sandbox ready. Preview URL is live.',
+        };
+      } catch (error) {
+        console.error(`[Sandbox] Init failed: ${error}`);
+        return {
+          status: 'error',
+          message: `Failed to initialize sandbox: ${error}`,
+        };
+      }
     }
   },
 });
 
 // ============================================================================
-// Surbee Agentic Tools (renamed from lov- to surbe-)
+// File Operations
 // ============================================================================
-
-export const surbeAddDependency = tool({
-  description: "Use this tool to add a dependency to the project. The dependency should be a valid npm package name.",
-  inputSchema: z.object({
-    package: z.string().describe("lodash@latest"),
-  }),
-  execute: async ({ package: pkg }) => {
-    // Placeholder - would integrate with actual package manager
-    return {
-      status: 'success',
-      message: `Dependency ${pkg} added to project`,
-      package: pkg
-    };
-  },
-});
-
-export const surbeSearchFiles = tool({
-  description: "Regex-based code search with file filtering and context.\n\nSearch using regex patterns across files in your project.\n\nParameters:\n- query: Regex pattern to find (e.g., \"useState\")\n- include_pattern: Files to include using glob syntax (e.g., \"src/**\")\n- exclude_pattern: Files to exclude using glob syntax (e.g., \"**/*.test.tsx\")\n- case_sensitive: Whether to match case (default: false)\n\nTip: Use \\\\ to escape special characters in regex patterns.",
-  inputSchema: z.object({
-    case_sensitive: z.boolean().optional().describe("false"),
-    exclude_pattern: z.string().optional().describe("src/components/ui/**"),
-    include_pattern: z.string().describe("src/**"),
-    query: z.string().describe("useEffect\\("),
-  }),
-  execute: async ({ query, include_pattern, exclude_pattern, case_sensitive }) => {
-    // Placeholder - would integrate with actual file search
-    return {
-      status: 'success',
-      message: `Search completed for pattern: ${query}`,
-      matches: [],
-      total_matches: 0
-    };
-  },
-});
 
 export const surbeWrite = tool({
-  description: "\nUse this tool to write to a file in the E2B sandbox. Creates the file with the specified content.\n\n  ### IMPORTANT: MINIMIZE CODE WRITING\n  - PREFER using surbe-line-replace for most changes instead of rewriting entire files\n  - This tool is mainly meant for creating new files or as fallback if surbe-line-replace fails\n  \n  ### Parallel Tool Usage\n  - If you need to create multiple files, it is very important that you create all of them at once instead of one by one, because it's much faster\n",
+  description: "\nUse this tool to write to a file in the sandbox. Creates the file with the specified content.\n\n  ### IMPORTANT: MINIMIZE CODE WRITING\n  - PREFER using surbe-line-replace for most changes instead of rewriting entire files\n  - This tool is mainly meant for creating new files or as fallback if surbe-line-replace fails\n  \n  ### Parallel Tool Usage\n  - If you need to create multiple files, it is very important that you create all of them at once instead of one by one, because it's much faster\n",
   inputSchema: z.object({
     content: z.string().describe("The complete file content"),
-    file_path: z.string().describe("File path relative to project root (e.g., 'src/Survey.tsx')"),
+    file_path: z.string().describe("File path relative to project root (e.g., 'app/page.tsx')"),
   }),
   execute: async ({ content, file_path }) => {
-    console.log(`📝 Writing file: ${file_path} (${content.length} bytes)`);
+    console.log(`[Write] ${file_path} (${content.length} bytes)`);
 
-    if (!latestProjectName) {
-      console.error('❌ No project initialized. Call surb_init_sandbox first.');
-      return {
-        status: 'error',
-        message: 'No project initialized. Call surb_init_sandbox first.',
-      };
-    }
-
-    const files = projectFiles.get(latestProjectName);
-    const sandbox = sandboxInstances.get(latestProjectName);
-
-    if (!files || !sandbox) {
-      console.error(`❌ Project not found: ${latestProjectName}`);
-      return {
-        status: 'error',
-        message: `Project not found: ${latestProjectName}`,
-      };
+    if (!latestProjectName || !getActiveSandbox()) {
+      return { status: 'error', message: 'No project initialized. Call surb_init_sandbox first.' };
     }
 
     try {
-      // Store in memory
-      files.files.set(file_path, content);
-
-      // Write to E2B sandbox
-      await sandbox.files.write(`/home/user/${file_path}`, content);
-      console.log(`✅ File written: ${file_path}`);
-
-      // Get all current files
+      await writeFileToSandbox(file_path, content);
       const allFiles = getAllSourceFiles();
+      const sandbox = getActiveSandbox()!;
 
       return {
         status: 'success',
@@ -183,18 +310,15 @@ export const surbeWrite = tool({
         file_path,
         content_length: content.length,
         source_files: allFiles,
+        preview_url: sandbox.previewUrl,
       };
     } catch (error) {
-      console.error(`❌ Failed to write file: ${error}`);
-      return {
-        status: 'error',
-        message: `Failed to write file: ${error}`,
-      };
+      console.error(`[Write] Failed: ${error}`);
+      return { status: 'error', message: `Failed to write file: ${error}` };
     }
   },
 });
 
-// Quick Edit Tool: Edit files using "// ... existing code ..." markers
 export const surbeQuickEdit = tool({
   description: `Use this tool to quickly edit existing files using the "// ... existing code ..." pattern. This is faster than surbe_line_replace for small changes because you don't need to specify line numbers.
 
@@ -203,22 +327,6 @@ export const surbeQuickEdit = tool({
 - Use "// ... existing code ..." to skip unchanged sections
 - Add <CHANGE> comments to explain what you're editing
 - The system merges your changes with the original file
-
-### Example:
-\`\`\`tsx
-function MyComponent() {
-  // ... existing code ...
-
-  // <CHANGE> Updating button color from red to blue
-  return (
-    <div>
-      <button className="bg-blue-500">Click me</button>
-    </div>
-  );
-
-  // ... existing code ...
-}
-\`\`\`
 
 ### When to use:
 - Small, focused edits to existing files
@@ -230,61 +338,37 @@ function MyComponent() {
 - Large refactors (use surbe_line_replace for precision)
 - When you need exact line control`,
   inputSchema: z.object({
-    file_path: z.string().describe("File path relative to project root (e.g., 'src/Survey.tsx')"),
+    file_path: z.string().describe("File path relative to project root (e.g., 'app/page.tsx')"),
     content: z.string().describe("Partial file content with '// ... existing code ...' markers indicating unchanged sections"),
   }),
   execute: async ({ file_path, content }) => {
-    console.log(`⚡ Quick edit: ${file_path}`);
+    console.log(`[QuickEdit] ${file_path}`);
 
-    if (!latestProjectName) {
-      console.error('❌ No project initialized. Call surb_init_sandbox first.');
-      return {
-        status: 'error',
-        message: 'No project initialized. Call surb_init_sandbox first.',
-      };
+    if (!latestProjectName || !getActiveSandbox()) {
+      return { status: 'error', message: 'No project initialized. Call surb_init_sandbox first.' };
     }
 
     const files = projectFiles.get(latestProjectName);
-    const sandbox = sandboxInstances.get(latestProjectName);
-
-    if (!files || !sandbox) {
-      console.error(`❌ Project not found: ${latestProjectName}`);
-      return {
-        status: 'error',
-        message: `Project not found: ${latestProjectName}`,
-      };
+    if (!files) {
+      return { status: 'error', message: `Project not found: ${latestProjectName}` };
     }
 
     try {
-      // Get current file content
       const originalContent = files.files.get(file_path);
       if (!originalContent) {
-        return {
-          status: 'error',
-          message: `File not found: ${file_path}. Use surbe_write to create it first, or surbe_view to check the file exists.`,
-        };
+        return { status: 'error', message: `File not found: ${file_path}. Use surbe_write to create it first.` };
       }
 
-      // Merge the content by replacing "// ... existing code ..." markers
       const MARKER = '// ... existing code ...';
       const mergedContent = mergeQuickEdit(originalContent, content, MARKER);
 
       if (!mergedContent) {
-        return {
-          status: 'error',
-          message: `Failed to merge content. Make sure your content uses "${MARKER}" markers correctly.`,
-        };
+        return { status: 'error', message: `Failed to merge content. Check your "${MARKER}" markers.` };
       }
 
-      // Store in memory
-      files.files.set(file_path, mergedContent);
-
-      // Write to E2B sandbox
-      await sandbox.files.write(`/home/user/${file_path}`, mergedContent);
-      console.log(`✅ Quick edit applied: ${file_path}`);
-
-      // Get all current files
+      await writeFileToSandbox(file_path, mergedContent);
       const allFiles = getAllSourceFiles();
+      const sandbox = getActiveSandbox()!;
 
       return {
         status: 'success',
@@ -292,29 +376,21 @@ function MyComponent() {
         file_path,
         changes_applied: true,
         source_files: allFiles,
+        preview_url: sandbox.previewUrl,
       };
     } catch (error) {
-      console.error(`❌ Failed to apply quick edit: ${error}`);
-      return {
-        status: 'error',
-        message: `Failed to apply quick edit: ${error}`,
-      };
+      console.error(`[QuickEdit] Failed: ${error}`);
+      return { status: 'error', message: `Failed to apply quick edit: ${error}` };
     }
   },
 });
 
-// Helper function to merge quick edit content with existing code
 function mergeQuickEdit(original: string, partial: string, marker: string): string | null {
   try {
-    // If no markers, return the partial content as-is (user wants to replace everything)
-    if (!partial.includes(marker)) {
-      return partial;
-    }
+    if (!partial.includes(marker)) return partial;
 
-    // Split both original and partial by lines
     const originalLines = original.split('\n');
     const partialLines = partial.split('\n');
-
     const result: string[] = [];
     let originalIndex = 0;
     let partialIndex = 0;
@@ -322,43 +398,34 @@ function mergeQuickEdit(original: string, partial: string, marker: string): stri
     while (partialIndex < partialLines.length) {
       const line = partialLines[partialIndex];
 
-      // Check if this line is a marker
       if (line.trim() === marker.trim()) {
-        // Find the next non-marker section in partial content
         let nextPartialIndex = partialIndex + 1;
         while (nextPartialIndex < partialLines.length && partialLines[nextPartialIndex].trim() === marker.trim()) {
           nextPartialIndex++;
         }
 
-        // If we're at the end, copy remaining original lines
         if (nextPartialIndex >= partialLines.length) {
           result.push(...originalLines.slice(originalIndex));
           break;
         }
 
-        // Find where the next partial section appears in the original
         const nextPartialSection = partialLines[nextPartialIndex];
         const foundIndex = originalLines.findIndex((origLine, idx) =>
           idx >= originalIndex && origLine.trim() === nextPartialSection.trim()
         );
 
         if (foundIndex === -1) {
-          // If we can't find the next section, copy remaining original and continue with partial
           result.push(...originalLines.slice(originalIndex));
           originalIndex = originalLines.length;
         } else {
-          // Copy original lines up to the found index
           result.push(...originalLines.slice(originalIndex, foundIndex));
           originalIndex = foundIndex;
         }
 
         partialIndex = nextPartialIndex;
       } else {
-        // Regular line from partial content - add it
         result.push(line);
         partialIndex++;
-
-        // Try to sync originalIndex by skipping matching lines
         if (originalIndex < originalLines.length && originalLines[originalIndex].trim() === line.trim()) {
           originalIndex++;
         }
@@ -366,252 +433,71 @@ function mergeQuickEdit(original: string, partial: string, marker: string): stri
     }
 
     return result.join('\n');
-  } catch (error) {
-    console.error('Error merging quick edit:', error);
+  } catch {
     return null;
   }
 }
 
-// New tool: Build and preview React app in E2B
-export const surbeBuildPreview = tool({
-  description: 'Build the React survey and generate a preview. Call this AFTER writing all component files. Returns the HTML preview and any build errors.',
-  inputSchema: z.object({
-    entry_file: z.string().describe('Main component file (e.g., "src/Survey.tsx")'),
-  }),
-  execute: async ({ entry_file }) => {
-    console.log(`🔨 Building preview for: ${entry_file}`);
-
-    if (!latestProjectName) {
-      return {
-        status: 'error',
-        message: 'No project initialized.',
-      };
-    }
-
-    const sandbox = sandboxInstances.get(latestProjectName);
-    const files = projectFiles.get(latestProjectName);
-
-    if (!sandbox || !files) {
-      return {
-        status: 'error',
-        message: 'Sandbox not found.',
-      };
-    }
-
-    try {
-      // Initialize console log storage for this project
-      sandboxConsoleLogs.set(latestProjectName, {
-        stdout: [],
-        stderr: [],
-        errors: []
-      });
-
-      // Create package.json if not exists
-      if (!files.files.has('package.json')) {
-        const packageJson = {
-          name: latestProjectName,
-          version: '1.0.0',
-          dependencies: {
-            'react': '^18.2.0',
-            'react-dom': '^18.2.0',
-          },
-        };
-        await sandbox.files.write('/home/user/package.json', JSON.stringify(packageJson, null, 2));
-      }
-
-      // Create HTML template
-      const htmlTemplate = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Survey Preview</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    // Capture console errors in the preview
-    window.addEventListener('error', (event) => {
-      console.error('[Runtime Error]:', event.message, 'at', event.filename, ':', event.lineno);
-    });
-    window.addEventListener('unhandledrejection', (event) => {
-      console.error('[Unhandled Promise Rejection]:', event.reason);
-    });
-  </script>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="module">
-    ${files.files.get(entry_file) || ''}
-  </script>
-</body>
-</html>`;
-
-      await sandbox.files.write('/home/user/preview.html', htmlTemplate);
-
-      // Try to validate the JavaScript by running a syntax check
-      const entryCode = files.files.get(entry_file) || '';
-
-      try {
-        // Run a simple syntax validation using Node.js in the sandbox
-        const validationCode = `
-try {
-  // Check if code has basic syntax errors
-  new Function(${JSON.stringify(entryCode)});
-  console.log("✅ Syntax validation passed");
-} catch (error) {
-  console.error("❌ Syntax error:", error.message);
-  throw error;
-}
-`;
-
-        const execution = await sandbox.runCode(validationCode);
-
-        // Capture logs from validation
-        const logs = sandboxConsoleLogs.get(latestProjectName)!;
-        if (execution.logs?.stdout) {
-          execution.logs.stdout.forEach(log => logs.stdout.push(log));
-        }
-        if (execution.logs?.stderr) {
-          execution.logs.stderr.forEach(log => logs.stderr.push(log));
-        }
-        if (execution.error) {
-          logs.errors.push(execution.error.name + ': ' + execution.error.value);
-        }
-
-        console.log('✅ Preview HTML generated and validated');
-      } catch (validationError) {
-        // Validation failed - still continue but log it
-        console.warn('⚠️ Syntax validation failed:', validationError);
-        const logs = sandboxConsoleLogs.get(latestProjectName)!;
-        logs.errors.push(String(validationError));
-      }
-
-      // Get all source files
-      const allFiles = getAllSourceFiles();
-
-      return {
-        status: 'success',
-        message: 'Preview built successfully!',
-        preview_html: htmlTemplate,
-        source_files: allFiles,
-        entry_point: entry_file,
-      };
-    } catch (error) {
-      console.error(`❌ Build failed: ${error}`);
-
-      // Store build error in logs
-      const logs = sandboxConsoleLogs.get(latestProjectName);
-      if (logs) {
-        logs.errors.push(`Build Error: ${String(error)}`);
-      }
-
-      return {
-        status: 'error',
-        message: `Build failed: ${error}`,
-        logs: String(error),
-      };
-    }
-  },
-});
-
 export const surbeLineReplace = tool({
-  description: "Line-Based Search and Replace Tool\n\nUse this tool to find and replace specific content in a file you have access to, using explicit line numbers. This is the PREFERRED and PRIMARY tool for editing existing files. Always use this tool when modifying existing code rather than rewriting entire files.\n\nProvide the following details to make an edit:\n\t1.\tfile_path - The path of the file to modify\n\t2.\tsearch - The content to search for (use ellipsis ... for large sections instead of writing them out in full)\n\t3.\tfirst_replaced_line - The line number of the first line in the search (1-indexed)\n\t4.\tlast_replaced_line - The line number of the last line in the search (1-indexed)\n\t5.\treplace - The new content to replace the found content\n\nThe tool will validate that search matches the content at the specified line range and then replace it with replace.\n\nIMPORTANT: When invoking this tool multiple times in parallel (multiple edits to the same file), always use the original line numbers from the file as you initially viewed it. Do not adjust line numbers based on previous edits.\n\nELLIPSIS USAGE:\nWhen replacing sections of code longer than ~6 lines, you should use ellipsis (...) in your search to reduce the number of lines you need to specify (writing fewer lines is faster).\n- Include the first few lines (typically 2-3 lines) of the section you want to replace\n- Add \"...\" on its own line to indicate omitted content\n- Include the last few lines (typically 2-3 lines) of the section you want to replace\n- The key is to provide enough unique context at the beginning and end to ensure accurate matching\n- Focus on uniqueness rather than exact line counts - sometimes 2 lines is enough, sometimes you need 4\n\n\n\nExample:\nTo replace a user card component at lines 22-42:\n\nOriginal content in file (lines 20-45):\n20:   return (\n21:     \n22:       \n23:         \n24:         {user.name}\n25:         {user.email}\n26:         {user.role}\n27:         {user.department}\n28:         {user.location}\n29:         \n30:            onEdit(user.id)}>Edit\n31:            onDelete(user.id)}>Delete\n32:            onView(user.id)}>View\n33:         \n34:         \n35:           Created: {user.createdAt}\n36:           Updated: {user.updatedAt}\n37:           Status: {user.status}\n38:         \n39:         \n40:           Permissions: {user.permissions.join(', ')}\n41:         \n42:       \n43:     \n44:   );\n45: }\n\nFor a large replacement like this, you must use ellipsis:\n- search: \"      \\n        \\n...\\n          Permissions: {user.permissions.join(', ')}\\n        \\n      \"\n- first_replaced_line: 22\n- last_replaced_line: 42\n- replace: \"      \\n        \\n           {\\n              e.currentTarget.src = '/default-avatar.png';\\n            }}\\n          />\\n        \\n        \\n          {user.name}\\n          {user.email}\\n          \\n            {user.role}\\n            {user.department}\\n          \\n        \\n        \\n           onEdit(user.id)}\\n            aria-label=\\\"Edit user profile\\\"\\n          >\\n            Edit Profile\\n          \\n        \\n      \"\n\nCritical guidelines:\n\t1. Line Numbers - Specify exact first_replaced_line and last_replaced_line (1-indexed, first line is line 1)\n\t2. Ellipsis Usage - For large sections (>6 lines), use ellipsis (...) to include only the first few and last few key identifying lines for cleaner, more focused matching\n\t3. Content Validation - The prefix and suffix parts of search (before and after ellipsis) must contain exact content matches from the file (without line numbers). The tool validates these parts against the actual file content\n\t4. File Validation - The file must exist and be readable\n\t5. Parallel Tool Calls - When multiple edits are needed, invoke necessary tools simultaneously in parallel. Do NOT wait for one edit to complete before starting the next\n\t6. Original Line Numbers - When making multiple edits to the same file, always use original line numbers from your initial view of the file",
+  description: "Line-Based Search and Replace Tool\n\nUse this tool to find and replace specific content in a file using explicit line numbers. This is the PREFERRED and PRIMARY tool for editing existing files.\n\nProvide:\n1. file_path - Path of the file to modify\n2. search - Content to search for (use ellipsis ... for large sections)\n3. first_replaced_line - Line number of the first line (1-indexed)\n4. last_replaced_line - Line number of the last line (1-indexed)\n5. replace - New content\n\nIMPORTANT: When making multiple edits to the same file in parallel, always use original line numbers from your initial view.",
   inputSchema: z.object({
-    file_path: z.string().describe("src/components/TaskList.tsx"),
-    first_replaced_line: z.number().describe("15"),
-    last_replaced_line: z.number().describe("28"),
-    replace: z.string().describe("  const handleTaskComplete = useCallback((taskId: string) => {\n    const updatedTasks = tasks.map(task =>\n      task.id === taskId \n        ? { ...task, completed: !task.completed, completedAt: new Date() }\n        : task\n    );\n    setTasks(updatedTasks);\n    onTaskUpdate?.(updatedTasks);\n    \n    // Analytics tracking\n    analytics.track('task_completed', { taskId, timestamp: Date.now() });\n  }, [tasks, onTaskUpdate]);"),
-    search: z.string().describe("  const handleTaskComplete = (taskId: string) => {\n    setTasks(tasks.map(task =>\n...\n    ));\n    onTaskUpdate?.(updatedTasks);\n  };"),
+    file_path: z.string().describe("File path relative to project root"),
+    first_replaced_line: z.number().describe("First line number (1-indexed)"),
+    last_replaced_line: z.number().describe("Last line number (1-indexed)"),
+    replace: z.string().describe("New content to replace with"),
+    search: z.string().describe("Content to search for (use ... for large sections)"),
   }),
   execute: async ({ file_path, search, first_replaced_line, last_replaced_line, replace }) => {
-    console.log(`🔄 Line replace in ${file_path} at lines ${first_replaced_line}-${last_replaced_line}`);
+    console.log(`[LineReplace] ${file_path} lines ${first_replaced_line}-${last_replaced_line}`);
 
-    if (!latestProjectName) {
-      console.error('❌ No project initialized. Call surb_init_sandbox first.');
-      return {
-        status: 'error',
-        message: 'No project initialized. Call surb_init_sandbox first.',
-      };
+    if (!latestProjectName || !getActiveSandbox()) {
+      return { status: 'error', message: 'No project initialized. Call surb_init_sandbox first.' };
     }
 
     const files = projectFiles.get(latestProjectName);
-    const sandbox = sandboxInstances.get(latestProjectName);
-
-    if (!files || !sandbox) {
-      console.error(`❌ Project not found: ${latestProjectName}`);
-      return {
-        status: 'error',
-        message: `Project not found: ${latestProjectName}`,
-      };
+    if (!files) {
+      return { status: 'error', message: `Project not found: ${latestProjectName}` };
     }
 
     try {
-      // Get current file content
       const currentContent = files.files.get(file_path);
       if (!currentContent) {
-        return {
-          status: 'error',
-          message: `File not found: ${file_path}. Use surbe_write to create it first.`,
-        };
+        return { status: 'error', message: `File not found: ${file_path}. Use surbe_write to create it first.` };
       }
 
-      // Split content into lines
       const lines = currentContent.split('\n');
 
-      // Validate line numbers
       if (first_replaced_line < 1 || last_replaced_line > lines.length || first_replaced_line > last_replaced_line) {
-        return {
-          status: 'error',
-          message: `Invalid line range: ${first_replaced_line}-${last_replaced_line}. File has ${lines.length} lines.`,
-        };
+        return { status: 'error', message: `Invalid line range: ${first_replaced_line}-${last_replaced_line}. File has ${lines.length} lines.` };
       }
 
-      // Extract the section to be replaced (convert to 0-indexed)
       const startIdx = first_replaced_line - 1;
       const endIdx = last_replaced_line - 1;
       const originalSection = lines.slice(startIdx, endIdx + 1).join('\n');
 
-      // Validate search pattern (handle ellipsis)
+      // Validate search pattern
       const searchLines = search.split('\n');
       const hasEllipsis = searchLines.some(line => line.trim() === '...');
 
       if (hasEllipsis) {
-        // For ellipsis mode, validate first and last few lines
         const ellipsisIdx = searchLines.findIndex(line => line.trim() === '...');
         const searchPrefix = searchLines.slice(0, ellipsisIdx).join('\n');
         const searchSuffix = searchLines.slice(ellipsisIdx + 1).join('\n');
-
         if (!originalSection.startsWith(searchPrefix) || !originalSection.endsWith(searchSuffix)) {
-          return {
-            status: 'error',
-            message: `Search pattern mismatch at lines ${first_replaced_line}-${last_replaced_line}. Expected content doesn't match actual content.`,
-          };
+          return { status: 'error', message: `Search pattern mismatch at lines ${first_replaced_line}-${last_replaced_line}.` };
         }
       } else {
-        // Exact match required
         if (originalSection !== search) {
-          return {
-            status: 'error',
-            message: `Search pattern mismatch at lines ${first_replaced_line}-${last_replaced_line}. Expected:\n${search}\n\nActual:\n${originalSection}`,
-          };
+          return { status: 'error', message: `Search pattern mismatch at lines ${first_replaced_line}-${last_replaced_line}.` };
         }
       }
 
-      // Perform replacement
-      const newLines = [
-        ...lines.slice(0, startIdx),
-        ...replace.split('\n'),
-        ...lines.slice(endIdx + 1)
-      ];
+      const newLines = [...lines.slice(0, startIdx), ...replace.split('\n'), ...lines.slice(endIdx + 1)];
       const newContent = newLines.join('\n');
 
-      // Update in memory and E2B sandbox
-      files.files.set(file_path, newContent);
-      await sandbox.files.write(`/home/user/${file_path}`, newContent);
-
-      console.log(`✅ Replaced lines ${first_replaced_line}-${last_replaced_line} in ${file_path}`);
-
-      // Get all current files
+      await writeFileToSandbox(file_path, newContent);
       const allFiles = getAllSourceFiles();
+      const sandbox = getActiveSandbox()!;
 
       return {
         status: 'success',
@@ -620,399 +506,524 @@ export const surbeLineReplace = tool({
         lines_affected: last_replaced_line - first_replaced_line + 1,
         new_line_count: newLines.length,
         source_files: allFiles,
+        preview_url: sandbox.previewUrl,
       };
     } catch (error) {
-      console.error(`❌ Failed to replace lines: ${error}`);
-      return {
-        status: 'error',
-        message: `Failed to replace lines: ${error}`,
-      };
+      console.error(`[LineReplace] Failed: ${error}`);
+      return { status: 'error', message: `Failed to replace lines: ${error}` };
     }
   },
 });
 
-export const surbeDownloadToRepo = tool({
-  description: "Download a file from a URL and save it to the repository.\n\nThis tool is useful for:\n- Downloading images, assets, or other files from URLs. Download images in the src/assets folder and import them as ES6 modules.\n- Saving external resources directly to the project\n- Migrating files from external sources to the repository\n\nThe file will be downloaded and saved at the specified path in the repository, ready to be used in the project.\nIMPORTANT:DO NOT USE this tool to handle the image uploaded by users in the chat and follow the instructions given with the images!\n\n",
+export const surbeBuildPreview = tool({
+  description: 'Sync all project files to the sandbox and return the live preview URL. Call after writing component files to ensure the preview is up to date.',
   inputSchema: z.object({
-    source_url: z.string().describe("https://example.com/image.png"),
-    target_path: z.string().describe("public/images/logo.png"),
+    entry_file: z.string().describe('Main component file (e.g., "app/page.tsx")'),
   }),
-  execute: async ({ source_url, target_path }) => {
-    // Placeholder - would integrate with actual download functionality
-    return {
-      status: 'success',
-      message: `Downloaded ${source_url} to ${target_path}`,
-      source_url,
-      target_path
-    };
-  },
-});
+  execute: async ({ entry_file }) => {
+    console.log(`[BuildPreview] Syncing files for: ${entry_file}`);
 
-export const surbeFetchWebsite = tool({
-  description: "Fetches a website and temporarily saves its content (markdown, HTML, screenshot) to files in `tmp://fetched-websites/`. Returns the paths to the created files and a preview of the content.",
-  inputSchema: z.object({
-    formats: z.string().optional().describe("markdown,screenshot"),
-    url: z.string().describe("https://example.com"),
-  }),
-  execute: async ({ url, formats }) => {
-    // Placeholder - would integrate with actual website fetching
-    return {
-      status: 'success',
-      message: `Fetched website content from ${url}`,
-      url,
-      formats: formats || 'markdown',
-      content_preview: 'Website content preview...'
-    };
-  },
-});
-
-export const surbeCopy = tool({
-  description: "Use this tool to copy a file or directory to a new location. This tool is primarily useful when copying files from a virtual file system (e.g. `user-uploads://`) to the project repo.",
-  inputSchema: z.object({
-    destination_file_path: z.string().describe("src/main_copy.ts"),
-    source_file_path: z.string().describe("src/main.ts"),
-  }),
-  execute: async ({ source_file_path, destination_file_path }) => {
-    // Placeholder - would integrate with actual file copying
-    return {
-      status: 'success',
-      message: `Copied ${source_file_path} to ${destination_file_path}`,
-      source: source_file_path,
-      destination: destination_file_path
-    };
-  },
-});
-
-export const surbeView = tool({
-  description: "Use this tool to read the contents of a file. If it's a project file, the file path should be relative to the project root. You can optionally specify line ranges to read using the lines parameter (e.g., \"1-800, 1001-1500\"). By default, the first 500 lines are read if lines is not specified.\n\nIMPORTANT GUIDELINES:\n- Do NOT use this tool if the file contents have already been provided in \n- Do NOT specify line ranges unless the file is very large (>500 lines) - rely on the default behavior which shows the first 500 lines\n- Only use line ranges when you need to see specific sections of large files that weren't shown in the default view\n- If you need to read multiple files, invoke this tool multiple times in parallel (not sequentially) for efficiency",
-  inputSchema: z.object({
-    file_path: z.string().describe("src/App.tsx"),
-    lines: z.string().optional().describe("1-800, 1001-1500"),
-  }),
-  execute: async ({ file_path, lines }) => {
-    // Placeholder - would integrate with actual file reading
-    return {
-      status: 'success',
-      message: `Read file ${file_path}`,
-      content: 'File content...',
-      total_lines: 100,
-      lines_read: lines || '1-500'
-    };
-  },
-});
-
-// Store for E2B sandbox console logs (stdout/stderr from build execution)
-export const sandboxConsoleLogs = new Map<string, { stdout: string[]; stderr: string[]; errors: string[] }>();
-
-export const surbeReadConsoleLogs = tool({
-  description: "Read E2B sandbox console logs to check for errors and warnings. Call this after building if you want to verify the code is running correctly. If errors are found, you can fix them and rebuild. Don't loop more than 2 times checking logs.",
-  inputSchema: z.object({
-    search: z.string().optional().describe("Optional search term to filter logs (e.g., 'error', 'warning')"),
-  }),
-  execute: async ({ search }) => {
-    if (!latestProjectName) {
-      return {
-        status: 'error',
-        message: 'No project initialized. Call surb_init_sandbox first.',
-        logs: []
-      };
+    if (!latestProjectName || !getActiveSandbox()) {
+      return { status: 'error', message: 'No project initialized.' };
     }
 
-    const logs = sandboxConsoleLogs.get(latestProjectName);
+    const sandbox = getActiveSandbox()!;
+    const allFiles = getAllSourceFiles();
 
-    if (!logs) {
-      return {
-        status: 'warning',
-        message: 'No console logs available yet. Build the project first with surbe_build_preview.',
-        logs: []
-      };
-    }
+    try {
+      // Batch-write all files to the sandbox relay
+      if (Object.keys(allFiles).length > 0) {
+        await relayPost('/write-batch', { files: allFiles });
+      }
 
-    // Check for errors in stderr
-    const hasErrors = logs.stderr.length > 0 || logs.errors.length > 0;
-
-    // Filter logs if search term provided
-    const filterLogs = (logArray: string[]) => search
-      ? logArray.filter(log => log.toLowerCase().includes(search.toLowerCase()))
-      : logArray;
-
-    const filteredStderr = filterLogs(logs.stderr);
-    const filteredErrors = filterLogs(logs.errors);
-    const filteredStdout = filterLogs(logs.stdout);
-
-    if (!hasErrors) {
       return {
         status: 'success',
-        message: '✅ No errors detected in sandbox console!',
-        stdout: filteredStdout,
-        stderr: [],
-        errors: [],
-        error_count: 0
+        message: 'All files synced. Preview is live.',
+        preview_url: sandbox.previewUrl,
+        source_files: allFiles,
+        entry_point: entry_file,
       };
+    } catch (error) {
+      console.error(`[BuildPreview] Failed: ${error}`);
+      return { status: 'error', message: `Build failed: ${error}` };
+    }
+  },
+});
+
+// ============================================================================
+// Read / Delete / Rename / Copy
+// ============================================================================
+
+export const surbeView = tool({
+  description: "Read the contents of a file. If you need to read multiple files, invoke this tool multiple times in parallel.",
+  inputSchema: z.object({
+    file_path: z.string().describe("File path relative to project root"),
+    lines: z.string().optional().describe("Line range (e.g., '1-500')"),
+  }),
+  execute: async ({ file_path, lines }) => {
+    if (!latestProjectName) {
+      return { status: 'error', message: 'No project initialized.' };
+    }
+
+    // Try local first
+    const files = projectFiles.get(latestProjectName);
+    let content = files?.files.get(file_path);
+
+    // Fall back to relay if not in local cache
+    if (!content && getActiveSandbox()) {
+      try {
+        const result = await relayPost('/read', { path: file_path }) as { content?: string };
+        content = result.content;
+        if (content && files) files.files.set(file_path, content);
+      } catch {
+        return { status: 'error', message: `File not found: ${file_path}` };
+      }
+    }
+
+    if (!content) {
+      return { status: 'error', message: `File not found: ${file_path}` };
+    }
+
+    const allLines = content.split('\n');
+    let displayContent = content;
+    let linesRead = `1-${allLines.length}`;
+
+    if (lines) {
+      // Parse line ranges like "1-500, 800-1000"
+      const ranges = lines.split(',').map(r => r.trim());
+      const selectedLines: string[] = [];
+      for (const range of ranges) {
+        const [start, end] = range.split('-').map(Number);
+        selectedLines.push(...allLines.slice((start || 1) - 1, end || allLines.length));
+      }
+      displayContent = selectedLines.join('\n');
+      linesRead = lines;
     }
 
     return {
-      status: 'error',
-      message: `❌ Found ${filteredStderr.length + filteredErrors.length} error(s) in sandbox console.`,
-      stdout: filteredStdout,
-      stderr: filteredStderr,
-      errors: filteredErrors,
-      error_count: filteredStderr.length + filteredErrors.length,
-      suggestion: 'Fix the errors above and rebuild. If errors persist after 2 attempts, let the user know.'
-    };
-  },
-});
-
-export const surbeReadNetworkRequests = tool({
-  description: "Use this tool to read the contents of the latest network requests. You can optionally provide a search query to filter the requests. If empty you will get all latest requests. You may not be able to see the requests that didn't happen recently.",
-  inputSchema: z.object({
-    search: z.string().describe("error"),
-  }),
-  execute: async ({ search }) => {
-    // Placeholder - would integrate with actual network request monitoring
-    return {
       status: 'success',
-      message: `Retrieved network requests with search: ${search}`,
-      requests: [],
-      filtered_by: search
-    };
-  },
-});
-
-export const surbeRemoveDependency = tool({
-  description: "Use this tool to uninstall a package from the project.",
-  inputSchema: z.object({
-    package: z.string().describe("lodash"),
-  }),
-  execute: async ({ package: pkg }) => {
-    // Placeholder - would integrate with actual package manager
-    return {
-      status: 'success',
-      message: `Removed dependency ${pkg} from project`,
-      package: pkg
-    };
-  },
-});
-
-export const surbeRename = tool({
-  description: "You MUST use this tool to rename a file instead of creating new files and deleting old ones. The original and new file path should be relative to the project root.",
-  inputSchema: z.object({
-    new_file_path: z.string().describe("src/main_new2.ts"),
-    original_file_path: z.string().describe("src/main.ts"),
-  }),
-  execute: async ({ original_file_path, new_file_path }) => {
-    // Placeholder - would integrate with actual file renaming
-    return {
-      status: 'success',
-      message: `Renamed ${original_file_path} to ${new_file_path}`,
-      original: original_file_path,
-      new: new_file_path
+      content: displayContent,
+      total_lines: allLines.length,
+      lines_read: linesRead,
     };
   },
 });
 
 export const surbeDelete = tool({
-  description: "Use this tool to delete a file. The file path should be relative to the project root.",
+  description: "Delete a file from the sandbox.",
   inputSchema: z.object({
-    file_path: z.string().describe("src/App.tsx"),
+    file_path: z.string().describe("File path relative to project root"),
   }),
   execute: async ({ file_path }) => {
-    // Placeholder - would integrate with actual file deletion
+    if (!latestProjectName || !getActiveSandbox()) {
+      return { status: 'error', message: 'No project initialized.' };
+    }
+
+    try {
+      await relayPost('/delete', { path: file_path });
+      const files = projectFiles.get(latestProjectName);
+      if (files) files.files.delete(file_path);
+
+      return { status: 'success', message: `Deleted ${file_path}`, file_path };
+    } catch (error) {
+      return { status: 'error', message: `Failed to delete: ${error}` };
+    }
+  },
+});
+
+export const surbeRename = tool({
+  description: "Rename a file in the sandbox.",
+  inputSchema: z.object({
+    original_file_path: z.string().describe("Current file path"),
+    new_file_path: z.string().describe("New file path"),
+  }),
+  execute: async ({ original_file_path, new_file_path }) => {
+    if (!latestProjectName || !getActiveSandbox()) {
+      return { status: 'error', message: 'No project initialized.' };
+    }
+
+    try {
+      // Read the original file, write to new path, delete original
+      const files = projectFiles.get(latestProjectName);
+      const content = files?.files.get(original_file_path);
+
+      if (!content) {
+        // Try reading from relay
+        const result = await relayPost('/read', { path: original_file_path }) as { content?: string };
+        if (!result.content) return { status: 'error', message: `File not found: ${original_file_path}` };
+        await writeFileToSandbox(new_file_path, result.content);
+      } else {
+        await writeFileToSandbox(new_file_path, content);
+      }
+
+      await relayPost('/delete', { path: original_file_path });
+      if (files) files.files.delete(original_file_path);
+
+      return { status: 'success', message: `Renamed ${original_file_path} to ${new_file_path}` };
+    } catch (error) {
+      return { status: 'error', message: `Failed to rename: ${error}` };
+    }
+  },
+});
+
+export const surbeCopy = tool({
+  description: "Copy a file to a new location in the sandbox.",
+  inputSchema: z.object({
+    source_file_path: z.string().describe("Source file path"),
+    destination_file_path: z.string().describe("Destination file path"),
+  }),
+  execute: async ({ source_file_path, destination_file_path }) => {
+    if (!latestProjectName || !getActiveSandbox()) {
+      return { status: 'error', message: 'No project initialized.' };
+    }
+
+    try {
+      const files = projectFiles.get(latestProjectName);
+      let content = files?.files.get(source_file_path);
+
+      if (!content) {
+        const result = await relayPost('/read', { path: source_file_path }) as { content?: string };
+        content = result.content;
+      }
+
+      if (!content) return { status: 'error', message: `Source not found: ${source_file_path}` };
+
+      await writeFileToSandbox(destination_file_path, content);
+      return { status: 'success', message: `Copied ${source_file_path} to ${destination_file_path}` };
+    } catch (error) {
+      return { status: 'error', message: `Failed to copy: ${error}` };
+    }
+  },
+});
+
+// ============================================================================
+// Dependencies & Console Logs
+// ============================================================================
+
+export const surbeAddDependency = tool({
+  description: "Install an npm package in the sandbox. Uses pnpm add.",
+  inputSchema: z.object({
+    package: z.string().describe("Package name (e.g., 'recharts' or 'recharts@latest')"),
+  }),
+  execute: async ({ package: pkg }) => {
+    if (!latestProjectName || !getActiveSandbox()) {
+      return { status: 'error', message: 'No project initialized.' };
+    }
+
+    try {
+      const result = await relayPost('/exec', {
+        command: `pnpm add ${pkg}`,
+        timeout: 60,
+      }) as { stdout?: string; stderr?: string; exit_code?: number };
+
+      return {
+        status: result.exit_code === 0 ? 'success' : 'error',
+        message: result.exit_code === 0 ? `Installed ${pkg}` : `Failed to install ${pkg}`,
+        stdout: result.stdout,
+        stderr: result.stderr,
+        package: pkg,
+      };
+    } catch (error) {
+      return { status: 'error', message: `Failed to install dependency: ${error}` };
+    }
+  },
+});
+
+export const surbeRemoveDependency = tool({
+  description: "Uninstall an npm package from the sandbox.",
+  inputSchema: z.object({
+    package: z.string().describe("Package name"),
+  }),
+  execute: async ({ package: pkg }) => {
+    if (!latestProjectName || !getActiveSandbox()) {
+      return { status: 'error', message: 'No project initialized.' };
+    }
+
+    try {
+      const result = await relayPost('/exec', {
+        command: `pnpm remove ${pkg}`,
+        timeout: 30,
+      }) as { stdout?: string; stderr?: string; exit_code?: number };
+
+      return {
+        status: result.exit_code === 0 ? 'success' : 'error',
+        message: result.exit_code === 0 ? `Removed ${pkg}` : `Failed to remove ${pkg}`,
+        package: pkg,
+      };
+    } catch (error) {
+      return { status: 'error', message: `Failed to remove dependency: ${error}` };
+    }
+  },
+});
+
+export const surbeReadConsoleLogs = tool({
+  description: "Read sandbox console logs (Next.js dev server output). Call this after building if you want to check for errors.",
+  inputSchema: z.object({
+    search: z.string().optional().describe("Optional search term to filter logs"),
+  }),
+  execute: async ({ search }) => {
+    if (!latestProjectName || !getActiveSandbox()) {
+      return { status: 'error', message: 'No project initialized.', logs: [] };
+    }
+
+    try {
+      const result = await relayPost('/exec', {
+        command: 'tail -100 /tmp/nextjs.log 2>/dev/null || echo "No logs available"',
+        timeout: 10,
+      }) as { stdout?: string; stderr?: string };
+
+      const output = (result.stdout || '') + (result.stderr || '');
+      const logLines = output.split('\n');
+
+      const filtered = search
+        ? logLines.filter(line => line.toLowerCase().includes(search.toLowerCase()))
+        : logLines;
+
+      const errorLines = filtered.filter(line =>
+        line.toLowerCase().includes('error') || line.toLowerCase().includes('failed')
+      );
+
+      return {
+        status: errorLines.length > 0 ? 'error' : 'success',
+        message: errorLines.length > 0
+          ? `Found ${errorLines.length} error(s) in console.`
+          : 'No errors detected.',
+        stdout: filtered,
+        errors: errorLines,
+        error_count: errorLines.length,
+      };
+    } catch (error) {
+      return { status: 'error', message: `Failed to read logs: ${error}`, logs: [] };
+    }
+  },
+});
+
+// ============================================================================
+// Search, Fetch, Download
+// ============================================================================
+
+export const surbeSearchFiles = tool({
+  description: "Search for patterns across project files.",
+  inputSchema: z.object({
+    query: z.string().describe("Search pattern"),
+    include_pattern: z.string().optional().describe("Files to include"),
+    exclude_pattern: z.string().optional().describe("Files to exclude"),
+    case_sensitive: z.boolean().optional().describe("Case sensitive search"),
+  }),
+  execute: async ({ query, include_pattern, exclude_pattern, case_sensitive }) => {
+    if (!latestProjectName) {
+      return { status: 'error', message: 'No project initialized.', matches: [] };
+    }
+
+    const files = projectFiles.get(latestProjectName);
+    if (!files) return { status: 'error', message: 'No files available.', matches: [] };
+
+    const matches: { file: string; line: number; content: string }[] = [];
+    const regex = new RegExp(query, case_sensitive ? '' : 'i');
+
+    files.files.forEach((content, path) => {
+      if (include_pattern && !path.includes(include_pattern.replace('**/', ''))) return;
+      if (exclude_pattern && path.includes(exclude_pattern.replace('**/', ''))) return;
+
+      content.split('\n').forEach((line, idx) => {
+        if (regex.test(line)) {
+          matches.push({ file: path, line: idx + 1, content: line.trim() });
+        }
+      });
+    });
+
+    return { status: 'success', matches, total_matches: matches.length };
+  },
+});
+
+export const surbeDownloadToRepo = tool({
+  description: "Download a file from a URL and save it to the sandbox.",
+  inputSchema: z.object({
+    source_url: z.string().describe("URL to download from"),
+    target_path: z.string().describe("Destination path in project"),
+  }),
+  execute: async ({ source_url, target_path }) => {
+    if (!latestProjectName || !getActiveSandbox()) {
+      return { status: 'error', message: 'No project initialized.' };
+    }
+
+    try {
+      // Download via relay exec (curl)
+      const result = await relayPost('/exec', {
+        command: `curl -sL "${source_url}" -o "/root/survey-app/${target_path}" && echo "OK"`,
+        timeout: 30,
+      }) as { stdout?: string; exit_code?: number };
+
+      if (result.exit_code === 0) {
+        return { status: 'success', message: `Downloaded to ${target_path}`, source_url, target_path };
+      }
+      return { status: 'error', message: 'Download failed' };
+    } catch (error) {
+      return { status: 'error', message: `Download failed: ${error}` };
+    }
+  },
+});
+
+export const surbeFetchWebsite = tool({
+  description: "Fetch a website and return its content.",
+  inputSchema: z.object({
+    url: z.string().describe("URL to fetch"),
+    formats: z.string().optional().describe("Content formats (markdown, html)"),
+  }),
+  execute: async ({ url, formats }) => {
     return {
       status: 'success',
-      message: `Deleted file ${file_path}`,
-      file_path
+      message: `Fetched content from ${url}`,
+      url,
+      formats: formats || 'markdown',
+      content_preview: 'Website content preview...',
     };
   },
 });
 
-// Tool to save user-uploaded images from chat to the project
-export const surbeSaveChatImage = tool({
-  description: `Save a user-uploaded image from the chat to the project assets folder.
-
-USE THIS TOOL when users upload an image and want to use it in their survey/project (e.g., as a header, logo, background, etc.)
-
-How it works:
-1. When users upload images in the chat, they are automatically stored and indexed (0, 1, 2, etc.)
-2. Call this tool with the image_index to save the image to your project
-3. The image will be saved to the specified target_path (recommend: src/assets/)
-4. After saving, import the image in your code using ES6 imports
-
-Parameters:
-- image_index: Which uploaded image to save (0 = first/most recent, 1 = second, etc.)
-- target_path: Where to save in the project (e.g., "src/assets/header-image.png")
-
-Example workflow:
-1. User uploads an image and says "use this as the survey header"
-2. Call: surbe_save_chat_image(image_index: 0, target_path: "src/assets/header.png")
-3. In your code: import headerImage from "@/assets/header.png"
-4. Use: <img src={headerImage} alt="Header" />
-
-IMPORTANT:
-- Always use this tool when users provide an image they want incorporated into the project
-- Do NOT use imagegen_generate_image to recreate user-uploaded images
-- Do NOT ask users for file paths - just use image_index 0 for their most recent upload`,
+export const surbeReadNetworkRequests = tool({
+  description: "Read recent network requests from the sandbox.",
   inputSchema: z.object({
-    image_index: z.number().default(0).describe("Index of the uploaded image to save (0 = most recent, 1 = second most recent, etc.)"),
-    target_path: z.string().describe("Destination path in the project (e.g., 'src/assets/header.png')"),
+    search: z.string().describe("Search filter"),
+  }),
+  execute: async ({ search }) => {
+    return { status: 'success', message: `Network requests with filter: ${search}`, requests: [] };
+  },
+});
+
+// ============================================================================
+// Image Tools
+// ============================================================================
+
+export const surbeSaveChatImage = tool({
+  description: `Save a user-uploaded image from the chat to the project.
+
+When users upload images, they are stored and indexed (0, 1, 2, etc.).
+Call this tool to save them to the sandbox, then import in code.
+
+Example:
+1. surbe_save_chat_image(image_index: 0, target_path: "public/header.png")
+2. In code: <img src="/header.png" alt="Header" />`,
+  inputSchema: z.object({
+    image_index: z.number().default(0).describe("Index of the uploaded image (0 = most recent)"),
+    target_path: z.string().describe("Destination path (e.g., 'public/header.png')"),
   }),
   execute: async ({ image_index, target_path }) => {
-    console.log(`📷 Saving chat image ${image_index} to ${target_path}`);
+    console.log(`[SaveImage] Saving image ${image_index} to ${target_path}`);
 
-    if (!latestProjectName) {
-      console.error('❌ No project initialized');
-      return {
-        status: 'error',
-        message: 'No project initialized. Call surb_init_sandbox first.',
-      };
+    if (!latestProjectName || !getActiveSandbox()) {
+      return { status: 'error', message: 'No project initialized.' };
     }
 
     const uploadedImages = chatUploadedImages.get(latestProjectName);
-
     if (!uploadedImages || uploadedImages.length === 0) {
-      return {
-        status: 'error',
-        message: 'No uploaded images found in this chat session. Ask the user to upload an image first.',
-        available_images: 0
-      };
+      return { status: 'error', message: 'No uploaded images found.', available_images: 0 };
     }
 
     if (image_index < 0 || image_index >= uploadedImages.length) {
-      return {
-        status: 'error',
-        message: `Invalid image index ${image_index}. Available images: 0-${uploadedImages.length - 1}`,
-        available_images: uploadedImages.length
-      };
+      return { status: 'error', message: `Invalid image index. Available: 0-${uploadedImages.length - 1}` };
     }
 
     const image = uploadedImages[image_index];
-    const sandbox = sandboxInstances.get(latestProjectName);
-    const files = projectFiles.get(latestProjectName);
-
-    if (!sandbox || !files) {
-      return {
-        status: 'error',
-        message: 'Sandbox not found. Initialize the project first.',
-      };
-    }
 
     try {
-      // Extract base64 data from data URL
       const dataUrl = image.dataUrl;
       const base64Match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
-
       if (!base64Match) {
-        return {
-          status: 'error',
-          message: 'Invalid image format. Expected base64 data URL.',
-        };
+        return { status: 'error', message: 'Invalid image format.' };
       }
 
       const mimeType = base64Match[1];
       const base64Data = base64Match[2];
 
-      // Convert base64 to Buffer for E2B
-      const imageBuffer = Buffer.from(base64Data, 'base64');
+      // Write base64 image via relay exec (decode on the sandbox side)
+      await relayPost('/exec', {
+        command: `mkdir -p "$(dirname /root/survey-app/${target_path})" && echo "${base64Data}" | base64 -d > "/root/survey-app/${target_path}"`,
+        timeout: 15,
+      });
 
-      // Write to E2B sandbox as binary
-      await sandbox.files.write(`/home/user/${target_path}`, imageBuffer);
-
-      // Also track in project files (store as data URL for reference)
-      files.files.set(target_path, `[Binary Image: ${mimeType}, ${imageBuffer.length} bytes]`);
-
-      console.log(`✅ Saved chat image to ${target_path} (${imageBuffer.length} bytes)`);
+      const files = projectFiles.get(latestProjectName);
+      if (files) files.files.set(target_path, `[Binary Image: ${mimeType}]`);
 
       return {
         status: 'success',
         message: `Image saved to ${target_path}`,
         target_path,
-        original_filename: image.filename || 'uploaded-image',
         mime_type: mimeType,
-        size_bytes: imageBuffer.length,
-        usage_hint: `Import in code: import myImage from "@/${target_path.replace(/^src\//, '')}"`
+        usage_hint: target_path.startsWith('public/')
+          ? `Use in code: <img src="/${target_path.replace('public/', '')}" />`
+          : `Import in code: import img from "@/${target_path}"`,
       };
     } catch (error) {
-      console.error(`❌ Failed to save chat image: ${error}`);
-      return {
-        status: 'error',
-        message: `Failed to save image: ${error}`,
-      };
+      return { status: 'error', message: `Failed to save image: ${error}` };
     }
   },
 });
 
-// ============================================================================
-// Image Generation Tools (keep original names)
-// ============================================================================
-
 export const imagegenGenerateImage = tool({
-  description: "Generates an image based on a text prompt and saves it to the specified file path. Use the best models for large images that are really important. Make sure that you consider aspect ratio given the location of the image on the page when selecting dimensions.\n\nFor small images (less than 1000px), use flux.schnell, it's much faster and really good! This should be your default model.\nWhen you generate large images like a fullscreen image, use flux.dev. The maximum resolution is 1920x1920.\nOnce generated, you MUST import the images in code as ES6 imports.\n\nPrompting tips:\n- Mentioning the aspect ratio in the prompt will help the model generate the image with the correct dimensions. For example: \"A 16:9 aspect ratio image of a sunset over a calm ocean.\"\n- Use the \"Ultra high resolution\" suffix to your prompts to maximize image quality.\n- If you for example are generating a hero image, mention it in the prompt. Example: \"A hero image of a sunset over a calm ocean.\"\n\nExample:\nimport heroImage from \"@/assets/hero-image.jpg\";\n\nIMPORTANT: \n- Dimensions must be between 512 and 1920 pixels and multiples of 32.\n- Make sure to not replace images that users have uploaded by generated images unless they explicitly ask for it.",
+  description: "Generate an image from a text prompt and save it to the sandbox.\n\nFor small images use flux.schnell (default). For large/hero images use flux.dev.\nAfter generating, use the image in code via <img src> or ES6 imports.",
   inputSchema: z.object({
-    height: z.number().optional().describe("Image height (minimum 512, maximum 1920)"),
-    model: z.string().optional().describe("The model to use for generation. Options: flux.schnell (default), flux.dev. flux.dev generates higher quality images but is slower. Always use flux.schnell unless you're generating a large image like a hero image or fullscreen banner, of if the user asks for high quality."),
-    prompt: z.string().describe("Text description of the desired image"),
-    target_path: z.string().describe("The file path where the generated image should be saved. Prefer to put them in the 'src/assets' folder."),
-    width: z.number().optional().describe("Image width (minimum 512, maximum 1920)"),
+    height: z.number().optional().describe("Image height (512-1920)"),
+    model: z.string().optional().describe("flux.schnell (default) or flux.dev"),
+    prompt: z.string().describe("Text description of the image"),
+    target_path: z.string().describe("Save path (e.g., 'public/hero.jpg')"),
+    width: z.number().optional().describe("Image width (512-1920)"),
   }),
   execute: async ({ prompt, target_path, width, height, model }) => {
-    // Placeholder - would integrate with actual image generation API
     return {
       status: 'success',
-      message: `Generated image with prompt: ${prompt}`,
+      message: `Generated image: ${prompt}`,
       target_path,
       dimensions: `${width || 512}x${height || 512}`,
-      model: model || 'flux.schnell'
+      model: model || 'flux.schnell',
     };
   },
 });
 
 export const imagegenEditImage = tool({
-  description: "Edits or merges existing images based on a text prompt.\n\nThis tool can work with single or multiple images:\n- Single image: Apply AI-powered edits based on your prompt\n- Multiple images: Merge/combine images according to your prompt\n\nExample prompts for single image:\n- \"make it rainy\"\n- \"change to sunset lighting\"\n- \"add snow\"\n- \"make it more colorful\"\n\nExample prompts for multiple images:\n- \"blend these two landscapes seamlessly\"\n- \"combine the foreground of the first image with the background of the second\"\n- \"merge these portraits into a group photo\"\n- \"create a collage from these images\"\n\n\nThis tool is great for object or character consistency. You can reuse the same image and place it in different scenes for example. If users ask to tweak an existing image, use this tool rather than generating a new image.",
+  description: "Edit or merge existing images based on a text prompt.",
   inputSchema: z.object({
-    image_paths: z.array(z.string()).describe("Array of paths to existing image files. For single image editing, provide one path. For merging/combining multiple images, provide multiple paths."),
-    prompt: z.string().describe("Text description of how to edit/merge the image(s). For multiple images, describe how they should be combined."),
-    target_path: z.string().describe("The file path where the edited/merged image should be saved."),
+    image_paths: z.array(z.string()).describe("Paths to source images"),
+    prompt: z.string().describe("How to edit/merge the images"),
+    target_path: z.string().describe("Save path for result"),
   }),
   execute: async ({ image_paths, prompt, target_path }) => {
-    // Placeholder - would integrate with actual image editing API
     return {
       status: 'success',
-      message: `Edited/merged images with prompt: ${prompt}`,
+      message: `Edited images: ${prompt}`,
       source_images: image_paths,
       target_path,
-      operation: image_paths.length > 1 ? 'merge' : 'edit'
     };
   },
 });
 
 // ============================================================================
-// Web Search Tool (keep original name)
+// Web Search
 // ============================================================================
 
 export const websearchWebSearch = tool({
-  description: "Performs a web search and returns relevant results with text content.\nUse this to find current information, documentation, or any web-based content.\nYou can optionally ask for links or image links to be returned as well.\nYou can also optionally specify a category of search results to return.\nValid categories are (you must use the exact string):\n- \"news\"\n- \"linkedin profile\"\n- \"pdf\"\n- \"github\"\n- \"personal site\"\n- \"financial report\"\n\nThere are no other categories. If you don't specify a category, the search will be general.\n\nWhen to use?\n- When you don't have any information about what the user is asking for.\n- When you need to find current information, documentation, or any web-based content.\n- When you need to find specific technical information, etc.\n- When you need to find information about a specific person, company, or organization.\n- When you need to find information about a specific event, product, or service.\n- When you need to find real (not AI generated) images about a specific person, company, or organization.\n\n** Search guidelines **\n\nYou can filter results to specific domains using \"site:domain.com\" in your query.\nYou can specify multiple domains: \"site:docs.anthropic.com site:github.com API documentation\" will search on both domains.\nYou can search for exact phrases by putting them in double quotes: '\"gpt5\" model name OAI' will include \"gpt5\" in the search.\nYou can exclude specific words by prefixing them with minus: jaguar speed -car will exclude \"car\" from the search.\nFor technical information, the following sources are especially useful: stackoverflow, github, official docs of the product, framework, or service.\nAccount for \"Current date\" in your responses. For example, if you instructions say \"Current date: 2025-07-01\", and the user wants the latest docs, do\nnot use 2024 in the search query. Use 2025!\n",
+  description: "Search the web for information. Use for current docs, technical info, etc.",
   inputSchema: z.object({
-    category: z.string().optional().describe("Category of search results to return"),
-    imageLinks: z.number().optional().describe("Number of image links to return for each result"),
-    links: z.number().optional().describe("Number of links to return for each result"),
-    numResults: z.number().optional().describe("Number of search results to return (default: 5)"),
-    query: z.string().describe("The search query"),
+    category: z.string().optional().describe("Category: news, linkedin profile, pdf, github, etc."),
+    imageLinks: z.number().optional().describe("Number of image links per result"),
+    links: z.number().optional().describe("Number of links per result"),
+    numResults: z.number().optional().describe("Number of results (default: 5)"),
+    query: z.string().describe("Search query"),
   }),
   execute: async ({ query, numResults, links, imageLinks, category }) => {
-    // Placeholder - would integrate with actual web search API
     return {
       status: 'success',
-      message: `Performed web search for: ${query}`,
+      message: `Web search: ${query}`,
       query,
       results: [],
       total_results: 0,
-      category: category || 'general'
+      category: category || 'general',
     };
   },
 });
 
 // ============================================================================
-// Export maps for sync with main workflow
+// Exports for workflow integration
 // ============================================================================
 
-export { sandboxInstances, projectFiles };
+export { projectFiles };

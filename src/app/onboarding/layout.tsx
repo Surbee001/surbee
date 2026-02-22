@@ -15,7 +15,7 @@ export default function OnboardingLayout({
     <div
       className="min-h-screen"
       style={{
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily: "'Opening Hours Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         backgroundColor: '#F7F7F4',
         color: '#11100C'
       }}

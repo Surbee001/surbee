@@ -528,7 +528,7 @@ html {
 body {
   border: 0px solid rgb(229, 231, 235);
   box-sizing: border-box;
-  font-family: "Inter", sans-serif;
+  font-family: "Opening Hours Sans", "Inter", sans-serif;
   font-feature-settings: "liga", "calt";
   -webkit-font-smoothing: antialiased;
   counter-reset: katexEqnNo 0 mmlEqnNo 0;

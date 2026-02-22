@@ -7,9 +7,15 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 /**
  * Add security headers to response
  */
-function addSecurityHeaders(response: NextResponse): NextResponse {
-  // Prevent clickjacking attacks
-  response.headers.set('X-Frame-Options', 'DENY');
+function addSecurityHeaders(response: NextResponse, pathname: string): NextResponse {
+  // Check if this is a WebContainer route that needs COOP/COEP headers
+  // Note: /project/ uses Modal sandboxes (not WebContainers), so no COEP needed
+  const needsWebContainerHeaders = pathname.startsWith('/s/');
+
+  // Prevent clickjacking attacks (skip for WebContainer routes)
+  if (!needsWebContainerHeaders) {
+    response.headers.set('X-Frame-Options', 'DENY');
+  }
 
   // Prevent MIME type sniffing
   response.headers.set('X-Content-Type-Options', 'nosniff');
@@ -23,11 +29,22 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   // Restrict browser features
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()');
 
-  // Content Security Policy - adjust as needed for your app
-  response.headers.set(
-    'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.surbee.dev https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://api.deepseek.com https://vercel.live; frame-src 'self' https://form.surbee.dev; frame-ancestors 'none';"
-  );
+  // Add COOP/COEP headers for WebContainer routes (required for SharedArrayBuffer)
+  if (needsWebContainerHeaders) {
+    response.headers.set('Cross-Origin-Embedder-Policy', 'credentialless');
+    response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+    // WebContainer-compatible CSP
+    response.headers.set(
+      'Content-Security-Policy',
+      "default-src 'self' blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' blob: https://*.surbee.dev https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://api.deepseek.com https://registry.npmjs.org https://unpkg.com; frame-src 'self' blob: https://*.modal.host; worker-src 'self' blob:;"
+    );
+  } else {
+    // Content Security Policy - adjust as needed for your app
+    response.headers.set(
+      'Content-Security-Policy',
+      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.surbee.dev https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://api.deepseek.com https://vercel.live; frame-src 'self' https://form.surbee.dev https://*.modal.host; frame-ancestors 'none';"
+    );
+  }
 
   // Strict Transport Security (HTTPS only)
   if (process.env.NODE_ENV === 'production') {
@@ -57,9 +74,14 @@ export async function middleware(request: NextRequest) {
     const surveyId = pathname.replace(/^\//, '');
     if (surveyId) {
       const response = NextResponse.rewrite(new URL(`/s/${surveyId}`, request.url));
-      // Allow iframe embedding for form subdomain
-      response.headers.delete('X-Frame-Options');
-      response.headers.set('Content-Security-Policy', "frame-ancestors *;");
+      // Add COOP/COEP headers for WebContainers (required for SharedArrayBuffer)
+      response.headers.set('Cross-Origin-Embedder-Policy', 'credentialless');
+      response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+      // WebContainer-compatible CSP
+      response.headers.set(
+        'Content-Security-Policy',
+        "default-src 'self' blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' blob: https://*.surbee.dev https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://api.deepseek.com https://registry.npmjs.org https://unpkg.com; frame-src 'self' blob: https://*.modal.host; worker-src 'self' blob:;"
+      );
       return response;
     }
   }
@@ -113,7 +135,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Add security headers to all responses
-  addSecurityHeaders(supabaseResponse);
+  addSecurityHeaders(supabaseResponse, pathname);
 
   return supabaseResponse
 }

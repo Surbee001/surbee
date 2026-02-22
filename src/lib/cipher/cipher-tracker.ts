@@ -598,7 +598,143 @@ export function generateCipherTrackerScript(config: CipherTrackerConfig): string
         }
       }
     }
+
+    // Handle messages from parent window
+    if (e.source === window.parent && e.data) {
+      const type = e.data.type;
+
+      // Dynamic settings update from parent
+      if (type === 'SETTINGS_UPDATE') {
+        const newSettings = e.data.settings;
+        if (newSettings) {
+          // Update tier if changed
+          if (typeof newSettings.tier === 'number' && newSettings.tier !== CIPHER_CONFIG.tier) {
+            const oldTier = CIPHER_CONFIG.tier;
+            CIPHER_CONFIG.tier = newSettings.tier;
+
+            // Reconfigure event listeners based on new tier
+            reconfigureTrackers(oldTier, newSettings.tier);
+          }
+
+          // Update enabled state
+          if (typeof newSettings.enabled === 'boolean') {
+            CIPHER_CONFIG.enabled = newSettings.enabled;
+          }
+
+          // Update other settings
+          if (typeof newSettings.resumeEnabled === 'boolean') {
+            CIPHER_CONFIG.resumeEnabled = newSettings.resumeEnabled;
+          }
+          if (typeof newSettings.resumeWindowHours === 'number') {
+            CIPHER_CONFIG.resumeWindowHours = newSettings.resumeWindowHours;
+          }
+
+          // Acknowledge settings update
+          try {
+            window.parent.postMessage({
+              type: 'SETTINGS_UPDATE_ACK',
+              tier: CIPHER_CONFIG.tier,
+              enabled: CIPHER_CONFIG.enabled,
+              timestamp: Date.now(),
+            }, '*');
+          } catch (err) {
+            // Silent fail
+          }
+        }
+      }
+
+      // On-demand metrics request
+      if (type === 'REQUEST_METRICS') {
+        postMetricsToParent();
+      }
+
+      // Terminate session request
+      if (type === 'TERMINATE_SESSION') {
+        clearSession();
+        try {
+          window.parent.postMessage({
+            type: 'SESSION_TERMINATED',
+            reason: e.data.reason,
+            sessionId: metrics.sessionId,
+            timestamp: Date.now(),
+          }, '*');
+        } catch (err) {
+          // Silent fail
+        }
+      }
+    }
   });
+
+  // ============================================
+  // DYNAMIC RECONFIGURATION
+  // ============================================
+
+  function reconfigureTrackers(oldTier, newTier) {
+    // Add tier 2 trackers if upgrading
+    if (oldTier < 2 && newTier >= 2) {
+      window.addEventListener('focus', onFocus);
+      window.addEventListener('blur', onBlur);
+      document.addEventListener('visibilitychange', onVisibilityChange);
+      document.addEventListener('paste', onPaste);
+    }
+
+    // Add tier 3 trackers if upgrading
+    if (oldTier < 3 && newTier >= 3) {
+      document.addEventListener('scroll', onScroll, { passive: true });
+      document.addEventListener('mouseover', onMouseOver, { passive: true });
+      document.addEventListener('mouseout', onMouseOut, { passive: true });
+    }
+
+    // Add tier 4 trackers if upgrading
+    if (oldTier < 4 && newTier >= 4) {
+      document.addEventListener('copy', onCopy);
+    }
+
+    // Remove tier 4 trackers if downgrading
+    if (oldTier >= 4 && newTier < 4) {
+      document.removeEventListener('copy', onCopy);
+    }
+
+    // Remove tier 3 trackers if downgrading
+    if (oldTier >= 3 && newTier < 3) {
+      document.removeEventListener('scroll', onScroll);
+      document.removeEventListener('mouseover', onMouseOver);
+      document.removeEventListener('mouseout', onMouseOut);
+    }
+
+    // Remove tier 2 trackers if downgrading
+    if (oldTier >= 2 && newTier < 2) {
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('blur', onBlur);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      document.removeEventListener('paste', onPaste);
+    }
+  }
+
+  // ============================================
+  // EVENT-DRIVEN METRICS POSTING
+  // ============================================
+
+  // Debounce helper for event-driven posting
+  let lastEventPost = 0;
+  const EVENT_POST_DEBOUNCE = 2000; // 2 seconds between event-driven posts
+
+  function postMetricsOnEvent(eventType) {
+    const now = Date.now();
+    if (now - lastEventPost > EVENT_POST_DEBOUNCE) {
+      lastEventPost = now;
+      try {
+        window.parent.postMessage({
+          type: 'METRICS_UPDATE',
+          eventType: eventType,
+          metrics: getMetricsSnapshot(),
+          timestamp: now,
+        }, '*');
+      } catch (err) {
+        // Silent fail
+      }
+    }
+  }
 
   // ============================================
   // QUESTION TRACKING HELPERS
@@ -608,13 +744,50 @@ export function generateCipherTrackerScript(config: CipherTrackerConfig): string
   window.__cipherQuestionStart = function(questionId) {
     metrics.questionStartTimes[questionId] = Date.now();
     window.__cipherCurrentQuestionIndex = Object.keys(metrics.questionStartTimes).length - 1;
+
+    // Post metrics on question start (page change)
+    postMetricsOnEvent('question_start');
   };
 
   window.__cipherQuestionEnd = function(questionId) {
     const startTime = metrics.questionStartTimes[questionId];
     if (startTime) {
-      metrics.responseTime.push(Date.now() - startTime);
+      const timing = Date.now() - startTime;
+      metrics.responseTime.push(timing);
+
+      // Post metrics on question answer
+      postMetricsOnEvent('question_answer');
+
+      // Also post specific question answered event
+      try {
+        window.parent.postMessage({
+          type: 'QUESTION_ANSWERED',
+          questionId: questionId,
+          questionIndex: window.__cipherCurrentQuestionIndex || 0,
+          timing: timing,
+          sessionId: metrics.sessionId,
+          timestamp: Date.now(),
+        }, '*');
+      } catch (err) {
+        // Silent fail
+      }
     }
+  };
+
+  // Global function to notify page/section change
+  window.__cipherPageChange = function(pageIndex, previousPage) {
+    try {
+      window.parent.postMessage({
+        type: 'PAGE_CHANGE',
+        pageIndex: pageIndex,
+        previousPage: previousPage || 0,
+        sessionId: metrics.sessionId,
+        timestamp: Date.now(),
+      }, '*');
+    } catch (err) {
+      // Silent fail
+    }
+    postMetricsOnEvent('page_change');
   };
 
   // ============================================

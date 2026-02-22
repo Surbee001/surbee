@@ -1,0 +1,266 @@
+{
+  "version": "v1.0.0",
+  "created_at": "2026-01-19T20:35:20.995778+00:00",
+  "feature_names": [
+    "mouseDistanceTotal",
+    "mouseVelocityMean",
+    "mouseVelocityStd",
+    "mouseVelocityMax",
+    "mouseAccelerationMean",
+    "mouseCurvatureEntropy",
+    "mouseStraightLineRatio",
+    "mousePauseCount",
+    "keystrokeCount",
+    "keystrokeTimingMean",
+    "keystrokeTimingStd",
+    "keystrokeDwellMean",
+    "keystrokeFlightMean",
+    "backspaceRatio",
+    "pasteEventCount",
+    "pasteCharRatio",
+    "scrollCount",
+    "scrollVelocityMean",
+    "scrollDirectionChanges",
+    "focusLossCount",
+    "focusLossDurationTotal",
+    "hoverCount",
+    "hoverDurationMean",
+    "clickCount",
+    "hoverBeforeClickRatio",
+    "completionTimeSeconds",
+    "timePerQuestionMean",
+    "timePerQuestionStd",
+    "timePerQuestionMin",
+    "timePerQuestionMax",
+    "readingVsAnsweringRatio",
+    "firstInteractionDelayMs",
+    "idleTimeTotal",
+    "activeTimeRatio",
+    "responseAcceleration",
+    "timeOfDayHour",
+    "dayOfWeek",
+    "hasWebdriver",
+    "hasAutomationFlags",
+    "pluginCount",
+    "screenResolutionCommon",
+    "timezoneOffsetMinutes",
+    "timezoneMatchesIp",
+    "fingerprintSeenCount",
+    "deviceMemoryGb",
+    "hardwareConcurrency",
+    "touchSupport",
+    "isVpn",
+    "isDatacenter",
+    "isTor",
+    "isProxy",
+    "ipReputationScore",
+    "ipCountryCode",
+    "geoTimezoneMatch",
+    "ipSeenCount",
+    "questionCount",
+    "openEndedCount",
+    "openEndedLengthMean",
+    "openEndedLengthStd",
+    "openEndedWordCountMean",
+    "openEndedUniqueWordRatio",
+    "straightLineRatio",
+    "answerEntropy",
+    "firstOptionRatio",
+    "lastOptionRatio",
+    "middleOptionRatio",
+    "responseUniquenessScore",
+    "duplicateAnswerRatio",
+    "naRatio",
+    "skipRatio",
+    "attentionCheckPassed",
+    "attentionCheckCount",
+    "consistencyCheckScore",
+    "trapFieldFilled",
+    "honeypotScore"
+  ],
+  "feature_count": 75,
+  "training_samples": 50000,
+  "fraud_samples": 25000,
+  "legitimate_samples": 25000,
+  "metrics": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "auc_roc": 1.0
+  },
+  "confusion_matrix": {
+    "tn": 5000,
+    "fp": 0,
+    "fn": 0,
+    "tp": 5000
+  },
+  "feature_importance": [
+    {
+      "name": "straightLineRatio",
+      "importance": 0.5617873072624207
+    },
+    {
+      "name": "honeypotScore",
+      "importance": 0.41880106925964355
+    },
+    {
+      "name": "ipSeenCount",
+      "importance": 0.00610029511153698
+    },
+    {
+      "name": "fingerprintSeenCount",
+      "importance": 0.0059767779894173145
+    },
+    {
+      "name": "timePerQuestionStd",
+      "importance": 0.002970554865896702
+    },
+    {
+      "name": "responseUniquenessScore",
+      "importance": 0.0011887941509485245
+    },
+    {
+      "name": "answerEntropy",
+      "importance": 0.001052611623890698
+    },
+    {
+      "name": "duplicateAnswerRatio",
+      "importance": 0.0004343446053098887
+    },
+    {
+      "name": "openEndedUniqueWordRatio",
+      "importance": 0.0004227846802677959
+    },
+    {
+      "name": "consistencyCheckScore",
+      "importance": 0.0003615237947087735
+    },
+    {
+      "name": "pasteCharRatio",
+      "importance": 0.00026451179292052984
+    },
+    {
+      "name": "backspaceRatio",
+      "importance": 0.0002631255774758756
+    },
+    {
+      "name": "keystrokeCount",
+      "importance": 0.00026259064907208085
+    },
+    {
+      "name": "ipReputationScore",
+      "importance": 0.00011377903138054535
+    },
+    {
+      "name": "mouseDistanceTotal",
+      "importance": 0.0
+    },
+    {
+      "name": "mouseVelocityMean",
+      "importance": 0.0
+    },
+    {
+      "name": "mouseVelocityStd",
+      "importance": 0.0
+    },
+    {
+      "name": "mouseVelocityMax",
+      "importance": 0.0
+    },
+    {
+      "name": "mouseAccelerationMean",
+      "importance": 0.0
+    },
+    {
+      "name": "mouseCurvatureEntropy",
+      "importance": 0.0
+    },
+    {
+      "name": "mouseStraightLineRatio",
+      "importance": 0.0
+    },
+    {
+      "name": "mousePauseCount",
+      "importance": 0.0
+    },
+    {
+      "name": "keystrokeTimingMean",
+      "importance": 0.0
+    },
+    {
+      "name": "keystrokeTimingStd",
+      "importance": 0.0
+    },
+    {
+      "name": "keystrokeDwellMean",
+      "importance": 0.0
+    },
+    {
+      "name": "keystrokeFlightMean",
+      "importance": 0.0
+    },
+    {
+      "name": "pasteEventCount",
+      "importance": 0.0
+    },
+    {
+      "name": "scrollCount",
+      "importance": 0.0
+    },
+    {
+      "name": "scrollVelocityMean",
+      "importance": 0.0
+    },
+    {
+      "name": "scrollDirectionChanges",
+      "importance": 0.0
+    }
+  ],
+  "hyperparameters": {
+    "objective": "binary:logistic",
+    "eval_metric": [
+      "auc",
+      "logloss"
+    ],
+    "max_depth": 6,
+    "learning_rate": 0.1,
+    "n_estimators": 200,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "min_child_weight": 3,
+    "gamma": 0.1,
+    "scale_pos_weight": 1.0,
+    "random_state": 42,
+    "n_jobs": -1
+  },
+  "user_metadata": {
+    "generated_at": "2026-01-19T20:34:40.096Z",
+    "sample_count": 50000,
+    "stats": {
+      "total": 50000,
+      "fraudCount": 25000,
+      "legitCount": 25000,
+      "byArchetype": {
+        "vpn_legitimate": 2000,
+        "script_bot": 4000,
+        "slow_careful": 4000,
+        "mobile_user": 5000,
+        "copy_paste_farm": 3000,
+        "thoughtful_desktop": 6000,
+        "distracted_user": 3000,
+        "datacenter_bot": 3000,
+        "fast_genuine": 4000,
+        "straight_liner": 4000,
+        "pure_bot": 5000,
+        "speed_runner": 4000,
+        "sophisticated_fraud": 2000,
+        "edge_case": 1000
+      },
+      "bySurveyLength": {
+        "short": 15012,
+        "medium": 25040,
+        "long": 9948
+      }
+    }
+  }
+}

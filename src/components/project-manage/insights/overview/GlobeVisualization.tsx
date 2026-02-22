@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from 'react';
-import { Globe, MapPin } from 'lucide-react';
+import React from 'react';
 import type { GeoLocation } from '../types';
 import styles from '../insights.module.css';
 
@@ -10,160 +9,171 @@ interface GlobeVisualizationProps {
   total: number;
 }
 
-// Simple SVG world map with dots
-function WorldMapSVG({ geoData, total }: { geoData: GeoLocation[]; total: number }) {
-  const [hoveredCountry, setHoveredCountry] = useState<GeoLocation | null>(null);
+const countryColors = ['#3ECC8C', '#2970FF', '#F79009', '#F04438', '#7A5AF8'];
+const defaultDotColor = '#212521';
 
-  // Convert lat/lng to SVG coordinates (simple equirectangular projection)
-  const toSVGCoords = (lat: number, lng: number) => {
-    const x = ((lng + 180) / 360) * 360;
-    const y = ((90 - lat) / 180) * 180;
-    return { x, y };
+// Hexagonal dot-grid world map coordinates
+// Each dot is positioned on a hex grid; 1 = land, 0 = water
+// Simplified continent shapes at ~15x30 resolution
+const WORLD_MAP_ROWS = [
+  //         N.America              Europe    Asia
+  '                   111         1111111111       ',
+  '               111111111      11111111111111    ',
+  '              1111111111111   111111111111111   ',
+  '             111111111111111 1111111111111111   ',
+  '            1111111111111111111111111111111111  ',
+  '           11111111111111111111111111111111111  ',
+  '           1111111111111  1111111111111111111   ',
+  '            111111111111   11111111111111111    ',
+  '             1111111111     1111111111111111    ',
+  '              111111111      111111111111111    ',
+  '                1111111    11111111111111111    ',
+  '                 11111    111111111111111       ',
+  '                  1111     1111111111           ',
+  '                   111  1   111111111           ',
+  // S.America           Africa    SE Asia
+  '                   111111    111111  111        ',
+  '                   1111111  1111111  1111       ',
+  '                    1111111111111111  111       ',
+  '                     111111111111111   11       ',
+  '                      1111111111111     1       ',
+  '                       11111111111              ',
+  '                        111111111               ',
+  '                         1111111                ',
+  '                          11111                 ',
+  '                           111                  ',
+  //                                    Australia
+  '                            1       1111        ',
+  '                                   111111       ',
+  '                                   111111       ',
+  '                                    1111        ',
+  '                                     11         ',
+];
+
+// Map country codes to approximate grid regions for highlighting
+function getCountryRegion(code: string): { rowRange: [number, number]; colRange: [number, number] } {
+  const regions: Record<string, { rowRange: [number, number]; colRange: [number, number] }> = {
+    US: { rowRange: [2, 8], colRange: [5, 18] },
+    CA: { rowRange: [0, 3], colRange: [5, 18] },
+    GB: { rowRange: [2, 5], colRange: [23, 27] },
+    DE: { rowRange: [3, 6], colRange: [27, 30] },
+    FR: { rowRange: [4, 7], colRange: [25, 28] },
+    CN: { rowRange: [4, 9], colRange: [35, 42] },
+    JP: { rowRange: [4, 8], colRange: [42, 45] },
+    IN: { rowRange: [8, 13], colRange: [34, 39] },
+    BR: { rowRange: [14, 22], colRange: [17, 24] },
+    AU: { rowRange: [24, 28], colRange: [37, 43] },
+    NL: { rowRange: [3, 5], colRange: [26, 28] },
+    MX: { rowRange: [8, 11], colRange: [6, 14] },
   };
+  return regions[code] || { rowRange: [-1, -1], colRange: [-1, -1] };
+}
 
-  const maxCount = Math.max(...geoData.map(g => g.count), 1);
+function HexDotGlobe({ geoData }: { geoData: GeoLocation[] }) {
+  const dotSize = 3.2;
+  const gapX = 8;
+  const gapY = 7;
+  const offsetX = 3.5; // offset for odd rows
+
+  // Build a map of country highlights
+  const sortedCountries = [...geoData].sort((a, b) => b.count - a.count).slice(0, 5);
+  const countryColorMap = new Map<string, string>();
+  sortedCountries.forEach((c, idx) => {
+    countryColorMap.set(c.countryCode, countryColors[idx] || countryColors[countryColors.length - 1]);
+  });
+
+  const dots: { cx: number; cy: number; fill: string }[] = [];
+
+  WORLD_MAP_ROWS.forEach((row, rowIdx) => {
+    const isOddRow = rowIdx % 2 === 1;
+    for (let col = 0; col < row.length; col++) {
+      if (row[col] === '1') {
+        const cx = col * gapX + (isOddRow ? offsetX : 0) + dotSize;
+        const cy = rowIdx * gapY + dotSize;
+
+        // Check if this dot falls in a highlighted country region
+        let fill = defaultDotColor;
+        for (const [code, color] of countryColorMap.entries()) {
+          const region = getCountryRegion(code);
+          if (
+            rowIdx >= region.rowRange[0] &&
+            rowIdx <= region.rowRange[1] &&
+            col >= region.colRange[0] &&
+            col <= region.colRange[1]
+          ) {
+            fill = color;
+            break;
+          }
+        }
+
+        dots.push({ cx, cy, fill });
+      }
+    }
+  });
+
+  const maxX = Math.max(...dots.map((d) => d.cx)) + dotSize * 2;
+  const maxY = WORLD_MAP_ROWS.length * gapY + dotSize * 2;
 
   return (
-    <div className={styles.globeMapContainer}>
-      <svg viewBox="0 0 360 180" className={styles.globeMap}>
-        {/* World outline - simplified continents */}
-        <defs>
-          <linearGradient id="dotGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="var(--insights-info)" stopOpacity="1" />
-            <stop offset="100%" stopColor="var(--insights-purple)" stopOpacity="0.8" />
-          </linearGradient>
-        </defs>
-
-        {/* Grid lines */}
-        {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(lng => (
-          <line
-            key={`lng-${lng}`}
-            x1={lng}
-            y1={0}
-            x2={lng}
-            y2={180}
-            stroke="var(--insights-border)"
-            strokeWidth="0.3"
-            strokeDasharray="2,2"
+    <div className={styles.demographicsGlobe}>
+      <svg
+        viewBox={`0 0 ${maxX} ${maxY}`}
+        className={styles.demographicsGlobeSvg}
+        preserveAspectRatio="xMidYMid meet"
+      >
+        {dots.map((dot, idx) => (
+          <circle
+            key={idx}
+            cx={dot.cx}
+            cy={dot.cy}
+            r={dotSize / 2}
+            fill={dot.fill}
+            opacity={dot.fill === defaultDotColor ? 0.4 : 0.85}
           />
         ))}
-        {[30, 60, 90, 120, 150].map(lat => (
-          <line
-            key={`lat-${lat}`}
-            x1={0}
-            y1={lat}
-            x2={360}
-            y2={lat}
-            stroke="var(--insights-border)"
-            strokeWidth="0.3"
-            strokeDasharray="2,2"
-          />
-        ))}
-
-        {/* Response dots */}
-        {geoData.map((location, idx) => {
-          const { x, y } = toSVGCoords(location.lat, location.lng);
-          const radius = 3 + (location.count / maxCount) * 8;
-          const pulseRadius = radius + 4;
-
-          return (
-            <g
-              key={location.countryCode}
-              onMouseEnter={() => setHoveredCountry(location)}
-              onMouseLeave={() => setHoveredCountry(null)}
-              style={{ cursor: 'pointer' }}
-            >
-              {/* Pulse animation */}
-              <circle
-                cx={x}
-                cy={y}
-                r={pulseRadius}
-                fill="url(#dotGradient)"
-                opacity="0.2"
-                className={styles.globePulse}
-              />
-              {/* Main dot */}
-              <circle
-                cx={x}
-                cy={y}
-                r={radius}
-                fill="url(#dotGradient)"
-                stroke="var(--insights-bg-card)"
-                strokeWidth="1"
-              />
-              {/* Count label for large dots */}
-              {location.count >= 5 && (
-                <text
-                  x={x}
-                  y={y + 1}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize="5"
-                  fill="white"
-                  fontWeight="600"
-                >
-                  {location.count}
-                </text>
-              )}
-            </g>
-          );
-        })}
       </svg>
-
-      {/* Hover tooltip */}
-      {hoveredCountry && (
-        <div className={styles.globeTooltip}>
-          <span className={styles.globeTooltipCountry}>{hoveredCountry.country}</span>
-          <span className={styles.globeTooltipCount}>
-            {hoveredCountry.count} response{hoveredCountry.count !== 1 ? 's' : ''}
-          </span>
-        </div>
-      )}
     </div>
   );
 }
 
 export function GlobeVisualization({ geoData, total }: GlobeVisualizationProps) {
-  const countriesWithData = geoData.filter(g => g.count > 0);
-  const topCountries = [...countriesWithData].sort((a, b) => b.count - a.count).slice(0, 5);
+  const sortedCountries = [...geoData].sort((a, b) => b.count - a.count);
+  const topCountries = sortedCountries.slice(0, 5);
+  const otherCount = sortedCountries.slice(5).reduce((sum, c) => sum + c.count, 0);
 
   return (
-    <div className={styles.globeCard}>
-      <div className={styles.cardTitle}>
-        <Globe size={16} style={{ color: 'var(--insights-info)' }} />
-        Geographic Distribution
-      </div>
-
-      {/* Map visualization */}
-      <WorldMapSVG geoData={geoData} total={total} />
-
-      {/* Top countries list */}
-      <div className={styles.globeCountryList}>
-        {topCountries.map((country, idx) => (
-          <div key={country.countryCode} className={styles.globeCountryItem}>
-            <span className={styles.globeCountryRank}>{idx + 1}</span>
-            <span className={styles.globeCountryName}>{country.country}</span>
-            <div className={styles.globeCountryBar}>
-              <div
-                className={styles.globeCountryBarFill}
-                style={{ width: `${(country.count / total) * 100}%` }}
+    <div className={styles.demographicsCard}>
+      <div className={styles.analyticsCardTitle}>Demographics</div>
+      <HexDotGlobe geoData={geoData} />
+      <div className={styles.demographicsCountryList}>
+        {topCountries.map((country, idx) => {
+          const pct = total > 0 ? ((country.count / total) * 100).toFixed(1) : '0.0';
+          return (
+            <div key={country.countryCode} className={styles.demographicsCountryItem}>
+              <span
+                className={styles.demographicsCountryDot}
+                style={{ backgroundColor: countryColors[idx] || countryColors[countryColors.length - 1] }}
               />
+              <span className={styles.demographicsCountryName}>{country.country}</span>
+              <span className={styles.demographicsCountryCount}>{country.count.toLocaleString()}</span>
+              <span className={styles.demographicsCountryPercent}>{pct}%</span>
             </div>
-            <span className={styles.globeCountryCount}>
-              {country.count}
-              <span className={styles.globeCountryPercent}>
-                ({Math.round((country.count / total) * 100)}%)
-              </span>
+          );
+        })}
+        {otherCount > 0 && (
+          <div className={styles.demographicsCountryItem}>
+            <span
+              className={styles.demographicsCountryDot}
+              style={{ backgroundColor: '#667085' }}
+            />
+            <span className={styles.demographicsCountryName}>Other</span>
+            <span className={styles.demographicsCountryCount}>{otherCount.toLocaleString()}</span>
+            <span className={styles.demographicsCountryPercent}>
+              {total > 0 ? ((otherCount / total) * 100).toFixed(1) : '0.0'}%
             </span>
           </div>
-        ))}
+        )}
       </div>
-
-      {countriesWithData.length > 5 && (
-        <div className={styles.globeMoreCountries}>
-          +{countriesWithData.length - 5} more countries
-        </div>
-      )}
     </div>
   );
 }

@@ -19,8 +19,8 @@ export default function AppLayout({
   const pathname = usePathname();
   const { resolvedTheme } = useTheme();
 
-  // Only show gradient on /home page (exact match)
-  const showGradient = pathname === '/home';
+  // Gradient disabled - keeping code for potential future use
+  const showGradient = false; // was: pathname === '/home'
 
   // Theme-based gradients
   const darkGradient = `linear-gradient(to bottom in oklab,

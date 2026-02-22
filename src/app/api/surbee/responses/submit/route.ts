@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase-server'
+import { supabase, supabaseAdmin } from '@/lib/supabase-server'
 import { computeSuspicionScore } from '@/features/survey/behavior/scoring'
+import { runMLPipelineAsync } from '@/lib/cipher/ml-pipeline'
 
 // In-memory rate limiting store for anonymous users
 const anonSubmissionLog = new Map<string, number[]>(); // IP -> timestamps of submissions
@@ -115,6 +116,20 @@ export async function POST(req: NextRequest) {
           total_completions: 1,
           updated_at: new Date().toISOString()
         }])
+    }
+
+    // Trigger ML pipeline asynchronously (non-blocking)
+    // This extracts features and auto-labels the response for ML training
+    if (response?.id) {
+      // Fetch project settings to check if ML is enabled
+      const { data: project } = await supabase
+        .from('surveys')
+        .select('settings')
+        .eq('id', surveyId)
+        .single();
+
+      const mlEnabled = project?.settings?.cipher?.mlEnabled ?? true;
+      runMLPipelineAsync(supabaseAdmin, response.id, surveyId, { mlEnabled })
     }
 
     return NextResponse.json({ success: true, id: response?.id, fraudScore: score, flags })

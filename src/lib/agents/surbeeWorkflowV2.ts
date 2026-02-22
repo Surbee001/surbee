@@ -14,7 +14,9 @@
 import { generateText, streamText, smoothStream, tool } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
-import { Sandbox } from '@e2b/code-interpreter';
+// E2B removed — this legacy workflow file is no longer active
+// import { Sandbox } from '@e2b/code-interpreter';
+type Sandbox = any;
 
 // ============================================================================
 // Types

@@ -1,6 +1,6 @@
 // Insights Dashboard Types
 
-export type DeviceType = 'desktop' | 'mobile' | 'tablet';
+export type DeviceType = 'desktop' | 'laptop' | 'mobile' | 'tablet';
 export type ResponseStatus = 'completed' | 'partial' | 'abandoned';
 export type IssueSeverity = 'low' | 'medium' | 'high';
 export type IssueType = 'spam' | 'copy-paste' | 'too-quick' | 'pattern';
@@ -57,8 +57,21 @@ export interface FunnelStep {
 
 export interface DeviceStats {
   desktop: number;
+  laptop: number;
   mobile: number;
   tablet: number;
+}
+
+export interface SourceData {
+  name: string;
+  count: number;
+  color: string;
+}
+
+export interface BrowserData {
+  name: string;
+  count: number;
+  color: string;
 }
 
 export interface InsightsStats {
@@ -124,6 +137,8 @@ export interface InsightsData {
   geoData: GeoLocation[];
   heatmapData: HeatmapCell[];
   questionStats: QuestionStats[];
+  sourceData: SourceData[];
+  browserData: BrowserData[];
   loading: boolean;
   error: Error | null;
 }

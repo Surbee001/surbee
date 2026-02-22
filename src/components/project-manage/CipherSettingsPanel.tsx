@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Shield, Zap, Eye, Globe, Brain, Settings2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Shield, Zap, Eye, Globe, Brain, Settings2, Users, Clock } from 'lucide-react';
 import { TierSlider } from './TierSlider';
 import { CipherTier, CIPHER_CHECKS, CipherCheckId, getChecksForTier } from '@/lib/cipher/tier-config';
+import { useCredits } from '@/hooks/useCredits';
 
 interface CipherSettings {
   enabled: boolean;
@@ -14,6 +15,7 @@ interface CipherSettings {
   resumeWindowHours: number;
   flagThreshold: number;
   blockThreshold: number;
+  mlEnabled: boolean; // XGBoost ML fraud detection
 }
 
 interface CipherSettingsPanelProps {
@@ -27,6 +29,11 @@ const CHECK_CATEGORIES = {
     icon: Zap,
     label: 'Behavioral Analysis',
     description: 'Mouse, keyboard, and timing patterns',
+  },
+  timing: {
+    icon: Clock,
+    label: 'Timing Analysis',
+    description: 'Response speed and suspicious pauses',
   },
   device: {
     icon: Shield,
@@ -48,13 +55,32 @@ const CHECK_CATEGORIES = {
     label: 'AI Detection',
     description: 'AI-generated content detection',
   },
+  fraudRing: {
+    icon: Users,
+    label: 'Fraud Ring Detection',
+    description: 'Coordinated fraud and collusion',
+  },
 };
+
+// Convert plan string to TierSlider format
+function getPlanType(plan: string): 'free' | 'pro' | 'max' {
+  if (plan === 'surbee_max' || plan === 'surbee_enterprise' || plan === 'max' || plan === 'enterprise') {
+    return 'max';
+  }
+  if (plan === 'surbee_pro' || plan === 'pro') {
+    return 'pro';
+  }
+  return 'free';
+}
 
 export function CipherSettingsPanel({
   projectId,
   userId,
   onSettingsChange,
 }: CipherSettingsPanelProps) {
+  const { credits } = useCredits();
+  const userPlan = getPlanType(credits?.plan || 'free_user');
+
   const [settings, setSettings] = useState<CipherSettings>({
     enabled: true,
     tier: 3,
@@ -64,6 +90,7 @@ export function CipherSettingsPanel({
     resumeWindowHours: 48,
     flagThreshold: 0.6,
     blockThreshold: 0.85,
+    mlEnabled: true, // ML fraud detection on by default
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -86,6 +113,7 @@ export function CipherSettingsPanel({
             resumeWindowHours: cipher.resumeWindowHours ?? 48,
             flagThreshold: cipher.flagThreshold ?? 0.6,
             blockThreshold: cipher.blockThreshold ?? 0.85,
+            mlEnabled: cipher.mlEnabled ?? true,
           });
         }
       } catch (err) {
@@ -149,25 +177,78 @@ export function CipherSettingsPanel({
   const getChecksByCategory = () => {
     const categories: Record<string, CipherCheckId[]> = {
       behavioral: [],
+      timing: [],
       device: [],
       content: [],
       network: [],
       ai: [],
+      fraudRing: [],
     };
 
-    Object.entries(CIPHER_CHECKS).forEach(([id, check]) => {
+    // Map checks to their categories based on tier-config
+    const categoryMap: Record<string, keyof typeof categories> = {
+      // Behavioral checks - mouse, keyboard, interaction patterns
+      rapid_completion: 'behavioral',
+      uniform_timing: 'behavioral',
+      low_interaction: 'behavioral',
+      excessive_paste: 'behavioral',
+      pointer_spikes: 'behavioral',
+      robotic_typing: 'behavioral',
+      mouse_teleporting: 'behavioral',
+      no_corrections: 'behavioral',
+      hover_behavior: 'behavioral',
+      scroll_patterns: 'behavioral',
+      mouse_acceleration: 'behavioral',
+
+      // Timing checks
+      impossibly_fast: 'timing',
+      suspicious_pauses: 'timing',
+
+      // Device & Automation checks
+      webdriver_detected: 'device',
+      automation_detected: 'device',
+      no_plugins: 'device',
+      suspicious_user_agent: 'device',
+      device_fingerprint_mismatch: 'device',
+      screen_anomaly: 'device',
+
+      // Content Analysis
+      straight_line_answers: 'content',
+      minimal_effort: 'content',
+      excessive_tab_switching: 'content',
+      window_focus_loss: 'content',
+
+      // Network checks
+      vpn_detection: 'network',
+      datacenter_ip: 'network',
+      tor_detection: 'network',
+      proxy_detection: 'network',
+      timezone_validation: 'network',
+
+      // AI Detection
+      ai_content_basic: 'ai',
+      ai_content_full: 'ai',
+      contradiction_basic: 'ai',
+      contradiction_full: 'ai',
+      plagiarism_basic: 'ai',
+      plagiarism_full: 'ai',
+      quality_assessment: 'ai',
+      semantic_analysis: 'ai',
+      perplexity_analysis: 'ai',
+      burstiness_analysis: 'ai',
+      baseline_deviation: 'ai',
+
+      // Fraud Ring Detection (Tier 5)
+      fraud_ring_detection: 'fraudRing',
+      answer_sharing: 'fraudRing',
+      coordinated_timing: 'fraudRing',
+      device_sharing: 'fraudRing',
+    };
+
+    Object.keys(CIPHER_CHECKS).forEach((id) => {
       const checkId = id as CipherCheckId;
-      if (['rapid_completion', 'uniform_timing', 'low_interaction', 'excessive_paste', 'pointer_spikes', 'robotic_typing', 'mouse_teleporting', 'no_corrections', 'hover_behavior', 'scroll_patterns', 'mouse_acceleration'].includes(id)) {
-        categories.behavioral.push(checkId);
-      } else if (['webdriver_detected', 'automation_detected', 'no_plugins', 'suspicious_user_agent', 'device_fingerprint_mismatch', 'screen_anomaly'].includes(id)) {
-        categories.device.push(checkId);
-      } else if (['straight_line_answers', 'minimal_effort', 'excessive_tab_switching', 'window_focus_loss', 'impossibly_fast', 'suspicious_pauses'].includes(id)) {
-        categories.content.push(checkId);
-      } else if (['vpn_detection', 'datacenter_ip', 'tor_detection', 'proxy_detection', 'timezone_validation'].includes(id)) {
-        categories.network.push(checkId);
-      } else {
-        categories.ai.push(checkId);
-      }
+      const category = categoryMap[id] || 'ai'; // Default to AI if not mapped
+      categories[category].push(checkId);
     });
 
     return categories;
@@ -223,6 +304,7 @@ export function CipherSettingsPanel({
               value={settings.tier}
               onChange={(tier) => updateSettings({ tier })}
               disabled={saving}
+              userPlan={userPlan}
             />
           </div>
 
@@ -400,6 +482,66 @@ export function CipherSettingsPanel({
                 })}
               </div>
             )}
+          </div>
+
+          {/* ML Detection Toggle */}
+          <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                  <Brain className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-white mb-1">ML Fraud Detection</h4>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    XGBoost model trained on 1M responses. Analyzes 75 behavioral
+                    signals in &lt;4ms per response.
+                  </p>
+                </div>
+              </div>
+              <label className="flex items-center cursor-pointer ml-4">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={settings.mlEnabled}
+                    onChange={(e) => updateSettings({ mlEnabled: e.target.checked })}
+                    className="sr-only"
+                  />
+                  <div className={`w-10 h-6 rounded-full transition-colors ${settings.mlEnabled ? 'bg-emerald-500' : 'bg-zinc-700'}`}>
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${settings.mlEnabled ? 'translate-x-5' : 'translate-x-1'}`} />
+                  </div>
+                </div>
+              </label>
+            </div>
+            {settings.mlEnabled && (
+              <div className="mt-3 ml-11 text-xs text-zinc-500">
+                Combined with rule-based checks for maximum accuracy. Uses the higher risk score.
+              </div>
+            )}
+          </div>
+
+          {/* Explainability Info */}
+          <div className="bg-zinc-900/50 rounded-xl p-4 border border-zinc-800/50">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center flex-shrink-0">
+                <Brain className="w-4 h-4 text-indigo-400" />
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-white mb-1">Explainability Engine</h4>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  For Tier 4+ assessments, Cipher provides human-readable explanations including
+                  key risk factors, mitigating factors, and actionable recommendations.
+                  These appear in your response analytics.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Check count summary */}
+          <div className="text-center">
+            <p className="text-xs text-zinc-500">
+              {Object.values(CIPHER_CHECKS).length} fraud detection checks available across 7 categories
+            </p>
           </div>
         </>
       )}

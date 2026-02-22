@@ -1,0 +1,25 @@
+{
+  "name": "remotion-hero",
+  "version": "1.0.0",
+  "description": "Surbee Hero Animation",
+  "main": "index.js",
+  "scripts": {
+    "start": "remotion studio",
+    "build": "remotion render HeroVideo out/hero.mp4",
+    "build:gif": "remotion render HeroVideo out/hero.gif --image-format=png",
+    "build:square": "remotion render HeroVideoSquare out/hero-square.mp4"
+  },
+  "keywords": ["remotion", "animation", "surbee"],
+  "author": "Surbee",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@remotion/bundler": "^4.0.408",
+    "@remotion/cli": "^4.0.408",
+    "@types/react": "^19.2.9",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "remotion": "^4.0.408",
+    "typescript": "^5.9.3"
+  }
+}

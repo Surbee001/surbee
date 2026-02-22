@@ -2877,7 +2877,7 @@ ul.FeaturesSection_list__qU33u li.FeaturesSection_list_item__T3w_p .FeaturesSect
 	background: #fdfdfd;
 	border: .5px solid rgba(132, 138, 156, .6);
 	padding: 6px 13px;
-	font-family: "Inter", var(--font-neue-montreal);
+	font-family: "Opening Hours Sans", "Inter", var(--font-neue-montreal);
 	font-weight: 400;
 	font-size: 18rem;
 	line-height: 1;
@@ -3128,7 +3128,7 @@ ul.FeaturesSection_list__qU33u li.FeaturesSection_list_item__T3w_p .FeaturesSect
 	flex: 1 1;
 	border: none;
 	background: rgba(0, 0, 0, 0);
-	font-family: "Inter", var(--font-neue-montreal);
+	font-family: "Opening Hours Sans", "Inter", var(--font-neue-montreal);
 	font-weight: 500;
 	font-size: 16rem;
 	line-height: 1.4;

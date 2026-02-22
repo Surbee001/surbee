@@ -58,3 +58,7 @@ node-v*.pkg
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# nested node_modules
+remotion-hero/node_modules/
+packages/*/node_modules/

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { v4 as uuidv4 } from 'uuid'
+import { runMLPipelineAsync } from '@/lib/cipher/ml-pipeline'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -64,6 +65,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (insertError) {
       console.error('Error inserting response:', insertError)
       return NextResponse.json({ error: 'Failed to save response' }, { status: 500 })
+    }
+
+    // Trigger ML pipeline asynchronously (non-blocking)
+    // This extracts features and auto-labels the response for ML training
+    if (newResponse?.id && !is_preview) {
+      runMLPipelineAsync(supabaseAdmin, newResponse.id, projectId)
     }
 
     return NextResponse.json({

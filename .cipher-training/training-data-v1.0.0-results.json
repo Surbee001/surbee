@@ -1,0 +1,66 @@
+{
+  "success": true,
+  "model_version": "v1.0.0",
+  "model_path": "/models/v1.0.0/model.json",
+  "metrics": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "auc_roc": 1.0
+  },
+  "training_samples": 50000,
+  "fraud_samples": 25000,
+  "legitimate_samples": 25000,
+  "top_features": [
+    {
+      "name": "straightLineRatio",
+      "display_name": "Answer Straight-lining",
+      "importance": 0.5617873072624207
+    },
+    {
+      "name": "honeypotScore",
+      "display_name": "Honeypot Failures",
+      "importance": 0.41880106925964355
+    },
+    {
+      "name": "ipSeenCount",
+      "display_name": "ipSeenCount",
+      "importance": 0.00610029511153698
+    },
+    {
+      "name": "fingerprintSeenCount",
+      "display_name": "fingerprintSeenCount",
+      "importance": 0.0059767779894173145
+    },
+    {
+      "name": "timePerQuestionStd",
+      "display_name": "timePerQuestionStd",
+      "importance": 0.002970554865896702
+    },
+    {
+      "name": "responseUniquenessScore",
+      "display_name": "responseUniquenessScore",
+      "importance": 0.0011887941509485245
+    },
+    {
+      "name": "answerEntropy",
+      "display_name": "Answer Diversity",
+      "importance": 0.001052611623890698
+    },
+    {
+      "name": "duplicateAnswerRatio",
+      "display_name": "duplicateAnswerRatio",
+      "importance": 0.0004343446053098887
+    },
+    {
+      "name": "openEndedUniqueWordRatio",
+      "display_name": "openEndedUniqueWordRatio",
+      "importance": 0.0004227846802677959
+    },
+    {
+      "name": "consistencyCheckScore",
+      "display_name": "consistencyCheckScore",
+      "importance": 0.0003615237947087735
+    }
+  ]
+}

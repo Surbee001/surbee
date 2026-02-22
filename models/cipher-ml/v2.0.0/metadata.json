@@ -1,0 +1,236 @@
+{
+  "version": "v2.0.0",
+  "created_at": "2026-01-19T20:44:09.295963+00:00",
+  "feature_names": [
+    "mouseDistanceTotal",
+    "mouseVelocityMean",
+    "mouseVelocityStd",
+    "mouseVelocityMax",
+    "mouseAccelerationMean",
+    "mouseCurvatureEntropy",
+    "mouseStraightLineRatio",
+    "mousePauseCount",
+    "keystrokeCount",
+    "keystrokeTimingMean",
+    "keystrokeTimingStd",
+    "keystrokeDwellMean",
+    "keystrokeFlightMean",
+    "backspaceRatio",
+    "pasteEventCount",
+    "pasteCharRatio",
+    "scrollCount",
+    "scrollVelocityMean",
+    "scrollDirectionChanges",
+    "focusLossCount",
+    "focusLossDurationTotal",
+    "hoverCount",
+    "hoverDurationMean",
+    "clickCount",
+    "hoverBeforeClickRatio",
+    "completionTimeSeconds",
+    "timePerQuestionMean",
+    "timePerQuestionStd",
+    "timePerQuestionMin",
+    "timePerQuestionMax",
+    "readingVsAnsweringRatio",
+    "firstInteractionDelayMs",
+    "idleTimeTotal",
+    "activeTimeRatio",
+    "responseAcceleration",
+    "timeOfDayHour",
+    "dayOfWeek",
+    "hasWebdriver",
+    "hasAutomationFlags",
+    "pluginCount",
+    "screenResolutionCommon",
+    "timezoneOffsetMinutes",
+    "timezoneMatchesIp",
+    "fingerprintSeenCount",
+    "deviceMemoryGb",
+    "hardwareConcurrency",
+    "touchSupport",
+    "isVpn",
+    "isDatacenter",
+    "isTor",
+    "isProxy",
+    "ipReputationScore",
+    "ipCountryCode",
+    "geoTimezoneMatch",
+    "ipSeenCount",
+    "questionCount",
+    "openEndedCount",
+    "openEndedLengthMean",
+    "openEndedLengthStd",
+    "openEndedWordCountMean",
+    "openEndedUniqueWordRatio",
+    "straightLineRatio",
+    "answerEntropy",
+    "firstOptionRatio",
+    "lastOptionRatio",
+    "middleOptionRatio",
+    "responseUniquenessScore",
+    "duplicateAnswerRatio",
+    "naRatio",
+    "skipRatio",
+    "attentionCheckPassed",
+    "attentionCheckCount",
+    "consistencyCheckScore",
+    "trapFieldFilled",
+    "honeypotScore"
+  ],
+  "feature_count": 75,
+  "training_samples": 1000000,
+  "fraud_samples": 500000,
+  "legitimate_samples": 500000,
+  "metrics": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "auc_roc": 1.0
+  },
+  "confusion_matrix": {
+    "tn": 100000,
+    "fp": 0,
+    "fn": 0,
+    "tp": 100000
+  },
+  "feature_importance": [
+    {
+      "name": "ipReputationScore",
+      "importance": 0.7571039795875549
+    },
+    {
+      "name": "straightLineRatio",
+      "importance": 0.1248176246881485
+    },
+    {
+      "name": "honeypotScore",
+      "importance": 0.11095646768808365
+    },
+    {
+      "name": "ipSeenCount",
+      "importance": 0.004216805100440979
+    },
+    {
+      "name": "fingerprintSeenCount",
+      "importance": 0.001293893437832594
+    },
+    {
+      "name": "timePerQuestionStd",
+      "importance": 0.0010985458502545953
+    },
+    {
+      "name": "backspaceRatio",
+      "importance": 0.0002967747859656811
+    },
+    {
+      "name": "answerEntropy",
+      "importance": 0.00014124723384156823
+    },
+    {
+      "name": "responseUniquenessScore",
+      "importance": 4.264606104698032e-05
+    },
+    {
+      "name": "duplicateAnswerRatio",
+      "importance": 3.20047874993179e-05
+    },
+    {
+      "name": "mouseDistanceTotal",
+      "importance": 0.0
+    },
+    {
+      "name": "mouseVelocityMean",
+      "importance": 0.0
+    },
+    {
+      "name": "mouseVelocityStd",
+      "importance": 0.0
+    },
+    {
+      "name": "mouseVelocityMax",
+      "importance": 0.0
+    },
+    {
+      "name": "mouseAccelerationMean",
+      "importance": 0.0
+    },
+    {
+      "name": "mouseCurvatureEntropy",
+      "importance": 0.0
+    },
+    {
+      "name": "mouseStraightLineRatio",
+      "importance": 0.0
+    },
+    {
+      "name": "mousePauseCount",
+      "importance": 0.0
+    },
+    {
+      "name": "keystrokeCount",
+      "importance": 0.0
+    },
+    {
+      "name": "keystrokeTimingMean",
+      "importance": 0.0
+    },
+    {
+      "name": "keystrokeTimingStd",
+      "importance": 0.0
+    },
+    {
+      "name": "keystrokeDwellMean",
+      "importance": 0.0
+    },
+    {
+      "name": "keystrokeFlightMean",
+      "importance": 0.0
+    },
+    {
+      "name": "pasteEventCount",
+      "importance": 0.0
+    },
+    {
+      "name": "pasteCharRatio",
+      "importance": 0.0
+    },
+    {
+      "name": "scrollCount",
+      "importance": 0.0
+    },
+    {
+      "name": "scrollVelocityMean",
+      "importance": 0.0
+    },
+    {
+      "name": "scrollDirectionChanges",
+      "importance": 0.0
+    },
+    {
+      "name": "focusLossCount",
+      "importance": 0.0
+    },
+    {
+      "name": "focusLossDurationTotal",
+      "importance": 0.0
+    }
+  ],
+  "hyperparameters": {
+    "objective": "binary:logistic",
+    "eval_metric": [
+      "auc",
+      "logloss"
+    ],
+    "max_depth": 8,
+    "learning_rate": 0.05,
+    "n_estimators": 300,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "min_child_weight": 3,
+    "gamma": 0.1,
+    "scale_pos_weight": 1.0,
+    "random_state": 42,
+    "n_jobs": -1
+  }
+}

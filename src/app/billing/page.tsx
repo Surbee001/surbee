@@ -3,40 +3,132 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useCredits } from "@/hooks/useCredits";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
+import { initializePaddle, Paddle } from "@paddle/paddle-js";
+import { PADDLE_CONFIG, getPaddlePriceId } from "@/lib/paddle";
 
 type PlanType = "free_user" | "surbee_pro" | "surbee_max" | "surbee_enterprise";
+type BillingCycle = "monthly" | "annual";
 
-const PLAN_DETAILS: Record<PlanType, { name: string; price: string; priceMonthly: string; credits: string; features: string[] }> = {
+const PLAN_DETAILS: Record<PlanType, {
+  name: string;
+  priceMonthly: number;
+  priceAnnual: number;
+  credits: string;
+  features: string[];
+  paddlePlan?: 'pro' | 'max';
+}> = {
   free_user: {
     name: "Free",
-    price: "$0",
-    priceMonthly: "$0/mo",
+    priceMonthly: 0,
+    priceAnnual: 0,
     credits: "100 credits/month",
     features: ["Survey generation", "Unlimited responses", "Chat with Claude Haiku", "CSV export"],
   },
   surbee_pro: {
     name: "Pro",
-    price: "$200/year",
-    priceMonthly: "$16.67/mo",
+    priceMonthly: 20,
+    priceAnnual: 200,
     credits: "2,000 credits/month",
-    features: ["All AI models", "Agent Mode", "Evaluation tools", "Remove branding", "Priority support"],
+    features: [
+      "All premium AI models (GPT-5, Claude, etc.)",
+      "Agent Mode for automated workflows",
+      "Evaluation & analysis tools",
+      "Remove Surbee branding",
+    ],
+    paddlePlan: 'pro',
   },
   surbee_max: {
     name: "Max",
-    price: "$600/year",
-    priceMonthly: "$50/mo",
+    priceMonthly: 60,
+    priceAnnual: 600,
     credits: "6,000 credits/month",
-    features: ["Everything in Pro", "Full Cipher", "Custom domain", "Higher rate limits", "Dedicated support"],
+    features: [
+      "Everything in Pro",
+      "Full Cipher fraud detection",
+      "Custom domain support",
+      "3x higher rate limits",
+    ],
+    paddlePlan: 'max',
   },
   surbee_enterprise: {
     name: "Enterprise",
-    price: "Custom",
-    priceMonthly: "Custom",
+    priceMonthly: -1,
+    priceAnnual: -1,
     credits: "Unlimited credits",
     features: ["Everything in Max", "SSO", "Custom integrations", "SLA guarantee"],
   },
 };
+
+// Loading shimmer component
+function LoadingShimmer() {
+  const [loadingText, setLoadingText] = useState(0);
+  const loadingMessages = [
+    "Getting your plan ready",
+    "Preparing checkout",
+    "Almost there",
+  ];
+  const subMessages = [
+    "Setting up your premium features",
+    "Configuring your account",
+    "Finalizing details",
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLoadingText((prev) => (prev + 1) % loadingMessages.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: "var(--surbee-bg-primary)" }}>
+      <div className="flex flex-col items-center gap-3 text-center">
+        <div className="relative">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-300 border-t-blue-500" />
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <span
+            className="text-base font-medium animate-pulse"
+            style={{ color: "var(--surbee-fg-primary)" }}
+          >
+            {loadingMessages[loadingText]}
+          </span>
+          <span
+            className="text-sm transition-opacity duration-300"
+            style={{ color: "var(--surbee-fg-muted)" }}
+          >
+            {subMessages[loadingText]}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Feature icon component
+function FeatureIcon({ index }: { index: number }) {
+  const icons = [
+    // Sparkle/AI icon
+    <svg key="ai" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2L13.09 8.26L18 6L14.74 10.91L21 12L14.74 13.09L18 18L13.09 15.74L12 22L10.91 15.74L6 18L9.26 13.09L3 12L9.26 10.91L6 6L10.91 8.26L12 2Z" fill="currentColor"/>
+    </svg>,
+    // Zap/Speed icon
+    <svg key="zap" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="currentColor"/>
+    </svg>,
+    // Chart/Analytics icon
+    <svg key="chart" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 3V21H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M7 16L12 11L15 14L21 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>,
+    // Shield/Security icon
+    <svg key="shield" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="currentColor"/>
+    </svg>,
+  ];
+  return <span style={{ color: "#8F8DF6" }}>{icons[index % icons.length]}</span>;
+}
 
 function BillingContent() {
   const { user, loading } = useAuth();
@@ -45,20 +137,124 @@ function BillingContent() {
   const searchParams = useSearchParams();
   const selectedPlan = searchParams.get("plan") as PlanType | null;
   const cancelled = searchParams.get("cancelled") === "true";
+  const success = searchParams.get("success") === "true";
 
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(cancelled ? "Payment was cancelled. You can try again when ready." : null);
+  const [paddle, setPaddle] = useState<Paddle | null>(null);
+  const [paddleLoading, setPaddleLoading] = useState(true);
+  const [error, setError] = useState<string | null>(
+    cancelled ? "Payment was cancelled. You can try again when ready." : null
+  );
+
+  // Initialize Paddle
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    console.log('Initializing Paddle with:', {
+      environment: PADDLE_CONFIG.environment,
+      token: PADDLE_CONFIG.clientToken ? `${PADDLE_CONFIG.clientToken.substring(0, 10)}...` : 'missing',
+    });
+
+    initializePaddle({
+      environment: PADDLE_CONFIG.environment,
+      token: PADDLE_CONFIG.clientToken,
+      eventCallback: (event) => {
+        console.log('Paddle event:', event.name, event);
+        if (event.name === 'checkout.completed') {
+          router.push("/home?upgraded=true");
+        } else if (event.name === 'checkout.closed') {
+          setIsProcessing(false);
+        } else if (event.name === 'checkout.error') {
+          console.error('Paddle checkout error:', event);
+          setError('Checkout error. Please check the console for details.');
+          setIsProcessing(false);
+        }
+      },
+    }).then((paddleInstance) => {
+      if (paddleInstance) {
+        console.log('Paddle initialized successfully');
+        setPaddle(paddleInstance);
+      } else {
+        console.error('Paddle instance is null');
+      }
+      setPaddleLoading(false);
+    }).catch((err) => {
+      console.error('Failed to initialize Paddle:', err);
+      setError(`Failed to initialize payment system: ${err.message || 'Unknown error'}`);
+      setPaddleLoading(false);
+    });
+  }, [router]);
+
+  // Handle success redirect
+  useEffect(() => {
+    if (success) {
+      router.push("/home?upgraded=true");
+    }
+  }, [success, router]);
 
   const currentPlan = (credits?.plan || "free_user") as PlanType;
   const planToShow = selectedPlan || currentPlan;
   const planDetails = PLAN_DETAILS[planToShow];
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: "var(--surbee-bg-primary)" }}>
-        <div className="animate-pulse text-sm" style={{ color: "var(--surbee-fg-muted)" }}>Loading...</div>
-      </div>
-    );
+  const handleCheckout = useCallback(async () => {
+    if (!paddle) {
+      setError("Payment system not initialized. Please refresh the page.");
+      return;
+    }
+    if (!user) {
+      setError("Please log in to continue.");
+      return;
+    }
+    if (!selectedPlan) {
+      setError("No plan selected.");
+      return;
+    }
+
+    const paddlePlan = planDetails.paddlePlan;
+    if (!paddlePlan) {
+      setError("This plan cannot be purchased online. Please contact sales.");
+      return;
+    }
+
+    const priceId = getPaddlePriceId(paddlePlan, billingCycle);
+    if (!priceId) {
+      setError("Invalid plan configuration.");
+      return;
+    }
+
+    console.log('Opening Paddle checkout:', { priceId, email: user.email, userId: user.id, plan: selectedPlan });
+
+    setError(null);
+    setIsProcessing(true);
+
+    try {
+      console.log('Opening checkout with priceId:', priceId);
+
+      paddle.Checkout.open({
+        items: [{ priceId, quantity: 1 }],
+        customer: user.email ? { email: user.email } : undefined,
+        customData: {
+          userId: user.id,
+          plan: selectedPlan,
+        },
+        settings: {
+          displayMode: "overlay",
+          theme: "light",
+          locale: "en",
+        },
+      });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Checkout error:', err);
+      setError(`Failed to open checkout: ${errorMessage}`);
+      setIsProcessing(false);
+    }
+  }, [paddle, user, selectedPlan, planDetails, billingCycle]);
+
+  // Show loading shimmer while Paddle is initializing
+  if (loading || (paddleLoading && selectedPlan)) {
+    return <LoadingShimmer />;
   }
 
   if (!user) {
@@ -66,46 +262,21 @@ function BillingContent() {
     return null;
   }
 
-  const handleCheckout = async () => {
-    setError(null);
-    setIsProcessing(true);
-
-    try {
-      const response = await fetch("/api/billing/create-checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan: selectedPlan,
-          userId: user.id,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.checkoutUrl) {
-        // Redirect to Clerk/Stripe Checkout
-        window.location.href = data.checkoutUrl;
-      } else if (data.success) {
-        // Direct success (test mode or already processed)
-        router.push("/home?upgraded=true");
-      } else if (data.error) {
-        setError(data.error);
-      }
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   const isUpgrade = selectedPlan && selectedPlan !== "free_user" && selectedPlan !== currentPlan;
+  const basePrice = billingCycle === "annual" ? planDetails.priceAnnual : planDetails.priceMonthly;
+  const taxRate = 0.05; // 5% VAT example
+  const taxAmount = basePrice * taxRate;
+  const totalPrice = basePrice + taxAmount;
+  const monthlyEquivalent = billingCycle === "annual"
+    ? (planDetails.priceAnnual / 12).toFixed(2)
+    : planDetails.priceMonthly.toFixed(2);
 
   return (
-    <div className="flex flex-col w-full min-h-screen items-center justify-center p-8" style={{ backgroundColor: "var(--surbee-bg-primary)" }}>
+    <div className="flex min-h-screen items-center justify-center p-6" style={{ backgroundColor: "var(--surbee-bg-primary)" }}>
       {/* Close Button */}
       <button
         onClick={() => router.push("/home")}
-        className="absolute top-6 right-6 z-10 flex justify-center items-center transition-all duration-200 cursor-pointer rounded-full w-9 h-9"
+        className="absolute top-6 right-6 z-10 flex justify-center items-center transition-all duration-200 cursor-pointer rounded-full w-9 h-9 hover:opacity-80"
         style={{ backgroundColor: "var(--surbee-bg-tertiary)", color: "var(--surbee-fg-primary)" }}
         aria-label="Close"
       >
@@ -114,143 +285,312 @@ function BillingContent() {
         </svg>
       </button>
 
-      <div className="max-w-lg w-full">
-        {isUpgrade ? (
-          <>
-            {/* Upgrade Flow */}
-            <h1 className="text-2xl font-semibold text-center mb-2" style={{ color: "var(--surbee-fg-primary)" }}>
-              Upgrade to {planDetails.name}
-            </h1>
-            <p className="text-center mb-8" style={{ color: "var(--surbee-fg-secondary)" }}>
-              {planDetails.priceMonthly} · {planDetails.credits}
-            </p>
-
-            {/* Plan Summary Card */}
-            <div className="rounded-2xl p-6 mb-6" style={{ backgroundColor: "var(--surbee-bg-secondary)" }}>
-              <div className="flex justify-between items-center mb-4">
-                <span style={{ color: "var(--surbee-fg-primary)" }}>{planDetails.name} Plan</span>
-                <span className="font-semibold" style={{ color: "var(--surbee-fg-primary)" }}>{planDetails.price}</span>
-              </div>
-              <ul className="space-y-2">
-                {planDetails.features.map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm" style={{ color: "var(--surbee-fg-muted)" }}>
-                    <svg height="14" width="14" fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M7.233 11.725c.221 0 .409-.107.543-.314l4.203-5.958c.074-.134.16-.281.16-.429 0-.301-.267-.495-.549-.495-.167 0-.334.107-.462.301l-3.922 5.603-1.89-2.28c-.16-.213-.308-.267-.496-.267a.519.519 0 0 0-.515.529c0 .147.06.288.154.415l2.205 2.58c.167.222.348.315.57.315Z" fill="currentColor" />
-                    </svg>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {error && (
-              <div className="mb-4 p-3 rounded-lg text-sm" style={{ backgroundColor: "rgba(239, 68, 68, 0.1)", color: "#ef4444" }}>
-                {error}
-              </div>
-            )}
-
-            <button
-              onClick={handleCheckout}
-              disabled={isProcessing}
-              className="w-full h-12 rounded-full text-sm font-medium transition-colors"
-              style={{ backgroundColor: "#0285ff", color: "#ffffff", opacity: isProcessing ? 0.7 : 1 }}
+      {isUpgrade ? (
+        <div className="flex max-w-[calc(100vw-48px)] flex-col gap-6 sm:max-w-[360px] md:max-w-[432px]">
+          {/* Main Card */}
+          <div
+            className="rounded-3xl border p-8 shadow-lg"
+            style={{
+              backgroundColor: "var(--surbee-bg-secondary)",
+              borderColor: "var(--surbee-border-primary)",
+            }}
+          >
+            {/* Plan Name */}
+            <h2
+              className="mb-3 text-[28px] leading-tight font-semibold"
+              style={{ color: "var(--surbee-fg-primary)" }}
             >
-              {isProcessing ? "Redirecting to checkout..." : `Continue to Payment`}
-            </button>
+              {planDetails.name} plan
+            </h2>
 
-            <p className="text-xs text-center mt-4" style={{ color: "var(--surbee-fg-muted)" }}>
-              You'll be redirected to our secure payment page powered by Stripe.
-            </p>
-
-            {/* Stripe badge */}
-            <div className="flex items-center justify-center mt-6 gap-2">
-              <svg width="50" height="21" viewBox="0 0 50 21" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4.11 8.82C4.11 8.37 4.47 8.17 5.05 8.17C5.86 8.17 6.88 8.42 7.69 8.87V6.07C6.8 5.71 5.93 5.55 5.05 5.55C2.78 5.55 1.27 6.73 1.27 8.95C1.27 12.38 6.06 11.82 6.06 13.32C6.06 13.85 5.6 14.05 4.98 14.05C4.09 14.05 2.96 13.67 2.07 13.16V15.99C3.06 16.43 4.06 16.62 4.98 16.62C7.31 16.62 8.91 15.47 8.91 13.22C8.9 9.51 4.11 10.18 4.11 8.82ZM12.53 3.72L9.82 4.29V14.61C9.82 15.8 10.72 16.62 11.91 16.62C12.57 16.62 13.06 16.52 13.34 16.38V14.07C13.07 14.18 12.53 14.35 12.53 13.16V8.57H13.34V5.72H12.53V3.72ZM17.38 6.85L17.21 5.72H14.73V16.45H17.55V9.03C18.19 8.22 19.24 8.36 19.58 8.48V5.72C19.23 5.58 18.02 5.37 17.38 6.85ZM20.52 5.72H23.35V16.45H20.52V5.72ZM20.52 4.58L23.35 3.99V1.5L20.52 2.09V4.58ZM28.71 5.55C27.5 5.55 26.67 6.09 26.21 6.46L26.05 5.72H23.54V19.5L26.36 18.93V16.25C26.83 16.52 27.51 16.62 28.2 16.62C30.31 16.62 32.22 15.06 32.22 11.03C32.22 7.34 30.28 5.55 28.71 5.55ZM28.02 14.03C27.54 14.03 27.25 13.89 27.03 13.69V8.69C27.27 8.46 27.57 8.33 28.02 8.33C28.84 8.33 29.39 9.25 29.39 11.16C29.39 13.12 28.86 14.03 28.02 14.03ZM38.67 5.55C36 5.55 34.2 7.54 34.2 11.11C34.2 15.01 36.22 16.62 38.99 16.62C40.29 16.62 41.36 16.32 42.18 15.88V13.3C41.42 13.71 40.51 13.98 39.38 13.98C38.27 13.98 37.34 13.56 37.21 12.15H42.69C42.7 11.98 42.72 11.39 42.72 11.06C42.71 7.57 41.11 5.55 38.67 5.55ZM37.18 10.01C37.18 8.69 37.88 8.09 38.65 8.09C39.39 8.09 40.06 8.69 40.06 10.01H37.18Z" fill="#6772E5"/>
-              </svg>
-              <span className="text-xs" style={{ color: "var(--surbee-fg-muted)" }}>Secure checkout</span>
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Manage Current Plan */}
-            <h1 className="text-2xl font-semibold text-center mb-2" style={{ color: "var(--surbee-fg-primary)" }}>
-              Your Current Plan
-            </h1>
-            <p className="text-center mb-8" style={{ color: "var(--surbee-fg-secondary)" }}>
-              Manage your subscription
-            </p>
-
-            <div className="rounded-2xl p-6 mb-6" style={{ backgroundColor: "var(--surbee-bg-secondary)" }}>
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <h3 className="font-semibold" style={{ color: "var(--surbee-fg-primary)" }}>
-                    {PLAN_DETAILS[currentPlan].name} Plan
-                  </h3>
-                  <p className="text-sm" style={{ color: "var(--surbee-fg-muted)" }}>
-                    {PLAN_DETAILS[currentPlan].credits}
-                  </p>
-                </div>
-                <span className="px-3 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: "rgba(34, 197, 94, 0.1)", color: "#22c55e" }}>
-                  Active
+            {/* Billing Toggle */}
+            <div className="flex items-center gap-2 mb-4">
+              <button
+                onClick={() => setBillingCycle("monthly")}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  billingCycle === "monthly"
+                    ? "bg-black text-white"
+                    : ""
+                }`}
+                style={billingCycle !== "monthly" ? { color: "var(--surbee-fg-muted)", backgroundColor: "var(--surbee-bg-tertiary)" } : {}}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingCycle("annual")}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 ${
+                  billingCycle === "annual"
+                    ? "bg-black text-white"
+                    : ""
+                }`}
+                style={billingCycle !== "annual" ? { color: "var(--surbee-fg-muted)", backgroundColor: "var(--surbee-bg-tertiary)" } : {}}
+              >
+                Annual
+                <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-600">
+                  -17%
                 </span>
-              </div>
+              </button>
+            </div>
 
-              <div className="pt-4 border-t" style={{ borderColor: "var(--surbee-border-primary)" }}>
-                <p className="text-sm mb-2" style={{ color: "var(--surbee-fg-muted)" }}>
-                  Credits remaining this month
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-2 rounded-full" style={{ backgroundColor: "var(--surbee-bg-tertiary)" }}>
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        backgroundColor: "#0285ff",
-                        width: `${Math.min(100, ((credits?.creditsRemaining || 0) / (credits?.monthlyCredits || 100)) * 100)}%`
-                      }}
-                    />
+            {/* Top Features */}
+            <h4
+              className="text-sm py-2 font-medium"
+              style={{ color: "var(--surbee-fg-secondary)" }}
+            >
+              Top features
+            </h4>
+
+            <ul className="mb-4 flex flex-col">
+              {planDetails.features.map((feature, index) => (
+                <li key={index} className="relative py-2.5">
+                  <div className="flex items-center gap-3.5">
+                    <FeatureIcon index={index} />
+                    <span
+                      className="text-[15px] font-normal"
+                      style={{ color: "var(--surbee-fg-primary)" }}
+                    >
+                      {feature}
+                    </span>
                   </div>
-                  <span className="text-sm" style={{ color: "var(--surbee-fg-secondary)" }}>
-                    {credits?.creditsRemaining || 0} / {credits?.monthlyCredits || 100}
+                </li>
+              ))}
+            </ul>
+
+            {/* Divider */}
+            <div className="w-full py-3">
+              <div className="h-px w-full" style={{ backgroundColor: "var(--surbee-border-primary)" }} />
+            </div>
+
+            {/* Pricing Breakdown */}
+            <div className="w-full pt-3 pb-5">
+              <div className="flex flex-col gap-2">
+                {/* Subscription line */}
+                <div className="flex w-full text-[14px]">
+                  <span style={{ color: "var(--surbee-fg-secondary)" }}>
+                    {billingCycle === "annual" ? "Annual" : "Monthly"} subscription
+                  </span>
+                  <span
+                    className="ml-auto"
+                    style={{ color: "var(--surbee-fg-secondary)" }}
+                  >
+                    ${basePrice.toFixed(2)}
+                  </span>
+                </div>
+                {billingCycle === "annual" && (
+                  <div className="flex w-full text-[12px]">
+                    <span style={{ color: "var(--surbee-fg-muted)" }}>
+                      (${monthlyEquivalent}/month)
+                    </span>
+                  </div>
+                )}
+
+                {/* Tax line */}
+                <div className="flex w-full text-[14px]">
+                  <span style={{ color: "var(--surbee-fg-secondary)" }}>
+                    Estimated tax
+                  </span>
+                  <span
+                    className="ml-auto"
+                    style={{ color: "var(--surbee-fg-secondary)" }}
+                  >
+                    ${taxAmount.toFixed(2)}
+                  </span>
+                </div>
+
+                {/* Total line */}
+                <div className="flex w-full text-base mt-2 pt-2" style={{ borderTop: "1px solid var(--surbee-border-primary)" }}>
+                  <span
+                    className="font-medium"
+                    style={{ color: "var(--surbee-fg-primary)" }}
+                  >
+                    Due today
+                  </span>
+                  <span
+                    className="ml-auto font-semibold"
+                    style={{ color: "var(--surbee-fg-primary)" }}
+                  >
+                    ${totalPrice.toFixed(2)}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <button
-                onClick={() => router.push("/home/pricing")}
-                className="w-full h-12 rounded-full text-sm font-medium transition-colors"
-                style={{ backgroundColor: "#0285ff", color: "#ffffff" }}
+            {/* Error message */}
+            {error && (
+              <div
+                className="mb-4 p-3 rounded-lg text-sm"
+                style={{ backgroundColor: "rgba(239, 68, 68, 0.1)", color: "#ef4444" }}
               >
-                {currentPlan === "free_user" ? "Upgrade Plan" : "Change Plan"}
-              </button>
+                {error}
+              </div>
+            )}
 
-              {currentPlan !== "free_user" && (
-                <button
-                  onClick={() => {/* Handle cancel - would open Stripe portal */}}
-                  className="w-full h-10 rounded-full text-sm font-medium transition-colors"
-                  style={{ backgroundColor: "transparent", color: "var(--surbee-fg-muted)", border: "1px solid var(--surbee-border-primary)" }}
-                >
-                  Cancel Subscription
-                </button>
+            {/* Subscribe Button */}
+            <button
+              onClick={handleCheckout}
+              disabled={isProcessing || !paddle}
+              className="w-full py-4 px-6 rounded-full text-base font-medium transition-all hover:opacity-90 disabled:opacity-50"
+              style={{ backgroundColor: "#0285ff", color: "#ffffff" }}
+            >
+              {isProcessing ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Processing...
+                </span>
+              ) : (
+                "Subscribe"
               )}
+            </button>
+          </div>
+
+          {/* Terms */}
+          <p
+            className="text-xs px-3 leading-relaxed"
+            style={{ color: "var(--surbee-fg-muted)" }}
+          >
+            Renews {billingCycle === "annual" ? "annually" : "monthly"} until cancelled. ${totalPrice.toFixed(2)}/{billingCycle === "annual" ? "year" : "month"} will be charged.{" "}
+            <a
+              href="/home/settings/billing"
+              className="underline hover:opacity-80"
+            >
+              Cancel anytime
+            </a>{" "}
+            in Settings. By subscribing, you agree to our{" "}
+            <a
+              href="/terms"
+              className="underline hover:opacity-80"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Terms of Use
+            </a>.
+          </p>
+        </div>
+      ) : (
+        /* Manage Current Plan View */
+        <div className="max-w-lg w-full">
+          <h1
+            className="text-2xl font-semibold text-center mb-2"
+            style={{ color: "var(--surbee-fg-primary)" }}
+          >
+            Your Current Plan
+          </h1>
+          <p
+            className="text-center mb-8"
+            style={{ color: "var(--surbee-fg-secondary)" }}
+          >
+            Manage your subscription
+          </p>
+
+          <div
+            className="rounded-2xl p-6 mb-6"
+            style={{ backgroundColor: "var(--surbee-bg-secondary)" }}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3
+                  className="font-semibold"
+                  style={{ color: "var(--surbee-fg-primary)" }}
+                >
+                  {PLAN_DETAILS[currentPlan].name} Plan
+                </h3>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--surbee-fg-muted)" }}
+                >
+                  {PLAN_DETAILS[currentPlan].credits}
+                </p>
+              </div>
+              <span
+                className="px-3 py-1 rounded-full text-xs font-medium"
+                style={{ backgroundColor: "rgba(34, 197, 94, 0.1)", color: "#22c55e" }}
+              >
+                Active
+              </span>
             </div>
-          </>
-        )}
-      </div>
+
+            <div
+              className="pt-4 border-t"
+              style={{ borderColor: "var(--surbee-border-primary)" }}
+            >
+              <p
+                className="text-sm mb-2"
+                style={{ color: "var(--surbee-fg-muted)" }}
+              >
+                Credits remaining this month
+              </p>
+              <div className="flex items-center gap-2">
+                <div
+                  className="flex-1 h-2 rounded-full"
+                  style={{ backgroundColor: "var(--surbee-bg-tertiary)" }}
+                >
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      backgroundColor: "#0285ff",
+                      width: `${Math.min(100, ((credits?.creditsRemaining || 0) / (credits?.monthlyCredits || 100)) * 100)}%`
+                    }}
+                  />
+                </div>
+                <span
+                  className="text-sm"
+                  style={{ color: "var(--surbee-fg-secondary)" }}
+                >
+                  {credits?.creditsRemaining || 0} / {credits?.monthlyCredits || 100}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => router.push("/home/pricing")}
+              className="w-full h-12 rounded-full text-sm font-medium transition-colors hover:opacity-90"
+              style={{ backgroundColor: "#0285ff", color: "#ffffff" }}
+            >
+              {currentPlan === "free_user" ? "Upgrade Plan" : "Change Plan"}
+            </button>
+
+            {currentPlan !== "free_user" && (
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch("/api/billing/customer-portal", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ userId: user.id }),
+                    });
+                    const data = await response.json();
+                    if (data.portalUrl) {
+                      window.location.href = data.portalUrl;
+                    }
+                  } catch (err) {
+                    console.error("Failed to open customer portal:", err);
+                  }
+                }}
+                className="w-full h-10 rounded-full text-sm font-medium transition-colors hover:opacity-80"
+                style={{
+                  backgroundColor: "transparent",
+                  color: "var(--surbee-fg-muted)",
+                  border: "1px solid var(--surbee-border-primary)"
+                }}
+              >
+                Manage Subscription
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 export default function BillingPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: "var(--surbee-bg-primary)" }}>
-          <div className="animate-pulse text-sm" style={{ color: "var(--surbee-fg-muted)" }}>Loading...</div>
-        </div>
-      }
-    >
+    <Suspense fallback={<LoadingShimmer />}>
       <BillingContent />
     </Suspense>
   );

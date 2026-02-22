@@ -187,18 +187,18 @@ export default function AccountSettingsPage() {
           font-weight: 500;
           color: var(--surbee-fg-primary, #E8E8E8);
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.1);
+          border: 1px solid var(--surbee-border-primary, rgba(232, 232, 232, 0.1));
           border-radius: 9999px;
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
         .settings-tab:hover {
-          border-color: rgba(232, 232, 232, 0.2);
+          border-color: var(--surbee-border-primary, rgba(232, 232, 232, 0.2));
         }
 
         .settings-tab.active {
-          background: rgba(232, 232, 232, 0.05);
+          background: var(--surbee-accent-subtle, rgba(232, 232, 232, 0.05));
           border-color: transparent;
         }
 
@@ -220,7 +220,7 @@ export default function AccountSettingsPage() {
           margin: 32px 0;
           width: 100%;
           height: 1px;
-          background-color: rgba(232, 232, 232, 0.08);
+          background-color: var(--surbee-border-secondary, rgba(232, 232, 232, 0.08));
         }
 
         /* Form Fields */
@@ -251,8 +251,8 @@ export default function AccountSettingsPage() {
           border-radius: 12px;
           font-size: 14px;
           color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
-          background: rgba(232, 232, 232, 0.04);
-          border: 1px solid rgba(232, 232, 232, 0.1);
+          background: var(--surbee-accent-subtle, rgba(232, 232, 232, 0.04));
+          border: 1px solid var(--surbee-border-primary, rgba(232, 232, 232, 0.1));
           max-width: 400px;
         }
 
@@ -354,18 +354,18 @@ export default function AccountSettingsPage() {
           font-size: 14px;
           color: var(--surbee-fg-primary, #E8E8E8);
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.15);
+          border: 1px solid var(--surbee-input-border, rgba(232, 232, 232, 0.15));
           border-radius: 12px;
           outline: none;
           margin-bottom: 16px;
         }
 
         .danger-zone-input:focus {
-          border-color: rgba(232, 232, 232, 0.3);
+          border-color: var(--surbee-border-primary, rgba(232, 232, 232, 0.3));
         }
 
         .danger-zone-input::placeholder {
-          color: rgba(232, 232, 232, 0.3);
+          color: var(--surbee-fg-muted);
         }
 
         .danger-zone-actions {
@@ -378,7 +378,7 @@ export default function AccountSettingsPage() {
           font-size: 14px;
           font-weight: 500;
           color: var(--surbee-fg-primary, #E8E8E8);
-          background: rgba(232, 232, 232, 0.06);
+          background: var(--surbee-accent-subtle, rgba(232, 232, 232, 0.06));
           border: none;
           border-radius: 9999px;
           cursor: pointer;
@@ -386,7 +386,7 @@ export default function AccountSettingsPage() {
         }
 
         .danger-zone-cancel:hover {
-          background: rgba(232, 232, 232, 0.1);
+          background: var(--surbee-accent-subtle, rgba(232, 232, 232, 0.1));
         }
 
         .danger-zone-delete {

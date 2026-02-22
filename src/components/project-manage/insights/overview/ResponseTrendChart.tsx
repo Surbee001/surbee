@@ -1,95 +1,111 @@
 "use client";
 
-import React from 'react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import React, { useState } from 'react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Download } from 'lucide-react';
 import type { TrendDataPoint, TimePeriod } from '../types';
 import styles from '../insights.module.css';
 
 interface ResponseTrendChartProps {
   data: TrendDataPoint[];
   timePeriod: TimePeriod;
+  onTimePeriodChange: (period: TimePeriod) => void;
 }
 
 const periodLabels: Record<TimePeriod, string> = {
-  week: 'Last 7 days',
-  month: 'Last 30 days',
-  quarter: 'Last 90 days',
-  year: 'Last year',
+  week: 'Last Week',
+  month: 'Last Month',
+  quarter: 'Last Quarter',
+  year: 'Last Year',
 };
 
-export function ResponseTrendChart({ data, timePeriod }: ResponseTrendChartProps) {
-  // Calculate total from chart data
+export function ResponseTrendChart({ data, timePeriod, onTimePeriodChange }: ResponseTrendChartProps) {
+  const [mode, setMode] = useState<'aggregate' | 'individual'>('aggregate');
   const total = data.reduce((sum, point) => sum + point.count, 0);
 
   return (
-    <div className={styles.chartCard}>
-      <div className={styles.chartHeader}>
-        <span className={styles.chartTitle}>Response Activity</span>
-        <div className={styles.chartControls}>
-          <span style={{
-            fontFamily: 'var(--insights-font-mono)',
-            fontSize: 14,
-            fontWeight: 600,
-            color: 'var(--insights-fg-primary)',
-            marginRight: 12,
-          }}>
-            {total.toLocaleString()} total
-          </span>
-          <span style={{
-            fontSize: 12,
-            color: 'var(--insights-fg-muted)',
-          }}>
+    <div className={styles.responseChartCard}>
+      <div className={styles.responseChartHeader}>
+        <div className={styles.responseChartTitleGroup}>
+          <span className={styles.responseChartLabel}>Total Responses</span>
+          <span className={styles.responseChartValue}>{total.toLocaleString()}</span>
+        </div>
+        <div className={styles.responseChartControls}>
+          <div className={styles.chartToggleGroup}>
+            <button
+              className={`${styles.chartToggleBtn} ${mode === 'aggregate' ? styles.chartToggleBtnActive : ''}`}
+              onClick={() => setMode('aggregate')}
+            >
+              Aggregate
+            </button>
+            <button
+              className={`${styles.chartToggleBtn} ${mode === 'individual' ? styles.chartToggleBtnActive : ''}`}
+              onClick={() => setMode('individual')}
+            >
+              Individual
+            </button>
+          </div>
+          <button className={styles.analyticsDropdown}>
             {periodLabels[timePeriod]}
-          </span>
+          </button>
+          <button className={styles.analyticsExportBtn}>
+            <Download size={16} />
+          </button>
         </div>
       </div>
-      <div className={styles.chartContainer}>
+      <div className={styles.responseChartContainer}>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
-              <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--insights-fg-primary)" stopOpacity={0.15} />
-                <stop offset="100%" stopColor="var(--insights-fg-primary)" stopOpacity={0.02} />
+              <linearGradient id="responseAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#3ECC8C" stopOpacity={0.25} />
+                <stop offset="100%" stopColor="#3ECC8C" stopOpacity={0.02} />
               </linearGradient>
             </defs>
+            <CartesianGrid
+              horizontal={true}
+              vertical={false}
+              stroke="#212521"
+              strokeDasharray=""
+            />
             <XAxis
               dataKey="day"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: 'var(--insights-fg-muted)', fontSize: 11, fontFamily: 'var(--insights-font-mono)' }}
+              tick={{ fill: '#808080', fontSize: 11, fontFamily: '-apple-system, sans-serif' }}
               dy={10}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fill: 'var(--insights-fg-subtle)', fontSize: 10, fontFamily: 'var(--insights-font-mono)' }}
+              tick={{ fill: '#808080', fontSize: 11, fontFamily: '-apple-system, sans-serif' }}
               width={40}
               tickFormatter={(value) => value.toLocaleString()}
             />
             <Tooltip
               contentStyle={{
-                background: 'var(--insights-bg-card)',
-                border: '1px solid var(--insights-border)',
-                borderRadius: 4,
+                background: '#1a1f1a',
+                border: '1px solid #212521',
+                borderRadius: 8,
                 fontSize: 12,
                 padding: '10px 14px',
-                fontFamily: 'var(--insights-font-mono)',
+                color: '#fff',
               }}
               formatter={(value: number) => [`${value.toLocaleString()} responses`, '']}
               labelFormatter={(label) => label}
-              cursor={{ stroke: 'var(--insights-fg-muted)', strokeWidth: 1, strokeDasharray: '4 4' }}
+              cursor={{ stroke: '#3ECC8C', strokeWidth: 1, strokeDasharray: '4 4' }}
             />
             <Area
               type="monotone"
               dataKey="count"
-              stroke="var(--insights-fg-primary)"
+              stroke="#3ECC8C"
               strokeWidth={2}
-              fill="url(#areaFill)"
+              fill="url(#responseAreaGradient)"
               dot={false}
               activeDot={{
                 r: 4,
-                fill: 'var(--insights-fg-primary)',
-                stroke: 'var(--insights-bg-card)',
+                fill: '#3ECC8C',
+                stroke: '#141714',
                 strokeWidth: 2,
               }}
             />

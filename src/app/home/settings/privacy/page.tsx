@@ -297,18 +297,18 @@ export default function PrivacySettingsPage() {
           font-weight: 500;
           color: var(--surbee-fg-primary, #E8E8E8);
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.1);
+          border: 1px solid var(--surbee-border-primary, rgba(232, 232, 232, 0.1));
           border-radius: 9999px;
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
         .settings-tab:hover {
-          border-color: rgba(232, 232, 232, 0.2);
+          border-color: var(--surbee-border-primary, rgba(232, 232, 232, 0.2));
         }
 
         .settings-tab.active {
-          background: rgba(232, 232, 232, 0.05);
+          background: var(--surbee-accent-subtle, rgba(232, 232, 232, 0.05));
           border-color: transparent;
         }
 
@@ -341,7 +341,7 @@ export default function PrivacySettingsPage() {
           margin: 32px 0;
           width: 100%;
           height: 1px;
-          background-color: rgba(232, 232, 232, 0.08);
+          background-color: var(--surbee-border-secondary, rgba(232, 232, 232, 0.08));
         }
 
         /* Form Fields */
@@ -376,7 +376,7 @@ export default function PrivacySettingsPage() {
           font-size: 14px;
           color: var(--surbee-fg-primary, #E8E8E8);
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.15);
+          border: 1px solid var(--surbee-input-border, rgba(232, 232, 232, 0.15));
           transition: all 0.2s ease;
           width: 100%;
           max-width: 400px;
@@ -384,7 +384,7 @@ export default function PrivacySettingsPage() {
 
         .field-input:focus {
           outline: none;
-          border-color: rgba(232, 232, 232, 0.3);
+          border-color: var(--surbee-border-primary, rgba(232, 232, 232, 0.3));
         }
 
         .field-input::placeholder {
@@ -443,7 +443,7 @@ export default function PrivacySettingsPage() {
           width: 44px;
           height: 24px;
           border-radius: 12px;
-          background: rgba(232, 232, 232, 0.12);
+          background: var(--surbee-accent-subtle);
           border: none;
           cursor: pointer;
           transition: all 0.2s ease;
@@ -488,7 +488,7 @@ export default function PrivacySettingsPage() {
           font-size: 14px;
           color: var(--surbee-fg-primary, #E8E8E8);
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.15);
+          border: 1px solid var(--surbee-input-border, rgba(232, 232, 232, 0.15));
           cursor: pointer;
           appearance: none;
           transition: all 0.2s ease;
@@ -496,7 +496,7 @@ export default function PrivacySettingsPage() {
 
         .field-select:focus {
           outline: none;
-          border-color: rgba(232, 232, 232, 0.3);
+          border-color: var(--surbee-border-primary, rgba(232, 232, 232, 0.3));
         }
 
         .field-select option {
@@ -519,7 +519,7 @@ export default function PrivacySettingsPage() {
         .save-section {
           margin-top: 40px;
           padding-top: 24px;
-          border-top: 1px solid rgba(232, 232, 232, 0.08);
+          border-top: 1px solid var(--surbee-border-secondary);
         }
 
         .save-btn {
@@ -541,7 +541,7 @@ export default function PrivacySettingsPage() {
         .save-btn.disabled {
           opacity: 0.4;
           cursor: not-allowed;
-          background: rgba(232, 232, 232, 0.08);
+          background: var(--surbee-accent-subtle);
           color: var(--surbee-fg-muted, rgba(232, 232, 232, 0.4));
         }
       `}</style>

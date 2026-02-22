@@ -63,6 +63,7 @@ export interface ReferenceItem {
 export interface ChatInputLightRef {
   addFiles: (files: File[]) => void;
   triggerFileInput: () => void;
+  setText: (text: string) => void;
 }
 
 interface ChatInputLightProps {
@@ -90,6 +91,7 @@ interface ChatInputLightProps {
   showModelSelector?: boolean; // optional, shows model selector dropdown
   selectedModel?: AIModel; // optional, currently selected AI model
   onModelChange?: (model: AIModel) => void; // optional, callback when model changes
+  userPlan?: string; // optional, user's subscription plan for model access control
   showBuildToggle?: boolean; // optional, shows build mode toggle
   isBuildMode?: boolean; // optional, whether build mode is active
   onToggleBuildMode?: () => void; // optional, callback to toggle build mode
@@ -123,6 +125,7 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
   showModelSelector = false,
   selectedModel = 'gpt-5',
   onModelChange,
+  userPlan = 'free_user',
   showBuildToggle = false,
   isBuildMode = false,
   onToggleBuildMode,
@@ -199,6 +202,13 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
     // If rotating placeholders are disabled, just use the static placeholder
     if (disableRotatingPlaceholders) {
       node.setAttribute("data-placeholder", placeholder);
+      // Ensure is-editor-empty class is set correctly when switching to static placeholder
+      const isEmpty = !node.textContent || node.textContent.trim() === '';
+      if (isEmpty && files.length === 0) {
+        node.classList.add('is-editor-empty');
+      } else {
+        node.classList.remove('is-editor-empty');
+      }
       return;
     }
 
@@ -213,7 +223,7 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [chatText, placeholderList, placeholderIndex, disableRotatingPlaceholders, placeholder]);
+  }, [chatText, placeholderList, placeholderIndex, disableRotatingPlaceholders, placeholder, files.length]);
 
   // Update is-editor-empty class based on content
   useEffect(() => {
@@ -241,34 +251,15 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
     if (!chatText.trim() && files.length === 0) return;
     if (isInputDisabled) return;
 
-    // Convert files to FileUIPart format for AI SDK
-    console.log('📷 ChatInputLight: files array has', files.length, 'files');
-    console.log('📷 ChatInputLight: filePreviews has', Object.keys(filePreviews).length, 'previews');
-
     const fileUIParts: FileUIPart[] = files
-      .filter(file => {
-        const hasPreview = !!filePreviews[file.name];
-        console.log(`📷 File "${file.name}" has preview: ${hasPreview}`);
-        return hasPreview;
-      })
+      .filter(file => !!filePreviews[file.name])
       .slice(0, 5)
       .map(file => ({
         type: 'file' as const,
         filename: file.name,
         mediaType: file.type,
-        url: filePreviews[file.name] // This is the data URL
+        url: filePreviews[file.name]
       }));
-
-    console.log('📷 ChatInputLight: Sending', fileUIParts.length, 'files as FileUIPart format');
-    if (fileUIParts.length > 0) {
-      console.log('📷 FileUIParts:', fileUIParts.map(f => ({
-        type: f.type,
-        filename: f.filename,
-        mediaType: f.mediaType,
-        urlPrefix: f.url?.substring(0, 50),
-        urlLength: f.url?.length
-      })));
-    }
 
     onSendMessage(
       chatText.trim(), 
@@ -386,6 +377,20 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
     triggerFileInput: () => {
       uploadInputRef.current?.click();
     },
+    setText: (text: string) => {
+      setChatText(text);
+      if (contentEditableRef.current) {
+        contentEditableRef.current.textContent = text;
+        contentEditableRef.current.classList.remove('is-editor-empty');
+        contentEditableRef.current.focus();
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.selectNodeContents(contentEditableRef.current);
+        range.collapse(false);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+    },
   }));
 
   const handleRemoveFile = (index: number) => {
@@ -489,7 +494,7 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
 
   return (
     <div className={`w-full mx-auto ${className}`}>
-      <div 
+      <div
         ref={chatboxContainerRef}
         className={`relative flex flex-col max-h-[40rem] ${compact ? 'min-h-[70px]' : 'min-h-[122px]'} z-10 transition-all duration-500`}
         style={{
@@ -499,12 +504,17 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
             : solidBackground
               ? 'none'
               : '1px solid var(--surbee-dropdown-border)',
+          outline: solidBackground
+            ? (detectedTheme === 'white' ? '1px solid rgba(0,0,0,0.08)' : '1px solid hsla(0,0%,99%,.074)')
+            : 'none',
           backgroundColor: solidBackground
             ? (detectedTheme === 'white'
-                ? 'rgba(0, 0, 0, 0.04)'
-                : (darkSolidBackground ? '#1a1a1a' : 'rgba(255, 255, 255, 0.06)'))
+                ? (darkSolidBackground ? '#FFFFFF' : '#FFFFFF')
+                : (darkSolidBackground ? '#212122' : '#202020'))
             : 'transparent',
-          boxShadow: shouldGlow ? '0 0 20px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.2)' : 'none'
+          boxShadow: shouldGlow
+            ? '0 0 20px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.2)'
+            : 'none'
         }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -727,6 +737,7 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
                   onModelChange={onModelChange}
                   theme={detectedTheme}
                   disabled={isInputDisabled}
+                  userPlan={userPlan}
                 />
               )}
               {onToggleEditMode && (

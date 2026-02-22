@@ -103,54 +103,86 @@ function DashboardContent() {
 
   const chatAreaRef = useRef<HTMLDivElement>(null);
 
-  // Generate personalized greeting based on time of day
+  // Generate greeting that changes ~every 3 hours, deterministic within each window.
+  // Uses the date + time-slot as a seed so it's stable across refreshes but rotates throughout the day.
   const generateGreeting = (userName?: string) => {
-    const hour = new Date().getHours();
+    const now = new Date();
+    const hour = now.getHours();
+    const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
+    const timeSlot = Math.floor(hour / 3); // 0-7, changes every 3 hours
+    const seed = dayOfYear * 8 + timeSlot;
+
     const firstName = userName?.split(' ')[0] || '';
 
-    const morningGreetings = [
+    // Time-aware greetings
+    const earlyMorning = [ // 5-8
+      `Early start, ${firstName}.`,
+      `Morning, ${firstName}.`,
+      `Up and at it, ${firstName}.`,
+      `Blank canvas today, ${firstName}.`,
+    ];
+    const midMorning = [ // 9-11
       `Good morning, ${firstName}.`,
-      `Rise and shine, ${firstName}.`,
-      `Early bird, ${firstName}.`,
-      `Fresh start, ${firstName}.`,
+      `What's the plan today, ${firstName}?`,
+      `Ready when you are, ${firstName}.`,
+      `Let's make something, ${firstName}.`,
     ];
-
-    const afternoonGreetings = [
-      `Good afternoon, ${firstName}.`,
+    const lunch = [ // 12-14
       `Afternoon, ${firstName}.`,
-      `Making moves, ${firstName}.`,
-      `Midday momentum, ${firstName}.`,
-      `Data awaits, ${firstName}.`,
+      `Good afternoon, ${firstName}.`,
+      `What are we working on, ${firstName}?`,
+      `Let's build something, ${firstName}.`,
     ];
-
-    const eveningGreetings = [
+    const midAfternoon = [ // 15-17
+      `Afternoon, ${firstName}.`,
+      `Still going strong, ${firstName}.`,
+      `What do you need, ${firstName}?`,
+      `Let's keep it moving, ${firstName}.`,
+    ];
+    const evening = [ // 18-20
       `Good evening, ${firstName}.`,
       `Evening, ${firstName}.`,
-      `Night owl, ${firstName}.`,
-      `Deep dive time, ${firstName}.`,
+      `Winding down or ramping up, ${firstName}?`,
+      `What's on your mind, ${firstName}?`,
+    ];
+    const lateEvening = [ // 21-23
+      `Late session, ${firstName}.`,
+      `Burning the midnight oil, ${firstName}.`,
+      `Quiet hours, big ideas, ${firstName}.`,
+      `The best ideas come late, ${firstName}.`,
+    ];
+    const lateNight = [ // 0-4
+      `Can't sleep either, ${firstName}?`,
+      `Still at it, ${firstName}.`,
+      `Night shift, ${firstName}.`,
+      `The world's asleep, let's build, ${firstName}.`,
     ];
 
-    const lateNightGreetings = [
-      `Night owl, ${firstName}.`,
-      `Still here, ${firstName}.`,
-      `Late night ideas, ${firstName}.`,
-      `Data never sleeps, ${firstName}.`,
+    // Generic / non-time greetings mixed in ~30% of the time
+    const generic = [
+      `What can I help with, ${firstName}?`,
+      `Got a survey in mind, ${firstName}?`,
+      `Let's get to it, ${firstName}.`,
+      `What are we creating, ${firstName}?`,
+      `Ready to go, ${firstName}.`,
+      `How can I help, ${firstName}?`,
     ];
 
-    const neutralGreetings = [
-      `Let's get creative, ${firstName}.`,
-      `What's cooking, ${firstName}.`,
-      `Time to create, ${firstName}.`,
-    ];
+    // Pick pool based on hour
+    let timePool: string[];
+    if (hour >= 5 && hour < 9) timePool = earlyMorning;
+    else if (hour >= 9 && hour < 12) timePool = midMorning;
+    else if (hour >= 12 && hour < 15) timePool = lunch;
+    else if (hour >= 15 && hour < 18) timePool = midAfternoon;
+    else if (hour >= 18 && hour < 21) timePool = evening;
+    else if (hour >= 21 && hour < 24) timePool = lateEvening;
+    else timePool = lateNight;
 
-    let pool: string[];
-    if (hour >= 5 && hour < 12) pool = morningGreetings;
-    else if (hour >= 12 && hour < 17) pool = afternoonGreetings;
-    else if (hour >= 17 && hour < 22) pool = eveningGreetings;
-    else if (hour >= 22 || hour < 5) pool = lateNightGreetings;
-    else pool = neutralGreetings;
+    // Mix in a generic greeting occasionally (based on seed)
+    const useGeneric = seed % 3 === 0;
+    const pool = useGeneric ? generic : timePool;
 
-    return pool[Math.floor(Math.random() * pool.length)];
+    return pool[seed % pool.length];
   };
 
   // Check if onboarding is needed - redirect to /onboarding if terms not accepted
@@ -163,14 +195,27 @@ function DashboardContent() {
       return;
     }
 
-    // Use session-stored greeting or generate new one
-    const storedGreeting = sessionStorage.getItem('surbee_session_greeting');
+    // Greeting is keyed by time-slot so it stays stable within a ~3hr window
+    // but naturally rotates throughout the day
+    const now = new Date();
+    const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
+    const timeSlot = Math.floor(now.getHours() / 3);
+    const slotKey = `surbee_greeting_${dayOfYear}_${timeSlot}`;
+
+    const storedGreeting = sessionStorage.getItem(slotKey);
     if (storedGreeting) {
       setGreeting(storedGreeting);
     } else {
+      // Clear old greeting keys
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const key = sessionStorage.key(i);
+        if (key && key.startsWith('surbee_greeting_') && key !== slotKey) {
+          sessionStorage.removeItem(key);
+        }
+      }
       const userName = userProfile?.name || user?.user_metadata?.name || user?.email?.split('@')[0];
       const newGreeting = generateGreeting(userName);
-      sessionStorage.setItem('surbee_session_greeting', newGreeting);
+      sessionStorage.setItem(slotKey, newGreeting);
       setGreeting(newGreeting);
     }
   }, [user, userProfile, router]);

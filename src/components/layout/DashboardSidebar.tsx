@@ -8,6 +8,7 @@ import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 import { useTheme } from '@/hooks/useTheme';
 import { HelpCircle, Check, ChevronUp, ChevronDown, Gift, X, Copy, ArrowRight, ExternalLink, Settings as SettingsIcon, Sun, Moon, Laptop, MessageSquare, MoreHorizontal, Pencil, Trash2, Coins, Inbox, PanelLeftClose, PanelLeft, UserPlus } from "lucide-react";
 import { useCredits } from '@/hooks/useCredits';
+import { useUserStore, useHasHydrated, RecentChat, getPlanDisplayName, isPaidPlan, canUpgradePlan } from '@/stores/userStore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -90,7 +91,16 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [recentChats, setRecentChats] = useState<any[]>([]);
+  // Use Zustand store for cached data
+  const {
+    recentChats: cachedRecentChats,
+    setRecentChats: setCachedRecentChats,
+    isChatsCacheStale,
+    subscription: cachedSubscription,
+    setSubscription: setCachedSubscription,
+  } = useUserStore();
+  const hasHydrated = useHasHydrated();
+  const [localRecentChats, setLocalRecentChats] = useState<RecentChat[]>([]);
   const [feedbackText, setFeedbackText] = useState('');
   const [renamingChatId, setRenamingChatId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
@@ -123,6 +133,35 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
     return diffDays > 0 ? diffDays : 0;
   }, [credits?.creditsResetAt]);
 
+  // Initialize local chats from cache after hydration and pre-fetch if stale
+  useEffect(() => {
+    if (!hasHydrated) return;
+
+    // Initialize from cache immediately
+    if (cachedRecentChats.length > 0 && localRecentChats.length === 0) {
+      setLocalRecentChats(cachedRecentChats);
+    }
+
+    // Pre-fetch chats in background if cache is stale
+    const prefetchChats = async () => {
+      if (!user?.id) return;
+      if (cachedRecentChats.length > 0 && !isChatsCacheStale()) return;
+
+      try {
+        const res = await fetch(`/api/chats/recent?userId=${user.id}&limit=20`);
+        if (res.ok) {
+          const data = await res.json();
+          const chats = data.recentChats || [];
+          setLocalRecentChats(chats);
+          setCachedRecentChats(chats);
+        }
+      } catch (e) {
+        console.error("Failed to prefetch chats", e);
+      }
+    };
+
+    prefetchChats();
+  }, [hasHydrated, cachedRecentChats, localRecentChats.length, user?.id, isChatsCacheStale, setCachedRecentChats]);
 
   // Focus rename input when renaming
   useEffect(() => {
@@ -265,20 +304,42 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
     }
   };
 
+  // Combine cached and local chats - prefer local for immediate updates
+  const recentChats = localRecentChats.length > 0 ? localRecentChats : cachedRecentChats;
+
+  // Unified setter that updates both local and cached state
+  const setRecentChats = (chats: RecentChat[]) => {
+    setLocalRecentChats(chats);
+    setCachedRecentChats(chats);
+  };
+
   const toggleChats = async () => {
     const newState = !isChatsOpen;
     setIsChatsOpen(newState);
-    
-    if (newState && recentChats.length === 0 && user?.id) {
+
+    if (newState && user?.id) {
+      // Use cached data immediately if available
+      if (cachedRecentChats.length > 0 && !isChatsCacheStale()) {
+        setLocalRecentChats(cachedRecentChats);
+        return;
+      }
+
+      // Fetch if cache is empty or stale
       try {
         // Fetch more chats (20) so users can scroll through their history
         const res = await fetch(`/api/chats/recent?userId=${user.id}&limit=20`);
         if (res.ok) {
           const data = await res.json();
-          setRecentChats(data.recentChats || []);
+          const chats = data.recentChats || [];
+          setLocalRecentChats(chats);
+          setCachedRecentChats(chats);
         }
       } catch (e) {
         console.error("Failed to fetch chats", e);
+        // Fall back to cached data if fetch fails
+        if (cachedRecentChats.length > 0) {
+          setLocalRecentChats(cachedRecentChats);
+        }
       }
     }
   };
@@ -327,10 +388,11 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
 
   const logoSrc = "/logo.svg";
 
-  // Subscription state
-  const [subscription, setSubscription] = useState<{ plan: string; status: string } | null>(null);
+  // Use cached subscription for immediate display while fresh data loads
+  const subscription = cachedSubscription;
 
-  // Fetch subscription on mount
+  // Fetch subscription on mount - always fetch fresh data from database
+  // Database is the source of truth, cache is only for immediate display
   useEffect(() => {
     const fetchSubscription = async () => {
       if (!user?.id) return;
@@ -348,7 +410,7 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
           });
           if (res.ok) {
             const data = await res.json();
-            setSubscription(data.subscription);
+            setCachedSubscription(data.subscription);
           }
         }
       } catch (e) {
@@ -356,29 +418,36 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
       }
     };
 
-    fetchSubscription();
-  }, [user?.id]);
+    // Fetch after hydration to get fresh data
+    if (hasHydrated) {
+      fetchSubscription();
+    }
+  }, [user?.id, hasHydrated, setCachedSubscription]);
 
-  // Get plan display name and class
+  // Get the current plan - wait for hydration to avoid flickering
+  const currentPlan = useMemo(() => {
+    // If not hydrated yet, return null to indicate loading state
+    if (!hasHydrated) return null;
+    return subscription?.plan || credits?.plan || 'free_user';
+  }, [hasHydrated, subscription?.plan, credits?.plan]);
+
+  // Get plan display name - only show after hydration
   const planDisplayName = useMemo(() => {
-    const plan = subscription?.plan || credits?.plan || 'free_user';
-    const displayNames: Record<string, string> = {
-      'free_user': 'Free',
-      'free': 'Free',
-      'surbee_pro': 'Pro',
-      'pro': 'Pro',
-      'surbee_max': 'Max',
-      'max': 'Max',
-      'surbee_enterprise': 'Enterprise',
-      'enterprise': 'Enterprise',
-    };
-    return displayNames[plan] || 'Free';
-  }, [subscription?.plan, credits?.plan]);
+    if (!currentPlan) return ''; // Empty during hydration to avoid flicker
+    return getPlanDisplayName(currentPlan);
+  }, [currentPlan]);
 
-  const isPaidPlan = useMemo(() => {
-    const plan = subscription?.plan || credits?.plan || 'free_user';
-    return ['pro', 'surbee_pro', 'max', 'surbee_max', 'enterprise', 'surbee_enterprise'].includes(plan);
-  }, [subscription?.plan, credits?.plan]);
+  // Check if user is on a paid plan
+  const userIsPaidPlan = useMemo(() => {
+    if (!currentPlan) return false;
+    return isPaidPlan(currentPlan);
+  }, [currentPlan]);
+
+  // Can upgrade if not on Max or Enterprise (Pro users can upgrade to Max)
+  const canUpgrade = useMemo(() => {
+    if (!currentPlan) return false; // Hide upgrade during hydration
+    return canUpgradePlan(currentPlan);
+  }, [currentPlan]);
 
   return (
     <div className={`dashboard-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
@@ -438,7 +507,7 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
         </div>
 
         <nav className="sidebar-nav">
-          <div className={`user-plan-text ${isPaidPlan ? 'pro' : ''}`}>{planDisplayName}</div>
+          <div className={`user-plan-text ${userIsPaidPlan ? 'pro' : ''}`}>{planDisplayName}</div>
           <SidebarItem
             label="Home"
             isActive={pathname === '/home' || pathname.startsWith('/home?')}
@@ -824,7 +893,7 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
                     ) : daysUntilReset !== null ? (
                       <>
                         {daysUntilReset === 0 ? 'Credits reset today.' : `${daysUntilReset} day${daysUntilReset === 1 ? '' : 's'} until credits reset.`}
-                        {!isPaidPlan && (
+                        {canUpgrade && (
                           <>
                             {' '}
                             <button
@@ -841,7 +910,7 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
                     ) : (
                       <>
                         Credits reset monthly.
-                        {!isPaidPlan && (
+                        {canUpgrade && (
                           <>
                             {' '}
                             <button
@@ -910,8 +979,8 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
                   </div>
                 </div>
 
-                {/* Upgrade Plan - hide ONLY for confirmed paid plans */}
-                {!isPaidPlan && (
+                {/* Upgrade Plan - show for Free and Pro users (hide for Max/Enterprise) */}
+                {canUpgrade && (
                   <button
                     onClick={() => { setIsUserMenuOpen(false); handleNavigation('/home/pricing'); }}
                     className="user-menu-item"

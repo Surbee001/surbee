@@ -7,6 +7,16 @@
     "unframer": {
       "type": "sse",
       "url": "https://mcp.unframer.co/sse?id=22e46d9655f402778424466cb166e2e8c0d325078f318d88ed1bc6c47a43db10&secret=Mjxd6M3ZWIAZ7qjZvKWl7BPpHhhdpHWo"
+    },
+    "paddle": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@paddle/paddle-mcp",
+        "--api-key=${PADDLE_API_KEY}",
+        "--environment=production",
+        "--tools=non-destructive"
+      ]
     }
   }
 }

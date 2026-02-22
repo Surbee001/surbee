@@ -123,7 +123,7 @@ export default function LoginPage() {
         justifyContent: 'center',
         padding: '20px',
         backgroundColor: '#F7F7F4',
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily: "'Opening Hours Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
       <motion.div
@@ -201,8 +201,8 @@ export default function LoginPage() {
                   transition: 'all 0.2s ease',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#F2C4FF'
-                  e.currentTarget.style.borderColor = '#F2C4FF'
+                  e.currentTarget.style.backgroundColor = '#3563C6'
+                  e.currentTarget.style.borderColor = '#3563C6'
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent'
@@ -233,7 +233,7 @@ export default function LoginPage() {
                   justifyContent: 'center',
                   gap: '10px',
                   padding: '12px 20px',
-                  backgroundColor: isHovered === 'google' ? '#F2C4FF' : '#000000',
+                  backgroundColor: isHovered === 'google' ? '#3563C6' : '#000000',
                   color: '#FFFFFF',
                   border: 'none',
                   borderRadius: '50px',
@@ -330,7 +330,7 @@ export default function LoginPage() {
                       style={{
                         flex: 1,
                         padding: '12px 20px',
-                        backgroundColor: isHovered === 'email-submit' ? '#F2C4FF' : '#000000',
+                        backgroundColor: isHovered === 'email-submit' ? '#3563C6' : '#000000',
                         color: '#FFFFFF',
                         border: 'none',
                         borderRadius: '50px',
@@ -359,9 +359,9 @@ export default function LoginPage() {
                     justifyContent: 'center',
                     gap: '10px',
                     padding: '12px 20px',
-                    backgroundColor: isHovered === 'email' ? '#F2C4FF' : 'transparent',
+                    backgroundColor: isHovered === 'email' ? '#3563C6' : 'transparent',
                     color: isHovered === 'email' ? '#FFFFFF' : '#11100C',
-                    border: isHovered === 'email' ? '1px solid #F2C4FF' : '1px solid rgba(100, 100, 100, 0.2)',
+                    border: isHovered === 'email' ? '1px solid #3563C6' : '1px solid rgba(100, 100, 100, 0.2)',
                     borderRadius: '50px',
                     fontSize: '14px',
                     fontWeight: 500,
@@ -410,9 +410,9 @@ export default function LoginPage() {
           }}
         >
           By continuing, you agree to our{' '}
-          <a href="/terms" style={{ color: '#11100C', textDecoration: 'underline' }}>Terms of Service</a>
+          <a href="https://surbee.dev/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#11100C', textDecoration: 'underline' }}>Terms of Service</a>
           {' '}and{' '}
-          <a href="/privacy" style={{ color: '#11100C', textDecoration: 'underline' }}>Privacy Policy</a>
+          <a href="https://surbee.dev/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#11100C', textDecoration: 'underline' }}>Privacy Policy</a>
         </motion.p>
       </motion.div>
     </div>

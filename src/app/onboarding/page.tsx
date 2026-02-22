@@ -260,7 +260,7 @@ function OnboardingPage() {
         justifyContent: 'center',
         padding: '20px',
         backgroundColor: '#F7F7F4',
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily: "'Opening Hours Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
       <AnimatePresence mode="wait">
@@ -641,7 +641,7 @@ function OnboardingPage() {
                   width: '100%',
                   padding: '16px 20px',
                   fontSize: '18px',
-                  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                  fontFamily: "'Opening Hours Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                   border: '2px solid rgba(100, 100, 100, 0.2)',
                   borderRadius: '12px',
                   backgroundColor: '#FFFFFF',

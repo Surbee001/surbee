@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ProjectsService } from '@/lib/services/projects';
+import { supabaseAdmin } from '@/lib/supabase-server';
 
 interface RouteContext {
   params: Promise<{ url: string }>;
@@ -25,41 +26,111 @@ export async function GET(
       );
     }
 
-    // Debug logging
-    console.log('[Published Survey API] Project found:', {
-      id: project.id,
-      title: project.title,
-      hasSandboxBundle: !!project.sandbox_bundle,
-      hasSurveySchema: !!project.survey_schema,
-      sandboxBundleKeys: project.sandbox_bundle ? Object.keys(project.sandbox_bundle) : null,
-      status: project.status,
-      published_url: project.published_url
-    });
-
     // Check for sandbox_bundle (AI-generated survey) first, then survey_schema as fallback
     if (!project || (!project.sandbox_bundle && !project.survey_schema)) {
-      console.log('[Published Survey API] No content found:', {
-        hasProject: !!project,
-        hasSandboxBundle: project?.sandbox_bundle ? true : false,
-        hasSurveySchema: project?.survey_schema ? true : false
-      });
       return NextResponse.json(
         { error: 'Survey not found or has no content yet' },
         { status: 404 }
       );
     }
 
+    const settings = project.settings || {};
+
+    // Check if survey is closed by date
+    if (settings.responses?.closeAfterDate) {
+      const closeDate = new Date(settings.responses.closeAfterDate);
+      if (new Date() > closeDate) {
+        return NextResponse.json({
+          closed: true,
+          closureReason: 'expired',
+          closureDate: settings.responses.closeAfterDate,
+          title: project.title,
+        });
+      }
+    }
+
+    // Check if response limit is reached
+    if (settings.responses?.limitResponses && settings.responses?.maxResponses) {
+      const { count, error: countError } = await supabaseAdmin
+        .from('survey_responses')
+        .select('*', { count: 'exact', head: true })
+        .eq('survey_id', project.id)
+        .eq('is_preview', false);
+
+      if (!countError && count !== null && count >= settings.responses.maxResponses) {
+        return NextResponse.json({
+          closed: true,
+          closureReason: 'limit_reached',
+          maxResponses: settings.responses.maxResponses,
+          title: project.title,
+        });
+      }
+    }
+
     // Return the project data including sandbox_bundle for rendering
+    // Include flags for client-side handling
     return NextResponse.json({
       id: project.id,
       title: project.title,
       description: project.description,
       sandbox_bundle: project.sandbox_bundle,
       survey_schema: project.survey_schema,
-      published_at: project.published_at
+      published_at: project.published_at,
+      // Include settings needed for client
+      settings: {
+        passwordProtected: settings.privacy?.passwordProtected || false,
+        showThankYouPage: settings.responses?.showThankYouPage ?? true,
+        thankYouMessage: settings.responses?.thankYouMessage || 'Thank you for completing this survey!',
+        redirectUrl: settings.responses?.redirectUrl || null,
+      }
     });
   } catch (error) {
     console.error('Error fetching published survey:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - Verify password for protected surveys
+export async function POST(
+  request: NextRequest,
+  context: RouteContext
+) {
+  try {
+    const { url: publishedUrl } = await context.params;
+    const body = await request.json();
+    const { password } = body;
+
+    const { data: project, error } = await ProjectsService.getPublishedProject(publishedUrl);
+
+    if (error || !project) {
+      return NextResponse.json(
+        { error: 'Survey not found' },
+        { status: 404 }
+      );
+    }
+
+    const settings = project.settings || {};
+
+    // Check if password protection is enabled
+    if (!settings.privacy?.passwordProtected) {
+      return NextResponse.json({ valid: true });
+    }
+
+    // Verify password
+    const storedPassword = settings.privacy?.password;
+    if (password === storedPassword) {
+      return NextResponse.json({ valid: true });
+    }
+
+    return NextResponse.json(
+      { valid: false, error: 'Incorrect password' },
+      { status: 401 }
+    );
+  } catch (error) {
+    console.error('Error verifying password:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
