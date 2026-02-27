@@ -5,18 +5,6 @@ const nextConfig: NextConfig = {
     // Temporarily ignore TS errors during production build while we integrate large codebase
     ignoreBuildErrors: true,
   },
-  // Required headers for WebContainers (SharedArrayBuffer support)
-  async headers() {
-    const coopCoepHeaders = [
-      { key: 'Cross-Origin-Embedder-Policy', value: 'credentialless' },
-      { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
-    ];
-    return [
-      { source: '/s/:path*', headers: coopCoepHeaders },
-      { source: '/project/:path*', headers: coopCoepHeaders },
-      { source: '/projects/:path*', headers: coopCoepHeaders },
-    ];
-  },
   async redirects() {
     return [
       // Redirect /dashboard to /home for backwards compatibility

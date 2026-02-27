@@ -2274,48 +2274,6 @@ Analyze the survey structure, questions, and design. Then help me build a simila
             )}
           </div>
 
-          {/* Quick suggestions - only before chat starts */}
-          <AnimatePresence>
-            {!hasStartedChat && (
-              <motion.div
-                className="flex flex-wrap gap-2.5 mt-2 w-full justify-between"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.3, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-              >
-                {[
-                  { label: 'Product feedback', tooltip: 'Generate a product feedback survey', prompt: 'Create a product feedback survey to understand what features users love, what frustrates them, and what improvements they\'d like to see in the next release.', build: true },
-                  { label: 'Analyze responses', tooltip: 'Summarize trends in your survey data', prompt: 'Analyze my latest survey responses and summarize the key trends, common themes, and any notable outliers in the data.', build: false },
-                  { label: 'Customer satisfaction', tooltip: 'Build a CSAT survey', prompt: 'Build a customer satisfaction (CSAT) survey that measures overall satisfaction, likelihood to recommend, and captures open-ended feedback on the experience.', build: true },
-                  { label: 'Improve questions', tooltip: 'Get suggestions to improve your questions', prompt: 'Review my most recent survey and suggest improvements to the questions — fix any leading or confusing wording and recommend better question types where appropriate.', build: false },
-                ].map((suggestion) => (
-                  <Tooltip key={suggestion.label}>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (suggestion.build) {
-                            setSelectedCreateType('Survey');
-                            setIsBuildMode(true);
-                          }
-                          chatInputRef.current?.setText(suggestion.prompt);
-                        }}
-                        className="px-3.5 py-1.5 rounded-full text-sm transition-all duration-200 cursor-pointer border dark:border-white/10 border-black/10 dark:hover:bg-white/10 hover:bg-black/5 dark:hover:border-white/20 hover:border-black/20"
-                        style={{
-                          color: 'var(--surbee-fg-secondary)',
-                          fontFamily: "'Opening Hours Sans', sans-serif",
-                        }}
-                      >
-                        {suggestion.label}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={4}>{suggestion.tooltip}</TooltipContent>
-                  </Tooltip>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </div>
 

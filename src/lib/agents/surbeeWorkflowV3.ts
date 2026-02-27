@@ -744,6 +744,63 @@ export function streamWorkflowV3({ messages: rawMessages, model = 'gpt-5', proje
     },
   });
 
+  // Define read_console_logs tool that fetches from sandbox relay
+  const readConsoleLogs = tool({
+    description: 'REQUIRED after every surbe_build_preview: Read console logs and compilation errors from the sandbox. Returns Next.js compilation errors, warnings, and recent stdout. If errors are found, you MUST fix them before finishing.',
+    inputSchema: z.object({
+      search: z.string().optional().describe('Optional search term to filter logs'),
+    }),
+    execute: async ({ search }) => {
+      if (!projectId || !userId) {
+        return { status: 'info', message: 'No project context.', errors: [], warnings: [], stdout: [], error_count: 0 };
+      }
+
+      try {
+        // Look up sandbox relay URL from DB
+        const { data: project } = await supabaseAdmin
+          .from('projects')
+          .select('sandbox_relay_url')
+          .eq('id', projectId)
+          .eq('user_id', userId)
+          .single();
+
+        if (!project?.sandbox_relay_url) {
+          return { status: 'info', message: 'No sandbox running.', errors: [], warnings: [], stdout: [], error_count: 0 };
+        }
+
+        const resp = await fetch(`${project.sandbox_relay_url}/logs?lines=100`, {
+          signal: AbortSignal.timeout(5000),
+        });
+
+        if (!resp.ok) {
+          return { status: 'error', message: 'Failed to fetch logs.', errors: [], warnings: [], stdout: [], error_count: 0 };
+        }
+
+        const data = await resp.json();
+        let errors: string[] = data.errors || [];
+        let warnings: string[] = data.warnings || [];
+
+        // Apply search filter if provided
+        if (search) {
+          const term = search.toLowerCase();
+          errors = errors.filter((e: string) => e.toLowerCase().includes(term));
+          warnings = warnings.filter((w: string) => w.toLowerCase().includes(term));
+        }
+
+        return {
+          status: 'success',
+          error_count: errors.length,
+          warning_count: warnings.length,
+          errors,
+          warnings,
+          stdout: (data.stdout || []).slice(-15),
+        };
+      } catch (err: any) {
+        return { status: 'error', message: err.message, errors: [], warnings: [], stdout: [], error_count: 0 };
+      }
+    },
+  });
+
   const streamConfig: any = {
     model: selectedModel,
     experimental_transform: smoothStream(),
@@ -778,7 +835,8 @@ export function streamWorkflowV3({ messages: rawMessages, model = 'gpt-5', proje
       }),
     tools: {
       ...tools,
-      save_survey_questions: saveSurveyQuestionsTool
+      surbe_read_console_logs: readConsoleLogs,
+      save_survey_questions: saveSurveyQuestionsTool,
     },
   };
 

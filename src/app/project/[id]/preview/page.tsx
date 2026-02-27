@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { WebContainerPreview } from '@/components/sandbox/WebContainerPreview';
+import { ModalSandboxPreview } from '@/components/sandbox/ModalSandboxPreview';
 
 interface PreviewPageProps {
   params: Promise<{
@@ -166,7 +166,7 @@ export default function PreviewPage({ params }: PreviewPageProps) {
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      <WebContainerPreview
+      <ModalSandboxPreview
         bundle={sandboxBundle}
         className="w-full h-full"
         projectId={projectId}

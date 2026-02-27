@@ -3,7 +3,7 @@
  *
  * All tools are "virtual" — they operate on an in-memory projectFiles Map.
  * Tool results include `source_files` which the client extracts and writes
- * to an in-browser WebContainer for live preview.
+ * to an in-browser sandbox for live preview.
  */
 
 import { tool } from 'ai';
@@ -466,7 +466,7 @@ export const surbeCopy = tool({
 // ============================================================================
 
 export const surbeAddDependency = tool({
-  description: "Install an npm package. The client WebContainer will handle the actual installation.",
+  description: "Install an npm package. The client sandbox will handle the actual installation.",
   inputSchema: z.object({
     package: z.string().describe("Package name (e.g., 'recharts' or 'recharts@latest')"),
   }),
@@ -506,14 +506,14 @@ export const surbeRemoveDependency = tool({
 });
 
 export const surbeReadConsoleLogs = tool({
-  description: "Read console logs. Console output is now handled client-side by the WebContainer.",
+  description: "Read console logs. Console output is now handled client-side by the sandbox.",
   inputSchema: z.object({
     search: z.string().optional().describe("Optional search term to filter logs"),
   }),
   execute: async () => {
     return {
       status: 'success',
-      message: 'Console logs are handled client-side by the WebContainer.',
+      message: 'Console logs are handled client-side by the sandbox.',
       stdout: [],
       errors: [],
       error_count: 0,
@@ -665,7 +665,7 @@ Example:
 
       const mimeType = base64Match[1];
 
-      // Store the data URL in projectFiles — the client WebContainer can handle binary files
+      // Store the data URL in projectFiles — the client sandbox can handle binary files
       trackFile(target_path, dataUrl);
 
       const allFiles = getAllSourceFiles();

@@ -196,7 +196,17 @@
       "Bash(cd /e/Surbee/surbee/fly && \"$USERPROFILE/.fly/bin/flyctl.exe\" deploy --app surbee-sandbox --remote-only --strategy immediate 2>&1)",
       "Bash(\"$USERPROFILE/.fly/bin/flyctl.exe\" machines:*)",
       "Bash(\"$USERPROFILE/.fly/bin/flyctl.exe\" machines destroy 48e4197ce47128 --app surbee-sandbox --force 2>&1 && \"$USERPROFILE/.fly/bin/flyctl.exe\" machines destroy 1850dd7b770ed8 --app surbee-sandbox --force 2>&1)",
-      "Bash(\"$USERPROFILE/.fly/bin/flyctl.exe\" ips:*)"
+      "Bash(\"$USERPROFILE/.fly/bin/flyctl.exe\" ips:*)",
+      "WebFetch(domain:modal.com)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(modal deploy:*)",
+      "Bash(PYTHONIOENCODING=utf-8 modal deploy:*)",
+      "Bash(PYTHONIOENCODING=utf-8 modal app:*)",
+      "Bash(PYTHONIOENCODING=utf-8 timeout 10 modal app:*)",
+      "Bash(PYTHONIOENCODING=utf-8 python:*)",
+      "Bash(xxd:*)",
+      "Bash(xargs file:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": [],

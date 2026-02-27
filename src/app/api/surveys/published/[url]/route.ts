@@ -74,6 +74,7 @@ export async function GET(
       title: project.title,
       description: project.description,
       sandbox_bundle: project.sandbox_bundle,
+      sandbox_preview_url: project.sandbox_preview_url || null,
       survey_schema: project.survey_schema,
       published_at: project.published_at,
       // Include settings needed for client

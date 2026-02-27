@@ -8,6 +8,10 @@ export interface Project {
   status: 'draft' | 'published' | 'archived';
   survey_schema?: any; // Latest survey schema
   sandbox_bundle?: any; // Sandbox files and configuration
+  sandbox_object_id?: string | null; // Modal sandbox ID
+  sandbox_relay_url?: string | null; // Modal sandbox relay URL (port 8000)
+  sandbox_preview_url?: string | null; // Modal sandbox preview URL (port 3000)
+  sandbox_last_heartbeat?: string | null; // Last time sandbox was confirmed alive
   preview_image?: string | null; // Screenshot of the survey/sandbox
   published_url?: string; // Shareable public URL
   published_at?: string; // Timestamp when published

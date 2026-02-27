@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { WebContainerPreview } from '@/components/sandbox/WebContainerPreview';
+import { ModalSandboxPreview } from '@/components/sandbox/ModalSandboxPreview';
 
 interface SandboxBundle {
   files: Record<string, string>;
@@ -61,7 +61,7 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ projectId, sandboxBundle
   return (
     <div className="preview-root">
       <div className="preview-container">
-        <WebContainerPreview
+        <ModalSandboxPreview
           bundle={sandboxBundle}
           projectId={projectId}
           className="w-full h-full"

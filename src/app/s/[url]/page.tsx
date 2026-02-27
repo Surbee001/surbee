@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { WebContainerPreview } from '@/components/sandbox/WebContainerPreview'
+import { ModalSandboxPreview } from '@/components/sandbox/ModalSandboxPreview'
 import type { CipherTier } from '@/lib/cipher/tier-config'
 import {
   subscribeToSettingsUpdates,
@@ -39,6 +39,7 @@ interface PublishedSurvey {
   title: string
   description?: string
   sandbox_bundle?: SandboxBundle
+  sandbox_preview_url?: string | null
   survey_schema?: any
   published_at: string
   settings?: SurveySettings
@@ -737,10 +738,26 @@ export default function PublishedSurveyPage() {
     )
   }
 
-  // Render survey using WebContainer
+  // Render survey using Modal sandbox
+  // If sandbox_preview_url exists (persistent sandbox), use direct iframe for instant load
+  if (survey.sandbox_preview_url) {
+    return (
+      <div style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
+        <iframe
+          ref={(el) => handleIframeReady(el)}
+          src={survey.sandbox_preview_url}
+          className="w-full h-full border-none"
+          title="Survey"
+          allow="clipboard-write"
+        />
+      </div>
+    )
+  }
+
+  // Fallback: create sandbox on-demand via ModalSandboxPreview
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      <WebContainerPreview
+      <ModalSandboxPreview
         bundle={survey.sandbox_bundle}
         className="w-full h-full"
         projectId={survey.id}

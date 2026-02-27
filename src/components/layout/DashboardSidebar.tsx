@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 import { useTheme } from '@/hooks/useTheme';
-import { HelpCircle, Check, ChevronUp, ChevronDown, Gift, X, Copy, ArrowRight, ExternalLink, Settings as SettingsIcon, Sun, Moon, Laptop, MessageSquare, MoreHorizontal, Pencil, Trash2, Coins, Inbox, PanelLeftClose, PanelLeft, UserPlus } from "lucide-react";
+import { HelpCircle, Check, ChevronUp, ChevronDown, Gift, X, Copy, ArrowRight, ExternalLink, Settings as SettingsIcon, Sun, Moon, Laptop, MessageSquare, MoreHorizontal, Pencil, Trash2, Coins, Inbox, PanelLeftClose, PanelLeft, UserPlus, Home, FolderOpen, Users } from "lucide-react";
 import { useCredits } from '@/hooks/useCredits';
 import { useUserStore, useHasHydrated, RecentChat, getPlanDisplayName, isPaidPlan, canUpgradePlan } from '@/stores/userStore';
 import {
@@ -50,34 +50,49 @@ function formatRelativeTime(dateString: string): string {
   return `${diffMonths} month${diffMonths === 1 ? '' : 's'} ago`;
 }
 
-const SidebarItem = ({ 
-  label, 
-  isActive = false, 
+const SidebarItem = ({
+  label,
+  isActive = false,
   onClick,
   comingSoon = false,
-  icon = null
+  icon = null,
+  collapsedIcon = null,
+  isCollapsed = false,
 }: {
   label: string;
   isActive?: boolean;
   onClick?: () => void;
   comingSoon?: boolean;
   icon?: 'arrow' | 'external' | 'chevron-down' | 'chevron-up' | null;
+  collapsedIcon?: React.ReactNode;
+  isCollapsed?: boolean;
 }) => (
-  <div 
-    className={`sidebar-item group ${isActive ? 'active' : ''}`}
-    onClick={onClick}
-  >
-    <span className="sidebar-item-label justify-between">
-      <span>{label}</span>
-      {comingSoon && (
-        <span className="coming-soon-label">Coming Soon</span>
-      )}
-      {icon === 'arrow' && <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
-      {icon === 'external' && <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
-      {icon === 'chevron-down' && <ChevronDown className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
-      {icon === 'chevron-up' && <ChevronUp className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
-    </span>
-  </div>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <div
+        className={`sidebar-item group ${isActive ? 'active' : ''}`}
+        onClick={onClick}
+      >
+        {isCollapsed ? (
+          <span className="sidebar-item-label justify-center" style={{ padding: '8px' }}>
+            {collapsedIcon}
+          </span>
+        ) : (
+          <span className="sidebar-item-label justify-between">
+            <span>{label}</span>
+            {comingSoon && (
+              <span className="coming-soon-label">Coming Soon</span>
+            )}
+            {icon === 'arrow' && <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
+            {icon === 'external' && <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
+            {icon === 'chevron-down' && <ChevronDown className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
+            {icon === 'chevron-up' && <ChevronUp className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
+          </span>
+        )}
+      </div>
+    </TooltipTrigger>
+    {isCollapsed && <TooltipContent side="right" sideOffset={4}>{label}</TooltipContent>}
+  </Tooltip>
 );
 
 interface DashboardSidebarProps {
@@ -517,42 +532,51 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
         </div>
 
         <nav className="sidebar-nav">
-          <div className={`user-plan-text ${userIsPaidPlan ? 'pro' : ''}`}>{planDisplayName}</div>
+          {!isCollapsed && <div className={`user-plan-text ${userIsPaidPlan ? 'pro' : ''}`}>{planDisplayName}</div>}
           <SidebarItem
             label="Home"
             isActive={pathname === '/home' || pathname.startsWith('/home?')}
             onClick={() => router.push('/home')}
+            collapsedIcon={<Home className="w-4 h-4" />}
+            isCollapsed={isCollapsed}
           />
           <SidebarItem
             label="Projects"
             isActive={pathname.startsWith('/projects')}
             onClick={() => handleNavigation('/projects')}
-            icon="arrow"
+            icon={isCollapsed ? null : "arrow"}
+            collapsedIcon={<FolderOpen className="w-4 h-4" />}
+            isCollapsed={isCollapsed}
           />
           {false && (
             <SidebarItem
               label="Knowledge Base"
               isActive={pathname.startsWith('/home/kb')}
               onClick={() => handleNavigation('/home/kb')}
+              isCollapsed={isCollapsed}
             />
           )}
           <SidebarItem
             label="Community"
             isActive={pathname.startsWith('/marketplace')}
             onClick={() => handleNavigation('/marketplace')}
-            icon="arrow"
+            icon={isCollapsed ? null : "arrow"}
+            collapsedIcon={<Users className="w-4 h-4" />}
+            isCollapsed={isCollapsed}
           />
           
           <div className="sidebar-group">
             <SidebarItem
               label="Chats"
               isActive={isChatsOpen}
-              onClick={toggleChats}
-              icon={isChatsOpen ? 'chevron-up' : 'chevron-down'}
+              onClick={isCollapsed ? () => router.push('/home') : toggleChats}
+              icon={isCollapsed ? null : (isChatsOpen ? 'chevron-up' : 'chevron-down')}
+              collapsedIcon={<MessageSquare className="w-4 h-4" />}
+              isCollapsed={isCollapsed}
             />
             
             <AnimatePresence>
-              {isChatsOpen && (
+              {isChatsOpen && !isCollapsed && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
@@ -706,7 +730,13 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
             </AnimatePresence>
           </div>
 
-          <SidebarItem label="Get Help" onClick={() => {}} icon="external" />
+          <SidebarItem
+            label="Get Help"
+            onClick={() => {}}
+            icon={isCollapsed ? null : "external"}
+            collapsedIcon={<HelpCircle className="w-4 h-4" />}
+            isCollapsed={isCollapsed}
+          />
         </nav>
 
         {/* Bottom account/settings trigger */}

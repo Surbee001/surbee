@@ -33,7 +33,7 @@ import { AgentWorkflow, convertPartsToWorkflowBlocks } from '@/components/agent/
 import { VersionHistory } from '@/components/VersionHistory';
 import { Switch } from "@/components/ui/switch";
 import { ProjectSettings } from '@/components/project-manage/ProjectSettings';
-import { WebContainerPreview } from "@/components/sandbox/WebContainerPreview";
+import { ModalSandboxPreview } from "@/components/sandbox/ModalSandboxPreview";
 import { useUserStore } from "@/stores/userStore";
 
 interface ThinkingStep {
@@ -2309,7 +2309,7 @@ function ProjectPreviewOnly({
   }
 
   return (
-    <WebContainerPreview
+    <ModalSandboxPreview
       bundle={bundle}
       refreshKey={refreshKey}
       className="h-full w-full"
@@ -4060,7 +4060,7 @@ Please make changes specifically to this element.`;
       <div className="h-screen w-full bg-[#0a0a0a] text-white">
         {/* Show sandbox view only */}
         <div className="relative h-full w-full">
-          <WebContainerPreview
+          <ModalSandboxPreview
             bundle={previewBundle}
             className="h-full w-full"
             projectId={projectId}
@@ -4979,9 +4979,18 @@ Please make changes specifically to this element.`;
                   backgroundColor: isDarkMode ? '#242424' : '#EBEBEB'
                 }}
               >
-                {/* Show loading animation while AI is working */}
+                {/* Show loading state while AI is working */}
                 {(status === 'submitted' || status === 'streaming') && !sandboxAvailable ? (
-                  <ProjectLoader isDark={isDarkMode} text="Building" />
+                  <div
+                    className="flex items-center justify-center h-full w-full"
+                    style={{
+                      backgroundColor: 'var(--surbee-bg-primary)',
+                      border: '1px solid var(--surbee-border-primary, rgba(0,0,0,0.08))',
+                      borderRadius: '0.625rem',
+                    }}
+                  >
+                    <p className="text-sm" style={{ color: 'var(--surbee-fg-muted)' }}>Building</p>
+                  </div>
                 ) : sandboxAvailable ? (
                   /* Show React preview when sandbox is available */
                   <div className={`${getDeviceStyles()} transition-all duration-300 mx-auto`}>
