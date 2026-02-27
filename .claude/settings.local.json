@@ -206,7 +206,8 @@
       "Bash(PYTHONIOENCODING=utf-8 python:*)",
       "Bash(xxd:*)",
       "Bash(xargs file:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": [],
