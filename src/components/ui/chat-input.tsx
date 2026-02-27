@@ -255,31 +255,12 @@ export default function ChatInput({
     }
   }, [chatText]);
 
-  // Quick suggestions loader (context-aware)
+  // Quick suggestions
   useEffect(() => {
-    let ignore = false;
-    const load = async () => {
-      try {
-        const html =
-          contextHtml ??
-          (typeof document !== 'undefined' ? (document.querySelector('main')?.innerHTML || document.body.innerHTML || '') : '');
-        const res = await fetch('/api/website-builder/suggestions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ html: String(html).slice(0, 50000) }),
-        });
-        if (!res.ok) throw new Error('suggestions');
-        const data = await res.json();
-        if (!ignore) setSuggestions(data?.suggestions ?? []);
-      } catch {
-        if (!ignore) setSuggestions(["Summarize this page", "Find related docs", "Explain this section", "Suggest improvements"]);
-      }
-    };
-    if (isFocused) load();
-    return () => {
-      ignore = true;
-    };
-  }, [isFocused, contextHtml]);
+    if (isFocused) {
+      setSuggestions(["Summarize this page", "Find related docs", "Explain this section", "Suggest improvements"]);
+    }
+  }, [isFocused]);
 
   return (
     <div className={`w-full ${className}`}>
