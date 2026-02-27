@@ -107,12 +107,10 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({ projectId }) => {
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
 
   const handleExportReport = () => {
-    console.log('Generating research report...');
     alert('Report generation started! This would create a comprehensive PDF/DOCX with all analytics, charts, and insights.');
   };
 
   const handleExportData = () => {
-    console.log('Exporting analytics data...');
     // Create CSV
     const csvContent = [
       ['Metric', 'Value'],

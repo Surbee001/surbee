@@ -50,8 +50,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL('/login?error=auth_failed', request.url))
       }
 
-      console.log('[Auth Callback] Session created successfully for user:', data.user?.id)
-
       // Return the response with cookies set
       return response
     } catch (error) {

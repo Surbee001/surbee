@@ -65,8 +65,6 @@ export async function POST(request: NextRequest) {
     }
 
     const event: PaddleWebhookEvent = JSON.parse(rawBody);
-    console.log(`Paddle webhook: ${event.event_type}`, event.event_id);
-
     switch (event.event_type) {
       case 'subscription.created':
       case 'subscription.activated':
@@ -94,7 +92,7 @@ export async function POST(request: NextRequest) {
         break;
 
       default:
-        console.log(`Unhandled Paddle event type: ${event.event_type}`);
+        break;
     }
 
     return NextResponse.json({ received: true });
@@ -163,7 +161,6 @@ async function handleSubscriptionCreated(data: Record<string, unknown>) {
     throw error;
   }
 
-  console.log(`Subscription created for user ${userId}: ${dbPlan}`);
 }
 
 async function handleSubscriptionUpdated(data: Record<string, unknown>) {
@@ -214,7 +211,6 @@ async function handleSubscriptionUpdated(data: Record<string, unknown>) {
     throw error;
   }
 
-  console.log(`Subscription updated: ${subscriptionId}`);
 }
 
 async function handleSubscriptionCanceled(data: Record<string, unknown>) {
@@ -238,7 +234,6 @@ async function handleSubscriptionCanceled(data: Record<string, unknown>) {
     throw error;
   }
 
-  console.log(`Subscription canceled: ${subscriptionId}`);
 }
 
 async function handleSubscriptionPastDue(data: Record<string, unknown>) {
@@ -256,7 +251,6 @@ async function handleSubscriptionPastDue(data: Record<string, unknown>) {
     console.error('Error updating subscription to past_due:', error);
   }
 
-  console.log(`Subscription past due: ${subscriptionId}`);
 }
 
 async function handleTransactionCompleted(data: Record<string, unknown>) {
@@ -297,7 +291,6 @@ async function handleTransactionCompleted(data: Record<string, unknown>) {
     console.error('Error resetting credits:', error);
   }
 
-  console.log(`Credits reset for subscription: ${subscriptionId}`);
 }
 
 async function handlePaymentFailed(data: Record<string, unknown>) {
@@ -317,5 +310,4 @@ async function handlePaymentFailed(data: Record<string, unknown>) {
     console.error('Error updating subscription after payment failure:', error);
   }
 
-  console.log(`Payment failed for subscription: ${subscriptionId}`);
 }

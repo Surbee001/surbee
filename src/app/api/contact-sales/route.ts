@@ -45,22 +45,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error('Error saving sales lead:', error);
-      // If table doesn't exist, just log and return success
-      // The lead can be captured via logs until table is created
-      console.log('Sales lead data:', {
-        companySize,
-        companyName,
-        firstName,
-        lastName,
-        email,
-        phone,
-        interest,
-        message,
-      });
     }
-
-    // TODO: Optionally send notification email to sales team
-    // await sendEmailToSales({ ... });
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -59,8 +59,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
       })
       .eq('id', projectId);
 
-    console.log(`✅ Screenshot saved: ${uploadResponse.url}`);
-
     return NextResponse.json({
       success: true,
       previewUrl: uploadResponse.url,

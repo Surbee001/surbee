@@ -34,8 +34,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    console.log(`[CaptureScreenshot] Starting capture for project ${projectId}`);
-
     // Get the project
     const { data: project, error: projectError } = await supabaseAdmin
       .from('projects')
@@ -44,7 +42,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
       .single();
 
     if (projectError || !project?.sandbox_bundle) {
-      console.log('[CaptureScreenshot] No sandbox bundle found');
       return NextResponse.json({ error: 'No sandbox bundle found' }, { status: 404 });
     }
 
@@ -52,7 +49,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     // Use external screenshot service (only works for published surveys with public URLs)
     if (effectivePublishedUrl) {
-      console.log('[CaptureScreenshot] Trying external screenshot service...');
       const surveyUrl = `https://form.surbee.dev/${effectivePublishedUrl}`;
       const screenshotApiUrl = `https://api.screenshotone.com/take?access_key=free&url=${encodeURIComponent(surveyUrl)}&viewport_width=1200&viewport_height=900&format=png&timeout=30`;
 
@@ -81,20 +77,16 @@ export async function POST(request: NextRequest, context: RouteContext) {
             })
             .eq('id', projectId);
 
-          console.log(`[CaptureScreenshot] Screenshot saved: ${uploadResponse.url}`);
           return NextResponse.json({ success: true, previewUrl: uploadResponse.url });
         } else {
-          console.log('[CaptureScreenshot] External service returned:', externalResponse.status);
+          // External service returned non-OK status
         }
-      } catch (extError) {
-        console.log('[CaptureScreenshot] External screenshot service failed:', extError);
+      } catch {
+        // External screenshot service failed
       }
-    } else {
-      console.log('[CaptureScreenshot] No published URL available for external service');
     }
 
     // No screenshot method worked - return gracefully
-    console.log('[CaptureScreenshot] Screenshot capture not available, returning without screenshot');
     return NextResponse.json({
       success: false,
       message: 'Screenshot capture not available - will retry later'

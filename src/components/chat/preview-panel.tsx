@@ -38,9 +38,8 @@ export function PreviewPanel({
     >
       <WebPreview
         defaultUrl={currentChat?.demo || ''}
-        onUrlChange={(url) => {
+        onUrlChange={() => {
           // Optional: Handle URL changes if needed
-          console.log('Preview URL changed:', url)
         }}
       >
         <WebPreviewNavigation>

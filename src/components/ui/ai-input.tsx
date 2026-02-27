@@ -59,11 +59,9 @@ export function AIInput({
 
   const processFile = (file: File) => {
     if (!isImageFile(file)) {
-      console.log("Only image files are allowed");
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      console.log("File too large (max 10MB)");
       return;
     }
     setFiles(prev => (prev.length >= 10 ? prev : [...prev, file].slice(0, 10)));

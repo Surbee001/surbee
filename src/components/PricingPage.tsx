@@ -177,7 +177,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onClose }) => {
                 {/* CTA Button */}
                 <button
                   className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${plan.buttonClass}`}
-                  onClick={() => console.log(`Subscribe to ${plan.name}`)}
+                  onClick={() => { /* TODO: implement subscription */ }}
                 >
                   {plan.buttonText}
                 </button>

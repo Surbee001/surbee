@@ -287,11 +287,6 @@ function DashboardContent() {
     // Redirect to survey builder with the initial prompt and selected model
     const projectId = `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // DEBUG: Log what we're saving
-    console.log('📝 SAVING TO SESSION STORAGE:');
-    console.log('   - selectedModel:', selectedModel);
-    console.log('   - files:', files?.length || 0, 'files');
-
     try {
       sessionStorage.setItem('surbee_initial_prompt', message.trim());
       sessionStorage.setItem('surbee_selected_model', selectedModel);
@@ -299,19 +294,13 @@ function DashboardContent() {
       // Save files if any were attached (in FileUIPart format)
       if (files && files.length > 0) {
         sessionStorage.setItem('surbee_initial_files', JSON.stringify(files));
-        console.log('✅ Saved', files.length, 'files to sessionStorage (FileUIPart format)');
       }
-
-      // DEBUG: Verify what was saved
-      const savedModel = sessionStorage.getItem('surbee_selected_model');
-      console.log('✅ VERIFIED SAVED MODEL:', savedModel);
     } catch {}
     router.push(`/project/${projectId}`);
     return;
   };
 
   const handleRemix = (projectId: string) => {
-    console.log('Remix project:', projectId);
     // Create a new project based on the community project
     const newProjectId = `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     try {

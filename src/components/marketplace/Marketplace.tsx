@@ -153,7 +153,6 @@ function FeaturedSlideshow({
   const getCurrentTemplates = () => {
     const startIndex = currentSlide * 3;
     const currentTemplates = templates.slice(startIndex, startIndex + 3);
-    console.log('Current slide templates:', currentSlide, currentTemplates.map(t => t.title));
     return currentTemplates;
   };
 

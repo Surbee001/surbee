@@ -242,7 +242,6 @@ export const VisualSurveyBuilder: React.FC<VisualSurveyBuilderProps> = ({
       const savedSurvey = surveyManager.saveDraft(surveyData)
       setCurrentSurveyId(savedSurvey.id)
     }
-    console.log('💾 Survey saved successfully')
   }
 
   // Publish survey (opens modal)

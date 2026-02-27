@@ -51,7 +51,6 @@ export const DynamicPreviewRenderer: React.FC<DynamicPreviewRendererProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Survey submitted (preview):', formData)
     alert('Survey preview completed! Data: ' + JSON.stringify(formData, null, 2))
   }
 

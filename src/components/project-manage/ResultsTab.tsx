@@ -106,7 +106,7 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ projectId }) => {
   });
 
   const handleExport = () => {
-    console.log('Exporting responses...');
+    // TODO: implement export functionality
   };
 
   const toggleResponseDetails = (id: string) => {

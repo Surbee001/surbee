@@ -58,8 +58,6 @@ export async function POST(request: NextRequest) {
     }
 
     // PLACEHOLDER: Implement actual ML-based accuracy detection
-    // For now, return mock data
-    console.log(`[SDK] Analyzing accuracy for survey ${surveyId}`);
 
     const score = calculateMockScore(responseData);
 

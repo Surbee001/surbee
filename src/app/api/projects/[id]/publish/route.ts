@@ -9,15 +9,6 @@ export async function POST(
     const { userId, surveySchema, sandboxBundle } = await request.json();
     const { id: projectId } = await params;
 
-    console.log('[Publish API] Publishing project:', {
-      projectId,
-      userId,
-      hasSurveySchema: !!surveySchema,
-      hasSandboxBundle: !!sandboxBundle,
-      sandboxBundleKeys: sandboxBundle ? Object.keys(sandboxBundle) : null,
-      sandboxHasFiles: sandboxBundle?.files ? Object.keys(sandboxBundle.files).length : 0
-    });
-
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
@@ -29,7 +20,7 @@ export async function POST(
          sandboxBundle.files['/App.jsx'] || sandboxBundle.files['App.jsx']);
 
       if (!hasAppFile) {
-        console.warn('[Publish API] Warning: sandboxBundle provided but no App file found');
+        // sandboxBundle provided but no App file found
       }
 
       const appContent = sandboxBundle.files?.['/App.tsx'] ||
@@ -38,7 +29,7 @@ export async function POST(
                         sandboxBundle.files?.['App.jsx'] || '';
 
       if (appContent.length < 50) {
-        console.warn('[Publish API] Warning: App file is very short:', appContent.length, 'chars');
+        // App file is very short
       }
     }
 
@@ -50,12 +41,10 @@ export async function POST(
     );
 
     if (error) {
-      console.log('[Publish API] Error:', error.message);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     if (!project) {
-      console.log('[Publish API] Project not found');
       return NextResponse.json(
         { error: 'Project not found or you do not have permission' },
         { status: 404 }
@@ -72,16 +61,6 @@ export async function POST(
     }
 
     // Verify sandbox_bundle exists
-    if (!project.sandbox_bundle) {
-      console.warn('[Publish API] Warning: Published project has no sandbox_bundle');
-    }
-
-    console.log('[Publish API] Success:', {
-      publishedUrl: project.published_url,
-      status: project.status,
-      hasSandboxBundle: !!project.sandbox_bundle
-    });
-
     return NextResponse.json(
       {
         success: true,

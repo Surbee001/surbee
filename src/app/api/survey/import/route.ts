@@ -36,7 +36,6 @@ async function getUserFromRequest(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await getUserFromRequest(req)
-    console.log('Survey import - user:', user?.id || 'not found')
 
     if (!user) {
       return NextResponse.json(
@@ -46,19 +45,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    console.log('Survey import - URL:', body.url)
     const { url } = ImportSurveySchema.parse(body)
 
     // Step 1: Scrape the survey URL using our universal scraper
-    console.log(`Scraping survey from: ${url}`)
-
     const scrapeResult = await scrapeUrl(url)
-    console.log('Scrape result:', {
-      success: scrapeResult.success,
-      source: scrapeResult.source,
-      contentLength: scrapeResult.content?.length || 0,
-      title: scrapeResult.title,
-    })
 
     // Extract survey-specific content
     const surveyContent = scrapeResult.success
@@ -75,8 +65,6 @@ export async function POST(req: NextRequest) {
       : 'minimal'
 
     // Step 2: Create a new project using ProjectsService
-    console.log('Creating project for user:', user.id)
-
     const { data: project, error: projectError } = await ProjectsService.createProject({
       title: surveyTitle,
       description: scrapeResult.description || `Imported from: ${url}`,
@@ -89,7 +77,6 @@ export async function POST(req: NextRequest) {
     }
 
     const projectId = project.id
-    console.log('Project created with ID:', projectId)
 
     // Step 3: Update the project with scraped survey data
     const { error: updateError } = await supabaseAdmin

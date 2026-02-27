@@ -56,17 +56,12 @@ RULES:
 Generate exactly what the user asks for with complete creative freedom!`
 
 export async function POST(req: NextRequest) {
-  console.log('=== FLEXIBLE SURVEY BUILDER API ===');
-  
   try {
     const body = await req.json()
     const parsed = ChatBody.parse(body)
-    
+
     const userMessage = parsed.message
     const currentCode = parsed.currentSurvey
-    
-    console.log('User request:', userMessage);
-    console.log('Has existing code:', !!currentCode);
 
     // Build messages for OpenAI
     const messages: any[] = [
@@ -90,7 +85,6 @@ export async function POST(req: NextRequest) {
     })
 
     // Generate the React component
-    console.log('🚀 Generating custom React component...');
     const completion = await openai.chat.completions.create({
       model: 'gpt-4-turbo-preview',
       messages,
@@ -99,7 +93,6 @@ export async function POST(req: NextRequest) {
     })
 
     const generatedCode = completion.choices[0]?.message?.content || ''
-    console.log('✅ Component generated successfully');
 
     // Extract component info for UI
     const titleMatch = generatedCode.match(/(?:title|heading).*?['"`]([^'"`]+)['"`]/i) || 

@@ -151,16 +151,10 @@ function BillingContent() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    console.log('Initializing Paddle with:', {
-      environment: PADDLE_CONFIG.environment,
-      token: PADDLE_CONFIG.clientToken ? `${PADDLE_CONFIG.clientToken.substring(0, 10)}...` : 'missing',
-    });
-
     initializePaddle({
       environment: PADDLE_CONFIG.environment,
       token: PADDLE_CONFIG.clientToken,
       eventCallback: (event) => {
-        console.log('Paddle event:', event.name, event);
         if (event.name === 'checkout.completed') {
           router.push("/home?upgraded=true");
         } else if (event.name === 'checkout.closed') {
@@ -173,7 +167,6 @@ function BillingContent() {
       },
     }).then((paddleInstance) => {
       if (paddleInstance) {
-        console.log('Paddle initialized successfully');
         setPaddle(paddleInstance);
       } else {
         console.error('Paddle instance is null');
@@ -223,14 +216,10 @@ function BillingContent() {
       return;
     }
 
-    console.log('Opening Paddle checkout:', { priceId, email: user.email, userId: user.id, plan: selectedPlan });
-
     setError(null);
     setIsProcessing(true);
 
     try {
-      console.log('Opening checkout with priceId:', priceId);
-
       paddle.Checkout.open({
         items: [{ priceId, quantity: 1 }],
         customer: user.email ? { email: user.email } : undefined,

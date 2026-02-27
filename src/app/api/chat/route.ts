@@ -17,8 +17,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Chat API request:', { message, chatId, streaming })
-
     let chat
 
     if (chatId) {

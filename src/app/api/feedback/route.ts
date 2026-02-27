@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       // If table doesn't exist, log and return success anyway
       if (error.code === '42P01') {
-        console.log('ai_feedback table does not exist yet, skipping save');
+        // ai_feedback table does not exist yet
         return NextResponse.json({ success: true, message: 'Feedback acknowledged (table not set up)' });
       }
       console.error('Error saving feedback:', error);

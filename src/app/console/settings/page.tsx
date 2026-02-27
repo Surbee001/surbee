@@ -14,7 +14,6 @@ export default function ConsoleSettingsPage() {
 
   const handleSave = () => {
     // TODO: Save settings
-    console.log('Saving settings...');
   };
 
   return (

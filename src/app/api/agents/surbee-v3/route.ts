@@ -15,32 +15,6 @@ export async function POST(req: NextRequest) {
     if (!user) return errorResponse;
 
     const body = await req.json();
-    console.log('📦 Received body keys:', Object.keys(body));
-    console.log('📦 Body.model:', body.model);
-    console.log('📦 Body.messages:', body.messages ? `${body.messages.length} messages` : 'no messages');
-
-    // Debug: Log the structure of each message to understand the format
-    if (body.messages) {
-      body.messages.forEach((msg: any, idx: number) => {
-        console.log(`📦 Message ${idx} [${msg.role}]:`, {
-          hasContent: !!msg.content,
-          contentType: typeof msg.content,
-          hasParts: !!msg.parts,
-          partsCount: msg.parts?.length,
-          partTypes: msg.parts?.map((p: any) => p.type),
-        });
-        // Log file parts specifically
-        const fileParts = msg.parts?.filter((p: any) => p.type === 'file') || [];
-        if (fileParts.length > 0) {
-          console.log(`📷 Message ${idx} has ${fileParts.length} file parts:`, fileParts.map((p: any) => ({
-            type: p.type,
-            filename: p.filename,
-            mediaType: p.mediaType,
-            urlPrefix: p.url?.substring(0, 50)
-          })));
-        }
-      });
-    }
 
     // Support both formats: useChat messages array OR legacy input+context format
     let messages: ChatMessage[];
@@ -50,11 +24,6 @@ export async function POST(req: NextRequest) {
     const projectId = body.projectId;
     const designTheme = body.designTheme;
     const userPreferences = body.userPreferences;
-
-    // CRITICAL DEBUG: Log exactly what model we're using
-    console.log('🎯 SELECTED MODEL:', selectedModel);
-    console.log('🎯 PROJECT CONTEXT:', { projectId, userId: user.id });
-    console.log('🎨 DESIGN THEME:', designTheme?.name || 'default');
 
     // Check if user can use premium models (free users only get Claude Haiku)
     const isPremiumModel = selectedModel !== 'claude-haiku' && !selectedModel.includes('haiku');
@@ -169,26 +138,6 @@ export async function POST(req: NextRequest) {
       throw new Error('Invalid request format: expected messages or input');
     }
 
-    console.log('📥 Final messages count:', messages?.length || 0);
-    console.log('🤖 Using model:', selectedModel);
-
-    // Count images and files in messages
-    const imageCount = messages.reduce((count, msg) => {
-      const imgs = msg.parts?.filter((p: any) => p.type === 'image').length || 0;
-      const files = msg.parts?.filter((p: any) => p.type === 'file' && p.mediaType?.startsWith('image/')).length || 0;
-      return count + imgs + files;
-    }, 0);
-    console.log(`📷 Total images/files in all messages: ${imageCount}`);
-
-    // Debug: Log final message parts structure
-    messages.forEach((msg, idx) => {
-      console.log(`📦 Final message ${idx} parts:`, msg.parts?.map((p: any) => ({
-        type: p.type,
-        ...(p.type === 'text' ? { textLength: p.text?.length } : {}),
-        ...(p.type === 'file' ? { filename: p.filename, mediaType: p.mediaType, urlLength: p.url?.length } : {}),
-        ...(p.type === 'image' ? { imageType: typeof p.image, imageLength: typeof p.image === 'string' ? p.image.length : 'not string' } : {}),
-      })));
-    });
 
     // Use the streaming workflow - it returns a streamText result
     const result = streamWorkflowV3({

@@ -262,9 +262,8 @@ export default function PublishedSurveyPage() {
         initializeCipherInIframe()
       }
 
-      // Handle Cipher ready confirmation
       if (messageType === 'CIPHER_READY') {
-        console.log('[Survey] Cipher tracker initialized:', event.data.sessionId)
+        // Cipher tracker initialized
       }
 
       // Handle real-time metrics updates from iframe

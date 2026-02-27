@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
       // If Clerk billing API isn't available, fall back to direct Supabase update for testing
       if (response.status === 404 || response.status === 400) {
-        console.log('Clerk billing API not available, using direct update for testing');
+        // Clerk billing API not available, fall back to direct Supabase update
 
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
 

@@ -81,9 +81,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Track usage (TODO: implement)
-    console.log(`[SDK] User ${user.userId} generating survey`);
-
     const startTime = Date.now();
 
     // Generate survey using existing orchestrator

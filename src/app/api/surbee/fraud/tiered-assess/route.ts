@@ -449,7 +449,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<TieredAss
           result.explainability.summary = hybridResult.explanation;
         }
 
-        console.log(`[Hybrid] ML: ${(hybridResult.mlScore * 100).toFixed(0)}%, LLM: ${hybridResult.llmScore ? (hybridResult.llmScore * 100).toFixed(0) + '%' : 'skipped'}, Final: ${(hybridResult.finalScore * 100).toFixed(0)}%`);
       } catch (error) {
         console.error('Hybrid assessment error:', error);
         // Continue without hybrid - will use Bayesian fallback

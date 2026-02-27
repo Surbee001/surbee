@@ -42,7 +42,7 @@ export function TemplateDetailView({
   }, [template.createdAt]);
 
   const handleRemix = () => {
-    console.log('Remix template', template.id);
+    // TODO: implement remix functionality
   };
 
   const handleShare = () => {

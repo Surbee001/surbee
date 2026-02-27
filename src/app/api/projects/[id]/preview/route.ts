@@ -11,9 +11,9 @@ async function triggerScreenshotCapture(projectId: string, publishedUrl?: string
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ publishedUrl }),
-    }).catch(err => console.log('Screenshot capture initiated:', err?.message || 'success'));
-  } catch (err) {
-    console.log('Could not trigger screenshot:', err);
+    }).catch(() => { /* screenshot capture fire-and-forget */ });
+  } catch {
+    // Could not trigger screenshot
   }
 }
 
@@ -25,10 +25,7 @@ export async function POST(
     const { id: projectId } = await params;
     const { userId, previewImage, sandboxBundle } = await request.json();
 
-    console.log('[Preview API] Saving project:', projectId, 'userId:', userId, 'hasSandbox:', !!sandboxBundle);
-
     if (!userId) {
-      console.log('[Preview API] Error: No userId provided');
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
@@ -48,7 +45,6 @@ export async function POST(
 
     // If project was updated, trigger screenshot capture in background
     if (existingProject && sandboxBundle) {
-      console.log('[Preview API] Successfully updated project with sandbox:', projectId);
       // Capture screenshot asynchronously (don't block response)
       triggerScreenshotCapture(projectId, existingProject.published_url);
 
@@ -68,7 +64,6 @@ export async function POST(
 
     // If no project found (PGRST116), create it with the preview data
     if (updateError?.code === 'PGRST116' || !existingProject) {
-      console.log('[Preview API] Project does not exist, creating:', projectId, 'for user:', userId);
       const { data: newProject, error: createError } = await supabaseAdmin
         .from('projects')
         .insert({
@@ -84,7 +79,6 @@ export async function POST(
         .single();
 
       if (createError) {
-        console.log('[Preview API] Error creating project:', createError.code, createError.message);
         // Handle duplicate key error (project was created between our check and insert)
         if (createError.code === '23505') {
           const { data: retryProject, error: retryError } = await supabaseAdmin
@@ -113,7 +107,6 @@ export async function POST(
         triggerScreenshotCapture(projectId);
       }
 
-      console.log('[Preview API] Successfully created project:', projectId);
       return NextResponse.json({
         success: true,
         project: newProject

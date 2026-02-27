@@ -59,7 +59,6 @@ export default function ProfileSettingsPage() {
   };
 
   const handleSave = () => {
-    console.log('Saving profile:', formData);
     // TODO: Implement save functionality
   };
 

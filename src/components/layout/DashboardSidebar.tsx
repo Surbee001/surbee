@@ -367,7 +367,6 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
   const handleSendFeedback = () => {
     if (feedbackText.trim()) {
       // TODO: Send feedback to backend
-      console.log('Feedback:', feedbackText);
       setFeedbackText('');
       setIsFeedbackModalOpen(false);
       // Show success message
@@ -396,7 +395,6 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
         handleNavigation('/home/pricing');
         break;
       case 'learn':
-        console.log('Open learn more');
         break;
       case 'logout':
         signOut().then(() => {

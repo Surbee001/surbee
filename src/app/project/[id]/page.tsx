@@ -2587,12 +2587,10 @@ export default function ProjectPage() {
 
   // Update sessionStorage when model changes
   const handleModelChange = useCallback((model: AIModel) => {
-    console.log('🔄 CHANGING MODEL TO:', model);
     setSelectedModel(model);
     selectedModelRef.current = model;
     try {
       sessionStorage.setItem('surbee_selected_model', model);
-      console.log('✅ SAVED NEW MODEL TO SESSION STORAGE:', model);
     } catch (e) {
       console.error('Failed to save model to sessionStorage:', e);
     }
@@ -2631,11 +2629,9 @@ export default function ProjectPage() {
 
         // If we have a session ID from URL, load that specific session
         if (sessionIdFromUrl) {
-          console.log('📥 Loading session messages for:', sessionIdFromUrl);
           session = await loadSession();
         } else {
           // If no session ID in URL, try to load the most recent chat session for this project
-          console.log('📥 Loading most recent chat session for project:', projectId);
           const response = await fetch(`/api/projects/${projectId}/chat-session?userId=${user.id}&latest=true`);
           if (response.ok) {
             const data = await response.json();
@@ -2644,7 +2640,6 @@ export default function ProjectPage() {
         }
 
         if (session?.messages && session.messages.length > 0) {
-          console.log('✅ Restoring', session.messages.length, 'messages from session');
           // Transform session messages to the format useChat expects
           const restoredMessages = session.messages.map((m: any, idx: number) => ({
             id: m.id || `restored-${idx}`,
@@ -2665,7 +2660,6 @@ export default function ProjectPage() {
           if (lastAssistant?.toolInvocations) {
             for (const tool of lastAssistant.toolInvocations) {
               if (tool.result?.source_files) {
-                console.log('🔄 Restoring sandbox bundle from session');
                 setSandboxBundle({
                   files: tool.result.source_files,
                   entry: tool.result.entry || '/index.tsx',
@@ -2697,8 +2691,6 @@ export default function ProjectPage() {
     if (fromDashboard) {
       const context = loadChatContext();
       if (context && context.messages.length > 0) {
-        console.log('📥 Restoring chat context from dashboard:', context.messages.length, 'messages');
-
         // Transform messages to the format useChat expects
         const restoredMessages = context.messages.map((msg: any, idx: number) => ({
           id: msg.id || `dashboard-${idx}`,
@@ -3428,8 +3420,6 @@ export default function ProjectPage() {
 
     // Use the current selected model from state
     const currentModel = selectedModelRef.current;
-    console.log('📤 SENDING MESSAGE WITH MODEL:', currentModel);
-
     // Send message with files using AI SDK's proper format
     const sendOptions = {
       body: {
@@ -3460,14 +3450,6 @@ Please make changes specifically to this element.`;
     }
 
     if (files && files.length > 0) {
-      console.log('📷 Sending message with', files.length, 'files (FileUIPart format)');
-      console.log('📷 Files structure:', files.map(f => ({
-        type: f.type,
-        filename: f.filename,
-        mediaType: f.mediaType,
-        urlPrefix: f.url?.substring(0, 50),
-        urlLength: f.url?.length
-      })));
       // Send files using the AI SDK format: { text, files }
       sendMessage({ text: finalMessage, files }, sendOptions);
     } else {
@@ -3655,11 +3637,9 @@ Please make changes specifically to this element.`;
 
   const processFile = (file: File) => {
     if (!isImageFile(file)) {
-      console.log("Only image files are allowed");
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      console.log("File too large (max 10MB)");
       return;
     }
     setFiles(prev => (prev.length >= 10 ? prev : [...prev, file].slice(0, 10)));
@@ -3982,39 +3962,6 @@ Please make changes specifically to this element.`;
         return 'w-full h-full';
     }
   };
-
-  // Skip loading states for demo mode
-  // if (authLoading || projectLoading) {
-  //   return (
-  //     <div className="flex items-center justify-center min-h-screen">
-  //       <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
-  //     </div>
-  //   );
-  // }
-
-  // Skip authentication for demo mode
-  // if (!user && !mockMode) {
-  //   window.location.href = '/login';
-  //   return null;
-  // }
-
-  // Skip project check for demo mode
-  // if (!project) {
-  //   return (
-  //     <div className="flex items-center justify-center min-h-screen">
-  //       <div className="text-center">
-  //         <h1 className="text-2xl font-semibold mb-2 text-white">Project not found</h1>
-  //         <p className="text-gray-400">The project you're looking for doesn't exist or you don't have access to it.</p>
-  //         <button 
-  //           onClick={() => window.location.href = '/projects'}
-  //           className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-  //         >
-  //           Back to Projects
-  //         </button>
-  //       </div>
-  //     </div>
-  //   );
-  // }
 
   // Handle element clicks in sandbox for parent window communication
   const handleElementClick = (element: HTMLElement) => {

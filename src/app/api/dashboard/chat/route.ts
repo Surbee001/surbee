@@ -599,16 +599,6 @@ export async function POST(request: NextRequest) {
       messageCount: messages?.length || 0,
     });
 
-    console.log('📦 Dashboard chat received:', {
-      messageCount: messages?.length,
-      model,
-      userId: user.id,
-      createMode,
-      searchWebEnabled,
-      referencesCount: references?.length || 0,
-      designTheme: designTheme?.name || 'default',
-    });
-
     // Fetch referenced content
     let referenceContext = '';
     if (references && references.length > 0) {
@@ -811,8 +801,6 @@ RULES:
       }
       return { role: m.role, content: '' };
     }).filter((m: any) => m.content);
-
-    console.log('📤 Sending to model with tools');
 
     // Create tools with userId
     const baseTools = createTools(user.id);

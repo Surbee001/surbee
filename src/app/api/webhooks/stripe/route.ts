@@ -45,8 +45,6 @@ export async function POST(req: NextRequest) {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  console.log(`📥 Stripe webhook received: ${event.type}`);
-
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -70,7 +68,6 @@ export async function POST(req: NextRequest) {
               updated_at: new Date().toISOString(),
             }, { onConflict: 'user_id' });
 
-            console.log(`✅ Subscription activated: User ${userId} -> ${plan}`);
           }
         }
         break;
@@ -97,7 +94,6 @@ export async function POST(req: NextRequest) {
               updated_at: new Date().toISOString(),
             }, { onConflict: 'user_id' });
 
-            console.log(`✅ Subscription updated: User ${userId} -> ${plan} (${status})`);
           }
         }
         break;
@@ -118,7 +114,6 @@ export async function POST(req: NextRequest) {
             updated_at: new Date().toISOString(),
           }, { onConflict: 'user_id' });
 
-          console.log(`✅ Subscription cancelled: User ${userId} reverted to free`);
         }
         break;
       }
@@ -144,7 +139,6 @@ export async function POST(req: NextRequest) {
                 updated_at: new Date().toISOString(),
               }).eq('user_id', userId);
 
-              console.log(`✅ Credits reset for user ${userId}: ${planConfig.credits} credits`);
             }
           }
         }
@@ -165,14 +159,13 @@ export async function POST(req: NextRequest) {
               updated_at: new Date().toISOString(),
             }).eq('user_id', userId);
 
-            console.log(`⚠️ Payment failed for user ${userId}`);
           }
         }
         break;
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        break;
     }
 
     return NextResponse.json({ received: true });

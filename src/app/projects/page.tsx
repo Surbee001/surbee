@@ -570,9 +570,8 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleShare = (projectId: string) => {
+  const handleShare = (_projectId: string) => {
     // Link is copied in the ProjectCard component
-    console.log('Shared project:', projectId);
   };
 
   const handleArchive = async (projectId: string) => {

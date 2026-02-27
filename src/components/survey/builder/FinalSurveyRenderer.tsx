@@ -90,7 +90,6 @@ export const FinalSurveyRenderer: React.FC<FinalSurveyRendererProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Survey submitted:', formData)
     // Show success message
     const successDiv = document.createElement('div')
     successDiv.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50'

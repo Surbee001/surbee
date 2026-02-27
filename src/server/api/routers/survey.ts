@@ -2,8 +2,6 @@ import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc'
 // Hybrid generator (primary path)
 import { hybridGenerator, HybridGenerationInput } from '@/lib/ai/hybrid-generator'
-// Advanced multi-model generator (fallback)
-import { generateAdvancedSurvey, generateCompleteSurveyFrontend } from '@/lib/ai/advanced-survey-generator'
 // Fast mode generator (fallback)
 import { generateSurveyComponentsFast } from '@/lib/ai/survey-generator-fast'
 import { computeSuspicionScore } from '@/features/survey/behavior/scoring'
@@ -276,7 +274,7 @@ export default function EnhancedScaleRating() {
       prompt: z.string().min(4).max(2000),
       projectId: z.string().optional(),
       conversationId: z.string().optional(),
-      mode: z.enum(['hybrid', 'pure-ai', 'template-only', 'advanced', 'fast']).default('hybrid'), // New hybrid mode as default
+      mode: z.enum(['hybrid', 'pure-ai', 'template-only', 'fast']).default('hybrid'),
       context: z.object({
         surveyType: z.enum(['marketing', 'research', 'feedback', 'academic']).optional(),
         targetAudience: z.string().optional(),
@@ -302,24 +300,15 @@ export default function EnhancedScaleRating() {
         if (['hybrid', 'pure-ai', 'template-only'].includes(input.mode)) {
           // Use the new hybrid generator (primary path)
           console.log('🎯 Using Hybrid Generator (Template + AI)')
-          
+
           const hybridInput: HybridGenerationInput = {
             prompt: input.prompt,
             context: input.context,
             userId,
             mode: input.mode as 'hybrid' | 'pure-ai' | 'template-only'
           }
-          
+
           aiOutput = await hybridGenerator.generateSurvey(hybridInput)
-        } else if (input.mode === 'advanced') {
-          // Use the advanced multi-model pipeline
-          console.log('🚀 Using Advanced Multi-Model Pipeline')
-          aiOutput = await generateAdvancedSurvey({
-            prompt: input.prompt,
-            context: input.context,
-            userId,
-            useTemplate: input.useTemplate
-          })
         } else {
           // Fallback to fast generator for compatibility
           console.log('⚡ Using Fast Generator (Legacy Mode)')
@@ -437,146 +426,5 @@ export default function EnhancedScaleRating() {
       return { success: true, fraudScore: score }
     }),
 
-  // Generate complete HTML frontend (like GPT-5 example)
-  generateFrontend: publicProcedure
-    .input(z.object({
-      prompt: z.string().min(4).max(2000),
-      context: z.object({
-        surveyType: z.enum(['marketing', 'research', 'feedback', 'academic']).optional(),
-        targetAudience: z.string().optional(),
-        industry: z.string().optional(),
-        complexity: z.enum(['simple', 'professional', 'research', 'academic']).optional(),
-        designStyle: z.enum(['minimal', 'modern', 'corporate', 'creative']).optional(),
-        length: z.enum(['short', 'medium', 'long']).optional(),
-      }).optional(),
-      useTemplate: z.boolean().optional().default(true),
-      saveToFile: z.boolean().optional().default(false), // Don't save files by default in API
-      filename: z.string().optional()
-    }))
-    .mutation(async ({ input, ctx }) => {
-      console.log('=== COMPLETE FRONTEND GENERATION ===')
-      console.log('Prompt:', input.prompt)
-      console.log('Context:', input.context)
-      console.log('Save to file:', input.saveToFile)
-
-      const userId = (ctx as any)?.session?.user?.id || 'anonymous'
-
-      try {
-        console.log('🎨 Generating complete survey frontend with GPT-5/GPT-4o...')
-        
-        const result = await generateCompleteSurveyFrontend({
-          prompt: input.prompt,
-          context: input.context,
-          userId,
-          useTemplate: input.useTemplate
-        }, input.saveToFile, input.filename)
-
-        console.log('✅ Complete frontend generation successful')
-        console.log('HTML size:', result.html.length, 'characters')
-        if (result.filePath) {
-          console.log('File saved to:', result.filePath)
-        }
-
-        return {
-          surveyData: result.surveyData,
-          html: result.html,
-          filePath: result.filePath,
-          previewUrl: result.filePath ? `file://${result.filePath}` : null
-        }
-
-      } catch (error) {
-        console.error('❌ Frontend generation failed:', error)
-        throw new Error(`Frontend generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      }
-    }),
-
-  // Refine existing survey frontend with style direction
-  refineFrontend: publicProcedure
-    .input(z.object({
-      originalPrompt: z.string().min(4).max(2000), // Need original to regenerate config
-      styleDirection: z.string().min(4).max(500), // e.g., "Make it lighter and more pastel"
-      context: z.object({
-        surveyType: z.enum(['marketing', 'research', 'feedback', 'academic']).optional(),
-        targetAudience: z.string().optional(),
-        industry: z.string().optional(),
-        complexity: z.enum(['simple', 'professional', 'research', 'academic']).optional(),
-        designStyle: z.enum(['minimal', 'modern', 'corporate', 'creative']).optional(),
-        length: z.enum(['short', 'medium', 'long']).optional(),
-      }).optional(),
-      referenceImageBase64: z.string().optional(), // Base64 encoded image
-      useTemplate: z.boolean().optional().default(true),
-      saveToFile: z.boolean().optional().default(false),
-      filename: z.string().optional()
-    }))
-    .mutation(async ({ input, ctx }) => {
-      console.log('=== FRONTEND REFINEMENT ===')
-      console.log('Original prompt:', input.originalPrompt)
-      console.log('Style direction:', input.styleDirection)
-      console.log('Has reference image:', !!input.referenceImageBase64)
-
-      const userId = (ctx as any)?.session?.user?.id || 'anonymous'
-
-      try {
-        console.log('🎨 Generating refined survey frontend...')
-        
-        // First generate the base survey data
-        const baseSurveyData = await generateAdvancedSurvey({
-          prompt: input.originalPrompt,
-          context: input.context,
-          userId,
-          useTemplate: input.useTemplate
-        })
-
-        // Create frontend config for refinement
-        const frontendConfig = {
-          analysis: baseSurveyData.metadata!.analysis as any,
-          designSystem: baseSurveyData.designSystem!,
-          architecture: {
-            pages: baseSurveyData.survey!.pages!,
-            flow: baseSurveyData.survey!.settings || { navigation: 'linear', progressType: 'percentage', allowBack: true },
-            validation: { realTime: true, completionChecks: ['required'] },
-            analytics: baseSurveyData.survey!.analytics || { trackingLevel: 'basic', fraudDetection: false, behavioralMetrics: true },
-            design: { theme: 'modern', layout: 'clean', animations: true }
-          },
-          surveyData: baseSurveyData,
-          styleDirection: input.styleDirection,
-          referenceImage: input.referenceImageBase64
-        }
-
-        // Generate refined frontend using SurveyFrontendGenerator
-        const frontendGenerator = new (await import('@/lib/ai/survey-frontend-generator')).SurveyFrontendGenerator()
-        
-        const result = input.saveToFile 
-          ? await frontendGenerator.refineSurveyFrontend(
-              frontendConfig,
-              input.styleDirection,
-              input.referenceImageBase64,
-              input.filename,
-              true
-            )
-          : await frontendGenerator.refineSurveyFrontend(
-              frontendConfig,
-              input.styleDirection,
-              input.referenceImageBase64,
-              undefined,
-              false
-            )
-
-        console.log('✅ Frontend refinement successful')
-        console.log('Refined HTML size:', result.html.length, 'characters')
-
-        return {
-          surveyData: baseSurveyData,
-          html: result.html,
-          filePath: result.filePath,
-          previewUrl: result.filePath ? `file://${result.filePath}` : null,
-          styleDirection: input.styleDirection
-        }
-
-      } catch (error) {
-        console.error('❌ Frontend refinement failed:', error)
-        throw new Error(`Frontend refinement failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      }
-    }),
 })
 

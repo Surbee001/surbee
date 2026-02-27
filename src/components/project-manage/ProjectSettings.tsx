@@ -826,7 +826,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
                 }}
               >
                 <span>{formData.closeAfterDate ? new Date(formData.closeAfterDate).toLocaleString() : 'Select date...'}</span>
-                <ChevronDown className="w-4 h-4" style={{ color: 'rgba(232, 232, 232, 0.5)' }} />
+                <ChevronDown className="w-4 h-4" style={{ color: 'var(--surbee-fg-muted)' }} />
               </button>
               <input
                 type="datetime-local"
@@ -1126,11 +1126,11 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           max-width: 700px;
           max-height: 85vh;
           background: var(--surbee-bg-primary, rgb(19, 19, 20));
-          border: 1px solid rgba(232, 232, 232, 0.1);
+          border: 1px solid var(--surbee-border-primary);
           border-radius: 16px;
           overflow-y: auto;
           scrollbar-width: thin;
-          scrollbar-color: rgba(232, 232, 232, 0.08) transparent;
+          scrollbar-color: var(--surbee-border-secondary) transparent;
         }
 
         :global(.settings-modal-close-btn) {
@@ -1143,18 +1143,18 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           justify-content: center;
           width: 36px;
           height: 36px;
-          background: rgba(232, 232, 232, 0.06);
-          border: 1px solid rgba(232, 232, 232, 0.1);
+          background: var(--surbee-accent-subtle);
+          border: 1px solid var(--surbee-border-primary);
           border-radius: 8px;
-          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          color: var(--surbee-fg-secondary, var(--surbee-fg-secondary));
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
         :global(.settings-modal-close-btn:hover) {
-          background: rgba(232, 232, 232, 0.1);
+          background: var(--surbee-border-primary);
           color: var(--surbee-fg-primary, #E8E8E8);
-          border-color: rgba(232, 232, 232, 0.2);
+          border-color: var(--surbee-border-primary);
         }
 
         .project-settings-root {
@@ -1215,18 +1215,18 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           font-weight: 500;
           color: var(--surbee-fg-primary, #E8E8E8);
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.1);
+          border: 1px solid var(--surbee-border-primary);
           border-radius: 9999px;
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
         .settings-tab:hover {
-          border-color: rgba(232, 232, 232, 0.2);
+          border-color: var(--surbee-border-primary);
         }
 
         .settings-tab.active {
-          background: rgba(232, 232, 232, 0.05);
+          background: var(--surbee-accent-subtle);
           border-color: transparent;
         }
 
@@ -1256,7 +1256,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
 
         .section-description {
           font-size: 14px;
-          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          color: var(--surbee-fg-secondary, var(--surbee-fg-secondary));
           margin-bottom: 16px;
         }
 
@@ -1264,21 +1264,21 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           margin: 40px 0;
           width: 100%;
           height: 1px;
-          background-color: rgba(232, 232, 232, 0.08);
+          background-color: var(--surbee-border-secondary);
         }
 
         /* Form Fields */
         .form-field {
           display: flex;
           flex-direction: column;
-          color: rgba(232, 232, 232, 0.6);
+          color: var(--surbee-fg-secondary);
           margin-top: 16px;
         }
 
         .form-field.nested {
           margin-left: 24px;
           padding-left: 16px;
-          border-left: 2px solid rgba(232, 232, 232, 0.1);
+          border-left: 2px solid var(--surbee-border-primary);
         }
 
         .field-label {
@@ -1292,7 +1292,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
 
         .field-description {
           font-size: 14px;
-          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          color: var(--surbee-fg-secondary, var(--surbee-fg-secondary));
           margin: 4px 0 8px;
         }
 
@@ -1305,7 +1305,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           font-size: 14px;
           color: var(--surbee-fg-primary, #E8E8E8);
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.15);
+          border: 1px solid var(--surbee-input-border);
           transition: all 0.2s ease;
         }
 
@@ -1315,11 +1315,11 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
 
         .field-input:focus {
           outline: none;
-          border-color: rgba(232, 232, 232, 0.3);
+          border-color: var(--surbee-border-focus);
         }
 
         .field-input::placeholder {
-          color: var(--surbee-fg-muted, rgba(232, 232, 232, 0.4));
+          color: var(--surbee-fg-muted, var(--surbee-fg-muted));
         }
 
         .field-textarea {
@@ -1330,7 +1330,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           line-height: 1.5;
           color: var(--surbee-fg-primary, #E8E8E8);
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.15);
+          border: 1px solid var(--surbee-input-border);
           resize: vertical;
           min-height: 80px;
           transition: all 0.2s ease;
@@ -1339,7 +1339,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
 
         .field-textarea:focus {
           outline: none;
-          border-color: rgba(232, 232, 232, 0.3);
+          border-color: var(--surbee-border-focus);
         }
 
         .field-select {
@@ -1351,7 +1351,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           font-size: 14px;
           color: var(--surbee-fg-primary, #E8E8E8);
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.15);
+          border: 1px solid var(--surbee-input-border);
           cursor: pointer;
           appearance: none;
           background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M5.25317 6.2182C5.46077 6.0106 5.7822 6.01729 5.96969 6.21152L8.56792 8.96373L11.1527 6.21152C11.3402 6.0106 11.675 6.01729 11.8692 6.22489C12.05 6.41237 12.0433 6.72043 11.8491 6.92803L9.21746 9.71373C8.86923 10.0954 8.25317 10.0954 7.90494 9.71373L5.27323 6.92803C5.09917 6.74049 5.08574 6.39232 5.25317 6.2182Z'/%3E%3C/svg%3E");
@@ -1363,12 +1363,12 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
 
         .field-select:focus {
           outline: none;
-          border-color: rgba(232, 232, 232, 0.3);
+          border-color: var(--surbee-border-focus);
         }
 
         .field-select option {
-          background: #1E1E1F;
-          color: #E8E8E8;
+          background: var(--surbee-bg-primary);
+          color: var(--surbee-fg-primary);
         }
 
         /* Date Dropdown Trigger - styled like evals/insights */
@@ -1384,15 +1384,15 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           font-weight: 500;
           color: var(--surbee-fg-primary, #E8E8E8);
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.15);
+          border: 1px solid var(--surbee-input-border);
           border-radius: 100px;
           cursor: pointer;
           transition: all 0.15s ease;
         }
 
         .date-dropdown-trigger:hover {
-          background: rgba(232, 232, 232, 0.04);
-          border-color: rgba(232, 232, 232, 0.25);
+          background: var(--surbee-accent-subtle);
+          border-color: var(--surbee-border-primary);
         }
 
         .date-input-hidden {
@@ -1421,17 +1421,17 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           padding: 12px 20px;
           font-size: 14px;
           font-weight: 500;
-          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
-          background: rgba(232, 232, 232, 0.04);
-          border: 1px dashed rgba(232, 232, 232, 0.2);
+          color: var(--surbee-fg-secondary, var(--surbee-fg-secondary));
+          background: var(--surbee-accent-subtle);
+          border: 1px dashed var(--surbee-border-primary);
           border-radius: 12px;
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
         .upload-btn:hover {
-          background: rgba(232, 232, 232, 0.08);
-          border-color: rgba(232, 232, 232, 0.3);
+          background: var(--surbee-border-secondary);
+          border-color: var(--surbee-border-focus);
           color: var(--surbee-fg-primary, #E8E8E8);
         }
 
@@ -1457,7 +1457,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           height: 48px;
           border-radius: 12px;
           object-fit: cover;
-          border: 1px solid rgba(232, 232, 232, 0.1);
+          border: 1px solid var(--surbee-border-primary);
         }
 
         .cover-preview {
@@ -1466,14 +1466,14 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           height: 120px;
           border-radius: 12px;
           object-fit: cover;
-          border: 1px solid rgba(232, 232, 232, 0.1);
+          border: 1px solid var(--surbee-border-primary);
         }
 
         .change-image-btn {
           padding: 6px 12px;
           font-size: 13px;
           color: var(--surbee-fg-secondary);
-          background: rgba(232, 232, 232, 0.06);
+          background: var(--surbee-accent-subtle);
           border: none;
           border-radius: 8px;
           cursor: pointer;
@@ -1481,7 +1481,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         }
 
         .change-image-btn:hover {
-          background: rgba(232, 232, 232, 0.1);
+          background: var(--surbee-border-primary);
           color: var(--surbee-fg-primary);
         }
 
@@ -1498,9 +1498,9 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           padding: 0 12px;
           height: 36px;
           font-size: 13px;
-          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
-          background: rgba(232, 232, 232, 0.04);
-          border: 1px solid rgba(232, 232, 232, 0.15);
+          color: var(--surbee-fg-secondary, var(--surbee-fg-secondary));
+          background: var(--surbee-accent-subtle);
+          border: 1px solid var(--surbee-input-border);
           border-right: none;
           border-radius: 18px 0 0 18px;
           font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
@@ -1520,10 +1520,10 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           justify-content: center;
           width: 36px;
           height: 36px;
-          background: rgba(232, 232, 232, 0.06);
-          border: 1px solid rgba(232, 232, 232, 0.15);
+          background: var(--surbee-accent-subtle);
+          border: 1px solid var(--surbee-input-border);
           border-left: none;
-          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          color: var(--surbee-fg-secondary, var(--surbee-fg-secondary));
           cursor: pointer;
           transition: all 0.2s ease;
           text-decoration: none;
@@ -1534,7 +1534,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         }
 
         .url-action-btn:hover {
-          background: rgba(232, 232, 232, 0.1);
+          background: var(--surbee-border-primary);
           color: var(--surbee-fg-primary, #E8E8E8);
         }
 
@@ -1557,7 +1557,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           width: 40px;
           height: 22px;
           border-radius: 11px;
-          background: rgba(232, 232, 232, 0.12);
+          background: var(--surbee-border-primary);
           border: none;
           cursor: pointer;
           transition: all 0.2s ease;
@@ -1590,7 +1590,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           gap: 16px;
           border-radius: 20px;
           padding: 20px 24px;
-          background-color: rgba(232, 232, 232, 0.02);
+          background-color: var(--surbee-accent-subtle);
         }
 
         .radio-option {
@@ -1604,7 +1604,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           width: 16px;
           height: 16px;
           border-radius: 8px;
-          border: 1px solid rgba(232, 232, 232, 0.2);
+          border: 1px solid var(--surbee-border-primary);
           background: transparent;
           cursor: pointer;
           display: flex;
@@ -1642,7 +1642,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
 
         .radio-description {
           font-size: 14px;
-          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          color: var(--surbee-fg-secondary, var(--surbee-fg-secondary));
           margin-top: 2px;
         }
 
@@ -1669,7 +1669,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           width: 36px;
           height: 36px;
           border-radius: 8px;
-          border: 1px solid rgba(232, 232, 232, 0.15);
+          border: 1px solid var(--surbee-input-border);
           cursor: pointer;
           padding: 0;
           overflow: hidden;
@@ -1707,7 +1707,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         .sana-form-field {
           display: flex;
           flex-direction: column;
-          color: rgba(232, 232, 232, 0.6);
+          color: var(--surbee-fg-secondary);
         }
 
         .sana-field-label {
@@ -1719,7 +1719,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
 
         .sana-field-description {
           font-size: 14px;
-          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          color: var(--surbee-fg-secondary, var(--surbee-fg-secondary));
           margin: 4px 0 12px;
         }
 
@@ -1729,7 +1729,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           width: 40px;
           height: 22px;
           border-radius: 11px;
-          background: rgba(232, 232, 232, 0.12);
+          background: var(--surbee-border-primary);
           border: none;
           cursor: pointer;
           transition: background 0.2s ease;
@@ -1789,7 +1789,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         }
 
         .sana-sort-btn:hover {
-          background: rgba(232, 232, 232, 0.06);
+          background: var(--surbee-accent-subtle);
         }
 
         .sana-sort-btn svg {
@@ -1800,7 +1800,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           padding: 12px 16px;
           font-size: 14px;
           color: var(--surbee-fg-primary, #E8E8E8);
-          border-bottom: 1px solid rgba(232, 232, 232, 0.06);
+          border-bottom: 1px solid var(--surbee-accent-subtle);
         }
 
         .sana-table tbody tr {
@@ -1809,7 +1809,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         }
 
         .sana-table tbody tr:hover {
-          background: rgba(232, 232, 232, 0.03);
+          background: var(--surbee-accent-subtle);
         }
 
         .sana-status-text {
@@ -1829,7 +1829,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         .sana-slider {
           flex: 1;
           height: 4px;
-          background: rgba(232, 232, 232, 0.15);
+          background: var(--surbee-input-border);
           border-radius: 2px;
           appearance: none;
           cursor: pointer;
@@ -1861,7 +1861,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           display: flex;
           justify-content: center;
           padding: 24px 32px;
-          border-top: 1px solid rgba(232, 232, 232, 0.05);
+          border-top: 1px solid var(--surbee-accent-subtle);
           background-color: var(--surbee-bg-primary, rgb(19, 19, 20));
           z-index: 10;
         }
@@ -1886,14 +1886,14 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         }
 
         .save-btn:hover:not(.disabled) {
-          background: rgba(232, 232, 232, 0.9);
+          background: var(--surbee-fg-secondary);
         }
 
         .save-btn.disabled {
           opacity: 0.4;
           cursor: not-allowed;
-          background: rgba(232, 232, 232, 0.04);
-          color: var(--surbee-fg-muted, rgba(232, 232, 232, 0.4));
+          background: var(--surbee-accent-subtle);
+          color: var(--surbee-fg-muted, var(--surbee-fg-muted));
         }
 
         /* Cipher Tier Slider */
@@ -1925,7 +1925,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         }
 
         .cipher-tier-label:hover {
-          background: rgba(232, 232, 232, 0.05);
+          background: var(--surbee-accent-subtle);
         }
 
         .cipher-tier-label.active .tier-number {
@@ -1935,25 +1935,25 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         .cipher-tier-label .tier-number {
           font-size: 18px;
           font-weight: 600;
-          color: rgba(232, 232, 232, 0.4);
+          color: var(--surbee-fg-muted);
           transition: color 0.2s ease;
         }
 
         .cipher-tier-label .tier-name {
           font-size: 11px;
-          color: rgba(232, 232, 232, 0.5);
+          color: var(--surbee-fg-muted);
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
 
         .cipher-tier-label.active .tier-name {
-          color: rgba(232, 232, 232, 0.7);
+          color: var(--surbee-fg-secondary);
         }
 
         .cipher-tier-track {
           position: relative;
           height: 4px;
-          background: rgba(232, 232, 232, 0.1);
+          background: var(--surbee-border-primary);
           border-radius: 2px;
           margin: 0 24px;
         }
@@ -1982,19 +1982,19 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         .cipher-tier-info {
           margin-top: 16px;
           padding: 12px 16px;
-          background: rgba(232, 232, 232, 0.03);
+          background: var(--surbee-accent-subtle);
           border-radius: 12px;
         }
 
         .tier-description {
           font-size: 14px;
-          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          color: var(--surbee-fg-secondary, var(--surbee-fg-secondary));
           margin: 0;
         }
 
         .tier-cost {
           font-size: 13px;
-          color: rgba(232, 232, 232, 0.4);
+          color: var(--surbee-fg-muted);
           margin: 8px 0 0 0;
         }
 
@@ -2023,11 +2023,11 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         }
 
         .cipher-dropdown-trigger:hover {
-          background: rgba(255, 255, 255, 0.05);
+          background: var(--surbee-accent-subtle);
         }
 
         .cipher-dropdown-trigger svg {
-          color: rgba(232, 232, 232, 0.6);
+          color: var(--surbee-fg-secondary);
         }
 
         .cipher-categories-container {
@@ -2039,7 +2039,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
 
         /* Cipher Category Accordion */
         .cipher-category-section {
-          border: 1px solid rgba(232, 232, 232, 0.08);
+          border: 1px solid var(--surbee-border-secondary);
           border-radius: 12px;
           overflow: hidden;
         }
@@ -2057,7 +2057,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         }
 
         .cipher-category-header:hover {
-          background: rgba(232, 232, 232, 0.03);
+          background: var(--surbee-accent-subtle);
         }
 
         .cipher-category-info {
@@ -2077,13 +2077,13 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
 
         .cipher-category-count {
           font-size: 12px;
-          color: rgba(232, 232, 232, 0.4);
+          color: var(--surbee-fg-muted);
         }
 
         .cipher-checks-list {
           display: flex;
           flex-direction: column;
-          border-top: 1px solid rgba(232, 232, 232, 0.06);
+          border-top: 1px solid var(--surbee-accent-subtle);
         }
 
         .cipher-check-row {
@@ -2095,11 +2095,11 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         }
 
         .cipher-check-row:not(:last-child) {
-          border-bottom: 1px solid rgba(232, 232, 232, 0.04);
+          border-bottom: 1px solid var(--surbee-accent-subtle);
         }
 
         .cipher-check-row:hover {
-          background: rgba(232, 232, 232, 0.02);
+          background: var(--surbee-accent-subtle);
         }
 
         .cipher-check-info {
@@ -2117,13 +2117,13 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           display: flex;
           align-items: center;
           justify-content: center;
-          color: rgba(232, 232, 232, 0.35);
+          color: var(--surbee-fg-muted);
           cursor: help;
           transition: color 0.15s ease;
         }
 
         .cipher-check-tooltip:hover {
-          color: rgba(232, 232, 232, 0.6);
+          color: var(--surbee-fg-secondary);
         }
 
         /* Monochrome Toggle - White when active */
@@ -2132,7 +2132,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           width: 40px;
           height: 22px;
           border-radius: 11px;
-          background: rgba(232, 232, 232, 0.12);
+          background: var(--surbee-border-primary);
           border: none;
           cursor: pointer;
           transition: background 0.2s ease;
@@ -2180,7 +2180,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
 
         .danger-zone-description {
           font-size: 14px;
-          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          color: var(--surbee-fg-secondary, var(--surbee-fg-secondary));
           margin: 0;
           line-height: 1.5;
         }
@@ -2211,7 +2211,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
 
         .danger-zone-confirm-label {
           font-size: 14px;
-          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          color: var(--surbee-fg-secondary, var(--surbee-fg-secondary));
           margin: 0 0 12px 0;
         }
 
@@ -2225,19 +2225,19 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           padding: 10px 14px;
           font-size: 14px;
           color: var(--surbee-fg-primary, #E8E8E8);
-          background: rgba(232, 232, 232, 0.04);
-          border: 1px solid rgba(232, 232, 232, 0.1);
+          background: var(--surbee-accent-subtle);
+          border: 1px solid var(--surbee-border-primary);
           border-radius: 8px;
           outline: none;
           margin-bottom: 16px;
         }
 
         .danger-zone-input:focus {
-          border-color: rgba(232, 232, 232, 0.2);
+          border-color: var(--surbee-border-primary);
         }
 
         .danger-zone-input::placeholder {
-          color: rgba(232, 232, 232, 0.3);
+          color: var(--surbee-border-focus);
         }
 
         .danger-zone-actions {
@@ -2250,7 +2250,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           font-size: 14px;
           font-weight: 500;
           color: var(--surbee-fg-primary, #E8E8E8);
-          background: rgba(232, 232, 232, 0.06);
+          background: var(--surbee-accent-subtle);
           border: none;
           border-radius: 8px;
           cursor: pointer;
@@ -2258,7 +2258,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         }
 
         .danger-zone-cancel:hover {
-          background: rgba(232, 232, 232, 0.1);
+          background: var(--surbee-border-primary);
         }
 
         .danger-zone-delete {
@@ -2307,7 +2307,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
 
         .cipher-field-description {
           font-size: 14px;
-          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          color: var(--surbee-fg-secondary, var(--surbee-fg-secondary));
           margin: 4px 0 12px;
         }
 
@@ -2315,7 +2315,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           margin: 32px 0;
           width: 100%;
           height: 1px;
-          background-color: rgba(232, 232, 232, 0.08);
+          background-color: var(--surbee-border-secondary);
         }
 
         /* Cipher Checkbox */
@@ -2335,7 +2335,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           width: 16px;
           height: 16px;
           border-radius: 5px;
-          border: 1px solid rgba(232, 232, 232, 0.2);
+          border: 1px solid var(--surbee-border-primary);
           background: transparent;
           cursor: pointer;
           display: flex;
@@ -2348,11 +2348,11 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         }
 
         .cipher-checkbox:hover {
-          border-color: rgba(232, 232, 232, 0.4);
+          border-color: var(--surbee-fg-muted);
         }
 
         .cipher-checkbox.checked {
-          border-color: rgba(232, 232, 232, 0.2);
+          border-color: var(--surbee-border-primary);
           background: transparent;
           color: var(--surbee-fg-primary, #E8E8E8);
         }
@@ -2371,12 +2371,12 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         .cipher-checkbox-desc {
           font-size: 14px;
           font-weight: 400;
-          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          color: var(--surbee-fg-secondary, var(--surbee-fg-secondary));
           transition: color 0.1s cubic-bezier(0.25, 0.5, 0.25, 1);
         }
 
         .cipher-checkbox-label:hover .cipher-checkbox-desc {
-          color: rgba(232, 232, 232, 0.8);
+          color: var(--surbee-fg-primary);
         }
 
         /* Cipher Radio Group */
@@ -2386,7 +2386,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           gap: 4px;
           border-radius: 16px;
           padding: 12px;
-          background-color: rgba(232, 232, 232, 0.02);
+          background-color: var(--surbee-accent-subtle);
         }
 
         .cipher-radio-label {
@@ -2400,7 +2400,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         }
 
         .cipher-radio-label:hover {
-          background: rgba(232, 232, 232, 0.04);
+          background: var(--surbee-accent-subtle);
         }
 
         .cipher-radio {
@@ -2408,7 +2408,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           width: 18px;
           height: 18px;
           border-radius: 50%;
-          border: 1px solid rgba(232, 232, 232, 0.25);
+          border: 1px solid var(--surbee-border-primary);
           background: transparent;
           cursor: pointer;
           display: flex;
@@ -2420,7 +2420,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         }
 
         .cipher-radio:hover {
-          border-color: rgba(232, 232, 232, 0.4);
+          border-color: var(--surbee-fg-muted);
         }
 
         .cipher-radio.checked {
@@ -2449,7 +2449,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
 
         .cipher-radio-desc {
           font-size: 13px;
-          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.5));
+          color: var(--surbee-fg-secondary, var(--surbee-fg-muted));
           line-height: 1.4;
         }
 
@@ -2491,7 +2491,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         }
 
         .cipher-radio-label.locked:hover {
-          background: rgba(232, 232, 232, 0.04);
+          background: var(--surbee-accent-subtle);
         }
 
         .cipher-radio.locked {
@@ -2529,16 +2529,16 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           font-size: 13px;
           font-weight: 500;
           color: var(--surbee-fg-primary, #E8E8E8);
-          background: rgba(232, 232, 232, 0.06);
-          border: 1px solid rgba(232, 232, 232, 0.15);
+          background: var(--surbee-accent-subtle);
+          border: 1px solid var(--surbee-input-border);
           border-radius: 9999px;
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
         .cipher-select-all-btn:hover {
-          background: rgba(232, 232, 232, 0.1);
-          border-color: rgba(232, 232, 232, 0.2);
+          background: var(--surbee-border-primary);
+          border-color: var(--surbee-border-primary);
         }
 
         .cipher-select-all-btn.small {
@@ -2550,18 +2550,18 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           padding: 6px 14px;
           font-size: 13px;
           font-weight: 500;
-          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          color: var(--surbee-fg-secondary, var(--surbee-fg-secondary));
           background: transparent;
-          border: 1px solid rgba(232, 232, 232, 0.1);
+          border: 1px solid var(--surbee-border-primary);
           border-radius: 9999px;
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
         .cipher-deselect-all-btn:hover {
-          background: rgba(232, 232, 232, 0.04);
+          background: var(--surbee-accent-subtle);
           color: var(--surbee-fg-primary, #E8E8E8);
-          border-color: rgba(232, 232, 232, 0.15);
+          border-color: var(--surbee-input-border);
         }
 
         .cipher-deselect-all-btn.small {
@@ -2576,7 +2576,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           border-radius: 20px;
           padding: 20px 24px;
           margin-bottom: 32px;
-          background-color: rgba(232, 232, 232, 0.02);
+          background-color: var(--surbee-accent-subtle);
         }
 
         /* Modal Styles */
@@ -2597,11 +2597,11 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           max-width: calc(100vw - 32px);
           max-height: calc(100vh - 32px);
           border-radius: 16px;
-          border: 1px solid rgba(232, 232, 232, 0.08);
+          border: 1px solid var(--surbee-border-secondary);
           background: var(--surbee-bg-primary, rgb(19, 19, 20));
           overflow-y: auto;
           scrollbar-width: thin;
-          scrollbar-color: rgba(232, 232, 232, 0.08) transparent;
+          scrollbar-color: var(--surbee-border-secondary) transparent;
         }
 
         /* Full Screen Layout */
@@ -2628,18 +2628,18 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           justify-content: center;
           width: 40px;
           height: 40px;
-          background: rgba(232, 232, 232, 0.06);
-          border: 1px solid rgba(232, 232, 232, 0.1);
+          background: var(--surbee-accent-subtle);
+          border: 1px solid var(--surbee-border-primary);
           border-radius: 10px;
-          color: var(--surbee-fg-secondary, rgba(232, 232, 232, 0.6));
+          color: var(--surbee-fg-secondary, var(--surbee-fg-secondary));
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
         .settings-close-btn:hover {
-          background: rgba(232, 232, 232, 0.1);
+          background: var(--surbee-border-primary);
           color: var(--surbee-fg-primary, #E8E8E8);
-          border-color: rgba(232, 232, 232, 0.2);
+          border-color: var(--surbee-border-primary);
         }
 
         .settings-scroll-container {
@@ -2647,7 +2647,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           height: 100%;
           overflow-y: auto;
           scrollbar-width: thin;
-          scrollbar-color: rgba(232, 232, 232, 0.08) transparent;
+          scrollbar-color: var(--surbee-border-secondary) transparent;
         }
       `}</style>
           </div>

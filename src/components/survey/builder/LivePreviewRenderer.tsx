@@ -112,7 +112,6 @@ export const LivePreviewRenderer: React.FC<LivePreviewRendererProps> = ({
   const handleSubmit = () => {
     if (!validateCurrentPage()) return
     
-    console.log('Survey submitted:', formData)
     alert('Survey preview completed! (This is just a preview)')
     
     // Reset form for continued testing

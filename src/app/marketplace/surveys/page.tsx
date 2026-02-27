@@ -214,8 +214,8 @@ function CommunitySurveysContent() {
     router.replace(`?${params.toString()}`, { scroll: false });
   };
 
-  const handleTakeSurvey = (surveyId: string) => {
-    console.log("Open survey", surveyId);
+  const handleTakeSurvey = (_surveyId: string) => {
+    // TODO: implement survey navigation
   };
 
   return (

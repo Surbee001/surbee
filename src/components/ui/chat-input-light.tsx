@@ -314,7 +314,6 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
           const sizeEstimate = (compressed.length - 'data:image/jpeg;base64,'.length) * 0.75;
 
           if (sizeEstimate <= maxSizeBytes) {
-            console.log(`📷 Compressed image to ${(sizeEstimate / 1024 / 1024).toFixed(2)}MB (quality: ${quality}, scale: ${scale})`);
             resolve(compressed);
           } else if (quality > 0.3) {
             // Reduce quality first
@@ -327,7 +326,6 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
             compress();
           } else {
             // Give up and return what we have
-            console.log(`📷 Could not compress below ${(sizeEstimate / 1024 / 1024).toFixed(2)}MB`);
             resolve(compressed);
           }
         };
@@ -341,11 +339,9 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
 
   const processFile = async (file: File) => {
     if (!isImageFile(file)) {
-      console.log("Only image files are allowed");
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      console.log("File too large (max 10MB)");
       return;
     }
 
@@ -360,7 +356,6 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
       let finalDataUrl = dataUrl;
 
       if (sizeEstimate > 4 * 1024 * 1024) {
-        console.log(`📷 Image ${file.name} is ${(sizeEstimate / 1024 / 1024).toFixed(2)}MB, compressing...`);
         finalDataUrl = await compressImage(dataUrl);
       }
 

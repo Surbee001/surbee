@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { supabase } from '@/lib/supabase'
-// Temporarily disable queue processing to fix build
-// import { queueAnalyticsProcessing } from '../../../../../../lib/queue/setup'
 
 const AnalyticsEventSchema = z.object({
   surveyId: z.string(),
@@ -58,17 +56,6 @@ export async function POST(req: NextRequest) {
         
         processedEvents.push(stored.id)
         
-        // Queue for advanced processing if needed
-        if (event.eventType === 'survey_completed') {
-          // TODO: Re-enable when queue system is properly configured
-          // await queueAnalyticsProcessing({
-          //   surveyId: event.surveyId,
-          //   responseId: stored.id,
-          //   behavioralData: event.behavioral || {},
-          //   timestamp: new Date(event.timestamp),
-          // })
-          console.log('Survey completed, analytics queuing disabled')
-        }
         
       } catch (eventError) {
         console.error(`Failed to process analytics event:`, eventError)
