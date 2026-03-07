@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Crown, Sparkles } from "lucide-react";
+import { ChevronDown, Crown, Sparkles, Brain } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
@@ -18,7 +18,18 @@ interface ModelSelectorProps {
   disabled?: boolean;
   theme?: 'dark' | 'white';
   userPlan?: string; // e.g., 'free_user', 'surbee_pro', 'surbee_max', 'surbee_enterprise'
+  thinkingEnabled?: boolean;
+  onThinkingChange?: (enabled: boolean) => void;
 }
+
+// Models that support thinking/reasoning
+const THINKING_SUPPORTED_MODELS: Set<AIModel> = new Set([
+  'gpt-5',
+  'gpt-5.2',
+  'gpt-5-mini',
+  'gpt-5.1-codex',
+  'claude-haiku',
+]);
 
 // Model configuration with plan requirements
 const models: Array<{
@@ -61,12 +72,15 @@ export default function ModelSelector({
   onModelChange,
   disabled = false,
   theme = 'dark',
-  userPlan = 'free_user'
+  userPlan = 'free_user',
+  thinkingEnabled = false,
+  onThinkingChange,
 }: ModelSelectorProps) {
   const router = useRouter();
   const selectedModelData = models.find(m => m.id === selectedModel) || models[0];
   const userIsPro = isPro(userPlan);
   const userIsMax = isMax(userPlan);
+  const supportsThinking = THINKING_SUPPORTED_MODELS.has(selectedModel);
 
   const handleModelSelect = (model: typeof models[0]) => {
     if (!canAccessModel(model.requiredPlan, userPlan)) {
@@ -83,6 +97,7 @@ export default function ModelSelector({
   );
 
   return (
+    <div className="flex items-center gap-1.5">
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
@@ -163,5 +178,32 @@ export default function ModelSelector({
         })}
       </DropdownMenuContent>
     </DropdownMenu>
+    {supportsThinking && onThinkingChange && (
+      <button
+        disabled={disabled}
+        onClick={() => onThinkingChange(!thinkingEnabled)}
+        className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium border rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+        style={{
+          color: 'var(--surbee-fg-secondary)',
+          backgroundColor: 'transparent',
+          borderColor: 'var(--surbee-sidebar-border)',
+          fontFamily: 'var(--font-inter), sans-serif',
+          opacity: thinkingEnabled ? 1 : 0.6,
+        }}
+        onMouseEnter={(e) => {
+          if (!disabled) {
+            e.currentTarget.style.backgroundColor = 'var(--surbee-sidebar-hover)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent';
+        }}
+        title={thinkingEnabled ? "Thinking enabled — click to disable" : "Enable thinking/reasoning"}
+      >
+        <Brain size={12} />
+        <span>{thinkingEnabled ? 'Think on' : 'Think'}</span>
+      </button>
+    )}
+    </div>
   );
 }

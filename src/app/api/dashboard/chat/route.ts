@@ -564,7 +564,7 @@ export async function POST(request: NextRequest) {
     if (!user) return errorResponse;
 
     const body = await request.json();
-    const { messages, model = 'claude-haiku', userPreferences, createMode, searchWebEnabled = true, references = [], designTheme } = body;
+    const { messages, model = 'claude-haiku', userPreferences, createMode, searchWebEnabled = true, references = [], designTheme, thinking = false } = body;
 
     // Check if user can use premium models (free users only get Claude Haiku)
     const isPremiumModel = model !== 'claude-haiku' && !model.includes('haiku');
@@ -810,6 +810,18 @@ RULES:
       ? { ...baseTools, ...createWebSearchTool() }
       : baseTools;
 
+    // Build provider options for thinking/reasoning when enabled
+    const providerOptions: Record<string, any> = {};
+    if (thinking) {
+      const isClaudeModel = model === 'claude-haiku' || model.includes('haiku') || model.includes('claude');
+      const isOpenAIModel = model.includes('gpt') || model.includes('codex');
+      if (isClaudeModel) {
+        providerOptions.anthropic = { thinking: { type: 'enabled', budgetTokens: 10000 } };
+      } else if (isOpenAIModel) {
+        providerOptions.openai = { reasoningEffort: 'medium' };
+      }
+    }
+
     // Use streamText with tools
     const result = streamText({
       model: getModel(model),
@@ -817,6 +829,7 @@ RULES:
       messages: transformedMessages,
       tools,
       maxSteps: 10, // Allow multiple tool calls for complex queries
+      ...(Object.keys(providerOptions).length > 0 && { providerOptions }),
     });
 
     // Return the UI message stream response for useChat

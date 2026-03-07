@@ -92,6 +92,8 @@ interface ChatInputLightProps {
   selectedModel?: AIModel; // optional, currently selected AI model
   onModelChange?: (model: AIModel) => void; // optional, callback when model changes
   userPlan?: string; // optional, user's subscription plan for model access control
+  thinkingEnabled?: boolean; // optional, whether thinking/reasoning is enabled
+  onThinkingChange?: (enabled: boolean) => void; // optional, callback when thinking toggle changes
   showBuildToggle?: boolean; // optional, shows build mode toggle
   isBuildMode?: boolean; // optional, whether build mode is active
   onToggleBuildMode?: () => void; // optional, callback to toggle build mode
@@ -126,6 +128,8 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
   selectedModel = 'gpt-5',
   onModelChange,
   userPlan = 'free_user',
+  thinkingEnabled = false,
+  onThinkingChange,
   showBuildToggle = false,
   isBuildMode = false,
   onToggleBuildMode,
@@ -733,6 +737,8 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
                   theme={detectedTheme}
                   disabled={isInputDisabled}
                   userPlan={userPlan}
+                  thinkingEnabled={thinkingEnabled}
+                  onThinkingChange={onThinkingChange}
                 />
               )}
               {onToggleEditMode && (

@@ -18,19 +18,39 @@ function getEditedFiles(output: any): string[] {
   return [];
 }
 
-// Get the action verb based on tool name
+// Get user-friendly action text based on tool name
 function getToolAction(toolName: string, isActive: boolean): { verb: string; icon: 'edit' | 'build' | 'search' | 'default' } {
-  const activeVerbs: Record<string, { verb: string; icon: 'edit' | 'build' | 'search' | 'default' }> = {
-    'surbe_write': { verb: isActive ? 'Creating' : 'Created', icon: 'edit' },
-    'surbe_quick_edit': { verb: isActive ? 'Editing' : 'Edited', icon: 'edit' },
-    'surbe_line_replace': { verb: isActive ? 'Editing' : 'Edited', icon: 'edit' },
-    'surbe_view': { verb: isActive ? 'Reading' : 'Read', icon: 'search' },
-    'surbe_search_files': { verb: isActive ? 'Searching' : 'Searched', icon: 'search' },
-    'surbe_preview': { verb: isActive ? 'Building' : 'Built', icon: 'build' },
-    'surbe_add_dependency': { verb: isActive ? 'Installing' : 'Installed', icon: 'build' },
-    'init_sandbox': { verb: isActive ? 'Initializing' : 'Initialized', icon: 'build' },
+  const map: Record<string, { active: string; done: string; icon: 'edit' | 'build' | 'search' | 'default' }> = {
+    'surbe_write':                { active: 'Creating file',        done: 'Created file',        icon: 'edit' },
+    'surbe_quick_edit':           { active: 'Editing file',         done: 'Edited file',         icon: 'edit' },
+    'surbe_line_replace':         { active: 'Updating file',        done: 'Updated file',        icon: 'edit' },
+    'surbe_view':                 { active: 'Viewing file',         done: 'Viewed file',         icon: 'search' },
+    'surbe_search_files':         { active: 'Searching files',      done: 'Searched files',      icon: 'search' },
+    'surbe_build_preview':        { active: 'Building preview',     done: 'Built preview',       icon: 'build' },
+    'surbe_preview':              { active: 'Building preview',     done: 'Built preview',       icon: 'build' },
+    'surbe_add_dependency':       { active: 'Installing package',   done: 'Installed package',   icon: 'build' },
+    'surbe_remove_dependency':    { active: 'Removing package',     done: 'Removed package',     icon: 'build' },
+    'surb_init_sandbox':          { active: 'Setting up project',   done: 'Project ready',       icon: 'build' },
+    'init_sandbox':               { active: 'Setting up project',   done: 'Project ready',       icon: 'build' },
+    'surbe_read_console_logs':    { active: 'Checking for errors',  done: 'Checked for errors',  icon: 'search' },
+    'surbe_read_network_requests':{ active: 'Checking network',     done: 'Checked network',     icon: 'search' },
+    'surbe_delete':               { active: 'Deleting file',        done: 'Deleted file',        icon: 'edit' },
+    'surbe_rename':               { active: 'Renaming file',        done: 'Renamed file',        icon: 'edit' },
+    'surbe_copy':                 { active: 'Copying file',         done: 'Copied file',         icon: 'edit' },
+    'surbe_save_chat_image':      { active: 'Saving image',         done: 'Saved image',         icon: 'edit' },
+    'surbe_download_to_repo':     { active: 'Downloading file',     done: 'Downloaded file',     icon: 'build' },
+    'surbe_fetch_website':        { active: 'Fetching website',     done: 'Fetched website',     icon: 'search' },
+    'websearch_web_search':       { active: 'Searching the web',    done: 'Searched the web',    icon: 'search' },
+    'imagegen_generate_image':    { active: 'Generating image',     done: 'Generated image',     icon: 'build' },
+    'imagegen_edit_image':        { active: 'Editing image',        done: 'Edited image',        icon: 'build' },
+    'suggest_followups':          { active: 'Preparing suggestions', done: 'Suggestions ready',  icon: 'default' },
+    'set_checkpoint_title':       { active: 'Saving version',       done: 'Version saved',       icon: 'default' },
+    'save_survey_questions':      { active: 'Saving questions',     done: 'Questions saved',     icon: 'default' },
+    'set_status':                 { active: 'Working',              done: 'Done',                icon: 'default' },
   };
-  return activeVerbs[toolName] || { verb: isActive ? 'Processing' : 'Processed', icon: 'default' };
+  const entry = map[toolName];
+  if (entry) return { verb: isActive ? entry.active : entry.done, icon: entry.icon };
+  return { verb: isActive ? 'Working' : 'Done', icon: 'default' };
 }
 
 // Shimmer text component for active state - matches reasoning shimmer effect

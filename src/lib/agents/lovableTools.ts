@@ -185,51 +185,154 @@ function mergeQuickEdit(original: string, partial: string, marker: string): stri
 
     const originalLines = original.split('\n');
     const partialLines = partial.split('\n');
-    const result: string[] = [];
-    let originalIndex = 0;
-    let partialIndex = 0;
+    const markerTrimmed = marker.trim();
 
-    while (partialIndex < partialLines.length) {
-      const line = partialLines[partialIndex];
-
-      if (line.trim() === marker.trim()) {
-        let nextPartialIndex = partialIndex + 1;
-        while (nextPartialIndex < partialLines.length && partialLines[nextPartialIndex].trim() === marker.trim()) {
-          nextPartialIndex++;
-        }
-
-        if (nextPartialIndex >= partialLines.length) {
-          result.push(...originalLines.slice(originalIndex));
-          break;
-        }
-
-        const nextPartialSection = partialLines[nextPartialIndex];
-        const foundIndex = originalLines.findIndex((origLine, idx) =>
-          idx >= originalIndex && origLine.trim() === nextPartialSection.trim()
-        );
-
-        if (foundIndex === -1) {
-          result.push(...originalLines.slice(originalIndex));
-          originalIndex = originalLines.length;
-        } else {
-          result.push(...originalLines.slice(originalIndex, foundIndex));
-          originalIndex = foundIndex;
-        }
-
-        partialIndex = nextPartialIndex;
+    // Split partial into segments between markers
+    const segments: string[][] = [];
+    let current: string[] = [];
+    for (const line of partialLines) {
+      if (line.trim() === markerTrimmed) {
+        segments.push(current);
+        current = [];
       } else {
-        result.push(line);
-        partialIndex++;
-        if (originalIndex < originalLines.length && originalLines[originalIndex].trim() === line.trim()) {
-          originalIndex++;
+        current.push(line);
+      }
+    }
+    segments.push(current);
+
+    // Pre-compute start anchors for each segment
+    const anchors: number[] = [];
+    let searchFrom = 0;
+    for (const seg of segments) {
+      if (seg.length === 0) {
+        anchors.push(-1);
+        continue;
+      }
+      const pos = findSegmentAnchor(originalLines, seg, searchFrom);
+      anchors.push(pos);
+      if (pos >= 0) searchFrom = pos + 1;
+    }
+
+    // Build result by interleaving segments with "existing code" gaps
+    const result: string[] = [];
+    let origPos = 0;
+
+    for (let i = 0; i < segments.length; i++) {
+      const seg = segments[i];
+      const isAfterMarker = i > 0;
+      const anchor = anchors[i];
+
+      if (seg.length === 0) {
+        // Empty segment after trailing marker — keep rest of original
+        if (isAfterMarker && i === segments.length - 1) {
+          result.push(...originalLines.slice(origPos));
+          origPos = originalLines.length;
+        }
+        continue;
+      }
+
+      if (isAfterMarker) {
+        // Insert "existing code" gap from original
+        const gapEnd = anchor >= origPos ? anchor : origPos;
+        if (gapEnd > origPos) {
+          result.push(...originalLines.slice(origPos, gapEnd));
         }
       }
+
+      // Insert segment content
+      result.push(...seg);
+
+      // Advance origPos past the section this segment replaces
+      const segStart = anchor >= origPos ? anchor : origPos;
+      let segEnd = segStart + seg.length;
+
+      // Cap by next anchor so we don't overshoot into the next section
+      for (let j = i + 1; j < segments.length; j++) {
+        if (anchors[j] >= 0) {
+          segEnd = Math.min(segEnd, anchors[j]);
+          break;
+        }
+      }
+
+      origPos = Math.min(segEnd, originalLines.length);
     }
 
     return result.join('\n');
   } catch {
     return null;
   }
+}
+
+/**
+ * Find where a segment starts in the original file using multi-line matching,
+ * then single-line fallback, then structural matching for modified lines.
+ */
+function findSegmentAnchor(originalLines: string[], segment: string[], fromIdx: number): number {
+  if (segment.length === 0) return -1;
+
+  // Strategy 1: Score-based matching — try each segment line as an anchor point
+  // and pick the position where the most lines align
+  let bestPos = -1;
+  let bestScore = 0;
+
+  for (let segOffset = 0; segOffset < segment.length; segOffset++) {
+    const segLine = segment[segOffset].trim();
+    if (segLine.length <= 2) continue;
+
+    for (let origIdx = fromIdx; origIdx < originalLines.length; origIdx++) {
+      if (originalLines[origIdx].trim() !== segLine) continue;
+
+      const candidateStart = origIdx - segOffset;
+      if (candidateStart < fromIdx) continue;
+
+      // Count how many segment lines match at expected positions
+      let score = 0;
+      for (let j = 0; j < segment.length; j++) {
+        const oi = candidateStart + j;
+        if (oi >= 0 && oi < originalLines.length &&
+            originalLines[oi].trim() === segment[j].trim()) {
+          score++;
+        }
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestPos = candidateStart;
+      }
+    }
+  }
+
+  if (bestScore >= 1) return bestPos;
+
+  // Strategy 2: Structural matching for segments where all lines are modified
+  // Match by HTML tag structure or function/variable names
+  for (let s = 0; s < Math.min(segment.length, 3); s++) {
+    const segLine = segment[s].trim();
+
+    // Match by JSX/HTML tag name (e.g. <h1>New Text</h1> matches <h1>Old Text</h1>)
+    const tagMatch = segLine.match(/^<(\w+)/);
+    if (tagMatch) {
+      const tagPattern = new RegExp(`^<${tagMatch[1]}[\\s>/]`);
+      for (let i = fromIdx; i < originalLines.length; i++) {
+        if (tagPattern.test(originalLines[i].trim())) {
+          return i - s;
+        }
+      }
+    }
+
+    // Match by variable/function declaration name
+    const declMatch = segLine.match(/^(?:export\s+)?(?:const|let|var|function)\s+(\w+)/);
+    if (declMatch) {
+      const namePattern = new RegExp(`(?:const|let|var|function)\\s+${declMatch[1]}\\b`);
+      for (let i = fromIdx; i < originalLines.length; i++) {
+        if (namePattern.test(originalLines[i].trim())) {
+          return i - s;
+        }
+      }
+    }
+  }
+
+  return -1;
 }
 
 export const surbeLineReplace = tool({

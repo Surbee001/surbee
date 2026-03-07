@@ -307,6 +307,9 @@ export function DashboardChatContainer({
   const [isSourcesOpen, setIsSourcesOpen] = useState(false);
   const [isModelOpen, setIsModelOpen] = useState(false);
   const [isModelExplicitlySelected, setIsModelExplicitlySelected] = useState(false);
+  const [hoveredLockedModel, setHoveredLockedModel] = useState<string | null>(null);
+  const [hoveredModelGroup, setHoveredModelGroup] = useState<string | null>(null);
+  const [thinkingEnabled, setThinkingEnabled] = useState(true);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [references, setReferences] = useState<ReferenceItem[]>([]);
@@ -643,10 +646,11 @@ export function DashboardChatContainer({
       message: content,
       body: {
         model: selectedModel,
+        thinking: selectedModel === 'claude-haiku' ? thinkingEnabled : true,
         ...(selectedCreateType && { createType: selectedCreateType }),
       },
     });
-  }, [rawMessages, setMessages, sendMessage, selectedModel, selectedCreateType]);
+  }, [rawMessages, setMessages, sendMessage, selectedModel, selectedCreateType, thinkingEnabled]);
 
   // Stable reload callback
   const handleReload = useCallback(() => {
@@ -1054,6 +1058,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
             body: {
               userId,
               model: selectedModel,
+              thinking: selectedModel === 'claude-haiku' ? thinkingEnabled : true,
               createMode: 'Survey',
               searchWebEnabled: true,
               designTheme: currentDesignThemeData.id !== 'default' ? {
@@ -1145,6 +1150,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
           body: {
             userId,
             model: selectedModel,
+            thinking: selectedModel === 'claude-haiku' ? thinkingEnabled : true,
             createMode: selectedCreateType,
             searchWebEnabled,
             references: activeRefs,
@@ -2022,9 +2028,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
             {/* Model selector button - only on /home, not /chat */}
             {!isChatPage && (
             <div className="flex items-center">
-              <DropdownMenu open={isModelOpen} onOpenChange={(open) => {
-                if (!isModelExplicitlySelected || open) setIsModelOpen(open);
-              }}>
+              <DropdownMenu open={isModelOpen} onOpenChange={setIsModelOpen}>
                 <Tooltip open={isModelOpen || isModelExplicitlySelected ? false : undefined}>
                 <TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
@@ -2085,24 +2089,65 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                 <DropdownMenuContent
                   align="end"
                   side="bottom"
+                  onMouseLeave={() => setHoveredLockedModel(null)}
                   style={{
                     borderRadius: '24px',
-                    padding: '8px',
+                    padding: '0',
                     border: `1px solid var(--surbee-dropdown-border)`,
                     backgroundColor: 'var(--surbee-dropdown-bg)',
                     backdropFilter: 'blur(12px)',
                     boxShadow: 'rgba(0, 0, 0, 0.2) 0px 7px 16px',
                     width: '300px',
-                    maxHeight: '315px',
-                    overflowY: 'auto',
+                    overflow: 'visible',
                     fontFamily: "'Opening Hours Sans', sans-serif",
                   }}
                 >
+                  {/* Upgrade panel - appears to the left on hover over locked models */}
+                  {hoveredLockedModel && (
+                    <div style={{
+                      position: 'absolute',
+                      right: '100%',
+                      top: '0',
+                      marginRight: '6px',
+                      width: '180px',
+                      padding: '14px',
+                      borderRadius: '20px',
+                      border: `1px solid var(--surbee-dropdown-border)`,
+                      backgroundColor: 'transparent',
+                      backdropFilter: 'blur(20px)',
+                    }}>
+                      <p style={{ color: 'var(--surbee-dropdown-text)', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
+                        Access to top models
+                      </p>
+                      <p style={{ color: 'var(--surbee-dropdown-text-muted)', fontSize: '12px', lineHeight: '1.4' }}>
+                        Unlock the most powerful AI models by upgrading your plan.
+                      </p>
+                      <button
+                        onClick={() => { router.push('/home/pricing'); setIsModelOpen(false); }}
+                        className="cursor-pointer"
+                        style={{
+                          marginTop: '10px',
+                          width: '100%',
+                          padding: '6px 12px',
+                          borderRadius: '10px',
+                          backgroundColor: '#0285ff',
+                          color: 'white',
+                          fontSize: '12px',
+                          fontWeight: 500,
+                          border: 'none',
+                        }}
+                      >
+                        View plans
+                      </button>
+                    </div>
+                  )}
+
+                  <div style={{ padding: '8px', maxHeight: '380px', overflowY: 'auto' }}>
                   {/* Best option (auto-selected default) */}
                   <DropdownMenuItem
                     className="cursor-pointer"
                     style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
-                    onSelect={() => { handleModelChange('claude-haiku'); setIsModelExplicitlySelected(false); setIsModelOpen(false); }}
+                    onSelect={(e) => { e.preventDefault(); handleModelChange('claude-haiku'); setIsModelExplicitlySelected(false); }}
                   >
                     <div className="flex items-center gap-3 w-full">
                       <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
@@ -2122,17 +2167,21 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                   </DropdownMenuItem>
 
                   {/* GPT-5 */}
+                  <div
+                    onMouseEnter={() => { setHoveredModelGroup('gpt-5'); if (userPlan === 'free' || userPlan === 'free_user') setHoveredLockedModel('gpt-5'); }}
+                    onMouseLeave={() => { setHoveredModelGroup(null); setHoveredLockedModel(null); }}
+                    style={{ borderRadius: '18px', marginBottom: '1px', backgroundColor: hoveredModelGroup === 'gpt-5' ? 'var(--surbee-dropdown-item-hover, rgba(255,255,255,0.06))' : 'transparent', transition: 'background-color 0.15s ease' }}
+                  >
                   <DropdownMenuItem
-                    className="cursor-pointer"
-                    style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
-                    onSelect={() => {
+                    className="cursor-pointer focus:!bg-transparent"
+                    style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)' }}
+                    onSelect={(e) => {
+                      e.preventDefault();
                       if (userPlan === 'free' || userPlan === 'free_user') {
-                        router.push('/home/pricing');
-                        setIsModelOpen(false);
+                        return;
                       } else {
                         handleModelChange('gpt-5');
                         setIsModelExplicitlySelected(true);
-                        setIsModelOpen(false);
                       }
                     }}
                   >
@@ -2155,19 +2204,63 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                       </div>
                     </div>
                   </DropdownMenuItem>
+                  {isModelExplicitlySelected && selectedModel === 'gpt-5' && (
+                    <div style={{ padding: '2px 16px 6px 44px' }}>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Thinking</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              disabled
+                              style={{
+                                position: 'relative',
+                                width: '36px',
+                                height: '20px',
+                                borderRadius: '10px',
+                                background: 'var(--surbee-fg-primary, #E8E8E8)',
+                                border: 'none',
+                                marginLeft: 'auto',
+                                flexShrink: 0,
+                                opacity: 0.4,
+                                cursor: 'not-allowed',
+                              }}
+                            >
+                              <div style={{
+                                position: 'absolute',
+                                top: '2px',
+                                left: '2px',
+                                width: '16px',
+                                height: '16px',
+                                borderRadius: '50%',
+                                background: 'var(--surbee-bg-primary, rgb(19, 19, 20))',
+                                transition: 'transform 0.2s ease',
+                                transform: 'translateX(16px)',
+                              }} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={4}>This is a thinking only model</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </div>
+                  )}
+                  </div>
 
                   {/* GPT-5.2 */}
+                  <div
+                    onMouseEnter={() => { setHoveredModelGroup('gpt-5.2'); if (userPlan === 'free' || userPlan === 'free_user') setHoveredLockedModel('gpt-5.2'); }}
+                    onMouseLeave={() => { setHoveredModelGroup(null); setHoveredLockedModel(null); }}
+                    style={{ borderRadius: '18px', marginBottom: '1px', backgroundColor: hoveredModelGroup === 'gpt-5.2' ? 'var(--surbee-dropdown-item-hover, rgba(255,255,255,0.06))' : 'transparent', transition: 'background-color 0.15s ease' }}
+                  >
                   <DropdownMenuItem
-                    className="cursor-pointer"
-                    style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
-                    onSelect={() => {
+                    className="cursor-pointer focus:!bg-transparent"
+                    style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)' }}
+                    onSelect={(e) => {
+                      e.preventDefault();
                       if (userPlan === 'free' || userPlan === 'free_user') {
-                        router.push('/home/pricing');
-                        setIsModelOpen(false);
+                        return;
                       } else {
                         handleModelChange('gpt-5.2');
                         setIsModelExplicitlySelected(true);
-                        setIsModelOpen(false);
                       }
                     }}
                   >
@@ -2190,15 +2283,60 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                       </div>
                     </div>
                   </DropdownMenuItem>
+                  {isModelExplicitlySelected && selectedModel === 'gpt-5.2' && (
+                    <div style={{ padding: '2px 16px 6px 44px' }}>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Thinking</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              disabled
+                              style={{
+                                position: 'relative',
+                                width: '36px',
+                                height: '20px',
+                                borderRadius: '10px',
+                                background: 'var(--surbee-fg-primary, #E8E8E8)',
+                                border: 'none',
+                                marginLeft: 'auto',
+                                flexShrink: 0,
+                                opacity: 0.4,
+                                cursor: 'not-allowed',
+                              }}
+                            >
+                              <div style={{
+                                position: 'absolute',
+                                top: '2px',
+                                left: '2px',
+                                width: '16px',
+                                height: '16px',
+                                borderRadius: '50%',
+                                background: 'var(--surbee-bg-primary, rgb(19, 19, 20))',
+                                transition: 'transform 0.2s ease',
+                                transform: 'translateX(16px)',
+                              }} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={4}>This is a thinking only model</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </div>
+                  )}
+                  </div>
 
                   {/* GPT-5 Mini */}
+                  <div
+                    onMouseEnter={() => setHoveredModelGroup('gpt-5-mini')}
+                    onMouseLeave={() => setHoveredModelGroup(null)}
+                    style={{ borderRadius: '18px', marginBottom: '1px', backgroundColor: hoveredModelGroup === 'gpt-5-mini' ? 'var(--surbee-dropdown-item-hover, rgba(255,255,255,0.06))' : 'transparent', transition: 'background-color 0.15s ease' }}
+                  >
                   <DropdownMenuItem
-                    className="cursor-pointer"
-                    style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
-                    onSelect={() => {
+                    className="cursor-pointer focus:!bg-transparent"
+                    style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)' }}
+                    onSelect={(e) => {
+                      e.preventDefault();
                       handleModelChange('gpt-5-mini');
                       setIsModelExplicitlySelected(true);
-                      setIsModelOpen(false);
                     }}
                   >
                     <div className="flex items-start gap-3 w-full">
@@ -2213,19 +2351,70 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                       </div>
                     </div>
                   </DropdownMenuItem>
+                  {isModelExplicitlySelected && selectedModel === 'gpt-5-mini' && (
+                    <div style={{ padding: '2px 16px 6px 44px' }}>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Thinking</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              disabled
+                              style={{
+                                position: 'relative',
+                                width: '36px',
+                                height: '20px',
+                                borderRadius: '10px',
+                                background: 'var(--surbee-fg-primary, #E8E8E8)',
+                                border: 'none',
+                                marginLeft: 'auto',
+                                flexShrink: 0,
+                                opacity: 0.4,
+                                cursor: 'not-allowed',
+                              }}
+                            >
+                              <div style={{
+                                position: 'absolute',
+                                top: '2px',
+                                left: '2px',
+                                width: '16px',
+                                height: '16px',
+                                borderRadius: '50%',
+                                background: 'var(--surbee-bg-primary, rgb(19, 19, 20))',
+                                transition: 'transform 0.2s ease',
+                                transform: 'translateX(16px)',
+                              }} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={4}>This is a thinking only model</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </div>
+                  )}
+                  </div>
 
                   {/* Codex Max */}
+                  <div
+                    onMouseEnter={() => {
+                      setHoveredModelGroup('gpt-5.1-codex');
+                      const isFree = userPlan === 'free' || userPlan === 'free_user';
+                      const isPro = userPlan === 'pro' || userPlan === 'surbee_pro';
+                      if (isFree || isPro) setHoveredLockedModel('gpt-5.1-codex');
+                    }}
+                    onMouseLeave={() => { setHoveredModelGroup(null); setHoveredLockedModel(null); }}
+                    style={{ borderRadius: '18px', marginBottom: '1px', backgroundColor: hoveredModelGroup === 'gpt-5.1-codex' ? 'var(--surbee-dropdown-item-hover, rgba(255,255,255,0.06))' : 'transparent', transition: 'background-color 0.15s ease' }}
+                  >
                   <DropdownMenuItem
-                    className="cursor-pointer"
-                    style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
-                    onSelect={() => {
-                      if (userPlan === 'free' || userPlan === 'free_user' || userPlan === 'pro' || userPlan === 'surbee_pro') {
-                        router.push('/home/pricing');
-                        setIsModelOpen(false);
+                    className="cursor-pointer focus:!bg-transparent"
+                    style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)' }}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      const isFree = userPlan === 'free' || userPlan === 'free_user';
+                      const isPro = userPlan === 'pro' || userPlan === 'surbee_pro';
+                      if (isFree || isPro) {
+                        return;
                       } else {
                         handleModelChange('gpt-5.1-codex');
                         setIsModelExplicitlySelected(true);
-                        setIsModelOpen(false);
                       }
                     }}
                   >
@@ -2248,12 +2437,57 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                       </div>
                     </div>
                   </DropdownMenuItem>
+                  {isModelExplicitlySelected && selectedModel === 'gpt-5.1-codex' && (
+                    <div style={{ padding: '2px 16px 6px 44px' }}>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Thinking</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              disabled
+                              style={{
+                                position: 'relative',
+                                width: '36px',
+                                height: '20px',
+                                borderRadius: '10px',
+                                background: 'var(--surbee-fg-primary, #E8E8E8)',
+                                border: 'none',
+                                marginLeft: 'auto',
+                                flexShrink: 0,
+                                opacity: 0.4,
+                                cursor: 'not-allowed',
+                              }}
+                            >
+                              <div style={{
+                                position: 'absolute',
+                                top: '2px',
+                                left: '2px',
+                                width: '16px',
+                                height: '16px',
+                                borderRadius: '50%',
+                                background: 'var(--surbee-bg-primary, rgb(19, 19, 20))',
+                                transition: 'transform 0.2s ease',
+                                transform: 'translateX(16px)',
+                              }} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={4}>This is a thinking only model</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </div>
+                  )}
+                  </div>
 
                   {/* Claude Haiku 4.5 */}
+                  <div
+                    onMouseEnter={() => setHoveredModelGroup('claude-haiku')}
+                    onMouseLeave={() => setHoveredModelGroup(null)}
+                    style={{ borderRadius: '18px', marginBottom: '1px', backgroundColor: hoveredModelGroup === 'claude-haiku' ? 'var(--surbee-dropdown-item-hover, rgba(255,255,255,0.06))' : 'transparent', transition: 'background-color 0.15s ease' }}
+                  >
                   <DropdownMenuItem
-                    className="cursor-pointer"
-                    style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
-                    onSelect={() => { handleModelChange('claude-haiku'); setIsModelExplicitlySelected(true); setIsModelOpen(false); }}
+                    className="cursor-pointer focus:!bg-transparent"
+                    style={{ borderRadius: '18px', padding: '8px 8px 8px 16px', color: 'var(--surbee-dropdown-text)' }}
+                    onSelect={(e) => { e.preventDefault(); handleModelChange('claude-haiku'); setIsModelExplicitlySelected(true); }}
                   >
                     <div className="flex items-start gap-3 w-full">
                       <div className="flex h-5 items-center justify-center -ml-1 -mr-1 min-w-6">
@@ -2267,6 +2501,42 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                       </div>
                     </div>
                   </DropdownMenuItem>
+                  {isModelExplicitlySelected && selectedModel === 'claude-haiku' && (
+                    <div style={{ padding: '2px 16px 6px 44px' }}>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>Thinking</span>
+                        <button
+                          onClick={() => setThinkingEnabled(!thinkingEnabled)}
+                          className="cursor-pointer"
+                          style={{
+                            position: 'relative',
+                            width: '36px',
+                            height: '20px',
+                            borderRadius: '10px',
+                            background: thinkingEnabled ? 'var(--surbee-fg-primary, #E8E8E8)' : 'var(--surbee-accent-subtle, rgba(232, 232, 232, 0.12))',
+                            border: 'none',
+                            marginLeft: 'auto',
+                            flexShrink: 0,
+                            transition: 'background 0.2s ease',
+                          }}
+                        >
+                          <div style={{
+                            position: 'absolute',
+                            top: '2px',
+                            left: '2px',
+                            width: '16px',
+                            height: '16px',
+                            borderRadius: '50%',
+                            background: 'var(--surbee-bg-primary, rgb(19, 19, 20))',
+                            transition: 'transform 0.2s ease',
+                            transform: thinkingEnabled ? 'translateX(16px)' : 'translateX(0)',
+                          }} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  </div>
+                  </div>
 
                 </DropdownMenuContent>
               </DropdownMenu>

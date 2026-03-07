@@ -126,57 +126,93 @@ function getPhaseFromToolName(toolName: string): WorkflowPhase {
     'surbe_line_replace': 'editing',
     'surbe_view': 'analyzing',
     'surbe_search_files': 'searching',
+    'surbe_build_preview': 'building',
     'surbe_preview': 'building',
     'surbe_add_dependency': 'installing',
+    'surbe_remove_dependency': 'installing',
+    'surb_init_sandbox': 'setup',
     'init_sandbox': 'setup',
+    'surbe_read_console_logs': 'analyzing',
+    'surbe_read_network_requests': 'analyzing',
+    'surbe_delete': 'editing',
+    'surbe_rename': 'editing',
+    'surbe_copy': 'editing',
+    'surbe_save_chat_image': 'creating',
+    'surbe_download_to_repo': 'creating',
+    'surbe_fetch_website': 'analyzing',
+    'websearch_web_search': 'searching',
+    'imagegen_generate_image': 'creating',
+    'imagegen_edit_image': 'editing',
     'screenshot': 'screenshotting',
     'fetch_url': 'analyzing',
   };
   return toolPhaseMap[toolName] || 'reasoning';
 }
 
-function getToolDescription(toolName: string, fileName?: string): string {
-  const descriptions: Record<string, string> = {
-    'surbe_write': fileName ? `Creating ${fileName}` : 'Creating file',
-    'surbe_quick_edit': fileName ? `Editing ${fileName}` : 'Editing file',
-    'surbe_line_replace': fileName ? `Updating ${fileName}` : 'Updating file',
-    'surbe_view': fileName ? `Reading ${fileName}` : 'Reading file',
-    'surbe_search_files': 'Searching files',
-    'surbe_preview': 'Building preview',
-    'surbe_add_dependency': 'Installing dependency',
-    'surbe_remove_dependency': 'Removing dependency',
-    'init_sandbox': 'Setting up sandbox',
-    'screenshot': 'Capturing screenshot',
-    'fetch_url': 'Fetching website',
-    'web_search': 'Searching the web',
-    'surbe_delete': fileName ? `Deleting ${fileName}` : 'Deleting file',
-    'surbe_rename': fileName ? `Renaming ${fileName}` : 'Renaming file',
-    'surbe_copy': fileName ? `Copying ${fileName}` : 'Copying file',
-  };
-  return descriptions[toolName] || toolName.replace(/_/g, ' ');
+// Active (present) and completed (past) descriptions for each tool
+const toolLabels: Record<string, { active: string; done: string; withFile: (f: string) => { active: string; done: string } }> = {
+  'surbe_write':                { active: 'Creating file',        done: 'Created file',        withFile: f => ({ active: `Creating ${f}`,  done: `Created ${f}` }) },
+  'surbe_quick_edit':           { active: 'Editing file',         done: 'Edited file',         withFile: f => ({ active: `Editing ${f}`,   done: `Edited ${f}` }) },
+  'surbe_line_replace':         { active: 'Updating file',        done: 'Updated file',        withFile: f => ({ active: `Updating ${f}`,  done: `Updated ${f}` }) },
+  'surbe_view':                 { active: 'Viewing file',         done: 'Viewed file',         withFile: f => ({ active: `Viewing ${f}`,   done: `Viewed ${f}` }) },
+  'surbe_search_files':         { active: 'Searching files',      done: 'Searched files',      withFile: _ => ({ active: 'Searching files', done: 'Searched files' }) },
+  'surbe_build_preview':        { active: 'Building preview',     done: 'Built preview',       withFile: _ => ({ active: 'Building preview', done: 'Built preview' }) },
+  'surbe_preview':              { active: 'Building preview',     done: 'Built preview',       withFile: _ => ({ active: 'Building preview', done: 'Built preview' }) },
+  'surbe_add_dependency':       { active: 'Installing package',   done: 'Installed package',   withFile: _ => ({ active: 'Installing package', done: 'Installed package' }) },
+  'surbe_remove_dependency':    { active: 'Removing package',     done: 'Removed package',     withFile: _ => ({ active: 'Removing package', done: 'Removed package' }) },
+  'surb_init_sandbox':          { active: 'Setting up project',   done: 'Project ready',       withFile: _ => ({ active: 'Setting up project', done: 'Project ready' }) },
+  'init_sandbox':               { active: 'Setting up project',   done: 'Project ready',       withFile: _ => ({ active: 'Setting up project', done: 'Project ready' }) },
+  'surbe_read_console_logs':    { active: 'Checking for errors',  done: 'Checked for errors',  withFile: _ => ({ active: 'Checking for errors', done: 'Checked for errors' }) },
+  'surbe_read_network_requests':{ active: 'Checking network',     done: 'Checked network',     withFile: _ => ({ active: 'Checking network', done: 'Checked network' }) },
+  'surbe_delete':               { active: 'Deleting file',        done: 'Deleted file',        withFile: f => ({ active: `Deleting ${f}`,  done: `Deleted ${f}` }) },
+  'surbe_rename':               { active: 'Renaming file',        done: 'Renamed file',        withFile: f => ({ active: `Renaming ${f}`,  done: `Renamed ${f}` }) },
+  'surbe_copy':                 { active: 'Copying file',         done: 'Copied file',         withFile: f => ({ active: `Copying ${f}`,   done: `Copied ${f}` }) },
+  'surbe_save_chat_image':      { active: 'Saving image',         done: 'Saved image',         withFile: _ => ({ active: 'Saving image', done: 'Saved image' }) },
+  'surbe_download_to_repo':     { active: 'Downloading file',     done: 'Downloaded file',     withFile: _ => ({ active: 'Downloading file', done: 'Downloaded file' }) },
+  'surbe_fetch_website':        { active: 'Fetching website',     done: 'Fetched website',     withFile: _ => ({ active: 'Fetching website', done: 'Fetched website' }) },
+  'websearch_web_search':       { active: 'Searching the web',    done: 'Searched the web',    withFile: _ => ({ active: 'Searching the web', done: 'Searched the web' }) },
+  'imagegen_generate_image':    { active: 'Generating image',     done: 'Generated image',     withFile: _ => ({ active: 'Generating image', done: 'Generated image' }) },
+  'imagegen_edit_image':        { active: 'Editing image',        done: 'Edited image',        withFile: _ => ({ active: 'Editing image', done: 'Edited image' }) },
+  'suggest_followups':          { active: 'Preparing suggestions', done: 'Suggestions ready',  withFile: _ => ({ active: 'Preparing suggestions', done: 'Suggestions ready' }) },
+  'set_checkpoint_title':       { active: 'Saving version',       done: 'Version saved',       withFile: _ => ({ active: 'Saving version', done: 'Version saved' }) },
+  'save_survey_questions':      { active: 'Saving questions',     done: 'Questions saved',     withFile: _ => ({ active: 'Saving questions', done: 'Questions saved' }) },
+  'set_status':                 { active: 'Working',              done: 'Done',                withFile: _ => ({ active: 'Working', done: 'Done' }) },
+};
+
+function getToolDescription(toolName: string, fileName?: string, isComplete?: boolean): string {
+  const entry = toolLabels[toolName];
+  if (!entry) return toolName.replace(/_/g, ' ');
+  if (fileName) {
+    const f = entry.withFile(fileName);
+    return isComplete ? f.done : f.active;
+  }
+  return isComplete ? entry.done : entry.active;
 }
 
 type ToolCategory = 'read' | 'write' | 'edit' | 'command' | 'search' | 'other';
 
 function getToolCategory(name: string): ToolCategory {
-  if (name === 'surbe_view' || name === 'fetch_url') return 'read';
-  if (name === 'surbe_write') return 'write';
-  if (name === 'surbe_quick_edit' || name === 'surbe_line_replace') return 'edit';
-  if (name === 'surbe_search_files' || name === 'web_search') return 'search';
-  if (name === 'surbe_preview' || name === 'init_sandbox' || name === 'surbe_add_dependency') return 'command';
+  if (name === 'surbe_view' || name === 'fetch_url' || name === 'surbe_fetch_website') return 'read';
+  if (name === 'surbe_write' || name === 'surbe_save_chat_image' || name === 'surbe_download_to_repo') return 'write';
+  if (name === 'surbe_quick_edit' || name === 'surbe_line_replace' || name === 'surbe_delete' || name === 'surbe_rename' || name === 'surbe_copy') return 'edit';
+  if (name === 'surbe_search_files' || name === 'websearch_web_search' || name === 'web_search' || name === 'surbe_read_console_logs' || name === 'surbe_read_network_requests') return 'search';
+  if (name === 'surbe_build_preview' || name === 'surbe_preview' || name === 'surb_init_sandbox' || name === 'init_sandbox' || name === 'surbe_add_dependency' || name === 'surbe_remove_dependency' || name === 'imagegen_generate_image' || name === 'imagegen_edit_image') return 'command';
   return 'other';
 }
 
-function getCategoryLabel(cat: ToolCategory, count: number): string {
-  const labels: Record<ToolCategory, [string, string]> = {
-    read: ['Viewed 1 file', `Viewed ${count} files`],
-    write: ['Created 1 file', `Created ${count} files`],
-    edit: ['Edited 1 file', `Edited ${count} files`],
-    search: ['Ran 1 search', `Ran ${count} searches`],
-    command: ['Ran 1 command', `Ran ${count} commands`],
-    other: ['Ran 1 action', `Ran ${count} actions`],
+function getCategoryLabel(cat: ToolCategory, count: number, isActive: boolean): string {
+  const labels: Record<ToolCategory, [string, string, string, string]> = {
+    //                           [active-single,       active-plural,              done-single,       done-plural]
+    read:    ['Viewing 1 file',    `Viewing ${count} files`,    'Viewed 1 file',    `Viewed ${count} files`],
+    write:   ['Creating 1 file',   `Creating ${count} files`,   'Created 1 file',   `Created ${count} files`],
+    edit:    ['Editing 1 file',    `Editing ${count} files`,    'Edited 1 file',    `Edited ${count} files`],
+    search:  ['Searching',         `Running ${count} searches`, 'Searched',         `Ran ${count} searches`],
+    command: ['Running 1 action',  `Running ${count} actions`,  'Ran 1 action',     `Ran ${count} actions`],
+    other:   ['Running 1 action',  `Running ${count} actions`,  'Ran 1 action',     `Ran ${count} actions`],
   };
-  return count === 1 ? labels[cat][0] : labels[cat][1];
+  const [activeSingle, activePlural, doneSingle, donePlural] = labels[cat];
+  if (isActive) return count === 1 ? activeSingle : activePlural;
+  return count === 1 ? doneSingle : donePlural;
 }
 
 function getCategoryIcon(cat: ToolCategory) {
@@ -198,36 +234,71 @@ interface ToolGroup {
   codeSnippets: CodeSnippetBlock[];
 }
 
-type DisplayItem = ReasoningBlock | ToolGroup | { type: 'done' };
+// A status-titled group wraps multiple tool groups under a named phase
+interface StatusGroup {
+  type: 'status_group';
+  title: string;
+  toolGroups: ToolGroup[];
+}
+
+type DisplayItem = ReasoningBlock | ToolGroup | StatusGroup | { type: 'done' };
 
 function groupBlocks(blocks: WorkflowBlock[]): DisplayItem[] {
   const items: DisplayItem[] = [];
-  let currentGroup: ToolGroup | null = null;
+  let currentToolGroup: ToolGroup | null = null;
+  let currentStatusGroup: StatusGroup | null = null;
+
+  const flushToolGroup = () => {
+    if (currentToolGroup) {
+      if (currentStatusGroup) {
+        currentStatusGroup.toolGroups.push(currentToolGroup);
+      } else {
+        items.push(currentToolGroup);
+      }
+      currentToolGroup = null;
+    }
+  };
+
+  const flushStatusGroup = () => {
+    flushToolGroup();
+    if (currentStatusGroup) {
+      items.push(currentStatusGroup);
+      currentStatusGroup = null;
+    }
+  };
 
   for (const block of blocks) {
     if (block.type === 'reasoning') {
-      if (currentGroup) {
-        items.push(currentGroup);
-        currentGroup = null;
-      }
+      flushStatusGroup();
       if (block.content.trim()) {
         items.push(block);
       }
     } else if (block.type === 'tool_call') {
-      const cat = getToolCategory(block.name);
-      if (currentGroup && currentGroup.category === cat) {
-        currentGroup.tools.push(block);
+      // set_status starts a new status group
+      if (block.name === 'set_status') {
+        flushToolGroup();
+        // If there's already a status group, flush it
+        if (currentStatusGroup) {
+          items.push(currentStatusGroup);
+        }
+        const title = (block.input as any)?.status || 'Working...';
+        currentStatusGroup = { type: 'status_group', title, toolGroups: [] };
       } else {
-        if (currentGroup) items.push(currentGroup);
-        currentGroup = { type: 'tool_group', category: cat, tools: [block], codeSnippets: [] };
+        const cat = getToolCategory(block.name);
+        if (currentToolGroup && currentToolGroup.category === cat) {
+          currentToolGroup.tools.push(block);
+        } else {
+          flushToolGroup();
+          currentToolGroup = { type: 'tool_group', category: cat, tools: [block], codeSnippets: [] };
+        }
       }
     } else if (block.type === 'code_snippet') {
-      if (currentGroup) {
-        currentGroup.codeSnippets.push(block);
+      if (currentToolGroup) {
+        currentToolGroup.codeSnippets.push(block);
       }
     }
   }
-  if (currentGroup) items.push(currentGroup);
+  flushStatusGroup();
   return items;
 }
 
@@ -299,7 +370,7 @@ function ToolRow({ block, isLast }: { block: ToolCallBlock; isLast: boolean }) {
           <button className="flex flex-row items-center rounded-lg px-2.5 w-full justify-between cursor-pointer transition-colors duration-200 hover:opacity-80">
             <div className="flex flex-row items-center gap-2 min-w-0 flex-1">
               <div className="text-sm text-left truncate w-0 flex-grow" style={{ color: themeVars.textMuted }}>
-                <span className="truncate">{getToolDescription(block.name, block.fileName)}</span>
+                <span className="truncate">{getToolDescription(block.name, block.fileName, block.status === 'complete')}</span>
               </div>
             </div>
           </button>
@@ -343,14 +414,14 @@ function ToolCodeBlock({ block }: { block: CodeSnippetBlock }) {
 }
 
 // --- Tool group (collapsible) ---
-function ToolGroupDisplay({ group, isStreaming }: { group: ToolGroup; isStreaming: boolean }) {
+function ToolGroupDisplay({ group, isStreaming, isFirst }: { group: ToolGroup; isStreaming: boolean; isFirst?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
-  const label = getCategoryLabel(group.category, group.tools.length);
   const allDone = group.tools.every(t => t.status === 'complete');
+  const label = getCategoryLabel(group.category, group.tools.length, !allDone && isStreaming);
 
   return (
     <div>
-      <VLine />
+      {!isFirst && <VLine />}
       <div className="min-w-0 pl-2 py-0.5">
         <button
           className="flex items-center gap-1 py-1 text-sm w-full text-left cursor-pointer transition-colors duration-150 hover:opacity-80"
@@ -399,48 +470,141 @@ function ToolGroupDisplay({ group, isStreaming }: { group: ToolGroup; isStreamin
   );
 }
 
-// --- Done marker ---
-function DoneMarker() {
+// --- Status-titled group (wraps tool groups under a named phase) ---
+function StatusGroupDisplay({ group, isStreaming, isFirst }: { group: StatusGroup; isStreaming: boolean; isFirst?: boolean }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const allTools = group.toolGroups.flatMap(g => g.tools);
+  const allDone = allTools.length > 0 && allTools.every(t => t.status === 'complete');
+  const isActive = !allDone && isStreaming;
+  const hasChildren = allTools.length > 0;
+  const showDoneStep = allDone && !isStreaming;
+
   return (
     <div>
-      <VLine />
-      <div className="flex flex-row rounded-lg transition-colors duration-150">
-        <div className="w-5 flex justify-center shrink-0">
-          <div className="flex flex-col items-center pt-1">
-            <div style={{ color: themeVars.textMuted }}>
-              <CheckCircleIcon />
+      {!isFirst && <VLine />}
+      <div className="min-w-0 py-0.5">
+        <button
+          className="flex items-center gap-1 py-1 text-sm w-full text-left cursor-pointer transition-colors duration-150 hover:opacity-80 pl-2"
+          style={{ color: isActive ? themeVars.text : themeVars.textMuted }}
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <div className="inline-flex items-center gap-1 min-w-0 flex-1">
+            <span className="truncate text-sm" style={{ fontWeight: isActive ? 430 : 400, lineHeight: 1.4 }}>
+              {isActive ? (
+                <ShimmerText className="text-sm">{group.title}</ShimmerText>
+              ) : (
+                group.title
+              )}
+            </span>
+            {hasChildren && (
+              <span
+                className="inline-flex shrink-0 transition-transform duration-200"
+                style={{ transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+              >
+                <ChevronDownIcon />
+              </span>
+            )}
+          </div>
+        </button>
+
+        {hasChildren && (
+          <div
+            className="grid transition-[grid-template-rows] duration-300 ease-out"
+            style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
+          >
+            <div className="overflow-hidden min-w-0">
+              <div className="pl-2" style={{ lineHeight: 1.5 }}>
+                {group.toolGroups.map((tg, idx) => (
+                  <ToolGroupDisplay key={`sg-${idx}`} group={tg} isStreaming={isStreaming} isFirst={idx === 0} />
+                ))}
+                {showDoneStep && (
+                  <div className="flex items-center gap-1.5 py-1 pl-2">
+                    <div style={{ color: themeVars.textMuted }}>
+                      <CheckCircleIcon />
+                    </div>
+                    <span className="text-sm" style={{ color: themeVars.textMuted, fontWeight: 400 }}>Done</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="pl-2.5 pt-0.5 text-sm" style={{ color: themeVars.text, fontWeight: 430, lineHeight: 1.4 }}>
-            Done
-          </div>
-        </div>
+        )}
       </div>
-      <VLine />
     </div>
   );
 }
 
-// --- Reasoning display ---
+// --- Done marker ---
+function DoneMarker({ isFirst }: { isFirst?: boolean }) {
+  return (
+    <div>
+      {!isFirst && <VLine />}
+      <div className="flex items-center gap-1.5 py-1 pl-2">
+        <div style={{ color: themeVars.textMuted }}>
+          <CheckCircleIcon />
+        </div>
+        <span className="text-sm" style={{ color: themeVars.textMuted, fontWeight: 400 }}>Done</span>
+      </div>
+    </div>
+  );
+}
+
+// --- Reasoning display (collapsible "Thinking" dropdown with scrollable content) ---
 function ReasoningDisplay({ block }: { block: ReasoningBlock }) {
+  const [isOpen, setIsOpen] = useState(false);
   const lines = block.content.split('\n').filter(l => l.trim());
   if (lines.length === 0) return null;
 
   return (
-    <div className="py-1">
-      <div className="flex flex-row">
-        <div className="w-5 flex justify-center shrink-0">
-          <div className="w-px h-full" style={{ backgroundColor: themeVars.line }} />
-        </div>
-        <div className="flex-1 min-w-0 pl-2.5">
-          <div className="text-xs leading-relaxed space-y-0.5" style={{ color: themeVars.textFaint }}>
-            {lines.slice(-6).map((line, lIdx) => (
-              <p key={lIdx} className={cn(block.isStreaming && lIdx === lines.length - 1 && 'opacity-80')}>
-                {line}
-              </p>
-            ))}
+    <div className="py-0.5">
+      <div className="min-w-0 pl-2">
+        <button
+          className="flex items-center gap-1 py-1 text-sm w-full text-left cursor-pointer transition-colors duration-150 hover:opacity-80"
+          style={{ color: themeVars.textMuted }}
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <span className="text-sm" style={{ fontWeight: 400, lineHeight: 1.4 }}>
+            {block.isStreaming ? (
+              <ShimmerText className="text-sm">Thinking</ShimmerText>
+            ) : (
+              'Thinking'
+            )}
+          </span>
+          <span
+            className="inline-flex shrink-0 transition-transform duration-200"
+            style={{ transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+          >
+            <ChevronDownIcon />
+          </span>
+        </button>
+
+        <div
+          className="grid transition-[grid-template-rows] duration-300 ease-out"
+          style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
+        >
+          <div className="overflow-hidden min-w-0">
+            <div className="relative pl-2.5">
+              {/* Top fade */}
+              <div
+                className="absolute top-0 left-0 right-0 h-4 z-10 pointer-events-none"
+                style={{ background: 'linear-gradient(to bottom, #0E0E0E, transparent)' }}
+              />
+              <div
+                className="max-h-[200px] overflow-y-auto text-xs leading-relaxed space-y-0.5 py-2"
+                style={{ color: themeVars.textFaint, fontFamily: "'Open Sans', sans-serif" }}
+              >
+                {lines.map((line, lIdx) => (
+                  <p key={lIdx} className={cn(block.isStreaming && lIdx === lines.length - 1 && 'opacity-80')}>
+                    {line}
+                  </p>
+                ))}
+              </div>
+              {/* Bottom fade */}
+              <div
+                className="absolute bottom-0 left-0 right-0 h-4 z-10 pointer-events-none"
+                style={{ background: 'linear-gradient(to top, #0E0E0E, transparent)' }}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -474,7 +638,10 @@ export function AgentWorkflow({ blocks, isStreaming, className }: AgentWorkflowP
 
   const grouped = useMemo(() => groupBlocks(blocks), [blocks]);
   const hasBlocks = blocks.length > 0;
-  const showDone = !isStreaming && hasBlocks && blocks.some(b => b.type === 'tool_call');
+  // Show standalone Done only if there are tool groups outside status groups
+  // (status groups show their own "Done" inline)
+  const hasStandaloneTools = grouped.some(i => i.type === 'tool_group');
+  const showDone = !isStreaming && hasBlocks && hasStandaloneTools;
 
   if (!hasBlocks && !isStreaming) return null;
 
@@ -482,15 +649,19 @@ export function AgentWorkflow({ blocks, isStreaming, className }: AgentWorkflowP
     <div className={cn("min-w-0", className)} style={{ fontWeight: 360, fontFamily: '-apple-system, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif', lineHeight: '26.4px' }}>
       <div className="min-w-0 pl-2 py-1.5">
         {grouped.map((item, idx) => {
+          const isFirst = idx === 0;
           if (item.type === 'reasoning') {
             return <ReasoningDisplay key={`r-${idx}`} block={item} />;
           }
+          if (item.type === 'status_group') {
+            return <StatusGroupDisplay key={`s-${idx}`} group={item} isStreaming={!!isStreaming} isFirst={isFirst} />;
+          }
           if (item.type === 'tool_group') {
-            return <ToolGroupDisplay key={`g-${idx}`} group={item} isStreaming={!!isStreaming} />;
+            return <ToolGroupDisplay key={`g-${idx}`} group={item} isStreaming={!!isStreaming} isFirst={isFirst} />;
           }
           return null;
         })}
-        {showDone && <DoneMarker />}
+        {showDone && <DoneMarker isFirst={grouped.length === 0} />}
       </div>
     </div>
   );

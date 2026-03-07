@@ -39,6 +39,22 @@ class EditRequest(BaseModel):
     entry: str | None = None
 
 
+def _is_config_file(path: str) -> bool:
+    """Return True if the path looks like a config/non-component file."""
+    name = path.rsplit("/", 1)[-1] if "/" in path else path
+    return bool(
+        re.match(
+            r"^(tailwind|postcss|next|vite|tsconfig|jest|babel|eslint|prettier|webpack)\.(config|setup)\b",
+            name,
+            re.IGNORECASE,
+        )
+        or re.match(r"^tsconfig(\.\w+)?\.json$", name, re.IGNORECASE)
+        or re.match(r"^package(-lock)?\.json$", name, re.IGNORECASE)
+        or re.match(r"^\.env", name, re.IGNORECASE)
+        or re.match(r"^globals?\.(css|scss)$", name, re.IGNORECASE)
+    )
+
+
 def generate_entry_page(entry_path: str, user_files: dict[str, str]) -> str:
     """
     Generate an app/page.tsx that imports and renders the user's entry component.
@@ -48,6 +64,10 @@ def generate_entry_page(entry_path: str, user_files: dict[str, str]) -> str:
 
     # If the entry IS app/page.tsx, no bridge needed
     if normalized in ("app/page.tsx", "app/page.ts", "app/page.jsx", "app/page.js"):
+        return BASE_PAGE
+
+    # Reject config files — they aren't React components
+    if _is_config_file(normalized):
         return BASE_PAGE
 
     # Build the import path relative from app/page.tsx
@@ -97,6 +117,17 @@ export default function Page() {{
 '''
 
 
+_HIDE_DEVTOOLS_BLOCK = """\
+/* --- sandbox: hide Next.js dev indicators --- */
+[data-nextjs-dialog-overlay],
+[data-nextjs-toast],
+nextjs-portal,
+#__next-build-indicator,
+[class*="nextjs-"] { display: none !important; }
+/* --- end sandbox overrides --- */
+"""
+
+
 @app.post("/edit")
 async def edit_files(req: EditRequest):
     """Write files to the survey app directory and generate entry bridge."""
@@ -106,6 +137,11 @@ async def edit_files(req: EditRequest):
         # Strip leading slashes
         clean_path = rel_path.lstrip("/")
         full_path = SURVEY_APP_DIR / clean_path
+
+        # If the agent writes globals.css, prepend the dev-indicator hide block
+        if clean_path in ("app/globals.css", "globals.css"):
+            if "hide Next.js dev indicators" not in content:
+                content = _HIDE_DEVTOOLS_BLOCK + "\n" + content
 
         # Ensure parent directory exists
         full_path.parent.mkdir(parents=True, exist_ok=True)

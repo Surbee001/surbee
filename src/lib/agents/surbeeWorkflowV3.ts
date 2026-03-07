@@ -401,6 +401,20 @@ const todoWriteTool = tool({
 });
 
 // ============================================================================
+// Set Status Tool - lets the agent name its current process group in the UI
+// ============================================================================
+
+const setStatusTool = tool({
+  description: 'Call this BEFORE each group of related tool calls to label what you are doing. The label appears as a shimmer title in the UI while the sub-tasks run underneath it. Write descriptive, contextual titles (6-14 words) that tell the user exactly what is happening and why. Include specifics like component names, feature names, or what you are fixing. Examples: "Setting up the Next.js project with Tailwind CSS", "Building the multi-step feedback form with progress bar", "Fixing the missing onClick handler on the submit button", "Adding smooth fade-in animations to question cards", "Checking the console for rendering errors in SurveyPage". Call this every time you start a new logical phase of work.',
+  inputSchema: z.object({
+    status: z.string().describe('Descriptive title for the current phase of work (6-14 words). Be specific — include component names, feature details, or the reason for the action. E.g. "Building the NPS rating scale with star icons", "Fixing the broken import in QuestionCard component"')
+  }),
+  execute: async ({ status }) => {
+    return { status };
+  },
+});
+
+// ============================================================================
 // Suggest Followups Tool - provides structured suggestions to the client
 // ============================================================================
 
@@ -483,6 +497,9 @@ const tools = {
 
   // Checkpoint Title for version history
   set_checkpoint_title: setCheckpointTitleTool,
+
+  // Status labels for UI process groups
+  set_status: setStatusTool,
 } satisfies ToolSet;
 
 export type ChatTools = InferUITools<typeof tools>;
@@ -590,7 +607,7 @@ interface UserPreferences {
   personalPreferences?: string;
 }
 
-export function streamWorkflowV3({ messages: rawMessages, model = 'gpt-5', projectId, userId, designTheme, userPreferences }: { messages: ChatMessage[], model?: string, projectId?: string, userId?: string, designTheme?: DesignThemeData | null, userPreferences?: UserPreferences }) {
+export function streamWorkflowV3({ messages: rawMessages, model = 'gpt-5', projectId, userId, designTheme, userPreferences, thinking = false }: { messages: ChatMessage[], model?: string, projectId?: string, userId?: string, designTheme?: DesignThemeData | null, userPreferences?: UserPreferences, thinking?: boolean }) {
 
   // CRITICAL: Filter out messages with empty or null content before processing
   // This prevents "messages.0: all messages must have non-empty content" error
@@ -840,7 +857,7 @@ export function streamWorkflowV3({ messages: rawMessages, model = 'gpt-5', proje
     },
   };
 
-  if (isClaudeModel) {
+  if (isClaudeModel && thinking) {
     streamConfig.providerOptions = {
       anthropic: {
         thinking: {
@@ -855,12 +872,11 @@ export function streamWorkflowV3({ messages: rawMessages, model = 'gpt-5', proje
         safePrompt: false,
       },
     };
-  } else if (isReasoningModel) {
-    // Only enable reasoning for models that benefit from it (o3, o4, gpt-5)
-    // GPT-5 mini and other fast models skip reasoning for speed
+  } else if (isReasoningModel && thinking) {
+    // Enable reasoning when user explicitly toggles thinking on
     streamConfig.providerOptions = {
       openai: {
-        reasoningEffort: 'low',
+        reasoningEffort: 'medium',
       },
     };
   }

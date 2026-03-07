@@ -6,7 +6,16 @@ export const metadata = { title: "Survey Preview" };
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <head>
+        <style dangerouslySetInnerHTML={{ __html: `
+          [data-nextjs-dialog-overlay],
+          [data-nextjs-toast],
+          nextjs-portal,
+          #__next-build-indicator,
+          [class*="nextjs-"] { display: none !important; }
+        `}} />
+      </head>
+      <body style={{ backgroundColor: '#ffffff' }}>{children}</body>
     </html>
   );
 }

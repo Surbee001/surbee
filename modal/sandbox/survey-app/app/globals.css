@@ -1,3 +1,11 @@
+/* --- sandbox: hide Next.js dev indicators --- */
+[data-nextjs-dialog-overlay],
+[data-nextjs-toast],
+nextjs-portal,
+#__next-build-indicator,
+[class*="nextjs-"] { display: none !important; }
+/* --- end sandbox overrides --- */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

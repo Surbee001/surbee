@@ -207,7 +207,8 @@
       "Bash(xxd:*)",
       "Bash(xargs file:*)",
       "Bash(sed:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "mcp__unframer__getProjectWebsiteUrl"
     ],
     "deny": [],
     "ask": [],
@@ -221,6 +222,7 @@
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "supabase",
-    "unframer"
+    "unframer",
+    "paddle"
   ]
 }

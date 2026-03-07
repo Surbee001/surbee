@@ -408,14 +408,43 @@ export function convertMessagePartsToSteps(
         status = "active";
       }
 
-      // Format tool name for display
-      const displayName = toolName
-        .replace(/_/g, " ")
-        .replace(/\b\w/g, c => c.toUpperCase());
+      // Map tool names to user-friendly labels
+      const friendlyToolNames: Record<string, { active: string; done: string }> = {
+        'surbe_write':                { active: 'Creating file',        done: 'Created file' },
+        'surbe_quick_edit':           { active: 'Editing file',         done: 'Edited file' },
+        'surbe_line_replace':         { active: 'Updating file',        done: 'Updated file' },
+        'surbe_view':                 { active: 'Viewing file',         done: 'Viewed file' },
+        'surbe_search_files':         { active: 'Searching files',      done: 'Searched files' },
+        'surbe_build_preview':        { active: 'Building preview',     done: 'Built preview' },
+        'surbe_preview':              { active: 'Building preview',     done: 'Built preview' },
+        'surbe_add_dependency':       { active: 'Installing package',   done: 'Installed package' },
+        'surbe_remove_dependency':    { active: 'Removing package',     done: 'Removed package' },
+        'surb_init_sandbox':          { active: 'Setting up project',   done: 'Project ready' },
+        'init_sandbox':               { active: 'Setting up project',   done: 'Project ready' },
+        'surbe_read_console_logs':    { active: 'Checking for errors',  done: 'Checked for errors' },
+        'surbe_read_network_requests':{ active: 'Checking network',     done: 'Checked network' },
+        'surbe_delete':               { active: 'Deleting file',        done: 'Deleted file' },
+        'surbe_rename':               { active: 'Renaming file',        done: 'Renamed file' },
+        'surbe_copy':                 { active: 'Copying file',         done: 'Copied file' },
+        'surbe_save_chat_image':      { active: 'Saving image',         done: 'Saved image' },
+        'surbe_download_to_repo':     { active: 'Downloading file',     done: 'Downloaded file' },
+        'surbe_fetch_website':        { active: 'Fetching website',     done: 'Fetched website' },
+        'websearch_web_search':       { active: 'Searching the web',    done: 'Searched the web' },
+        'imagegen_generate_image':    { active: 'Generating image',     done: 'Generated image' },
+        'imagegen_edit_image':        { active: 'Editing image',        done: 'Edited image' },
+        'suggest_followups':          { active: 'Preparing suggestions', done: 'Suggestions ready' },
+        'set_checkpoint_title':       { active: 'Saving version',       done: 'Version saved' },
+        'save_survey_questions':      { active: 'Saving questions',     done: 'Questions saved' },
+      };
+
+      const friendly = friendlyToolNames[toolName];
+      const displayName = friendly
+        ? (status === 'complete' ? friendly.done : friendly.active)
+        : toolName.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
       steps.push({
         id: `tool-${stepIndex++}`,
-        label: `Using ${displayName}`,
+        label: displayName,
         description: toolPart.input ? JSON.stringify(toolPart.input, null, 2).slice(0, 200) : undefined,
         status,
         icon: WrenchIcon,

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { RotateCcw, AlertCircle } from "lucide-react";
+import { RotateCcw, AlertCircle, Wrench } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 // ---------------------------------------------------------------------------
@@ -20,6 +20,7 @@ interface ModalSandboxPreviewProps {
   refreshKey?: number;
   className?: string;
   onPreviewUrlReady?: (url: string) => void;
+  onBuildError?: (error: string) => void;
   projectId?: string;
 }
 
@@ -34,20 +35,24 @@ export function ModalSandboxPreview({
   refreshKey = 0,
   className = "",
   onPreviewUrlReady,
+  onBuildError,
   projectId,
 }: ModalSandboxPreviewProps) {
   const [status, setStatus] = useState<SandboxStatus>("idle");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [buildError, setBuildError] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const prevBundleRef = useRef<Record<string, string> | null>(null);
   const isCreatingRef = useRef(false);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const errorCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cleanup poll timer
+  // Cleanup timers
   useEffect(() => {
     return () => {
       if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+      if (errorCheckTimerRef.current) clearTimeout(errorCheckTimerRef.current);
     };
   }, []);
 
@@ -64,6 +69,32 @@ export function ModalSandboxPreview({
       return { "Content-Type": "application/json" };
     }
   }, []);
+
+  // Check sandbox logs for build errors after updates
+  const checkForBuildErrors = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`/api/sandbox/logs?projectId=${encodeURIComponent(projectId)}`, { headers });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      if (data.error_count > 0 && data.errors?.length > 0) {
+        const errorText = data.errors.join('\n');
+        setBuildError(errorText);
+      } else {
+        setBuildError(null);
+      }
+    } catch {
+      // Silent fail — error checking is best-effort
+    }
+  }, [projectId, getAuthHeaders]);
+
+  // Clear build error when bundle changes (new code being written)
+  useEffect(() => {
+    if (status === "updating") {
+      setBuildError(null);
+    }
+  }, [status]);
 
   // Poll for sandbox readiness after spawn
   const pollForReady = useCallback(
@@ -213,13 +244,19 @@ export function ModalSandboxPreview({
             }
           }, 500);
         }
+
+        // Check for build errors after a delay (give Next.js time to compile)
+        if (errorCheckTimerRef.current) clearTimeout(errorCheckTimerRef.current);
+        errorCheckTimerRef.current = setTimeout(() => {
+          checkForBuildErrors();
+        }, 3000);
       } catch (err) {
         console.error("[ModalSandbox] Update error:", err);
         setError(err instanceof Error ? err.message : "Unknown error");
         setStatus("error");
       }
     },
-    [projectId, previewUrl, getAuthHeaders]
+    [projectId, previewUrl, getAuthHeaders, checkForBuildErrors]
   );
 
   // Boot on first bundle
@@ -343,9 +380,43 @@ export function ModalSandboxPreview({
           ref={iframeRef}
           src={previewUrl}
           className="w-full flex-1 border-none"
+          style={{ backgroundColor: '#ffffff' }}
           title="Survey Preview"
           allow="clipboard-write"
         />
+      )}
+
+      {/* Build error overlay — covers the Next.js error page */}
+      {buildError && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center"
+          style={{ backgroundColor: 'var(--surbee-bg-primary, #ffffff)' }}
+        >
+          <div className="text-center px-8 max-w-md">
+            <div
+              className="w-10 h-10 mx-auto mb-4 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'var(--surbee-bg-tertiary, #f3f3f3)' }}
+            >
+              <AlertCircle className="w-5 h-5" style={{ color: 'var(--surbee-fg-secondary, #888)' }} />
+            </div>
+            <p className="text-sm font-medium mb-1" style={{ color: 'var(--surbee-fg-primary)' }}>
+              Something went wrong with the preview
+            </p>
+            <p className="text-xs mb-5" style={{ color: 'var(--surbee-fg-muted)' }}>
+              A build error was detected. Click below to auto-fix it for free.
+            </p>
+            <button
+              onClick={() => onBuildError?.(buildError)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-90 active:scale-[0.98]"
+              style={{
+                background: 'var(--surbee-button-primary-bg, #2563eb)',
+                color: 'var(--surbee-button-primary-fg, #fff)',
+              }}
+            >
+              <Wrench className="w-4 h-4" />
+              Fix this error
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

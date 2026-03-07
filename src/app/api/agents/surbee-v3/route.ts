@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
     const projectId = body.projectId;
     const designTheme = body.designTheme;
     const userPreferences = body.userPreferences;
+    const thinking = body.thinking === true;
 
     // Check if user can use premium models (free users only get Claude Haiku)
     const isPremiumModel = selectedModel !== 'claude-haiku' && !selectedModel.includes('haiku');
@@ -41,23 +42,28 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Check credits for this survey generation action
-    const creditAction = getChatModelAction(selectedModel);
-    const creditCheck = await checkCreditsForStream(user.id, creditAction, {
-      rateLimitFeature: 'surveyGeneration',
-    });
+    // Skip credit check/deduction for free auto-fix of build errors
+    const isFreeAutoFix = body.freeAutoFix === true;
 
-    if (!creditCheck.allowed) {
-      return creditCheck.error;
+    if (!isFreeAutoFix) {
+      // Check credits for this survey generation action
+      const creditAction = getChatModelAction(selectedModel);
+      const creditCheck = await checkCreditsForStream(user.id, creditAction, {
+        rateLimitFeature: 'surveyGeneration',
+      });
+
+      if (!creditCheck.allowed) {
+        return creditCheck.error;
+      }
+
+      // Deduct credits upfront for streaming
+      await deductCreditsAfterStream(user.id, creditAction, {
+        model: selectedModel,
+        projectId,
+        action: 'survey_generation',
+        messageCount: body.messages?.length || 1,
+      });
     }
-
-    // Deduct credits upfront for streaming
-    await deductCreditsAfterStream(user.id, creditAction, {
-      model: selectedModel,
-      projectId,
-      action: 'survey_generation',
-      messageCount: body.messages?.length || 1,
-    });
 
     if (body.messages) {
       // New format: direct messages array from useChat
@@ -146,7 +152,8 @@ export async function POST(req: NextRequest) {
       projectId,
       userId: user.id,
       designTheme,
-      userPreferences
+      userPreferences,
+      thinking
     });
 
     // Return the UI message stream response for useChat
