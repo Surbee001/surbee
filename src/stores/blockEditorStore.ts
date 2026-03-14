@@ -322,7 +322,10 @@ export const useBlockEditorStore = create<BlockEditorState>()(
           if (!found) return
           const { page } = found
 
-          if (afterBlockId) {
+          if (afterBlockId === null && page.blocks.length > 0) {
+            // null means insert at the very beginning
+            page.blocks.unshift(block)
+          } else if (afterBlockId) {
             const afterIdx = page.blocks.findIndex(b => b.id === afterBlockId)
             if (afterIdx >= 0) {
               page.blocks.splice(afterIdx + 1, 0, block)

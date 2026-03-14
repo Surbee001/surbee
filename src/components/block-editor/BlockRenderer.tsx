@@ -129,6 +129,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
   return (
     <BlockWrapper
       block={block}
+      pageId={pageId}
       isSelected={isSelected}
       isEditing={isEditing}
       onSelect={handleSelect}

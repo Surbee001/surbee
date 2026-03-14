@@ -8,6 +8,7 @@ import {
 import type { EditorPage, SurveyTheme } from '@/lib/block-editor/types'
 import { BlockRenderer } from './BlockRenderer'
 import { EmptyBlockPlaceholder } from './EmptyBlockPlaceholder'
+import { BlockGap } from './BlockGap'
 import { LogicBuilder } from './LogicBuilder'
 import { useBlockEditorStore } from '@/stores/blockEditorStore'
 
@@ -63,15 +64,16 @@ export const PageView: React.FC<PageViewProps> = ({
         minHeight: '100%',
         display: 'flex',
         flexDirection: 'column',
-        gap: '6px',
+        gap: '0px',
         fontFamily: theme.fontFamily || 'inherit',
+        backgroundColor: theme.backgroundColor || '#ffffff',
         // Force light theme inside the survey canvas
-        color: '#0a0a0a',
+        color: theme.textColor || '#0a0a0a',
         // CSS vars for blocks to use light styling
-        ['--surbee-fg-primary' as any]: '#0a0a0a',
-        ['--surbee-fg-secondary' as any]: '#374151',
-        ['--surbee-fg-muted' as any]: '#9ca3af',
-        ['--surbee-bg-primary' as any]: '#ffffff',
+        ['--surbee-fg-primary' as any]: theme.textColor || '#0a0a0a',
+        ['--surbee-fg-secondary' as any]: theme.textColor ? `${theme.textColor}cc` : '#374151',
+        ['--surbee-fg-muted' as any]: theme.textColor ? `${theme.textColor}80` : '#9ca3af',
+        ['--surbee-bg-primary' as any]: theme.backgroundColor || '#ffffff',
         ['--surbee-bg-secondary' as any]: '#f9fafb',
         ['--surbee-bg-tertiary' as any]: '#f3f4f6',
         ['--surbee-border-primary' as any]: 'rgba(0,0,0,0.08)',
@@ -79,17 +81,34 @@ export const PageView: React.FC<PageViewProps> = ({
         ['--surbee-accent-primary' as any]: theme.primaryColor || '#2563eb',
       }}
     >
-      {/* Blocks */}
+      {/* Blocks with editable gaps between them */}
       <SortableContext items={blockIds} strategy={verticalListSortingStrategy}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-          {page.blocks.map((block) => (
-            <BlockRenderer
-              key={block.id}
-              block={block}
-              pageId={page.id}
-              isEditing={isEditing}
-              theme={theme}
-            />
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+          {page.blocks.map((block, idx) => (
+            <React.Fragment key={block.id}>
+              {/* Editable gap before this block */}
+              {isEditing && idx === 0 && (
+                <BlockGap
+                  pageId={page.id}
+                  afterBlockId={null}
+                  beforeBlockId={block.id}
+                />
+              )}
+              <BlockRenderer
+                block={block}
+                pageId={page.id}
+                isEditing={isEditing}
+                theme={theme}
+              />
+              {/* Editable gap after this block */}
+              {isEditing && (
+                <BlockGap
+                  pageId={page.id}
+                  afterBlockId={block.id}
+                  beforeBlockId={page.blocks[idx + 1]?.id || null}
+                />
+              )}
+            </React.Fragment>
           ))}
         </div>
       </SortableContext>

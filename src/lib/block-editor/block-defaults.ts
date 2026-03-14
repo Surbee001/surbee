@@ -42,6 +42,7 @@ const defaultContent: { [K in BlockType]: () => BlockContentMap[K] } = {
   video: () => ({ src: '' }),
   button: () => ({ label: 'Submit', action: 'submit', variant: 'primary', align: 'left' }),
   'custom-code': () => ({ html: '<div style="padding: 20px; text-align: center; color: #666;">Custom HTML here</div>', css: '' }),
+  columns: () => ({ layout: '1:1' as const, cells: [{ id: nanoid(8), blockType: null, content: null }, { id: nanoid(8), blockType: null, content: null }] }),
   'text-input': () => ({ label: 'Your question here', placeholder: 'Type your answer...', required: false }),
   textarea: () => ({ label: 'Your question here', placeholder: 'Share your thoughts...', required: false, rows: 4 }),
   radio: () => ({ label: 'Your question here', required: false, options: defaultOptions(3) }),
@@ -104,7 +105,7 @@ export function createDefaultBlock<T extends BlockType>(
 ): Block<T> {
   const content = { ...defaultContent[type](), ...contentOverride } as BlockContentMap[T]
   const isQuestion = ![
-    'heading', 'paragraph', 'divider', 'spacer', 'image', 'video',
+    'heading', 'paragraph', 'divider', 'spacer', 'image', 'video', 'columns',
   ].includes(type)
 
   questionCounter++

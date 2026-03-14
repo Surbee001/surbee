@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -11,6 +12,9 @@ import {
 import { CipherTier, CIPHER_TIERS, CIPHER_CHECKS, getChecksForTier, CipherCheckId } from '@/lib/cipher/tier-config';
 import { broadcastSettingsUpdate } from '@/lib/survey-bridge';
 import { useCredits } from '@/hooks/useCredits';
+import { useBlockEditorStore } from '@/stores/blockEditorStore';
+import type { SurveyTheme } from '@/lib/block-editor/types';
+import { Palette } from 'lucide-react';
 
 // Tier plan requirements
 const TIER_PLAN_REQUIREMENTS: Record<CipherTier, 'free' | 'pro' | 'max' | null> = {
@@ -39,7 +43,7 @@ interface ProjectSettingsProps {
   onClose?: () => void;
 }
 
-type SettingsTab = 'general' | 'privacy' | 'responses' | 'cipher' | 'danger';
+type SettingsTab = 'general' | 'theme' | 'privacy' | 'responses' | 'cipher' | 'danger';
 type SubscriptionPlan = 'free' | 'pro' | 'max' | 'enterprise';
 
 interface ProjectData {
@@ -115,6 +119,11 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState('');
   const [copiedUrl, setCopiedUrl] = useState(false);
+
+  // Block editor theme
+  const blockTheme = useBlockEditorStore(s => s.survey?.theme);
+  const updateBlockTheme = useBlockEditorStore(s => s.updateSurveyTheme);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   // File upload refs
   const iconFileInputRef = useRef<HTMLInputElement>(null);
@@ -484,59 +493,83 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
 
   const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
     { id: 'general', label: 'General', icon: <Settings2 className="w-4 h-4" /> },
+    { id: 'theme', label: 'Theme', icon: <Palette className="w-4 h-4" /> },
     { id: 'privacy', label: 'Privacy', icon: <Lock className="w-4 h-4" /> },
     { id: 'responses', label: 'Responses', icon: <MessageSquare className="w-4 h-4" /> },
     { id: 'cipher', label: 'Cipher', icon: <Shield className="w-4 h-4" /> },
     { id: 'danger', label: 'Delete', icon: <Trash2 className="w-4 h-4" /> },
   ];
 
+  const portalStyle: React.CSSProperties = {
+    position: 'fixed',
+    top: 0, left: 0, right: 0, bottom: 0,
+    width: '100vw', height: '100vh',
+    zIndex: 99999,
+    background: 'var(--surbee-bg-primary, rgb(19, 19, 20))',
+    overflow: 'hidden',
+  };
+
+  const closeBtnStyle: React.CSSProperties = {
+    position: 'fixed',
+    top: 24, right: 24,
+    zIndex: 100000,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    width: 36, height: 36,
+    background: 'var(--surbee-bg-tertiary)',
+    border: 'none',
+    borderRadius: '50%',
+    color: 'var(--surbee-fg-primary)',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  };
+
   if (loading) {
-    return (
+    return createPortal(
       <AnimatePresence>
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="settings-fullscreen"
+          style={portalStyle}
         >
           {onClose && (
-            <button
-              className="settings-close-btn"
-              onClick={onClose}
-              aria-label="Close settings"
-            >
-              <X className="w-5 h-5" />
+            <button style={closeBtnStyle} onClick={onClose} aria-label="Close settings" title="Close">
+              <svg height="20" width="20" fill="none" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.499 23.624A1.1 1.1 0 0 1 8.4 22.512c0-.295.108-.576.322-.777l5.71-5.723-5.71-5.71a1.07 1.07 0 0 1-.322-.777c0-.63.483-1.098 1.099-1.098.308 0 .549.107.763.308l5.737 5.724 5.763-5.737c.228-.228.469-.322.763-.322.616 0 1.112.483 1.112 1.099 0 .308-.094.549-.335.79l-5.723 5.723 5.71 5.71c.227.2.335.482.335.79 0 .616-.496 1.112-1.125 1.112a1.06 1.06 0 0 1-.79-.322l-5.71-5.723-5.697 5.723a1.1 1.1 0 0 1-.803.322" fill="currentColor" />
+              </svg>
             </button>
           )}
-          <div className="settings-scroll-container">
+          <div className="settings-scroll-container" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
             <div className="settings-loading">
               <div className="settings-loader" />
             </div>
           </div>
         </motion.div>
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
     );
   }
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="settings-fullscreen"
+        style={portalStyle}
       >
         {/* Close button */}
         {onClose && (
           <button
-            className="settings-close-btn"
+            style={closeBtnStyle}
             onClick={onClose}
             aria-label="Close settings"
           >
             <X className="w-5 h-5" />
           </button>
         )}
-        <div className="settings-scroll-container">
+        <div className="settings-scroll-container" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
 
           <div className="project-settings-root">
             {/* Header */}
@@ -737,6 +770,15 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
               </label>
             </div>
           </div>
+        )}
+
+        {/* THEME TAB */}
+        {activeTab === 'theme' && (
+          <ThemeTabContent
+            theme={blockTheme}
+            updateTheme={updateBlockTheme}
+            logoInputRef={logoInputRef}
+          />
         )}
 
         {/* PRIVACY TAB */}
@@ -1107,9 +1149,9 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
         </div>
       )}
 
-      <style jsx>{`
+      <style jsx global>{`
         /* Modal Styles */
-        :global(.settings-modal-backdrop) {
+        .settings-modal-backdrop {
           position: fixed;
           inset: 0;
           z-index: 99999;
@@ -1120,7 +1162,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           backdrop-filter: blur(4px);
         }
 
-        :global(.settings-modal-content) {
+        .settings-modal-content {
           position: relative;
           width: 90%;
           max-width: 700px;
@@ -1133,7 +1175,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           scrollbar-color: var(--surbee-border-secondary) transparent;
         }
 
-        :global(.settings-modal-close-btn) {
+        .settings-modal-close-btn {
           position: absolute;
           top: 16px;
           right: 16px;
@@ -1151,7 +1193,7 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           transition: all 0.2s ease;
         }
 
-        :global(.settings-modal-close-btn:hover) {
+        .settings-modal-close-btn:hover {
           background: var(--surbee-border-primary);
           color: var(--surbee-fg-primary, #E8E8E8);
           border-color: var(--surbee-border-primary);
@@ -2649,12 +2691,497 @@ export function ProjectSettings({ projectId, onClose }: ProjectSettingsProps) {
           scrollbar-width: thin;
           scrollbar-color: var(--surbee-border-secondary) transparent;
         }
+
+        /* Theme tab styles */
+        .theme-preset-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 8px;
+        }
+
+        .theme-preset-btn {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 12px;
+          border-radius: 12px;
+          border: 1px solid var(--surbee-input-border);
+          background: transparent;
+          cursor: pointer;
+          text-align: left;
+          color: var(--surbee-fg-primary);
+          transition: all 0.2s ease;
+        }
+
+        .theme-preset-btn:hover {
+          border-color: var(--surbee-border-focus);
+          background: var(--surbee-accent-subtle);
+        }
+
+        .theme-preset-btn.active {
+          border-color: var(--surbee-border-focus);
+          background: var(--surbee-accent-subtle);
+        }
+
+        .theme-preset-dots {
+          display: flex;
+          gap: 3px;
+          flex-shrink: 0;
+        }
+
+        .theme-preset-dots span {
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          border: 1px solid var(--surbee-border-primary);
+        }
+
+        .theme-preset-label {
+          font-size: 13px;
+          font-weight: 500;
+        }
+
+        .theme-color-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          margin-top: 4px;
+        }
+
+        .theme-color-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .theme-color-label {
+          font-size: 14px;
+          color: var(--surbee-fg-secondary);
+          width: 80px;
+          flex-shrink: 0;
+        }
+
+        .theme-color-picker {
+          width: 32px;
+          height: 32px;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          padding: 0;
+          flex-shrink: 0;
+        }
+
+        .theme-color-hex {
+          flex: 1;
+          font-family: monospace;
+          font-size: 13px;
+        }
+
+        .theme-color-swatches {
+          display: flex;
+          gap: 3px;
+          flex-shrink: 0;
+        }
+
+        .theme-swatch {
+          width: 16px;
+          height: 16px;
+          border-radius: 4px;
+          border: 1px solid var(--surbee-border-primary);
+          cursor: pointer;
+          padding: 0;
+          transition: transform 0.1s;
+        }
+
+        .theme-swatch:hover {
+          transform: scale(1.15);
+        }
+
+        .theme-swatch.active {
+          border: 2px solid var(--surbee-fg-primary);
+        }
+
+        .theme-option-row {
+          display: flex;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+
+        .theme-option-btn {
+          padding: 6px 14px;
+          border-radius: 18px;
+          border: 1px solid var(--surbee-input-border);
+          background: transparent;
+          color: var(--surbee-fg-secondary);
+          font-size: 13px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-family: inherit;
+        }
+
+        .theme-option-btn:hover {
+          border-color: var(--surbee-border-focus);
+          color: var(--surbee-fg-primary);
+        }
+
+        .theme-option-btn.active {
+          border-color: var(--surbee-border-focus);
+          background: var(--surbee-accent-subtle);
+          color: var(--surbee-fg-primary);
+          font-weight: 600;
+        }
+
+        .theme-font-trigger {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: 0 16px;
+          height: 40px;
+          border-radius: 18px;
+          font-size: 14px;
+          color: var(--surbee-fg-primary, #E8E8E8);
+          background: transparent;
+          border: 1px solid var(--surbee-input-border);
+          cursor: pointer;
+          transition: all 0.2s ease;
+          text-align: left;
+        }
+
+        .theme-font-trigger:hover {
+          border-color: var(--surbee-border-focus);
+        }
+
+        .theme-font-menu {
+          position: absolute;
+          top: calc(100% + 6px);
+          left: 0;
+          right: 0;
+          max-height: 280px;
+          overflow-y: auto;
+          border-radius: 24px;
+          padding: 8px;
+          border: 1px solid var(--surbee-dropdown-border, var(--surbee-border-primary));
+          background: var(--surbee-dropdown-bg, var(--surbee-bg-primary));
+          backdrop-filter: blur(12px);
+          box-shadow: rgba(0, 0, 0, 0.2) 0px 7px 16px;
+          z-index: 100;
+          scrollbar-width: thin;
+        }
+
+        .theme-font-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: 10px 14px;
+          border: none;
+          border-radius: 18px;
+          background: transparent;
+          color: var(--surbee-dropdown-text, var(--surbee-fg-primary));
+          font-size: 14px;
+          cursor: pointer;
+          text-align: left;
+          margin-bottom: 1px;
+          transition: background 0.1s;
+        }
+
+        .theme-font-item:hover {
+          background: var(--surbee-dropdown-item-hover, rgba(255, 255, 255, 0.05));
+        }
+
+        .theme-font-item.active {
+          background: var(--surbee-dropdown-item-hover, rgba(255, 255, 255, 0.05));
+          font-weight: 600;
+        }
       `}</style>
           </div>
         </div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
 
 export default ProjectSettings;
+
+// ---------------------------------------------------------------------------
+// Theme Tab Content — uses same CSS classes as other settings tabs
+// ---------------------------------------------------------------------------
+
+const THEME_PRESETS: { name: string; theme: Partial<SurveyTheme> }[] = [
+  { name: 'Default', theme: { primaryColor: '#2563eb', secondaryColor: '#7c3aed', accentColor: '#2563eb', backgroundColor: '#ffffff', textColor: '#0a0a0a', fontFamily: 'Inter, sans-serif', borderRadius: '0.5rem' } },
+  { name: 'Midnight', theme: { primaryColor: '#818cf8', secondaryColor: '#c084fc', accentColor: '#818cf8', backgroundColor: '#0f172a', textColor: '#f1f5f9', fontFamily: 'DM Sans, sans-serif', borderRadius: '0.75rem' } },
+  { name: 'Rose', theme: { primaryColor: '#f43f5e', secondaryColor: '#fb7185', accentColor: '#f43f5e', backgroundColor: '#fff1f2', textColor: '#1c1917', fontFamily: 'Plus Jakarta Sans, sans-serif', borderRadius: '1rem' } },
+  { name: 'Forest', theme: { primaryColor: '#059669', secondaryColor: '#34d399', accentColor: '#059669', backgroundColor: '#ffffff', textColor: '#064e3b', fontFamily: 'Space Grotesk, sans-serif', borderRadius: '0.5rem' } },
+  { name: 'Ocean', theme: { primaryColor: '#0ea5e9', secondaryColor: '#38bdf8', accentColor: '#0ea5e9', backgroundColor: '#f0f9ff', textColor: '#0c4a6e', fontFamily: 'Outfit, sans-serif', borderRadius: '0.75rem' } },
+  { name: 'Sunset', theme: { primaryColor: '#f59e0b', secondaryColor: '#fbbf24', accentColor: '#f59e0b', backgroundColor: '#fffbeb', textColor: '#1c1917', fontFamily: 'Nunito, sans-serif', borderRadius: '0.5rem' } },
+  { name: 'Minimal', theme: { primaryColor: '#171717', secondaryColor: '#525252', accentColor: '#171717', backgroundColor: '#ffffff', textColor: '#171717', fontFamily: 'Inter, sans-serif', borderRadius: '0.25rem' } },
+  { name: 'Academic', theme: { primaryColor: '#1d4ed8', secondaryColor: '#3b82f6', accentColor: '#1d4ed8', backgroundColor: '#ffffff', textColor: '#111827', fontFamily: 'Source Serif 4, serif', borderRadius: '0.375rem' } },
+  { name: 'Playful', theme: { primaryColor: '#8b5cf6', secondaryColor: '#a78bfa', accentColor: '#8b5cf6', backgroundColor: '#faf5ff', textColor: '#2e1065', fontFamily: 'Poppins, sans-serif', borderRadius: '1.5rem' } },
+];
+
+const THEME_FONTS = [
+  { label: 'Inter', value: 'Inter, sans-serif' },
+  { label: 'DM Sans', value: 'DM Sans, sans-serif' },
+  { label: 'Plus Jakarta Sans', value: 'Plus Jakarta Sans, sans-serif' },
+  { label: 'Space Grotesk', value: 'Space Grotesk, sans-serif' },
+  { label: 'Outfit', value: 'Outfit, sans-serif' },
+  { label: 'Poppins', value: 'Poppins, sans-serif' },
+  { label: 'Nunito', value: 'Nunito, sans-serif' },
+  { label: 'Manrope', value: 'Manrope, sans-serif' },
+  { label: 'Roboto', value: 'Roboto, sans-serif' },
+  { label: 'Source Serif 4', value: 'Source Serif 4, serif' },
+  { label: 'Playfair Display', value: 'Playfair Display, serif' },
+  { label: 'Merriweather', value: 'Merriweather, serif' },
+  { label: 'Lora', value: 'Lora, serif' },
+  { label: 'JetBrains Mono', value: 'JetBrains Mono, monospace' },
+];
+
+const RADIUS_OPTIONS = [
+  { label: 'None', value: '0' },
+  { label: 'Small', value: '0.25rem' },
+  { label: 'Medium', value: '0.5rem' },
+  { label: 'Large', value: '0.75rem' },
+  { label: 'XL', value: '1rem' },
+  { label: 'Full', value: '1.5rem' },
+];
+
+const QUICK_COLORS = ['#2563eb', '#8b5cf6', '#ec4899', '#ef4444', '#f59e0b', '#10b981', '#0ea5e9', '#171717'];
+
+function ThemeTabContent({ theme, updateTheme, logoInputRef }: {
+  theme: SurveyTheme | undefined;
+  updateTheme: (t: Partial<SurveyTheme>) => void;
+  logoInputRef: React.RefObject<HTMLInputElement | null>;
+}) {
+  if (!theme) {
+    return (
+      <div className="settings-section">
+        <div className="form-field">
+          <p className="field-description">Create a survey first to customize its theme.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => updateTheme({ logoUrl: ev.target?.result as string });
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="settings-section">
+      {/* Presets */}
+      <div className="form-field">
+        <label className="field-label">Color Scheme</label>
+        <p className="field-description">Pick a preset or customize individual colors below</p>
+        <div className="theme-preset-grid">
+          {THEME_PRESETS.map((preset) => {
+            const isActive = theme.primaryColor === preset.theme.primaryColor && theme.backgroundColor === preset.theme.backgroundColor;
+            return (
+              <button
+                key={preset.name}
+                onClick={() => updateTheme(preset.theme)}
+                className={`theme-preset-btn ${isActive ? 'active' : ''}`}
+              >
+                <div className="theme-preset-dots">
+                  <span style={{ backgroundColor: preset.theme.primaryColor }} />
+                  <span style={{ backgroundColor: preset.theme.backgroundColor }} />
+                  <span style={{ backgroundColor: preset.theme.textColor }} />
+                </div>
+                <span className="theme-preset-label">{preset.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="divider" />
+
+      {/* Individual Colors */}
+      <div className="form-field">
+        <label className="field-label">Colors</label>
+        <p className="field-description">Customize the survey color palette</p>
+        <div className="theme-color-list">
+          <ThemeColorRow label="Primary" value={theme.primaryColor} onChange={(v) => updateTheme({ primaryColor: v, accentColor: v })} />
+          <ThemeColorRow label="Secondary" value={theme.secondaryColor} onChange={(v) => updateTheme({ secondaryColor: v })} />
+          <ThemeColorRow label="Background" value={theme.backgroundColor} onChange={(v) => updateTheme({ backgroundColor: v })} />
+          <ThemeColorRow label="Text" value={theme.textColor} onChange={(v) => updateTheme({ textColor: v })} />
+        </div>
+      </div>
+
+      <div className="divider" />
+
+      {/* Heading Font */}
+      <div className="form-field">
+        <label className="field-label">Heading Font</label>
+        <p className="field-description">Used for titles and headings</p>
+        <ThemeFontDropdown
+          value={theme.fontFamily}
+          onChange={(v) => updateTheme({ fontFamily: v })}
+          fonts={THEME_FONTS}
+        />
+      </div>
+
+      {/* Body Font */}
+      <div className="form-field">
+        <label className="field-label">Body Font</label>
+        <p className="field-description">Used for descriptions, labels, and body text</p>
+        <ThemeFontDropdown
+          value={theme.secondaryFontFamily || theme.fontFamily}
+          onChange={(v) => updateTheme({ secondaryFontFamily: v })}
+          fonts={THEME_FONTS}
+        />
+      </div>
+
+      {/* Border Radius */}
+      <div className="form-field">
+        <label className="field-label">Border Radius</label>
+        <p className="field-description">Roundness of buttons and inputs</p>
+        <div className="theme-option-row">
+          {RADIUS_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => updateTheme({ borderRadius: opt.value })}
+              className={`theme-option-btn ${theme.borderRadius === opt.value ? 'active' : ''}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="divider" />
+
+      {/* Logo */}
+      <div className="form-field">
+        <label className="field-label">Survey Logo</label>
+        <p className="field-description">Displayed at the top of your survey</p>
+        <div className="image-upload-area">
+          <input
+            ref={logoInputRef as any}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleLogoUpload}
+          />
+          {theme.logoUrl ? (
+            <div className="image-preview">
+              <img src={theme.logoUrl} alt="Logo" style={{ maxHeight: '60px', maxWidth: '180px', objectFit: 'contain' }} />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="change-image-btn" onClick={() => logoInputRef.current?.click()}>Change</button>
+                <button className="change-image-btn" onClick={() => updateTheme({ logoUrl: undefined })} style={{ color: 'var(--surbee-fg-danger, #ef4444)' }}>Remove</button>
+              </div>
+            </div>
+          ) : (
+            <button className="upload-btn" onClick={() => logoInputRef.current?.click()}>
+              <Upload className="w-4 h-4" />
+              Upload Logo
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Logo Position */}
+      {theme.logoUrl && (
+        <div className="form-field">
+          <label className="field-label">Logo Position</label>
+          <div className="theme-option-row">
+            {(['top-left', 'top-center', 'top-right'] as const).map(pos => (
+              <button
+                key={pos}
+                onClick={() => updateTheme({ logoPosition: pos })}
+                className={`theme-option-btn ${(theme.logoPosition || 'top-left') === pos ? 'active' : ''}`}
+                style={{ flex: 1, textTransform: 'capitalize' }}
+              >
+                {pos.replace('top-', '')}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ThemeFontDropdown({ value, onChange, fonts }: {
+  value: string;
+  onChange: (v: string) => void;
+  fonts: { label: string; value: string }[];
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const currentFont = fonts.find(f => f.value === value);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [isOpen]);
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="theme-font-trigger"
+        style={{ fontFamily: value }}
+      >
+        <span>{currentFont?.label || 'Select font'}</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, opacity: 0.5 }}>
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {isOpen && (
+        <div className="theme-font-menu">
+          {fonts.map(f => (
+            <button
+              key={f.value}
+              onClick={() => { onChange(f.value); setIsOpen(false); }}
+              className={`theme-font-item ${value === f.value ? 'active' : ''}`}
+              style={{ fontFamily: f.value }}
+            >
+              <span>{f.label}</span>
+              <span style={{ opacity: 0.4, fontSize: '12px' }}>Aa Bb Cc</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ThemeColorRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="theme-color-row">
+      <span className="theme-color-label">{label}</span>
+      <input
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="theme-color-picker"
+      />
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => { if (/^#[0-9a-fA-F]{0,6}$/.test(e.target.value)) onChange(e.target.value) }}
+        className="field-input theme-color-hex"
+      />
+      <div className="theme-color-swatches">
+        {QUICK_COLORS.map(c => (
+          <button
+            key={c}
+            onClick={() => onChange(c)}
+            className={`theme-swatch ${value === c ? 'active' : ''}`}
+            style={{ backgroundColor: c }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}

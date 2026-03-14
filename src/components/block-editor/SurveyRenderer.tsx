@@ -225,6 +225,22 @@ export const SurveyRenderer: React.FC<SurveyRendererProps> = ({
       ['--surbee-border-primary' as any]: 'rgba(0,0,0,0.08)',
       ['--surbee-accent-primary' as any]: theme.primaryColor || '#2563eb',
     }}>
+      {/* Logo */}
+      {theme.logoUrl && (
+        <div style={{
+          padding: '16px 24px 0',
+          display: 'flex',
+          justifyContent: theme.logoPosition === 'top-center' ? 'center' : theme.logoPosition === 'top-right' ? 'flex-end' : 'flex-start',
+          flexShrink: 0,
+        }}>
+          <img
+            src={theme.logoUrl}
+            alt="Survey logo"
+            style={{ maxHeight: '48px', maxWidth: '160px', objectFit: 'contain' }}
+          />
+        </div>
+      )}
+
       {/* Progress bar */}
       {settings.showProgress && (
         <div style={{ height: 3, backgroundColor: 'rgba(0,0,0,0.08)', flexShrink: 0 }}>

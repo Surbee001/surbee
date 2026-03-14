@@ -6,9 +6,11 @@ import { CSS } from '@dnd-kit/utilities'
 import type { Block, BlockStyle } from '@/lib/block-editor/types'
 import { isQuestionBlock } from '@/lib/block-editor/types'
 import { useBlockEditorStore } from '@/stores/blockEditorStore'
+import { ConditionalVisibilityEditor } from './ConditionalVisibilityEditor'
 
 interface BlockWrapperProps {
   block: Block
+  pageId: string
   isSelected: boolean
   isEditing: boolean
   onSelect: () => void
@@ -39,6 +41,7 @@ const ALL_FONTS = [
 
 export const BlockWrapper: React.FC<BlockWrapperProps> = ({
   block,
+  pageId,
   isSelected,
   isEditing,
   onSelect,
@@ -132,7 +135,9 @@ export const BlockWrapper: React.FC<BlockWrapperProps> = ({
         onClick={onSelect}
         style={{
           padding: bs.padding || '8px 4px',
-          borderRadius: '4px', cursor: 'text', position: 'relative',
+          borderRadius: '6px', cursor: 'text', position: 'relative',
+          border: isSelected ? '1.5px solid rgba(59, 130, 246, 0.35)' : '1.5px solid transparent',
+          transition: 'border-color 0.15s ease',
           ...(bs.backgroundColor ? { backgroundColor: bs.backgroundColor } : {}),
           ...(bs.fontSize ? { fontSize: bs.fontSize } : {}),
           ...(bs.color ? { color: bs.color } : {}),
@@ -317,6 +322,11 @@ export const BlockWrapper: React.FC<BlockWrapperProps> = ({
           <button onClick={onDuplicate} style={tBtn(false)} title="Duplicate"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
           <button onClick={onDelete} style={{ ...tBtn(false), color: '#ef4444' }} title="Delete"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14"/></svg></button>
         </div>
+      )}
+
+      {/* Conditional visibility editor */}
+      {isEditing && isSelected && (
+        <ConditionalVisibilityEditor block={block} pageId={pageId} />
       )}
     </div>
   )

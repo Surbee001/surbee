@@ -1469,6 +1469,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                     </motion.span>
                   ))}
                 </h1>
+
               </motion.div>
             )}
           </AnimatePresence>
@@ -2543,6 +2544,40 @@ Analyze the survey structure, questions, and design. Then help me build a simila
             </div>
             )}
           </div>
+
+          {/* Start blank project - centered below dropdowns */}
+          {!hasStartedChat && (
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={() => {
+                  const projectId = `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                  router.push(`/project/${projectId}`);
+                }}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: '20px',
+                  border: '1px solid var(--surbee-border-primary)',
+                  backgroundColor: 'transparent',
+                  color: 'var(--surbee-fg-muted)',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  fontFamily: "'Opening Hours Sans', sans-serif",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--surbee-bg-secondary)';
+                  e.currentTarget.style.color = 'var(--surbee-fg-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'var(--surbee-fg-muted)';
+                }}
+              >
+                or start a blank project
+              </button>
+            </div>
+          )}
 
         </div>
       </div>

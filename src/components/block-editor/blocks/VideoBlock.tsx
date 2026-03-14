@@ -14,36 +14,48 @@ export const VideoBlock: React.FC<BlockComponentProps<'video'>> = ({
 
   if (!content.src && isEditing) {
     return (
-      <div
-        onClick={onFocus}
-        style={{
-          border: '2px dashed var(--surbee-border-primary)',
-          borderRadius: '8px',
-          padding: '32px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '8px',
-        }}
-      >
-        <span style={{ fontSize: '1.5rem', opacity: 0.4 }}>&#127909;</span>
-        <input
-          type="text"
-          placeholder="Paste a video URL..."
-          onBlur={(e) => {
-            if (e.target.value) onContentChange({ src: e.target.value })
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.target as HTMLInputElement).value) {
-              onContentChange({ src: (e.target as HTMLInputElement).value })
-            }
-          }}
+      <div onClick={onFocus}>
+        <div
           style={{
-            background: 'transparent', border: '1px solid var(--surbee-border-primary)',
-            borderRadius: '6px', padding: '6px 10px', fontSize: '0.8rem',
-            color: 'var(--surbee-fg-primary)', width: '80%', textAlign: 'center', fontFamily: 'inherit',
+            backgroundColor: '#f0f0f0',
+            borderRadius: '8px',
+            minHeight: '140px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '16px',
+            cursor: 'pointer',
           }}
-        />
+        >
+          {/* Video icon */}
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3" />
+          </svg>
+
+          {/* URL input */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '80%', maxWidth: '320px' }}>
+            <input
+              type="text"
+              placeholder="Paste a video URL..."
+              onClick={(e) => e.stopPropagation()}
+              onBlur={(e) => {
+                if (e.target.value) onContentChange({ src: e.target.value })
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.target as HTMLInputElement).value) {
+                  onContentChange({ src: (e.target as HTMLInputElement).value })
+                }
+              }}
+              style={{
+                flex: 1,
+                background: '#fff', border: '1px solid #ddd',
+                borderRadius: '6px', padding: '8px 12px', fontSize: '13px',
+                color: '#333', fontFamily: 'inherit', outline: 'none',
+              }}
+            />
+          </div>
+        </div>
       </div>
     )
   }
@@ -57,6 +69,22 @@ export const VideoBlock: React.FC<BlockComponentProps<'video'>> = ({
             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
             allowFullScreen
           />
+          {isEditing && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onContentChange({ src: '' }) }}
+              style={{
+                position: 'absolute', top: 8, right: 8,
+                width: 24, height: 24, borderRadius: '6px',
+                backgroundColor: 'rgba(0,0,0,0.5)', border: 'none',
+                color: '#fff', cursor: 'pointer', fontSize: '14px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: 2,
+              }}
+              title="Remove video"
+            >
+              &times;
+            </button>
+          )}
         </div>
       )}
     </div>

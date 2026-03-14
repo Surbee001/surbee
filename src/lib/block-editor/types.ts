@@ -18,6 +18,7 @@ export type LayoutBlockType =
   | 'video'
   | 'button'
   | 'custom-code'
+  | 'columns'
 
 export type QuestionBlockType =
   | 'text-input'
@@ -81,6 +82,17 @@ export interface ButtonContent {
   url?: string
   variant: 'primary' | 'secondary' | 'outline'
   align: 'left' | 'center' | 'right'
+}
+
+export interface ColumnCell {
+  id: string
+  blockType: BlockType | null
+  content: BlockContentMap[BlockType] | null
+}
+
+export interface ColumnsContent {
+  layout: '1:1' | '1:2' | '2:1' | '1:1:1' | '1:2:1'
+  cells: ColumnCell[]
 }
 
 // -- Question block content types --
@@ -249,6 +261,7 @@ export interface BlockContentMap {
   video: VideoContent
   button: ButtonContent
   'custom-code': CustomCodeContent
+  columns: ColumnsContent
   'text-input': TextInputContent
   textarea: TextAreaContent
   radio: RadioContent
@@ -401,8 +414,11 @@ export interface SurveyTheme {
   backgroundColor: string
   textColor: string
   fontFamily: string
+  secondaryFontFamily?: string
   borderRadius: string
   accentColor: string
+  logoUrl?: string
+  logoPosition?: 'top-left' | 'top-center' | 'top-right'
 }
 
 export interface SurveyMetadata {
@@ -430,7 +446,7 @@ export interface BlockEditorSurvey {
 // ---------------------------------------------------------------------------
 
 export const LAYOUT_BLOCK_TYPES: LayoutBlockType[] = [
-  'heading', 'paragraph', 'divider', 'spacer', 'image', 'video', 'button', 'custom-code',
+  'heading', 'paragraph', 'divider', 'spacer', 'image', 'video', 'button', 'custom-code', 'columns',
 ]
 
 export const QUESTION_BLOCK_TYPES: QuestionBlockType[] = [
