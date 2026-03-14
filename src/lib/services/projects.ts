@@ -298,7 +298,8 @@ export class ProjectsService {
     projectId: string,
     userId: string,
     surveySchema?: any,
-    sandboxBundle?: any
+    sandboxBundle?: any,
+    blockSurvey?: any
   ): Promise<{ data: Project | null; error: Error | null }> {
     try {
       console.log('[ProjectsService.publishProject] Starting publish:', { projectId, userId, hasSandboxBundle: !!sandboxBundle });
@@ -362,19 +363,22 @@ export class ProjectsService {
           // Ignore error, use default title
         }
 
+        const insertData: any = {
+          id: projectId,
+          user_id: userId,
+          title: blockSurvey?.title || projectTitle,
+          description: 'Survey created with Surbee',
+          status: 'published',
+          published_url: publishedUrl,
+          published_at: new Date().toISOString(),
+          survey_schema: surveySchema,
+          sandbox_bundle: sandboxBundle || null,
+        };
+        if (blockSurvey) insertData.block_survey = blockSurvey;
+
         const { data: newProject, error: createError } = await supabaseAdmin
           .from('projects')
-          .insert({
-            id: projectId,
-            user_id: userId,
-            title: projectTitle,
-            description: 'Survey created with Surbee',
-            status: 'published',
-            published_url: publishedUrl,
-            published_at: new Date().toISOString(),
-            survey_schema: surveySchema,
-            sandbox_bundle: sandboxBundle || null,
-          })
+          .insert(insertData)
           .select()
           .single();
 
@@ -395,6 +399,11 @@ export class ProjectsService {
       // Only update sandbox_bundle if provided, otherwise keep existing
       if (sandboxBundle !== undefined) {
         updateData.sandbox_bundle = sandboxBundle;
+      }
+
+      // Only update block_survey if provided, otherwise keep existing
+      if (blockSurvey !== undefined) {
+        updateData.block_survey = blockSurvey;
       }
 
       const { data: project, error } = await supabaseAdmin

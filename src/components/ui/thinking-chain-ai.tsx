@@ -412,22 +412,20 @@ function CodeContainer({ htmlContent, isStreaming }: { htmlContent: string; isSt
   
   return (
     <div className="relative h-48 overflow-hidden">
-      {/* Top fade */}
-      <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#1a1a1a] to-transparent z-10" />
+      {/* Top fade — uses inline style for CSS var support */}
+      <div className="absolute top-0 left-0 right-0 h-4 z-10" style={{ background: 'linear-gradient(to bottom, var(--surbee-sidebar-bg, #1a1a1a), transparent)' }} />
 
       {/* Code Content */}
-      <div 
+      <div
         ref={scrollRef}
         className="p-4 font-mono text-sm overflow-y-auto h-full scroll-smooth"
       >
-        <pre className="text-gray-300 whitespace-pre-wrap">
+        <pre className="text-gray-300 whitespace-pre-wrap dark:text-gray-300 text-gray-600">
           {isStreaming ? (
-            // During streaming, show raw content for better performance
-            <code className="text-gray-300">
+            <code className="dark:text-gray-300 text-gray-600">
               {htmlContent}
             </code>
           ) : (
-            // When done streaming, show lightly highlighted content
             <code
               dangerouslySetInnerHTML={{
                 __html: highlightedCode
@@ -438,7 +436,7 @@ function CodeContainer({ htmlContent, isStreaming }: { htmlContent: string; isSt
       </div>
 
       {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#1a1a1a] to-transparent z-10" />
+      <div className="absolute bottom-0 left-0 right-0 h-4 z-10" style={{ background: 'linear-gradient(to top, var(--surbee-sidebar-bg, #1a1a1a), transparent)' }} />
     </div>
   )
 }

@@ -11,6 +11,7 @@ export interface UserPreferences {
   exportFormat: string;
   autoSave: boolean;
   analyticsTracking: boolean;
+  enabledModels?: string[];    // Which AI models to show in the selector
 }
 
 const defaultPreferences: UserPreferences = {

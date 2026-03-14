@@ -153,7 +153,8 @@ export async function POST(req: NextRequest) {
       userId: user.id,
       designTheme,
       userPreferences,
-      thinking
+      thinking,
+      existingBlockSurvey: body.existingBlockSurvey,
     });
 
     // Return the UI message stream response for useChat

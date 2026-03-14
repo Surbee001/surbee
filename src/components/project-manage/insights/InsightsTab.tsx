@@ -329,7 +329,7 @@ export function InsightsTab({ projectId }: InsightsTabProps) {
           <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite', color: 'var(--surbee-fg-muted)' }} />
         </div>
         <style jsx>{`
-          .insights-root { max-width: 1100px; margin: 0 auto; }
+          .insights-root { max-width: 100%; margin: 0 auto; }
           @keyframes spin { to { transform: rotate(360deg); } }
         `}</style>
       </div>
@@ -350,24 +350,14 @@ export function InsightsTab({ projectId }: InsightsTabProps) {
       {/* ─── Header ─── */}
       <header className="insights-header">
         <h1 className="insights-title">Insights</h1>
-        <p className="insights-subtitle">
-          {isConnected ? (
+        {isConnected && (
+          <p className="insights-subtitle">
             <span className="status-indicator">
               <Wifi size={13} style={{ color: 'var(--surbee-success)' }} />
               <span style={{ color: 'var(--surbee-success)' }}>Live</span>
             </span>
-          ) : usePolling ? (
-            <span className="status-indicator">
-              <RefreshCw size={13} style={{ color: 'var(--surbee-info)' }} />
-              <span style={{ color: 'var(--surbee-info)' }}>Polling</span>
-            </span>
-          ) : (
-            <span className="status-indicator">
-              <WifiOff size={13} style={{ color: 'var(--surbee-fg-muted)' }} />
-              <span style={{ color: 'var(--surbee-fg-muted)' }}>Offline</span>
-            </span>
-          )}
-        </p>
+          </p>
+        )}
       </header>
 
       {/* ─── Pill Tabs ─── */}
@@ -707,7 +697,7 @@ export function InsightsTab({ projectId }: InsightsTabProps) {
 
       {/* ─── Styles ─── */}
       <style jsx>{`
-        .insights-root { max-width: 1100px; margin: 0 auto; padding: 8px 0 80px; color: var(--surbee-fg-primary, #E8E8E8); }
+        .insights-root { max-width: 100%; margin: 0 auto; padding: 8px 0 80px; color: var(--surbee-fg-primary, #E8E8E8); }
         .insights-header { margin-bottom: 24px; }
         .insights-title { font-family: 'Kalice-Trial-Regular', sans-serif; font-size: 28px; font-weight: 400; line-height: 1.4; margin: 0 0 4px 0; color: var(--surbee-fg-primary, #E8E8E8); }
         .insights-subtitle { font-size: 14px; color: var(--surbee-fg-secondary, #d1d5db); margin: 0; }

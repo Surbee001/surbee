@@ -6,7 +6,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId, surveySchema, sandboxBundle } = await request.json();
+    const { userId, surveySchema, sandboxBundle, blockSurvey } = await request.json();
     const { id: projectId } = await params;
 
     if (!userId) {
@@ -37,7 +37,8 @@ export async function POST(
       projectId,
       userId,
       surveySchema,
-      sandboxBundle
+      sandboxBundle,
+      blockSurvey
     );
 
     if (error) {

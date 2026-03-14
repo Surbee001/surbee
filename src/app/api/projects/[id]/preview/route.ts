@@ -23,21 +23,24 @@ export async function POST(
 ) {
   try {
     const { id: projectId } = await params;
-    const { userId, previewImage, sandboxBundle } = await request.json();
+    const { userId, previewImage, sandboxBundle, blockSurvey } = await request.json();
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
     // First try to update the project
+    const updateData: Record<string, unknown> = {
+      preview_image_url: previewImage || null,
+      last_preview_generated_at: previewImage ? new Date().toISOString() : null,
+      updated_at: new Date().toISOString(),
+    };
+    if (sandboxBundle) updateData.sandbox_bundle = sandboxBundle;
+    if (blockSurvey) updateData.block_survey = blockSurvey;
+
     const { data: existingProject, error: updateError } = await supabaseAdmin
       .from('projects')
-      .update({
-        preview_image_url: previewImage || null,
-        last_preview_generated_at: previewImage ? new Date().toISOString() : null,
-        sandbox_bundle: sandboxBundle || null,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', projectId)
       .eq('user_id', userId)
       .select()
@@ -64,31 +67,37 @@ export async function POST(
 
     // If no project found (PGRST116), create it with the preview data
     if (updateError?.code === 'PGRST116' || !existingProject) {
+      const insertData: Record<string, unknown> = {
+        id: projectId,
+        user_id: userId,
+        title: blockSurvey?.title || 'Untitled Project',
+        status: 'draft',
+        preview_image_url: previewImage || null,
+        last_preview_generated_at: previewImage ? new Date().toISOString() : null,
+      };
+      if (sandboxBundle) insertData.sandbox_bundle = sandboxBundle;
+      if (blockSurvey) insertData.block_survey = blockSurvey;
+
       const { data: newProject, error: createError } = await supabaseAdmin
         .from('projects')
-        .insert({
-          id: projectId,
-          user_id: userId,
-          title: 'Untitled Project',
-          status: 'draft',
-          preview_image_url: previewImage || null,
-          last_preview_generated_at: previewImage ? new Date().toISOString() : null,
-          sandbox_bundle: sandboxBundle || null,
-        })
+        .insert(insertData)
         .select()
         .single();
 
       if (createError) {
         // Handle duplicate key error (project was created between our check and insert)
         if (createError.code === '23505') {
+          const retryData: Record<string, unknown> = {
+            preview_image_url: previewImage || null,
+            last_preview_generated_at: previewImage ? new Date().toISOString() : null,
+            updated_at: new Date().toISOString(),
+          };
+          if (sandboxBundle) retryData.sandbox_bundle = sandboxBundle;
+          if (blockSurvey) retryData.block_survey = blockSurvey;
+
           const { data: retryProject, error: retryError } = await supabaseAdmin
             .from('projects')
-            .update({
-              preview_image_url: previewImage || null,
-              last_preview_generated_at: previewImage ? new Date().toISOString() : null,
-              sandbox_bundle: sandboxBundle || null,
-              updated_at: new Date().toISOString(),
-            })
+            .update(retryData)
             .eq('id', projectId)
             .eq('user_id', userId)
             .select()

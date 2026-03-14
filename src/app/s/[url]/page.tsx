@@ -4,6 +4,8 @@ import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { ModalSandboxPreview } from '@/components/sandbox/ModalSandboxPreview'
+import { SurveyRenderer } from '@/components/block-editor/SurveyRenderer'
+import type { BlockEditorSurvey } from '@/lib/block-editor/types'
 import type { CipherTier } from '@/lib/cipher/tier-config'
 import {
   subscribeToSettingsUpdates,
@@ -38,6 +40,7 @@ interface PublishedSurvey {
   id: string
   title: string
   description?: string
+  block_survey?: BlockEditorSurvey
   sandbox_bundle?: SandboxBundle
   sandbox_preview_url?: string | null
   survey_schema?: any
@@ -564,8 +567,8 @@ export default function PublishedSurveyPage() {
     )
   }
 
-  // No sandbox bundle
-  if (!survey.sandbox_bundle) {
+  // No content (no block survey and no sandbox bundle)
+  if (!survey.block_survey && !survey.sandbox_bundle) {
     return (
       <div
         className="min-h-screen flex items-center justify-center p-6"
@@ -733,6 +736,72 @@ export default function PublishedSurveyPage() {
             </p>
           )}
         </div>
+      </div>
+    )
+  }
+
+  // Render block-based survey if available (preferred)
+  if (survey.block_survey) {
+    return (
+      <div style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
+        <SurveyRenderer
+          survey={survey.block_survey}
+          onComplete={async (surveyResponses, metrics) => {
+            try {
+              // Submit response to database
+              await fetch(`/api/projects/${survey.id}/responses`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  responses: surveyResponses,
+                  completed_at: new Date().toISOString(),
+                  user_id: user?.id || null,
+                  is_preview: false,
+                  session_id: sessionIdRef.current,
+                  mouse_data: metrics.mouseMovements,
+                  keystroke_data: metrics.keystrokeDynamics,
+                  timing_data: metrics.responseTime,
+                  device_data: metrics.deviceFingerprint,
+                }),
+              })
+
+              // Run fraud assessment if cipher is enabled
+              if (cipherSettings?.enabled) {
+                try {
+                  const assessmentRes = await fetch('/api/surbee/fraud/tiered-assess', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      tier: cipherSettings.tier,
+                      responses: surveyResponses,
+                      behavioralMetrics: metrics,
+                      projectId: survey.id,
+                      sessionId: sessionIdRef.current,
+                    }),
+                  })
+                  if (assessmentRes.ok) {
+                    const assessment = await assessmentRes.json()
+                    if (assessment.overallRiskScore > 0) {
+                      await fetch(`/api/projects/${survey.id}/responses/update-fraud`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          session_id: sessionIdRef.current,
+                          fraud_score: assessment.overallRiskScore,
+                          is_flagged: assessment.overallRiskScore >= cipherSettings.flagThreshold,
+                          flag_reasons: assessment.flags,
+                        }),
+                      }).catch(() => {})
+                    }
+                  }
+                } catch {}
+              }
+            } catch (err) {
+              console.error('Error saving response:', err)
+            }
+            setIsCompleted(true)
+          }}
+        />
       </div>
     )
   }

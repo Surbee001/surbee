@@ -38,6 +38,16 @@ import {
   surbeSaveChatImage,
   chatUploadedImages,
   projectFiles,
+  blockCreateSurveyTool,
+  blockAddPageTool,
+  blockAddBlockTool,
+  blockUpdateBlockTool,
+  blockDeleteBlockTool,
+  blockReorderBlocksTool,
+  blockSetPageLogicTool,
+  blockUpdateThemeTool,
+  blockGetSurveyTool,
+  blockBuildPreviewTool,
 } from './lovableTools';
 import { buildSurbeeSystemPrompt } from './surbeeSystemPrompt';
 
@@ -500,6 +510,18 @@ const tools = {
 
   // Status labels for UI process groups
   set_status: setStatusTool,
+
+  // Block Editor Tools (preferred for standard surveys)
+  block_create_survey: blockCreateSurveyTool,
+  block_add_page: blockAddPageTool,
+  block_add_block: blockAddBlockTool,
+  block_update_block: blockUpdateBlockTool,
+  block_delete_block: blockDeleteBlockTool,
+  block_reorder_blocks: blockReorderBlocksTool,
+  block_set_page_logic: blockSetPageLogicTool,
+  block_update_theme: blockUpdateThemeTool,
+  block_get_survey: blockGetSurveyTool,
+  block_build_preview: blockBuildPreviewTool,
 } satisfies ToolSet;
 
 export type ChatTools = InferUITools<typeof tools>;
@@ -607,7 +629,7 @@ interface UserPreferences {
   personalPreferences?: string;
 }
 
-export function streamWorkflowV3({ messages: rawMessages, model = 'gpt-5', projectId, userId, designTheme, userPreferences, thinking = false }: { messages: ChatMessage[], model?: string, projectId?: string, userId?: string, designTheme?: DesignThemeData | null, userPreferences?: UserPreferences, thinking?: boolean }) {
+export function streamWorkflowV3({ messages: rawMessages, model = 'gpt-5', projectId, userId, designTheme, userPreferences, thinking = false, existingBlockSurvey }: { messages: ChatMessage[], model?: string, projectId?: string, userId?: string, designTheme?: DesignThemeData | null, userPreferences?: UserPreferences, thinking?: boolean, existingBlockSurvey?: any }) {
 
   // CRITICAL: Filter out messages with empty or null content before processing
   // This prevents "messages.0: all messages must have non-empty content" error
@@ -636,6 +658,12 @@ export function streamWorkflowV3({ messages: rawMessages, model = 'gpt-5', proje
 
   // Generate unique project name
   const projectName = `survey-${Date.now()}`;
+
+  // Pre-load existing block survey if provided (from database restore)
+  if (existingBlockSurvey) {
+    const { blockSurveys } = require('./lovableTools');
+    blockSurveys.set(existingBlockSurvey.id, existingBlockSurvey);
+  }
 
   // Store uploaded images from messages in the shared chatUploadedImages map
   // This makes them accessible to the surbe_save_chat_image tool

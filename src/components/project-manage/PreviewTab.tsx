@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { ModalSandboxPreview } from '@/components/sandbox/ModalSandboxPreview';
+import { SurveyRenderer } from '@/components/block-editor/SurveyRenderer';
+import type { BlockEditorSurvey } from '@/lib/block-editor/types';
 
 interface SandboxBundle {
   files: Record<string, string>;
@@ -13,11 +15,47 @@ interface SandboxBundle {
 interface PreviewTabProps {
   projectId: string;
   sandboxBundle?: SandboxBundle | null;
+  blockSurvey?: BlockEditorSurvey | null;
   activeChatSessionId?: string | null;
 }
 
-export const PreviewTab: React.FC<PreviewTabProps> = ({ projectId, sandboxBundle }) => {
-  // No sandbox bundle - show placeholder
+export const PreviewTab: React.FC<PreviewTabProps> = ({ projectId, sandboxBundle, blockSurvey }) => {
+  // Block survey preview — renders the SurveyRenderer exactly as respondents would see
+  if (blockSurvey) {
+    return (
+      <div className="preview-root">
+        <div className="preview-container">
+          <SurveyRenderer survey={blockSurvey} isPreview />
+        </div>
+
+        <style jsx>{`
+          .preview-root {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            background: ${blockSurvey.theme?.backgroundColor || '#ffffff'};
+            overflow: hidden;
+            margin: -24px;
+          }
+
+          .preview-container {
+            flex: 1;
+            display: flex;
+            overflow: auto;
+            width: 100%;
+          }
+
+          .preview-container > div {
+            width: 100%;
+            min-height: 100%;
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // No content
   if (!sandboxBundle?.files) {
     return (
       <div className="preview-root">
@@ -58,6 +96,7 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ projectId, sandboxBundle
     );
   }
 
+  // Sandbox preview
   return (
     <div className="preview-root">
       <div className="preview-container">

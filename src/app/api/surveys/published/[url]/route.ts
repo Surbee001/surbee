@@ -26,8 +26,8 @@ export async function GET(
       );
     }
 
-    // Check for sandbox_bundle (AI-generated survey) first, then survey_schema as fallback
-    if (!project || (!project.sandbox_bundle && !project.survey_schema)) {
+    // Check for content: block_survey, sandbox_bundle, or survey_schema
+    if (!project || (!project.block_survey && !project.sandbox_bundle && !project.survey_schema)) {
       return NextResponse.json(
         { error: 'Survey not found or has no content yet' },
         { status: 404 }
@@ -73,6 +73,7 @@ export async function GET(
       id: project.id,
       title: project.title,
       description: project.description,
+      block_survey: project.block_survey || null,
       sandbox_bundle: project.sandbox_bundle,
       sandbox_preview_url: project.sandbox_preview_url || null,
       survey_schema: project.survey_schema,

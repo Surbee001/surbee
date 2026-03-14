@@ -8,6 +8,10 @@
 
 import { tool } from 'ai';
 import { z } from 'zod';
+import { nanoid } from 'nanoid';
+import type { BlockEditorSurvey, BlockType, EditorPage, Block, PageLogic, SurveyTheme } from '@/lib/block-editor/types';
+import { createDefaultBlock, createDefaultPage, createDefaultSurvey, DEFAULT_SETTINGS, DEFAULT_THEME } from '@/lib/block-editor/block-defaults';
+import { blockTypeSchema, blockContentSchemas, surveyThemeSchema, pageLogicSchema } from '@/lib/block-editor/schemas';
 
 // ---------------------------------------------------------------------------
 // State: project files
@@ -848,5 +852,239 @@ export const websearchWebSearch = tool({
       total_results: 0,
       category: category || 'general',
     };
+  },
+});
+
+// ============================================================================
+// Block Editor Tools
+// ============================================================================
+
+// In-memory block survey state (parallel to projectFiles for sandbox)
+export const blockSurveys = new Map<string, BlockEditorSurvey>();
+let latestBlockSurveyId: string | null = null;
+
+function getBlockSurvey(): BlockEditorSurvey | null {
+  if (!latestBlockSurveyId) return null;
+  return blockSurveys.get(latestBlockSurveyId) ?? null;
+}
+
+function saveBlockSurvey(survey: BlockEditorSurvey): void {
+  blockSurveys.set(survey.id, survey);
+  latestBlockSurveyId = survey.id;
+}
+
+export const blockCreateSurveyTool = tool({
+  description: 'Initialize a new block-based survey. Call this ONCE at the start before adding pages or blocks. This is the PREFERRED approach for building standard surveys.',
+  inputSchema: z.object({
+    title: z.string().describe('Survey title'),
+    description: z.string().optional().describe('Survey description'),
+    theme: surveyThemeSchema.partial().optional().describe('Optional theme overrides'),
+  }),
+  execute: async ({ title, description, theme }) => {
+    const id = `survey-${nanoid(8)}`;
+    const survey = createDefaultSurvey(id, title);
+    if (description) survey.description = description;
+    if (theme) Object.assign(survey.theme, theme);
+
+    saveBlockSurvey(survey);
+    return { status: 'success', message: `Created survey: ${title}`, block_survey: survey };
+  },
+});
+
+export const blockAddPageTool = tool({
+  description: 'Add a new page (slide) to the survey. Pages are like presentation slides that contain blocks.',
+  inputSchema: z.object({
+    title: z.string().describe('Page title'),
+    description: z.string().optional().describe('Page description'),
+    position: z.number().optional().describe('Insert position (0-indexed). Defaults to end.'),
+  }),
+  execute: async ({ title, description, position }) => {
+    const survey = getBlockSurvey();
+    if (!survey) return { status: 'error', message: 'No survey initialized. Call block_create_survey first.' };
+
+    const pos = position ?? survey.pages.length;
+    const page = createDefaultPage(pos, title);
+    if (description) page.description = description;
+
+    survey.pages.splice(pos, 0, page);
+    survey.pages.forEach((p, i) => { p.position = i; });
+    survey.metadata.updatedAt = new Date().toISOString();
+    saveBlockSurvey(survey);
+
+    return { status: 'success', message: `Added page: ${title}`, page_id: page.id, block_survey: survey };
+  },
+});
+
+export const blockAddBlockTool = tool({
+  description: 'Add a block (question, heading, divider, etc.) to a page. This is how you add content to survey pages.',
+  inputSchema: z.object({
+    page_id: z.string().describe('The page ID to add the block to'),
+    type: blockTypeSchema.describe('Block type (e.g. "radio", "text-input", "heading", "paragraph", "nps", "scale", etc.)'),
+    content: z.record(z.unknown()).describe('Block content matching the type schema (e.g. { label: "...", options: [...] } for radio)'),
+    position: z.number().optional().describe('Insert position within the page. Defaults to end.'),
+    after_block_id: z.string().optional().describe('Insert after this block ID instead of using position'),
+  }),
+  execute: async ({ page_id, type, content, position, after_block_id }) => {
+    const survey = getBlockSurvey();
+    if (!survey) return { status: 'error', message: 'No survey initialized. Call block_create_survey first.' };
+
+    const page = survey.pages.find(p => p.id === page_id);
+    if (!page) return { status: 'error', message: `Page not found: ${page_id}` };
+
+    const block = createDefaultBlock(type as BlockType, 0, content as any);
+
+    if (after_block_id) {
+      const afterIdx = page.blocks.findIndex(b => b.id === after_block_id);
+      if (afterIdx >= 0) {
+        page.blocks.splice(afterIdx + 1, 0, block);
+      } else {
+        page.blocks.push(block);
+      }
+    } else if (position !== undefined) {
+      page.blocks.splice(position, 0, block);
+    } else {
+      page.blocks.push(block);
+    }
+
+    page.blocks.forEach((b, i) => { b.meta.position = i; });
+    survey.metadata.updatedAt = new Date().toISOString();
+    saveBlockSurvey(survey);
+
+    return { status: 'success', message: `Added ${type} block`, block_id: block.id, block_survey: survey };
+  },
+});
+
+export const blockUpdateBlockTool = tool({
+  description: 'Update the content or metadata of an existing block.',
+  inputSchema: z.object({
+    page_id: z.string().describe('The page ID containing the block'),
+    block_id: z.string().describe('The block ID to update'),
+    content: z.record(z.unknown()).optional().describe('Partial content updates'),
+    meta: z.object({
+      questionId: z.string().optional(),
+      style: z.record(z.unknown()).optional(),
+      validation: z.record(z.unknown()).optional(),
+    }).optional().describe('Partial meta updates'),
+  }),
+  execute: async ({ page_id, block_id, content, meta }) => {
+    const survey = getBlockSurvey();
+    if (!survey) return { status: 'error', message: 'No survey initialized.' };
+
+    const page = survey.pages.find(p => p.id === page_id);
+    if (!page) return { status: 'error', message: `Page not found: ${page_id}` };
+
+    const block = page.blocks.find(b => b.id === block_id);
+    if (!block) return { status: 'error', message: `Block not found: ${block_id}` };
+
+    if (content) Object.assign(block.content, content);
+    if (meta) Object.assign(block.meta, meta);
+
+    survey.metadata.updatedAt = new Date().toISOString();
+    saveBlockSurvey(survey);
+
+    return { status: 'success', message: `Updated block ${block_id}`, block_survey: survey };
+  },
+});
+
+export const blockDeleteBlockTool = tool({
+  description: 'Remove a block from a page.',
+  inputSchema: z.object({
+    page_id: z.string().describe('The page ID'),
+    block_id: z.string().describe('The block ID to delete'),
+  }),
+  execute: async ({ page_id, block_id }) => {
+    const survey = getBlockSurvey();
+    if (!survey) return { status: 'error', message: 'No survey initialized.' };
+
+    const page = survey.pages.find(p => p.id === page_id);
+    if (!page) return { status: 'error', message: `Page not found: ${page_id}` };
+
+    page.blocks = page.blocks.filter(b => b.id !== block_id);
+    page.blocks.forEach((b, i) => { b.meta.position = i; });
+    survey.metadata.updatedAt = new Date().toISOString();
+    saveBlockSurvey(survey);
+
+    return { status: 'success', message: `Deleted block ${block_id}`, block_survey: survey };
+  },
+});
+
+export const blockReorderBlocksTool = tool({
+  description: 'Reorder blocks within a page by providing the new order of block IDs.',
+  inputSchema: z.object({
+    page_id: z.string().describe('The page ID'),
+    block_ids: z.array(z.string()).describe('Ordered array of block IDs'),
+  }),
+  execute: async ({ page_id, block_ids }) => {
+    const survey = getBlockSurvey();
+    if (!survey) return { status: 'error', message: 'No survey initialized.' };
+
+    const page = survey.pages.find(p => p.id === page_id);
+    if (!page) return { status: 'error', message: `Page not found: ${page_id}` };
+
+    const blockMap = new Map(page.blocks.map(b => [b.id, b]));
+    page.blocks = block_ids.map(id => blockMap.get(id)).filter(Boolean) as Block[];
+    page.blocks.forEach((b, i) => { b.meta.position = i; });
+    survey.metadata.updatedAt = new Date().toISOString();
+    saveBlockSurvey(survey);
+
+    return { status: 'success', message: 'Blocks reordered', block_survey: survey };
+  },
+});
+
+export const blockSetPageLogicTool = tool({
+  description: 'Set conditional branching logic on a page. Determines which page to navigate to based on answers.',
+  inputSchema: z.object({
+    page_id: z.string().describe('The page ID'),
+    logic: pageLogicSchema.describe('The branching logic'),
+  }),
+  execute: async ({ page_id, logic }) => {
+    const survey = getBlockSurvey();
+    if (!survey) return { status: 'error', message: 'No survey initialized.' };
+
+    const page = survey.pages.find(p => p.id === page_id);
+    if (!page) return { status: 'error', message: `Page not found: ${page_id}` };
+
+    page.logic = logic as PageLogic;
+    survey.metadata.updatedAt = new Date().toISOString();
+    saveBlockSurvey(survey);
+
+    return { status: 'success', message: 'Page logic updated', block_survey: survey };
+  },
+});
+
+export const blockUpdateThemeTool = tool({
+  description: 'Update the survey visual theme (colors, fonts, border radius).',
+  inputSchema: z.object({
+    theme: surveyThemeSchema.partial().describe('Partial theme updates'),
+  }),
+  execute: async ({ theme }) => {
+    const survey = getBlockSurvey();
+    if (!survey) return { status: 'error', message: 'No survey initialized.' };
+
+    Object.assign(survey.theme, theme);
+    survey.metadata.updatedAt = new Date().toISOString();
+    saveBlockSurvey(survey);
+
+    return { status: 'success', message: 'Theme updated', block_survey: survey };
+  },
+});
+
+export const blockGetSurveyTool = tool({
+  description: 'Read the current block survey state. Use this to understand the current structure before making changes.',
+  inputSchema: z.object({}),
+  execute: async () => {
+    const survey = getBlockSurvey();
+    if (!survey) return { status: 'error', message: 'No survey initialized.' };
+    return { status: 'success', block_survey: survey };
+  },
+});
+
+export const blockBuildPreviewTool = tool({
+  description: 'Signal the client to render the block survey preview. Call this AFTER adding all blocks. The client will hydrate the block editor with the survey data.',
+  inputSchema: z.object({}),
+  execute: async () => {
+    const survey = getBlockSurvey();
+    if (!survey) return { status: 'error', message: 'No survey initialized.' };
+    return { status: 'success', message: 'Preview ready', block_survey: survey };
   },
 });

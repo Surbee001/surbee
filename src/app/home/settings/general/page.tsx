@@ -256,6 +256,79 @@ export default function GeneralSettingsPage() {
             </div>
           </div>
 
+          <div className="divider" />
+
+          {/* AI Models */}
+          <div className="form-field">
+            <label className="field-label">AI Models</label>
+            <p className="field-description">Toggle which models appear in your selector</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '12px' }}>
+              {(() => {
+                const allModels = [
+                  { id: 'gpt-5-mini', name: 'GPT-5 Mini', provider: 'OpenAI', plan: null },
+                  { id: 'claude-haiku', name: 'Haiku 4.5', provider: 'Anthropic', plan: null },
+                  { id: 'gpt-5', name: 'GPT-5', provider: 'OpenAI', plan: 'Pro' },
+                  { id: 'gpt-5.2', name: 'GPT-5.2', provider: 'OpenAI', plan: 'Pro' },
+                  { id: 'gpt-5.1-codex', name: 'Codex Max', provider: 'OpenAI', plan: 'Max' },
+                  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'Google', plan: 'Pro' },
+                  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'Google', plan: null },
+                  { id: 'mistral', name: 'Mistral Large', provider: 'Mistral', plan: null },
+                ]
+                const allIds = allModels.map(m => m.id)
+                const enabledModels = preferences.enabledModels || allIds
+
+                return allModels.map(model => {
+                  const isOn = enabledModels.includes(model.id)
+                  return (
+                    <div
+                      key={model.id}
+                      onClick={() => {
+                        const current = preferences.enabledModels || allIds
+                        const updated = isOn ? current.filter((m: string) => m !== model.id) : [...current, model.id]
+                        if (updated.length === 0) return
+                        updatePreferences({ enabledModels: updated })
+                        setHasChanges(true)
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        transition: 'background 0.1s',
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--surbee-bg-secondary)' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {/* Provider icon */}
+                        <span style={{ width: 20, height: 20, borderRadius: '5px', backgroundColor: 'var(--surbee-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700, color: 'var(--surbee-fg-muted)', flexShrink: 0 }}>
+                          {model.provider === 'OpenAI' ? 'O' : model.provider === 'Anthropic' ? 'A' : model.provider === 'Google' ? 'G' : 'M'}
+                        </span>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '13px', color: 'var(--surbee-fg-primary)', fontWeight: 500 }}>{model.name}</span>
+                            {model.plan && (
+                              <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', backgroundColor: model.plan === 'Max' ? 'rgba(139,92,246,0.1)' : 'rgba(37,99,235,0.1)', color: model.plan === 'Max' ? '#8b5cf6' : '#2563eb', fontWeight: 600, textTransform: 'uppercase' as const }}>{model.plan}</span>
+                            )}
+                          </div>
+                          <span style={{ fontSize: '11px', color: 'var(--surbee-fg-muted)' }}>{model.provider}</span>
+                        </div>
+                      </div>
+                      <button
+                        className={`toggle-btn ${isOn ? 'active' : ''}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="toggle-thumb" />
+                      </button>
+                    </div>
+                  )
+                })
+              })()}
+            </div>
+          </div>
+
           {/* Save Button */}
           <div className="save-section">
             <button

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo, useDeferredValue } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy, Hammer, Terminal, AlertTriangle, Settings as SettingsIcon, Sun, Moon, Laptop, CheckCircle2, Coins } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Plus, Home, Library, Search, MessageSquare, Folder as FolderIcon, ArrowUp, User, ThumbsUp, HelpCircle, Gift, ChevronsLeft, Menu, AtSign, Settings2, Inbox, FlaskConical, BookOpen, X, Paperclip, History, Monitor, Smartphone, Tablet, ExternalLink, RotateCcw, Eye, GitBranch, Flag, PanelLeftClose, PanelLeftOpen, Share2, Copy, Hammer, Terminal, AlertTriangle, Settings as SettingsIcon, Sun, Moon, Laptop, CheckCircle2, Coins, Play, Square } from "lucide-react";
 import UserNameBadge from "@/components/UserNameBadge";
 import UserMenu from "@/components/ui/user-menu";
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -36,6 +36,10 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { ProjectSettings } from '@/components/project-manage/ProjectSettings';
 import { ModalSandboxPreview } from "@/components/sandbox/ModalSandboxPreview";
 import { useUserStore } from "@/stores/userStore";
+import { BlockPageEditor } from "@/components/block-editor/BlockPageEditor";
+import { SurveyRenderer } from "@/components/block-editor/SurveyRenderer";
+import { useBlockEditorStore } from "@/stores/blockEditorStore";
+import { useBlockEditorPersistence } from "@/hooks/useBlockEditorPersistence";
 
 interface ThinkingStep {
   id: string;
@@ -2576,6 +2580,17 @@ export default function ProjectPage() {
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const sandboxAvailable = Boolean(sandboxBundle);
 
+  // Block editor mode state
+  const [editorMode, setEditorMode] = useState<'sandbox' | 'blocks'>('blocks');
+  const blockEditorSurvey = useBlockEditorStore(s => s.survey);
+  const initBlockSurvey = useBlockEditorStore(s => s.initSurvey);
+  const blockEditorAvailable = Boolean(blockEditorSurvey);
+  const blockEditorHasContent = Boolean(blockEditorSurvey?.pages?.some(p => p.blocks.length > 0));
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+
+  // Auto-save block editor changes
+  useBlockEditorPersistence(projectId ?? null, user?.id ?? null);
+
   // Initialize selected model ONCE from sessionStorage
   const [selectedModel, setSelectedModel] = useState<AIModel>(() => {
     if (typeof window === 'undefined') return 'gpt-5';
@@ -2825,6 +2840,13 @@ export default function ProjectPage() {
       for (const part of msg.parts) {
         if (part.type.startsWith('tool-') && part.state === 'output-available') {
           const output = part.output as any;
+
+          // Block editor survey data from block tools
+          if (output?.block_survey) {
+            initBlockSurvey(output.block_survey);
+            setEditorMode('blocks');
+            continue;
+          }
 
           if (output?.source_files && Object.keys(output.source_files).length > 0) {
 
@@ -3171,9 +3193,14 @@ export default function ProjectPage() {
             // Project exists, use it
             setProject(data.project);
             
-            // CRITICAL: Restore sandbox_bundle from database if available
-            // This ensures the survey content persists across page navigations
-            if (data.project.sandbox_bundle && !sandboxBundle) {
+            // CRITICAL: Restore block_survey from database if available
+            if (data.project.block_survey && !blockEditorSurvey) {
+              initBlockSurvey(data.project.block_survey);
+              setEditorMode('blocks');
+            }
+
+            // Restore sandbox_bundle from database if available
+            if (data.project.sandbox_bundle && !sandboxBundle && !data.project.block_survey) {
               const restoredBundle: SandboxBundle = {
                 files: data.project.sandbox_bundle.files || {},
                 entry: data.project.sandbox_bundle.entry || '/App.tsx',
@@ -3482,6 +3509,8 @@ export default function ProjectPage() {
         userId: user?.id,
         userPreferences: userPreferences || undefined,
         thinking: true,
+        // Pass existing block survey so the agent knows the current state
+        existingBlockSurvey: blockEditorSurvey || undefined,
       }
     };
 
@@ -3540,9 +3569,9 @@ Please make changes specifically to this element.`;
   const handlePublish = useCallback(async () => {
     if (!projectId || !user?.id) return;
 
-    // Check if there's code in the sandbox
-    if (!sandboxAvailable || !sandboxBundle) {
-      setPublishSuccess('Please generate code before publishing');
+    // Check if there's content to publish (sandbox OR block editor)
+    if (!sandboxAvailable && !blockEditorAvailable) {
+      setPublishSuccess('Please generate content before publishing');
       setTimeout(() => setPublishSuccess(null), 3000);
       return;
     }
@@ -3551,25 +3580,24 @@ Please make changes specifically to this element.`;
     setPublishSuccess(null);
 
     try {
-      // First, ensure the sandbox bundle is saved to the project
+      // First, ensure content is saved to the project
       await fetch(`/api/projects/${projectId}/preview`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
-          sandboxBundle: sandboxBundle,
+          ...(blockEditorAvailable ? { blockSurvey: blockEditorSurvey } : { sandboxBundle: sandboxBundle }),
         })
       });
 
       // Then publish the project (creates it if it doesn't exist)
-      // CRITICAL: Include sandboxBundle to ensure it's saved with the published project
       const response = await fetch(`/api/projects/${projectId}/publish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
-          surveySchema: null, // Can add survey schema if needed
-          sandboxBundle: sandboxBundle, // Include the sandbox bundle for the shared survey
+          surveySchema: null,
+          ...(blockEditorAvailable ? { blockSurvey: blockEditorSurvey } : { sandboxBundle: sandboxBundle }),
           publishToMarketplace
         })
       });
@@ -3620,7 +3648,7 @@ Please make changes specifically to this element.`;
     } finally {
       setIsPublishing(false);
     }
-  }, [projectId, user?.id, publishToMarketplace, project, sandboxAvailable, sandboxBundle]);
+  }, [projectId, user?.id, publishToMarketplace, project, sandboxAvailable, sandboxBundle, blockEditorAvailable, blockEditorSurvey]);
 
   const copyPublishedLink = useCallback(async () => {
     if (!projectId) return;
@@ -4954,13 +4982,18 @@ Please make changes specifically to this element.`;
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => {
-                        if (previewUrl) {
+                        if (editorMode === 'blocks' && publishedUrl) {
+                          window.open(`/s/${publishedUrl}`, '_blank', 'noopener,noreferrer');
+                        } else if (editorMode === 'blocks') {
+                          // Open preview mode instead
+                          setIsPreviewMode(true);
+                        } else if (previewUrl) {
                           window.open(previewUrl, '_blank', 'noopener,noreferrer');
                         }
                       }}
                       className="aspect-square h-6 w-6 p-1 rounded-md transition-colors inline-flex items-center justify-center"
-                      style={{ color: 'var(--surbee-fg-secondary)', opacity: previewUrl ? 1 : 0.4, cursor: previewUrl ? 'pointer' : 'default' }}
-                      disabled={!previewUrl}
+                      style={{ color: 'var(--surbee-fg-secondary)', opacity: (previewUrl || editorMode === 'blocks') ? 1 : 0.4, cursor: (previewUrl || editorMode === 'blocks') ? 'pointer' : 'default' }}
+                      disabled={!previewUrl && editorMode !== 'blocks'}
                       onMouseEnter={(e) => {
                         if (!previewUrl) return;
                         const isDark = document.documentElement.classList.contains('dark');
@@ -5002,8 +5035,43 @@ Please make changes specifically to this element.`;
             </div>
           </div>
 
-          {/* Right Section - Upgrade & Publish Buttons */}
+          {/* Right Section - Preview, Upgrade & Publish Buttons */}
           <div className="relative flex items-center gap-2">
+            {/* Preview button — just play/pause icon with tooltip */}
+            {editorMode === 'blocks' && blockEditorAvailable && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="transition-all duration-150 cursor-pointer rounded-full inline-flex items-center justify-center"
+                    style={{
+                      width: 32,
+                      height: 32,
+                      backgroundColor: isPreviewMode
+                        ? (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
+                        : 'transparent',
+                      color: isDarkMode ? '#ffffff' : '#000000',
+                    }}
+                    onMouseEnter={(e) => {
+                      const isDark = document.documentElement.classList.contains('dark');
+                      e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isPreviewMode) e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                    onClick={() => setIsPreviewMode(v => !v)}
+                  >
+                    {isPreviewMode ? (
+                      <Square className="w-3 h-3" fill="currentColor" />
+                    ) : (
+                      <Play className="w-3.5 h-3.5" fill="currentColor" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={4}>
+                  {isPreviewMode ? 'Back to editor' : 'Preview'}
+                </TooltipContent>
+              </Tooltip>
+            )}
             <button
               className="relative px-3 py-1.5 font-medium text-sm transition-all duration-150 cursor-pointer rounded-full"
               style={{
@@ -5038,7 +5106,7 @@ Please make changes specifically to this element.`;
               project={project}
               publishedUrl={publishedUrl}
               isPublishing={isPublishing}
-              sandboxAvailable={sandboxAvailable}
+              sandboxAvailable={sandboxAvailable || blockEditorHasContent}
               onPublish={handlePublish}
             />
           </div>
@@ -5046,39 +5114,42 @@ Please make changes specifically to this element.`;
 
                   {/* Main Content Area */}
                 <div className="flex-1 flex relative overflow-hidden min-h-0">
-                  {/* Restored rounded preview frame with border, like before */}
-                  <div
-                    className="flex-1 flex flex-col relative rounded-[0.625rem] mt-3 mr-3 mb-3 ml-2 overflow-hidden"
-                    style={{
-                      backgroundColor: isDarkMode ? '#202020' : '#EBEBEB',
-                    }}
-                  >
+                  {editorMode === 'blocks' ? (
+                    /* Block editor — dark bg with page canvas inside */
                     <div
-                className="flex-1 overflow-hidden relative flex items-center justify-center"
-                style={{
-                  backgroundColor: isDarkMode ? '#202020' : '#EBEBEB'
-                }}
-              >
-                {/* Show loading state while AI is working */}
-                {(status === 'submitted' || status === 'streaming') && !sandboxAvailable ? (
-                  <div
-                    className="flex items-center justify-center h-full w-full"
-                  >
-                    <p className="text-sm" style={{ color: 'var(--surbee-fg-muted)' }}>Building</p>
-                  </div>
-                ) : sandboxAvailable ? (
-                  /* Show React preview when sandbox is available */
-                  <div className={`${getDeviceStyles()} transition-all duration-300 mx-auto`}>
-                    <ProjectPreviewOnly refreshKey={rendererKey} bundle={sandboxBundle} projectId={projectId} onPreviewUrlReady={(url) => setPreviewUrl(url)} onBuildError={handleSandboxFixRequest} />
-                  </div>
-                ) : (
-                  /* Waiting for content */
-                  <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--surbee-fg-secondary)' }}>
-                    <p>Start a conversation to see the preview</p>
-                  </div>
-                )}
-              </div>
-          </div>
+                      className="flex-1 flex flex-col relative rounded-[0.625rem] mt-3 mr-3 mb-3 ml-2 overflow-hidden"
+                      style={{ backgroundColor: isDarkMode ? '#0E0E0E' : '#EBEBEB' }}
+                    >
+                      <div className="flex-1 overflow-hidden relative">
+                        <BlockPageEditor isDarkMode={isDarkMode} isPreviewMode={isPreviewMode} />
+                      </div>
+                    </div>
+                  ) : (
+                    /* Sandbox / legacy mode — original #202020 container */
+                    <div
+                      className="flex-1 flex flex-col relative rounded-[0.625rem] mt-3 mr-3 mb-3 ml-2 overflow-hidden"
+                      style={{ backgroundColor: isDarkMode ? '#202020' : '#EBEBEB' }}
+                    >
+                      <div
+                        className="flex-1 overflow-hidden relative flex items-center justify-center"
+                        style={{ backgroundColor: isDarkMode ? '#202020' : '#EBEBEB' }}
+                      >
+                        {(status === 'submitted' || status === 'streaming') && !sandboxAvailable ? (
+                          <div className="flex items-center justify-center h-full w-full">
+                            <p className="text-sm" style={{ color: 'var(--surbee-fg-muted)' }}>Building</p>
+                          </div>
+                        ) : sandboxAvailable ? (
+                          <div className={`${getDeviceStyles()} transition-all duration-300 mx-auto`}>
+                            <ProjectPreviewOnly refreshKey={rendererKey} bundle={sandboxBundle} projectId={projectId} onPreviewUrlReady={(url) => setPreviewUrl(url)} onBuildError={handleSandboxFixRequest} />
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--surbee-fg-secondary)' }}>
+                            <p>Start a conversation to see the preview</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
         </div>
       </div>
 
@@ -5127,6 +5198,57 @@ Please make changes specifically to this element.`;
           projectId={projectId || ''}
           onClose={() => setIsProjectSettingsOpen(false)}
         />
+      )}
+
+      {/* Fullscreen Survey Preview */}
+      {isPreviewMode && blockEditorSurvey && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            backgroundColor: blockEditorSurvey.theme?.backgroundColor || '#ffffff',
+          }}
+        >
+          {/* Close bar */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 20px',
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.15), transparent)',
+          }}>
+            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', fontFamily: 'FK Grotesk, sans-serif' }}>
+              Preview Mode
+            </span>
+            <button
+              onClick={() => setIsPreviewMode(false)}
+              style={{
+                padding: '6px 16px',
+                borderRadius: '20px',
+                border: 'none',
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                backdropFilter: 'blur(8px)',
+                color: '#fff',
+                fontSize: '0.8rem',
+                fontWeight: 500,
+                cursor: 'pointer',
+                fontFamily: 'FK Grotesk, sans-serif',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.7)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.5)' }}
+            >
+              Exit Preview
+            </button>
+          </div>
+          <SurveyRenderer survey={blockEditorSurvey} isPreview />
+        </div>
       )}
     </div>
     </AppLayout>

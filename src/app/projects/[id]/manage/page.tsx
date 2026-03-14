@@ -658,6 +658,7 @@ export default function ProjectManagePage() {
 
   // Fetch project data to get sandbox bundle and active session
   const [sandboxBundle, setSandboxBundle] = useState<SandboxBundle | null>(null);
+  const [blockSurvey, setBlockSurvey] = useState<any>(null);
   const [activeChatSessionId, setActiveChatSessionId] = useState<string | null>(null);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const [isLoadingProject, setIsLoadingProject] = useState(true);
@@ -675,7 +676,10 @@ export default function ProjectManagePage() {
         if (response.ok) {
           const data = await response.json();
           if (data.project) {
-            // Load sandbox bundle
+            // Load block survey or sandbox bundle
+            if (data.project.block_survey) {
+              setBlockSurvey(data.project.block_survey);
+            }
             if (data.project.sandbox_bundle) {
               setSandboxBundle(data.project.sandbox_bundle);
             }
@@ -1062,6 +1066,19 @@ export default function ProjectManagePage() {
                                       }}
                                     >
                                       Evaluation
+                                      <span style={{
+                                        marginLeft: '6px',
+                                        fontSize: '10px',
+                                        fontWeight: 600,
+                                        padding: '2px 7px',
+                                        borderRadius: '5px',
+                                        backgroundColor: 'rgba(37,99,235,0.12)',
+                                        color: '#3b82f6',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.04em',
+                                        verticalAlign: 'middle',
+                                        lineHeight: '1.2',
+                                      }}>New</span>
                                     </button>
 
                                     <button
@@ -1227,7 +1244,7 @@ export default function ProjectManagePage() {
             </div>
           ) : (
             <div className="flex-1 overflow-auto" style={{ padding: '24px' }}>
-              {activeTab === 'preview' && <PreviewTab projectId={projectId} sandboxBundle={sandboxBundle} activeChatSessionId={activeChatSessionId} />}
+              {activeTab === 'preview' && <PreviewTab projectId={projectId} sandboxBundle={sandboxBundle} blockSurvey={blockSurvey} activeChatSessionId={activeChatSessionId} />}
               {activeTab === 'share' && <ShareTab projectId={projectId} publishedUrl={publishedUrl} />}
               {activeTab === 'settings' && <ProjectSettings projectId={projectId} />}
             </div>
