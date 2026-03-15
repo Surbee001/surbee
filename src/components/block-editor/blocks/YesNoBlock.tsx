@@ -13,7 +13,7 @@ export const YesNoBlock: React.FC<BlockComponentProps<'yes-no'>> = ({
   const content = block.content as YesNoContent
 
   return (
-    <div onClick={onFocus} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+    <div onClick={onFocus} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
         {isEditing ? (
           <input type="text" value={content.label} onChange={(e) => onContentChange({ label: e.target.value })} placeholder="Question label" style={{ background: 'transparent', border: 'none', outline: 'none', fontSize: '0.95rem', fontWeight: 600, color: 'var(--surbee-fg-primary)', padding: 0, width: '100%', fontFamily: 'inherit' }} />
@@ -23,16 +23,18 @@ export const YesNoBlock: React.FC<BlockComponentProps<'yes-no'>> = ({
         {content.required && <span style={{ color: '#ef4444', fontSize: '0.875rem' }}>*</span>}
       </div>
 
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <div style={{ display: 'flex', gap: '10px' }}>
         {[content.yesLabel || 'Yes', content.noLabel || 'No'].map((label, i) => (
           <button
             key={i}
             disabled
             style={{
-              flex: 1, padding: '10px 16px', border: '1px solid var(--surbee-border-primary)',
-              borderRadius: '8px', fontSize: '0.9rem', color: 'var(--surbee-fg-primary)',
+              flex: 1, padding: '12px 20px',
+              border: '1.5px solid var(--surbee-border-primary)',
+              borderRadius: '10px', fontSize: '0.9rem', fontWeight: 500,
+              color: 'var(--surbee-fg-primary)',
               backgroundColor: 'transparent', cursor: 'pointer', fontFamily: 'inherit',
-              opacity: 0.8, transition: 'all 0.15s',
+              opacity: 0.85, transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           >
             {label}

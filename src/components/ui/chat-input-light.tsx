@@ -1,10 +1,17 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo, useImperativeHandle, forwardRef } from "react";
-import { ArrowUp, Plus, X, Settings2, Crosshair, Eye, Lightbulb, Square, Hammer } from "lucide-react";
+import { ArrowUp, Plus, X, Settings2, Crosshair, Eye, Lightbulb, Square, Hammer, Search, Download } from "lucide-react";
 import ChatSettingsMenu from "@/components/ui/chat-settings-menu";
 import { ImageViewerModal } from "@/components/ui/image-viewer-modal";
 import ModelSelector, { AIModel } from "@/components/ui/model-selector";
+import { Paperclip } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 // Visual Editor Toggle Component
 interface VisualEditorToggleProps {
@@ -102,6 +109,9 @@ interface ChatInputLightProps {
   references?: ReferenceItem[]; // optional, referenced surveys/chats
   onRemoveReference?: (id: string) => void; // optional, callback to remove a reference
   forceDarkStyle?: boolean; // optional, forces dark mode styling regardless of theme
+  leftActions?: React.ReactNode; // optional, custom actions rendered at the start of the bottom toolbar
+  modelIconOnly?: boolean; // optional, renders model selector as circular icon button
+  attachAsDropdown?: boolean; // optional, renders + button as a sources dropdown instead of direct file picker
 }
 
 const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(function ChatInputLight({
@@ -140,6 +150,9 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
   forceDarkStyle = false,
   solidBackground = false,
   darkSolidBackground = false,
+  leftActions,
+  modelIconOnly = false,
+  attachAsDropdown = false,
 }, ref) {
   const [chatText, setChatText] = useState("");
   // Initialize theme by checking DOM immediately
@@ -508,7 +521,7 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
             : 'none',
           backgroundColor: solidBackground
             ? (detectedTheme === 'white'
-                ? (darkSolidBackground ? '#FFFFFF' : '#FFFFFF')
+                ? (darkSolidBackground ? '#FFFFFF' : '#EDEDED')
                 : (darkSolidBackground ? '#212122' : '#202020'))
             : 'transparent',
           boxShadow: shouldGlow
@@ -719,16 +732,82 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
               accept="image/*"
             />
             <div className="flex flex-row gap-1 items-center min-w-0 flex-1">
+              {leftActions}
               {!hideAttachButton && (
-                <button
-                  onClick={() => uploadInputRef.current?.click()}
-                  className={`inline-flex items-center justify-center rounded-md transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-[28px] w-7 ${detectedTheme === 'white' ? 'text-gray-700 hover:text-black hover:bg-black/5' : 'text-gray-300 hover:text-white hover:bg-white/5'}`}
-                  type="button"
-                  disabled={isInputDisabled}
-                  title="Add"
-                >
-                  <Plus className="h-3 w-3" />
-                </button>
+                attachAsDropdown ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className={`inline-flex items-center justify-center rounded-full transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-[28px] w-7 ${detectedTheme === 'white' ? 'text-gray-700 hover:text-black hover:bg-black/5' : 'text-gray-300 hover:text-white hover:bg-white/5'}`}
+                        type="button"
+                        disabled={isInputDisabled}
+                        title="Sources"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      side="bottom"
+                      style={{
+                        borderRadius: '24px',
+                        padding: '8px',
+                        border: '1px solid var(--surbee-dropdown-border)',
+                        backgroundColor: 'var(--surbee-dropdown-bg)',
+                        backdropFilter: 'blur(12px)',
+                        boxShadow: 'rgba(0, 0, 0, 0.2) 0px 7px 16px',
+                        width: '280px',
+                        fontFamily: "'Opening Hours Sans', sans-serif",
+                      }}
+                    >
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
+                        onSelect={() => uploadInputRef.current?.click()}
+                      >
+                        <div className="flex items-center gap-3 w-full">
+                          <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
+                            <path d="M12.405 8.789 8.17 13.024c-1.43 1.436-3.352 1.294-4.579.052-1.234-1.227-1.377-3.135.052-4.571l5.608-5.6c.86-.861 2.125-.98 2.948-.165.816.83.696 2.087-.157 2.948l-5.436 5.435c-.366.382-.815.27-1.07.015-.254-.261-.359-.695.008-1.077l3.86-3.846c.225-.232.24-.561.023-.778-.217-.21-.546-.194-.77.03L4.78 9.343c-.763.763-.734 1.93-.06 2.603.733.734 1.84.719 2.61-.052l5.467-5.466c1.399-1.399 1.339-3.24.12-4.459-1.19-1.19-3.06-1.28-4.46.12L2.813 7.742C.965 9.59 1.107 12.23 2.776 13.899c1.668 1.661 4.309 1.803 6.157-.037l4.272-4.273c.217-.217.217-.613-.007-.815-.217-.232-.569-.202-.793.015" />
+                          </svg>
+                          <span className="text-sm">Upload files</span>
+                        </div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-dropdown-text)', marginBottom: '1px' }}
+                        onSelect={() => {}}
+                      >
+                        <div className="flex items-center gap-3 w-full">
+                          <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'var(--surbee-dropdown-text-muted)' }}>
+                            <path d="M1.719 6.484a5.35 5.35 0 0 0 5.344 5.344 5.3 5.3 0 0 0 3.107-1.004l3.294 3.301a.8.8 0 0 0 .57.228c.455 0 .77-.342.77-.79a.77.77 0 0 0-.221-.55L11.308 9.72a5.28 5.28 0 0 0 1.098-3.235 5.35 5.35 0 0 0-5.344-5.343A5.35 5.35 0 0 0 1.72 6.484m1.145 0a4.2 4.2 0 0 1 4.199-4.198 4.2 4.2 0 0 1 4.198 4.198 4.2 4.2 0 0 1-4.198 4.199 4.2 4.2 0 0 1-4.2-4.199" />
+                          </svg>
+                          <span className="text-sm">Reference surveys or chats</span>
+                        </div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        style={{ borderRadius: '18px', padding: '10px 14px', color: 'var(--surbee-dropdown-text)' }}
+                        onSelect={() => {}}
+                      >
+                        <div className="flex items-center gap-3 w-full">
+                          <Download size={16} style={{ color: 'var(--surbee-dropdown-text-muted)' }} />
+                          <span className="text-sm">Import survey</span>
+                          <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-md" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', color: 'rgb(96, 165, 250)' }}>NEW</span>
+                        </div>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <button
+                    onClick={() => uploadInputRef.current?.click()}
+                    className={`inline-flex items-center justify-center rounded-full transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-[28px] w-7 ${detectedTheme === 'white' ? 'text-gray-700 hover:text-black hover:bg-black/5' : 'text-gray-300 hover:text-white hover:bg-white/5'}`}
+                    type="button"
+                    disabled={isInputDisabled}
+                    title="Add"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                )
               )}
               {showModelSelector && onModelChange && (
                 <ModelSelector
@@ -739,6 +818,7 @@ const ChatInputLight = forwardRef<ChatInputLightRef, ChatInputLightProps>(functi
                   userPlan={userPlan}
                   thinkingEnabled={thinkingEnabled}
                   onThinkingChange={onThinkingChange}
+                  iconOnly={modelIconOnly}
                 />
               )}
               {onToggleEditMode && (

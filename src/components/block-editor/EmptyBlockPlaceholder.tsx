@@ -76,6 +76,7 @@ export const EmptyBlockPlaceholder: React.FC<EmptyBlockPlaceholderProps> = ({ pa
           ref={inputRef}
           contentEditable
           suppressContentEditableWarning
+          spellCheck
           onKeyDown={handleKeyDown}
           onInput={handleInput}
           data-placeholder="Type text or / for blocks..."

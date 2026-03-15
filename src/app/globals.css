@@ -484,10 +484,9 @@ body {
   --surbee-sidebar-active: #DBDBDB;
   --surbee-sidebar-border: #DEDEDE;
 
-  /* Sidebar text - stays light since sidebar is always dark */
-  --surbee-sidebar-text-primary: #E8E8E8;
-  --surbee-sidebar-text-secondary: #d1d5db;
-  --surbee-sidebar-text-muted: #9ca3af;
+  --surbee-sidebar-text-primary: #0a0a0a;
+  --surbee-sidebar-text-secondary: #1f2937;
+  --surbee-sidebar-text-muted: #4b5563;
 
   --surbee-scrollbar: rgba(0, 0, 0, 0.3);
   --surbee-scrollbar-hover: rgba(0, 0, 0, 0.5);
@@ -1127,10 +1126,12 @@ body {
   width: 340px;
   height: 480px;
   max-height: calc(100vh - 100px);
-  background: #1E1E1F;
+  background: var(--surbee-bg-primary);
+  border: 1px solid var(--surbee-border-primary);
   border-radius: 12px;
   z-index: 1150;
   overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .inbox-popup-inner {
@@ -1150,7 +1151,7 @@ body {
   position: relative;
   display: flex;
   border-radius: 0.5rem;
-  background: hsl(60 3% 15%);
+  background: var(--surbee-bg-tertiary);
   padding: 0.25rem;
 }
 
@@ -1160,7 +1161,7 @@ body {
   top: 0.25rem;
   bottom: 0.25rem;
   border-radius: calc(0.5rem - 2px);
-  background: #1E1E1F;
+  background: var(--surbee-bg-primary);
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   transition: left 0.15s cubic-bezier(0, 0, 0.2, 1), width 0.15s cubic-bezier(0, 0, 0.2, 1);
 }
@@ -1180,17 +1181,17 @@ body {
   background: transparent;
   border: none;
   cursor: pointer;
-  color: hsl(40 9% 75%);
+  color: var(--surbee-fg-muted);
   transition: color 0.1s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: center;
 }
 
 .inbox-popup-tab:hover {
-  color: hsl(45 40% 98%);
+  color: var(--surbee-fg-primary);
 }
 
 .inbox-popup-tab.active {
-  color: hsl(45 40% 98%);
+  color: var(--surbee-fg-primary);
 }
 
 /* Content Area */
@@ -1226,7 +1227,7 @@ body {
 }
 
 .inbox-notification-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surbee-sidebar-hover);
 }
 
 .inbox-notification-row {
@@ -1241,7 +1242,7 @@ body {
   flex-shrink: 0;
   border-radius: 50%;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surbee-bg-tertiary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1278,21 +1279,21 @@ body {
 .inbox-notification-title {
   font-size: 14px;
   font-weight: 600;
-  color: rgb(255, 255, 255);
+  color: var(--surbee-fg-primary);
   margin: 0;
   line-height: 1.4;
 }
 
 .inbox-notification-desc {
   font-size: 13px;
-  color: rgb(153, 153, 153);
+  color: var(--surbee-fg-secondary);
   margin: 0;
   line-height: 1.5;
 }
 
 .inbox-notification-time {
   font-size: 12px;
-  color: rgb(102, 102, 102);
+  color: var(--surbee-fg-muted);
   margin-top: 4px;
 }
 
@@ -1313,17 +1314,17 @@ body {
 }
 
 .inbox-action-btn.secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgb(255, 255, 255);
+  background: var(--surbee-bg-tertiary);
+  color: var(--surbee-fg-primary);
 }
 
 .inbox-action-btn.secondary:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--surbee-sidebar-hover);
 }
 
 .inbox-action-btn.primary {
-  background: rgb(255, 255, 255);
-  color: rgb(0, 0, 0);
+  background: var(--surbee-fg-primary);
+  color: var(--surbee-bg-primary);
 }
 
 .inbox-action-btn.primary:hover {
@@ -1345,7 +1346,7 @@ body {
 }
 
 .inbox-news-item:hover {
-  background: hsl(60 3% 15%);
+  background: var(--surbee-bg-tertiary);
 }
 
 .inbox-news-item-inner {
@@ -1376,7 +1377,7 @@ body {
 .inbox-news-title {
   font-size: 1rem;
   font-weight: 480;
-  color: hsl(45 40% 98%);
+  color: var(--surbee-fg-primary);
   margin: 0;
   line-height: 1.25;
   overflow: hidden;
@@ -1386,14 +1387,14 @@ body {
 }
 
 .inbox-news-item:hover .inbox-news-title {
-  color: hsl(45 40% 98%);
+  color: var(--surbee-fg-primary);
 }
 
 .inbox-news-arrow {
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
-  color: hsl(40 9% 75%);
+  color: var(--surbee-fg-muted);
   opacity: 0;
   transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -1404,7 +1405,7 @@ body {
 
 .inbox-news-desc {
   font-size: 0.875rem;
-  color: hsl(40 9% 75%);
+  color: var(--surbee-fg-secondary);
   margin: 0;
   margin-bottom: 0.5rem;
   line-height: 1.5;
@@ -1416,7 +1417,7 @@ body {
 
 .inbox-news-time {
   font-size: 0.875rem;
-  color: hsl(40 9% 75%);
+  color: var(--surbee-fg-muted);
 }
 
 /* News Image - Small (thumbnail on right) */
@@ -1427,7 +1428,7 @@ body {
   flex-shrink: 0;
   overflow: hidden;
   border-radius: 0.75rem;
-  border: 1px solid hsl(60 1% 25%);
+  border: 1px solid var(--surbee-border-primary);
   background: linear-gradient(to bottom right, #a855f7, #2563eb);
 }
 
@@ -1459,7 +1460,7 @@ body {
   aspect-ratio: 3 / 2;
   margin-bottom: 0.75rem;
   border-radius: 0.75rem;
-  border: 1px solid hsl(60 1% 25%);
+  border: 1px solid var(--surbee-border-primary);
   background: linear-gradient(to bottom right, #a855f7, #2563eb);
   overflow: hidden;
 }
@@ -1471,13 +1472,13 @@ body {
   bottom: 80px;
   z-index: 1200;
   border: none;
-  background: #1E1E1F;
-  color: #E8E8E8;
+  background: var(--surbee-bg-primary);
+  color: var(--surbee-fg-primary);
   border-radius: 0.75rem;
   min-width: 8rem;
   width: 17rem;
   padding: 0.5rem;
-  box-shadow: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(32px) saturate(180%);
   -webkit-backdrop-filter: blur(32px) saturate(180%);
   -webkit-font-smoothing: antialiased;
@@ -1495,7 +1496,7 @@ body {
 
 /* Header Section with User Info */
 .user-menu-header-wrapper {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--surbee-border-primary);
   margin-bottom: 0.25rem;
   overflow: hidden;
 }
@@ -1517,7 +1518,7 @@ body {
 }
 
 .user-menu-header-section.clickable:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surbee-sidebar-hover);
 }
 
 .user-menu-header-info {
@@ -1548,7 +1549,7 @@ body {
   font-weight: 600;
   line-height: 1.5;
   letter-spacing: 0.009em;
-  color: #E8E8E8;
+  color: var(--surbee-fg-primary);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -1559,7 +1560,7 @@ body {
   font-weight: 456;
   line-height: 1.43;
   letter-spacing: 0.014em;
-  color: hsl(0, 0%, 68%);
+  color: var(--surbee-fg-muted);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -1579,8 +1580,8 @@ body {
   font-weight: 600;
   line-height: 1.43;
   letter-spacing: 0.014em;
-  background: hsl(0, 0%, 93%, 0.08);
-  color: #E8E8E8;
+  background: var(--surbee-bg-tertiary);
+  color: var(--surbee-fg-primary);
   border: none;
   cursor: pointer;
   transition: background-color 0.15s cubic-bezier(0, 0, 0.2, 1);
@@ -1589,7 +1590,7 @@ body {
 }
 
 .user-menu-setup-profile:hover {
-  background: hsl(0, 0%, 93%, 0.12);
+  background: var(--surbee-sidebar-hover);
 }
 
 /* Icon circle for Request app and Settings */
@@ -1600,8 +1601,8 @@ body {
   width: 1.25rem;
   height: 1.25rem;
   border-radius: 50%;
-  background-color: hsl(0, 0%, 93%, 0.08);
-  color: #E8E8E8;
+  background-color: var(--surbee-bg-tertiary);
+  color: var(--surbee-fg-primary);
   flex-shrink: 0;
 }
 
@@ -1618,7 +1619,7 @@ body {
   font-weight: 456;
   line-height: 1.43;
   letter-spacing: 0.014em;
-  color: #E8E8E8;
+  color: var(--surbee-fg-primary);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -1627,7 +1628,7 @@ body {
 }
 
 .user-menu-item:hover {
-  background: hsl(0, 0%, 93%, 0.08);
+  background: var(--surbee-sidebar-hover);
 }
 
 /* Theme section */
@@ -1645,14 +1646,14 @@ body {
   font-weight: 456;
   line-height: 1.43;
   letter-spacing: 0.014em;
-  color: #E8E8E8;
+  color: var(--surbee-fg-primary);
 }
 
 .user-menu-theme-toggle {
   display: flex;
   gap: 0.25rem;
   padding: 0.25rem;
-  background: hsl(0, 0%, 93%, 0.08);
+  background: var(--surbee-bg-tertiary);
   border-radius: 9999px;
 }
 
@@ -1665,19 +1666,19 @@ body {
   border-radius: 9999px;
   background: transparent;
   border: none;
-  color: hsl(0, 0%, 68%);
+  color: var(--surbee-fg-muted);
   cursor: pointer;
   transition: background-color 0.15s cubic-bezier(0, 0, 0.2, 1), color 0.15s cubic-bezier(0, 0, 0.2, 1);
 }
 
 .user-menu-theme-btn:hover {
-  background: hsl(0, 0%, 93%, 0.12);
-  color: #E8E8E8;
+  background: var(--surbee-sidebar-hover);
+  color: var(--surbee-fg-primary);
 }
 
 .user-menu-theme-btn.active {
-  background: hsl(0, 0%, 93%, 0.15);
-  color: #E8E8E8;
+  background: var(--surbee-sidebar-active);
+  color: var(--surbee-fg-primary);
 }
 
 /* New badge for Merch */
@@ -1699,14 +1700,14 @@ body {
   gap: 0.75rem;
   padding: 0.75rem 0.75rem 0.5rem;
   margin-top: 0.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--surbee-border-primary);
   -webkit-font-smoothing: antialiased;
 }
 
 .user-menu-footer-link {
   background: none;
   border: none;
-  color: hsl(0, 0%, 68%);
+  color: var(--surbee-fg-muted);
   font-size: 0.75rem;
   font-weight: 456;
   cursor: pointer;
@@ -1717,7 +1718,7 @@ body {
 }
 
 .user-menu-footer-link:hover {
-  color: #E8E8E8;
+  color: var(--surbee-fg-primary);
 }
 
 /* Switch Account Items */
@@ -1733,7 +1734,7 @@ body {
 }
 
 .user-menu-switch-item:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surbee-sidebar-hover);
 }
 
 .user-menu-switch-avatar {
@@ -1741,7 +1742,7 @@ body {
   height: 28px;
   border-radius: 50%;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surbee-bg-tertiary);
   display: flex;
   align-items: center;
   justify-content: center;

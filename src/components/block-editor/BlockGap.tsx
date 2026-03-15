@@ -77,7 +77,7 @@ export const BlockGap: React.FC<BlockGapProps> = ({ pageId, afterBlockId, before
         minHeight: active ? '28px' : '6px',
         cursor: 'text',
         position: 'relative',
-        transition: 'min-height 0.1s ease',
+        transition: 'min-height 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
       onClick={() => inputRef.current?.focus()}
     >
@@ -85,6 +85,7 @@ export const BlockGap: React.FC<BlockGapProps> = ({ pageId, afterBlockId, before
         ref={inputRef}
         contentEditable
         suppressContentEditableWarning
+        spellCheck
         onKeyDown={handleKeyDown}
         onInput={handleInput}
         onFocus={handleFocus}
@@ -98,7 +99,7 @@ export const BlockGap: React.FC<BlockGapProps> = ({ pageId, afterBlockId, before
           fontFamily: 'inherit',
           lineHeight: 1.6,
           opacity: active ? 1 : 0,
-          transition: 'opacity 0.1s, min-height 0.1s, padding 0.1s',
+          transition: 'opacity 0.15s ease, min-height 0.15s cubic-bezier(0.4, 0, 0.2, 1), padding 0.15s ease',
         }}
       />
     </div>

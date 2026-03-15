@@ -3627,6 +3627,43 @@ Please make changes specifically to this element.`;
 
       const data = await response.json();
 
+      // Extract and save questions from block survey for insights
+      if (blockEditorAvailable && blockEditorSurvey) {
+        const questionTypes = new Set([
+          'text-input', 'textarea', 'radio', 'checkbox', 'select',
+          'scale', 'nps', 'slider', 'yes-no', 'date-picker',
+          'matrix', 'ranking', 'file-upload', 'likert', 'image-choice'
+        ])
+        const extractedQuestions: any[] = []
+        let orderIndex = 0
+        for (const page of (blockEditorSurvey.pages || [])) {
+          for (const block of (page.blocks || [])) {
+            if (questionTypes.has(block.type)) {
+              const content = block.content as any
+              extractedQuestions.push({
+                question_id: block.meta?.questionId || block.id,
+                question_text: content.label || content.text || `Question ${orderIndex + 1}`,
+                question_type: block.type,
+                options: content.options || null,
+                required: content.required || false,
+                order_index: orderIndex,
+                scale_min: content.min ?? null,
+                scale_max: content.max ?? null,
+                metadata: { blockId: block.id, pageId: page.id },
+              })
+              orderIndex++
+            }
+          }
+        }
+        if (extractedQuestions.length > 0) {
+          fetch(`/api/projects/${projectId}/questions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ questions: extractedQuestions }),
+          }).catch(() => {}) // fire and forget
+        }
+      }
+
       if (data.success && data.publishedUrl) {
         setPublishedUrl(data.publishedUrl);
         setPublishSuccess(project?.status === 'published' ? 'Survey updated successfully!' : 'Survey published successfully!');
@@ -4176,7 +4213,7 @@ Please make changes specifically to this element.`;
         <div className="relative flex items-center px-3 pt-3 pb-0">
           <button
             onClick={() => setIsUserMenuOpen((v) => !v)}
-            className="flex items-center gap-1.5 rounded-md transition-colors hover:bg-white/5"
+            className="flex items-center gap-1.5 rounded-md transition-colors hover:bg-foreground/5"
             style={{
               cursor: 'pointer',
               padding: '8px 12px',
@@ -4394,31 +4431,22 @@ Please make changes specifically to this element.`;
                 {/* Footer */}
                 <div className="user-menu-footer">
                   <button
-                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/privacy'); }}
+                    onClick={() => { setIsUserMenuOpen(false); window.open('https://surbee.dev/privacy', '_blank'); }}
                     className="user-menu-footer-link"
                   >
                     Privacy
                   </button>
                   <button
-                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/terms'); }}
+                    onClick={() => { setIsUserMenuOpen(false); window.open('https://surbee.dev/terms', '_blank'); }}
                     className="user-menu-footer-link"
                   >
                     Terms
                   </button>
                   <button
-                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/copyright'); }}
+                    onClick={() => { setIsUserMenuOpen(false); window.open('https://surbee.dev/refundpolicy', '_blank'); }}
                     className="user-menu-footer-link"
                   >
-                    Copyright
-                  </button>
-                  <button
-                    onClick={() => { setIsUserMenuOpen(false); window.open('https://x.com/surbee', '_blank'); }}
-                    className="user-menu-footer-link"
-                    aria-label="X (Twitter)"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                    </svg>
+                    Refund Policy
                   </button>
                 </div>
               </motion.div>
@@ -4427,7 +4455,15 @@ Please make changes specifically to this element.`;
         </div>
 
         {/* Chat Area in Sidebar */}
-          <div className="flex-1 flex flex-col min-h-0">
+          <div
+            className="flex-1 flex flex-col min-h-0 ml-3 mr-1.5 mb-3 overflow-hidden"
+            style={{
+              backgroundColor: isDarkMode ? 'transparent' : '#F4F4F4',
+              borderRadius: isDarkMode ? 0 : '0.625rem',
+              border: isDarkMode ? 'none' : '1px solid rgba(0,0,0,0.08)',
+              marginTop: '12px',
+            }}
+          >
             {sidebarView === 'history' ? (
               /* Version History View */
               <div className="flex-1 overflow-hidden">
@@ -4665,7 +4701,7 @@ Please make changes specifically to this element.`;
                                 <TooltipTrigger asChild>
                                   <button
                                     onClick={handleRetry}
-                                    className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+                                    className="p-1.5 rounded-md hover:bg-foreground/10 transition-colors"
                                     disabled={!(status === 'ready' || status === 'error')}
                                   >
                                     <RotateCcw className="w-4 h-4 text-muted-foreground" />
@@ -4681,7 +4717,7 @@ Please make changes specifically to this element.`;
                                       const textContent = msg.parts?.find(p => p.type === 'text')?.text || '';
                                       handleCopyMessage(msg.id, textContent);
                                     }}
-                                    className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+                                    className="p-1.5 rounded-md hover:bg-foreground/10 transition-colors"
                                   >
                                     {copiedMessageId === msg.id ? (
                                       <CheckCircle2 className="w-4 h-4 text-green-500" />
@@ -4700,7 +4736,7 @@ Please make changes specifically to this element.`;
                                       const textContent = msg.parts?.find(p => p.type === 'text')?.text || '';
                                       handleFeedback(msg.id, 'up', textContent);
                                     }}
-                                    className={`p-1.5 rounded-md hover:bg-white/10 transition-colors ${feedbackGiven[msg.id] === 'up' ? 'bg-white/10' : ''}`}
+                                    className={`p-1.5 rounded-md hover:bg-foreground/10 transition-colors ${feedbackGiven[msg.id] === 'up' ? 'bg-foreground/10' : ''}`}
                                     disabled={!!feedbackGiven[msg.id]}
                                   >
                                     <ThumbsUp className={`w-4 h-4 ${feedbackGiven[msg.id] === 'up' ? 'text-green-500' : 'text-muted-foreground'}`} />
@@ -4716,7 +4752,7 @@ Please make changes specifically to this element.`;
                                       const textContent = msg.parts?.find(p => p.type === 'text')?.text || '';
                                       handleFeedback(msg.id, 'down', textContent);
                                     }}
-                                    className={`p-1.5 rounded-md hover:bg-white/10 transition-colors ${feedbackGiven[msg.id] === 'down' ? 'bg-white/10' : ''}`}
+                                    className={`p-1.5 rounded-md hover:bg-foreground/10 transition-colors ${feedbackGiven[msg.id] === 'down' ? 'bg-foreground/10' : ''}`}
                                     disabled={!!feedbackGiven[msg.id]}
                                   >
                                     <svg className={`w-4 h-4 ${feedbackGiven[msg.id] === 'down' ? 'text-red-500' : 'text-muted-foreground'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4754,12 +4790,21 @@ Please make changes specifically to this element.`;
                                     <div className="flex h-4 w-4 shrink-0 items-end justify-start">
                                       <div
                                         className="h-1/2 w-1/2 self-start rounded-bl-sm border-b border-l"
-                                        style={{ borderColor: 'rgba(255,255,255,0.2)' }}
+                                        style={{ borderColor: 'var(--surbee-fg-secondary)', opacity: 0.2 }}
                                       />
                                     </div>
                                     <button
                                       onClick={() => handleSuggestionClick(suggestion)}
-                                      className="px-3.5 py-2 text-[13px] text-muted-foreground bg-white/5 hover:bg-white/10 rounded-full transition-colors duration-150 hover:text-foreground"
+                                      className="px-3.5 py-2 text-[13px] text-muted-foreground rounded-full transition-colors duration-150 hover:text-foreground"
+                                      style={{
+                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.1)'
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
+                                      }}
                                     >
                                       {suggestion.length > 50 ? suggestion.slice(0, 50) + '...' : suggestion}
                                     </button>
@@ -4796,62 +4841,65 @@ Please make changes specifically to this element.`;
                 </div>
               </div>
             )}
-          </div>
 
-        {/* Chat Input - overlaps messages area for scroll-behind effect */}
-        <div className="pl-4 pr-2 pb-3 relative z-20" style={{ backgroundColor: 'var(--surbee-sidebar-bg)', marginTop: '-64px' }}>
-          {/* Gradient fade above chatbox */}
-          <div className="absolute left-0 right-0 pointer-events-none" style={{ top: '-40px', height: '40px', background: 'linear-gradient(to bottom, transparent, var(--surbee-sidebar-bg))' }} />
-          <div className="relative ml-0 mr-0">
-            {/* Selected Element Indicator - matches agent reference pill style */}
-            {visualEditElement && (
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                <div
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs"
-                  style={{
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    color: 'rgb(59, 130, 246)',
-                  }}
-                >
-                  <Eye className="w-3 h-3" />
-                  <span className="max-w-[150px] truncate">
-                    {visualEditElement.selector}
-                  </span>
-                  <button
-                    onClick={() => setVisualEditElement(null)}
-                    className="flex items-center justify-center w-3.5 h-3.5 hover:bg-blue-500/20 rounded-full transition-colors"
-                    title="Clear selection"
-                  >
-                    <X className="w-2.5 h-2.5" />
-                  </button>
+            {/* Chat Input - overlaps messages area for scroll-behind effect */}
+            {sidebarView !== 'history' && (
+              <div className="relative z-20" style={{ marginTop: '-64px' }}>
+                {/* Gradient fade above chatbox */}
+                <div className="pointer-events-none" style={{ height: '40px', background: isDarkMode ? 'linear-gradient(to bottom, transparent, var(--surbee-sidebar-bg))' : 'linear-gradient(to bottom, transparent, #F4F4F4)' }} />
+                <div className="relative pl-4 pr-2 pb-3" style={{ backgroundColor: isDarkMode ? 'var(--surbee-sidebar-bg)' : '#F4F4F4' }}>
+                  {/* Selected Element Indicator - matches agent reference pill style */}
+                  {visualEditElement && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      <div
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs"
+                        style={{
+                          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                          color: 'rgb(59, 130, 246)',
+                        }}
+                      >
+                        <Eye className="w-3 h-3" />
+                        <span className="max-w-[150px] truncate">
+                          {visualEditElement.selector}
+                        </span>
+                        <button
+                          onClick={() => setVisualEditElement(null)}
+                          className="flex items-center justify-center w-3.5 h-3.5 hover:bg-blue-500/20 rounded-full transition-colors"
+                          title="Clear selection"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {/* Chat input container */}
+                  <div className="relative">
+                    <ChatInputLight
+                      onSendMessage={(message, files) => handleSubmit(message, files)}
+                      isInputDisabled={status !== 'ready'}
+                      placeholder={visualEditElement ? "Describe changes for this element..." : (hasStartedChat ? "Ask for a follow-up" : "Ask Surbee to build a survey...")}
+                      className="chat-input-grey"
+                      isEditMode={isEditMode}
+                      onToggleEditMode={() => setIsEditMode(!isEditMode)}
+                      showSettings={false}
+                      selectedElement={null}
+                      disableRotatingPlaceholders={hasStartedChat}
+                      onClearSelection={() => {}}
+                      showModelSelector={true}
+                      modelIconOnly={true}
+                      attachAsDropdown={true}
+                      selectedModel={selectedModel}
+                      onModelChange={handleModelChange}
+                      isBusy={status === 'submitted' || status === 'streaming'}
+                      onStop={stop}
+                      solidBackground={true}
+                      userPlan={credits?.plan || 'free_user'}
+                    />
+                  </div>
                 </div>
               </div>
             )}
-            {/* (Suggestion pills are rendered inside the chat scroll area above) */}
-            {/* Chat input container to anchor controls to the box itself */}
-            <div className="relative">
-              <ChatInputLight
-                onSendMessage={(message, files) => handleSubmit(message, files)}
-                isInputDisabled={status !== 'ready'}
-                placeholder={visualEditElement ? "Describe changes for this element..." : (hasStartedChat ? "Ask for a follow-up" : "Ask Surbee to build a survey...")}
-                className="chat-input-grey"
-                isEditMode={isEditMode}
-                onToggleEditMode={() => setIsEditMode(!isEditMode)}
-                showSettings={false}
-                selectedElement={null}
-                disableRotatingPlaceholders={hasStartedChat}
-                onClearSelection={() => {}}
-                showModelSelector={false}
-                selectedModel={selectedModel}
-                onModelChange={handleModelChange}
-                isBusy={status === 'submitted' || status === 'streaming'}
-                onStop={stop}
-                solidBackground={true}
-                userPlan={credits?.plan || 'free_user'}
-              />
-            </div>
-        </div>
-      </div>
+          </div>
       </div>
 
       {/* Right Side - Preview */}
@@ -4866,8 +4914,8 @@ Please make changes specifically to this element.`;
                 <button
                   className={`rounded-md transition-colors cursor-pointer ${
                     isChatHidden
-                      ? 'text-gray-400 hover:text-white hover:bg-white/5'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      ? 'text-gray-400 hover:text-foreground hover:bg-foreground/5'
+                      : 'text-gray-400 hover:text-foreground hover:bg-foreground/5'
                   }`}
                   onClick={() => setIsChatHidden(v => !v)}
                   style={{
@@ -4885,8 +4933,8 @@ Please make changes specifically to this element.`;
                 <button
                   className={`rounded-md transition-colors cursor-pointer ${
                     sidebarView === 'history'
-                      ? 'text-white bg-white/10'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      ? 'text-foreground bg-foreground/10'
+                      : 'text-gray-400 hover:text-foreground hover:bg-foreground/5'
                   }`}
                   onClick={() => setSidebarView((current) => current === 'history' ? 'chat' : 'history')}
                   aria-pressed={sidebarView === 'history'}
@@ -4905,7 +4953,7 @@ Please make changes specifically to this element.`;
           {/* Center Section - Device Controls */}
           <div className="hidden md:flex flex-1 items-center justify-center">
             <div className="relative flex h-8 min-w-[340px] max-w-[560px] items-center justify-between gap-2 rounded-full px-1 text-sm page-dropdown" style={{
-              backgroundColor: isDarkMode ? '#1f1f1f' : 'var(--surbee-sidebar-bg)'
+              backgroundColor: isDarkMode ? '#1f1f1f' : 'rgba(0,0,0,0.06)'
             }}>
               {/* Device View Buttons - Hidden on mobile */}
               <div className="hidden md:flex items-center gap-0.5">
@@ -5152,11 +5200,11 @@ Please make changes specifically to this element.`;
                     onClick={() => setIsProjectSettingsOpen(true)}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" />
-                      <circle cx="12" cy="12" r="4" />
-                      <line x1="21.17" y1="8" x2="12" y2="8" />
-                      <line x1="3.95" y1="6.06" x2="8.54" y2="14" />
-                      <line x1="10.88" y1="21.94" x2="15.46" y2="14" />
+                      <circle cx="13.5" cy="6.5" r="0.5" fill="currentColor" />
+                      <circle cx="17.5" cy="10.5" r="0.5" fill="currentColor" />
+                      <circle cx="8.5" cy="7.5" r="0.5" fill="currentColor" />
+                      <circle cx="6.5" cy="12.5" r="0.5" fill="currentColor" />
+                      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
                     </svg>
                   </button>
                 </TooltipTrigger>

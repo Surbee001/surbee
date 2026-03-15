@@ -30,7 +30,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Project not found or unauthorized' }, { status: 403 })
     }
 
-    // Fetch questions
+    // Fetch questions from survey_questions table
     const { data: questions, error: questionsError } = await supabaseAdmin
       .from('survey_questions')
       .select('*')
@@ -39,6 +39,52 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     if (questionsError) {
       return NextResponse.json({ error: questionsError.message }, { status: 500 })
+    }
+
+    // If no questions in table, extract from block_survey JSONB
+    if (!questions || questions.length === 0) {
+      const { data: projectData } = await supabaseAdmin
+        .from('projects')
+        .select('block_survey')
+        .eq('id', projectId)
+        .single()
+
+      if (projectData?.block_survey) {
+        const blockSurvey = projectData.block_survey as any
+        const extractedQuestions: any[] = []
+        let orderIndex = 0
+
+        const questionTypes = new Set([
+          'text-input', 'textarea', 'radio', 'checkbox', 'select',
+          'scale', 'nps', 'slider', 'yes-no', 'date-picker',
+          'matrix', 'ranking', 'file-upload', 'likert', 'image-choice'
+        ])
+
+        for (const page of (blockSurvey.pages || [])) {
+          for (const block of (page.blocks || [])) {
+            if (questionTypes.has(block.type)) {
+              const content = block.content || {}
+              extractedQuestions.push({
+                project_id: projectId,
+                question_id: block.meta?.questionId || block.id,
+                question_text: content.label || content.text || `Question ${orderIndex + 1}`,
+                question_type: block.type,
+                options: content.options || null,
+                required: content.required || false,
+                order_index: orderIndex,
+                scale_min: content.min ?? content.scaleMin ?? null,
+                scale_max: content.max ?? content.scaleMax ?? null,
+                metadata: { blockId: block.id, pageId: page.id },
+              })
+              orderIndex++
+            }
+          }
+        }
+
+        if (extractedQuestions.length > 0) {
+          return NextResponse.json({ questions: extractedQuestions, source: 'block_survey' })
+        }
+      }
     }
 
     return NextResponse.json({ questions: questions || [] })

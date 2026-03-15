@@ -17,6 +17,7 @@ import { PageNavigator } from './PageNavigator'
 import { SlashMenu } from './SlashMenu'
 import { PageCardMenu } from './PageCardMenu'
 import { LAYOUT_TEMPLATES, SURVEY_TEMPLATES, getTemplateCategories, type SurveyTemplate } from '@/lib/block-editor/templates'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { createDefaultPage } from '@/lib/block-editor/block-defaults'
 
 interface BlockPageEditorProps {
@@ -250,23 +251,6 @@ export const BlockPageEditor: React.FC<BlockPageEditorProps> = ({
                     </div>
                   </TemplateCardWithTooltip>
 
-                  {/* Generate with AI button */}
-                  <TemplateCardWithTooltip
-                    label="Generate"
-                    description="Let AI build your survey"
-                    onClick={() => {
-                      const chatInput = document.querySelector('.chat-input-grey [contenteditable]') as HTMLElement
-                      if (chatInput) chatInput.focus()
-                    }}
-                  >
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" />
-                        <path d="M18 15l.75 2.25L21 18l-2.25.75L18 21l-.75-2.25L15 18l2.25-.75L18 15z" />
-                      </svg>
-                      <span style={{ fontSize: '12px', fontWeight: 500, color: '#888' }}>Generate</span>
-                    </div>
-                  </TemplateCardWithTooltip>
                 </div>
               </div>
             </div>
@@ -287,14 +271,13 @@ export const BlockPageEditor: React.FC<BlockPageEditorProps> = ({
                   maxWidth: 1040,
                   minHeight: '400px',
                   borderRadius: '10px',
-                  overflow: 'hidden',
                   backgroundColor: pageBg,
                   flexShrink: 0,
                   display: 'flex',
                   flexDirection: 'column',
-                  boxShadow: isActive ? selectedGlow : 'none',
-                  border: isActive ? 'none' : `1px solid ${unselectedBorder}`,
-                  transition: 'box-shadow 0.2s ease',
+                  boxShadow: isActive ? '0 0 0 1px rgba(37,99,235,0.15)' : 'none',
+                  border: isActive ? '2px solid rgba(37,99,235,0.5)' : `1px solid ${unselectedBorder}`,
+                  transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
                   cursor: isActive ? 'default' : 'pointer',
                   position: 'relative',
                 }}
@@ -432,73 +415,42 @@ const TemplateCardWithTooltip: React.FC<{
   onClick: () => void
   children: React.ReactNode
 }> = ({ label, description, onClick, children }) => {
-  const [showTooltip, setShowTooltip] = useState(false)
-
   return (
-    <div style={{ position: 'relative' }}>
-      <button
-        onClick={onClick}
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
-        style={{
-          width: '140px',
-          height: '100px',
-          borderRadius: '10px',
-          border: '1px solid #e5e5e5',
-          backgroundColor: '#fafafa',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '12px',
-          transition: 'all 0.15s',
-        }}
-        onMouseOver={(e) => {
-          e.currentTarget.style.borderColor = '#ccc'
-          e.currentTarget.style.backgroundColor = '#f5f5f5'
-          e.currentTarget.style.transform = 'translateY(-1px)'
-        }}
-        onMouseOut={(e) => {
-          e.currentTarget.style.borderColor = '#e5e5e5'
-          e.currentTarget.style.backgroundColor = '#fafafa'
-          e.currentTarget.style.transform = 'translateY(0)'
-        }}
-      >
-        {children}
-      </button>
-      {showTooltip && (
-        <div style={{
-          position: 'absolute',
-          bottom: '100%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          marginBottom: '8px',
-          padding: '8px 12px',
-          backgroundColor: '#1a1a1a',
-          color: '#fff',
-          borderRadius: '8px',
-          fontSize: '12px',
-          whiteSpace: 'nowrap',
-          zIndex: 100,
-          pointerEvents: 'none',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          textAlign: 'center',
-          lineHeight: 1.4,
-        }}>
-          <div style={{ fontWeight: 600 }}>{label}</div>
-          <div style={{ opacity: 0.7, fontSize: '11px' }}>{description}</div>
-          <div style={{
-            position: 'absolute',
-            bottom: '-4px',
-            left: '50%',
-            transform: 'translateX(-50%) rotate(45deg)',
-            width: '8px',
-            height: '8px',
-            backgroundColor: '#1a1a1a',
-          }} />
-        </div>
-      )}
-    </div>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={onClick}
+          style={{
+            width: '140px',
+            height: '100px',
+            borderRadius: '10px',
+            border: '1px solid #e5e5e5',
+            backgroundColor: '#fafafa',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '12px',
+            transition: 'all 0.15s',
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.borderColor = '#ccc'
+            e.currentTarget.style.backgroundColor = '#f5f5f5'
+            e.currentTarget.style.transform = 'translateY(-1px)'
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.borderColor = '#e5e5e5'
+            e.currentTarget.style.backgroundColor = '#fafafa'
+            e.currentTarget.style.transform = 'translateY(0)'
+          }}
+        >
+          {children}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={8}>
+        {label}
+      </TooltipContent>
+    </Tooltip>
   )
 }
 

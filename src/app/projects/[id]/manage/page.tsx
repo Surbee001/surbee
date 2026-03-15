@@ -1243,7 +1243,7 @@ export default function ProjectManagePage() {
               </div>
             </div>
           ) : (
-            <div className="flex-1 overflow-auto" style={{ padding: '24px' }}>
+            <div className="flex-1 overflow-auto" style={{ padding: activeTab === 'preview' || activeTab === 'share' ? '0' : '24px', position: 'relative' }}>
               {activeTab === 'preview' && <PreviewTab projectId={projectId} sandboxBundle={sandboxBundle} blockSurvey={blockSurvey} activeChatSessionId={activeChatSessionId} />}
               {activeTab === 'share' && <ShareTab projectId={projectId} publishedUrl={publishedUrl} />}
               {activeTab === 'settings' && <ProjectSettings projectId={projectId} />}

@@ -30,6 +30,7 @@ import { FileUploadBlock } from './FileUploadBlock'
 import { LikertBlock } from './LikertBlock'
 import { ImageChoiceBlock } from './ImageChoiceBlock'
 import { ColumnsBlock } from './ColumnsBlock'
+import { TableBlock } from './TableBlock'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const BlockRegistry: Record<BlockType, React.FC<BlockComponentProps<any>>> = {
@@ -57,6 +58,7 @@ export const BlockRegistry: Record<BlockType, React.FC<BlockComponentProps<any>>
   likert: LikertBlock,
   'image-choice': ImageChoiceBlock,
   columns: ColumnsBlock,
+  table: TableBlock,
 }
 
 export type { BlockComponentProps } from './types'

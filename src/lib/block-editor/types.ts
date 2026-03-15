@@ -19,6 +19,7 @@ export type LayoutBlockType =
   | 'button'
   | 'custom-code'
   | 'columns'
+  | 'table'
 
 export type QuestionBlockType =
   | 'text-input'
@@ -50,6 +51,7 @@ export interface HeadingContent {
 
 export interface ParagraphContent {
   text: string
+  listType?: 'bullet' | 'numbered' | 'todo'
 }
 
 export interface DividerContent {
@@ -80,8 +82,10 @@ export interface ButtonContent {
   label: string
   action: 'next_page' | 'submit' | 'url'
   url?: string
-  variant: 'primary' | 'secondary' | 'outline'
+  variant: 'primary' | 'secondary' | 'outline' | 'ghost'
   align: 'left' | 'center' | 'right'
+  radius?: 'none' | 'sm' | 'md' | 'lg' | 'full'
+  size?: 'sm' | 'md' | 'lg'
 }
 
 export interface ColumnCell {
@@ -93,6 +97,16 @@ export interface ColumnCell {
 export interface ColumnsContent {
   layout: '1:1' | '1:2' | '2:1' | '1:1:1' | '1:2:1'
   cells: ColumnCell[]
+}
+
+export interface TableCell {
+  id: string
+  text: string
+}
+
+export interface TableContent {
+  rows: TableCell[][]
+  headerRow?: boolean
 }
 
 // -- Question block content types --
@@ -262,6 +276,7 @@ export interface BlockContentMap {
   button: ButtonContent
   'custom-code': CustomCodeContent
   columns: ColumnsContent
+  table: TableContent
   'text-input': TextInputContent
   textarea: TextAreaContent
   radio: RadioContent
@@ -382,6 +397,10 @@ export interface PageStyle {
   backgroundColor?: string
   maxWidth?: string
   padding?: string
+  layout?: 'default' | 'image-top' | 'image-left' | 'image-right' | 'image-bg'
+  backgroundImage?: string
+  contentAlign?: 'top' | 'center' | 'bottom'
+  fullBleed?: boolean
 }
 
 export interface EditorPage {
@@ -446,7 +465,7 @@ export interface BlockEditorSurvey {
 // ---------------------------------------------------------------------------
 
 export const LAYOUT_BLOCK_TYPES: LayoutBlockType[] = [
-  'heading', 'paragraph', 'divider', 'spacer', 'image', 'video', 'button', 'custom-code', 'columns',
+  'heading', 'paragraph', 'divider', 'spacer', 'image', 'video', 'button', 'custom-code', 'columns', 'table',
 ]
 
 export const QUESTION_BLOCK_TYPES: QuestionBlockType[] = [

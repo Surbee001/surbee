@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { BlockEditorSurvey, EditorPage, Block, SurveyTheme, ButtonContent } from '@/lib/block-editor/types'
+import type { BlockEditorSurvey, EditorPage, Block, SurveyTheme, ButtonContent, BlockStyle } from '@/lib/block-editor/types'
 import { isQuestionBlock } from '@/lib/block-editor/types'
 import { evaluatePageLogic, evaluateBlockVisibility } from '@/lib/block-editor/logic-engine'
 import { BlockRegistry } from './blocks'
@@ -177,7 +177,8 @@ export const SurveyRenderer: React.FC<SurveyRendererProps> = ({
   if (isCompleted) {
     return (
       <div style={{
-        minHeight: '100vh',
+        minHeight: isPreview ? '100%' : '100vh',
+        width: '100%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -211,7 +212,8 @@ export const SurveyRenderer: React.FC<SurveyRendererProps> = ({
 
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: isPreview ? '100%' : '100vh',
+      width: '100%',
       backgroundColor: theme.backgroundColor,
       fontFamily: theme.fontFamily,
       display: 'flex',
@@ -271,7 +273,7 @@ export const SurveyRenderer: React.FC<SurveyRendererProps> = ({
             transition={{ duration: 0.25 }}
             style={{
               width: '100%',
-              maxWidth: 640,
+              maxWidth: 720,
               display: 'flex',
               flexDirection: 'column',
               gap: '20px',
@@ -301,6 +303,7 @@ export const SurveyRenderer: React.FC<SurveyRendererProps> = ({
                     key={block.id}
                     content={btnContent}
                     theme={theme}
+                    blockStyle={block.meta.style}
                     onNext={handleNext}
                     onBack={handleBack}
                   />
@@ -402,17 +405,38 @@ export const SurveyRenderer: React.FC<SurveyRendererProps> = ({
 interface SurveyButtonProps {
   content: ButtonContent
   theme: SurveyTheme
+  blockStyle?: BlockStyle
   onNext: () => void
   onBack: () => void
 }
 
-const SurveyButton: React.FC<SurveyButtonProps> = ({ content, theme, onNext }) => {
+const RADIUS_MAP: Record<string, string> = { none: '0px', sm: '6px', md: '10px', lg: '16px', full: '9999px' }
+const SIZE_MAP: Record<string, { padding: string; fontSize: string }> = {
+  sm: { padding: '8px 20px', fontSize: '0.825rem' },
+  md: { padding: '12px 32px', fontSize: '0.95rem' },
+  lg: { padding: '16px 40px', fontSize: '1.05rem' },
+}
+
+const SurveyButton: React.FC<SurveyButtonProps> = ({ content, theme, blockStyle, onNext }) => {
   const handleClick = () => {
     if (content.action === 'url' && content.url) {
       window.open(content.url, '_blank')
     } else {
-      // Both 'next_page' and 'submit' trigger the same handleNext logic
       onNext()
+    }
+  }
+
+  const sizeStyle = SIZE_MAP[content.size || 'md'] || SIZE_MAP.md
+  const borderRadius = RADIUS_MAP[content.radius || 'md'] || (theme.borderRadius || '10px')
+  const bs = blockStyle || {}
+
+  const getVariantStyle = (): React.CSSProperties => {
+    switch (content.variant) {
+      case 'primary': return { backgroundColor: theme.primaryColor, color: '#ffffff', border: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }
+      case 'secondary': return { backgroundColor: theme.secondaryColor, color: '#ffffff', border: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }
+      case 'outline': return { backgroundColor: 'transparent', color: theme.primaryColor, border: `1.5px solid ${theme.primaryColor}` }
+      case 'ghost': return { backgroundColor: 'transparent', color: theme.primaryColor, border: 'none' }
+      default: return { backgroundColor: theme.primaryColor, color: '#ffffff', border: 'none' }
     }
   }
 
@@ -424,17 +448,16 @@ const SurveyButton: React.FC<SurveyButtonProps> = ({ content, theme, onNext }) =
       <button
         onClick={handleClick}
         style={{
-          padding: '12px 32px',
-          borderRadius: theme.borderRadius || '8px',
-          fontSize: '0.95rem',
-          fontWeight: 500,
+          ...sizeStyle,
+          borderRadius,
+          fontWeight: bs.fontWeight || '500',
           cursor: 'pointer',
-          fontFamily: theme.fontFamily || 'inherit',
-          transition: 'all 0.15s',
-          border: content.variant === 'outline' ? `1.5px solid ${theme.primaryColor}` : 'none',
-          backgroundColor: content.variant === 'primary' ? theme.primaryColor :
-                           content.variant === 'secondary' ? theme.secondaryColor : 'transparent',
-          color: content.variant === 'outline' ? theme.primaryColor : '#ffffff',
+          fontFamily: bs.fontFamily || theme.fontFamily || 'inherit',
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          letterSpacing: '0.01em',
+          ...getVariantStyle(),
+          ...(bs.fontSize ? { fontSize: bs.fontSize } : {}),
+          ...(bs.color ? { color: bs.color } : {}),
         }}
       >
         {content.label}

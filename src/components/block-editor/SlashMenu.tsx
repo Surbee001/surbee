@@ -38,6 +38,7 @@ const SLASH_MENU_ITEMS: SlashMenuItem[] = [
   { type: 'spacer', label: 'Spacer', icon: '\u2195', category: 'layout', keywords: ['gap', 'space'] },
   { type: 'button', label: 'Button', icon: '\u25A3', category: 'layout', keywords: ['button', 'submit', 'next', 'cta', 'action'] },
   { type: 'columns', label: 'Columns', icon: '\u2759', category: 'layout', keywords: ['columns', 'layout', 'side by side', 'grid', 'row', 'two column'] },
+  { type: 'table', label: 'Table', icon: '\u229E', category: 'layout', keywords: ['table', 'grid', 'rows', 'columns', 'data', 'spreadsheet'] },
   // Media
   { type: 'image', label: 'Image', icon: '\uD83D\uDDBC', category: 'media', keywords: ['image', 'photo'] },
   { type: 'video', label: 'Video', icon: '\u25B6', category: 'media', keywords: ['video', 'youtube'] },

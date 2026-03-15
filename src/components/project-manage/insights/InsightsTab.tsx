@@ -324,13 +324,29 @@ export function InsightsTab({ projectId }: InsightsTabProps) {
   /* Loading state */
   if (loading) {
     return (
-      <div className="insights-root">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}>
-          <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite', color: 'var(--surbee-fg-muted)' }} />
+      <div className="insights-root" style={{ height: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '300px', gap: '8px', textAlign: 'center' }}>
+          <p style={{ fontSize: '14px', color: 'var(--surbee-fg-muted, #9ca3af)', margin: 0 }}>Loading insights...</p>
         </div>
         <style jsx>{`
           .insights-root { max-width: 100%; margin: 0 auto; }
-          @keyframes spin { to { transform: rotate(360deg); } }
+        `}</style>
+      </div>
+    );
+  }
+
+  /* Empty state — no responses yet */
+  if (!loading && responses.length === 0) {
+    return (
+      <div className="insights-root" style={{ height: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '300px', gap: '8px', textAlign: 'center' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--surbee-fg-primary)', margin: 0 }}>No responses yet</h3>
+          <p style={{ fontSize: '14px', color: 'var(--surbee-fg-muted, #9ca3af)', margin: 0, maxWidth: '360px', lineHeight: 1.5 }}>
+            Share your published survey to start collecting responses. Data will appear here in real time.
+          </p>
+        </div>
+        <style jsx>{`
+          .insights-root { max-width: 100%; margin: 0 auto; }
         `}</style>
       </div>
     );

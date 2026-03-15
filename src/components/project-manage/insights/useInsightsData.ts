@@ -165,22 +165,10 @@ export function useInsightsData(
           };
         });
 
-        // If no responses, use mock data for demonstration
-        if (transformedResponses.length === 0 || useMockData) {
-          const mockData = generateMockData();
-          setResponses(mockData.responses);
-          if (questionsData.questions?.length === 0) {
-            setQuestions(mockData.questions);
-          }
-        } else {
-          setResponses(transformedResponses);
-        }
+        setResponses(transformedResponses);
       } catch (err) {
         console.error('Error fetching insights data:', err);
-        // On error, still show mock data for demonstration
-        const mockData = generateMockData();
-        setResponses(mockData.responses);
-        setQuestions(mockData.questions);
+        setResponses([]);
         setError(err instanceof Error ? err : new Error('Unknown error'));
       } finally {
         setLoading(false);
@@ -188,6 +176,10 @@ export function useInsightsData(
     };
 
     fetchData();
+
+    // Poll for new responses every 30 seconds for real-time updates
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
   }, [projectId, user?.id, useMockData]);
 
   // Calculate stats

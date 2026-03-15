@@ -66,6 +66,7 @@ export const HeadingBlock: React.FC<BlockComponentProps<'heading'>> = ({
       aria-level={level}
       contentEditable
       suppressContentEditableWarning
+      spellCheck
       onInput={handleInput}
       onFocus={onFocus}
       onBlur={onBlur}
@@ -80,6 +81,7 @@ export const HeadingBlock: React.FC<BlockComponentProps<'heading'>> = ({
         minHeight: '1.2em',
         lineHeight: 1.3,
         margin: 0,
+        caretColor: 'var(--surbee-accent-primary, #2563eb)',
       }}
       className="empty:before:content-[attr(data-placeholder)] empty:before:text-[var(--surbee-fg-muted)] empty:before:pointer-events-none"
     >

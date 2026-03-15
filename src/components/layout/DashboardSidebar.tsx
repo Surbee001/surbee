@@ -566,9 +566,9 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
           <div className="sidebar-group">
             <SidebarItem
               label="Chats"
-              isActive={isChatsOpen}
-              onClick={isCollapsed ? () => router.push('/home') : toggleChats}
-              icon={isCollapsed ? null : (isChatsOpen ? 'chevron-up' : 'chevron-down')}
+              isActive={pathname.startsWith('/chats') || pathname.startsWith('/home/chat')}
+              onClick={() => handleNavigation('/chats')}
+              icon={isCollapsed ? null : "arrow"}
               collapsedIcon={<MessageSquare className="w-4 h-4" />}
               isCollapsed={isCollapsed}
             />
@@ -918,7 +918,7 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
                   </div>
                   <div
                     className="relative h-2 w-full overflow-hidden rounded-full"
-                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.08)' }}
+                    style={{ backgroundColor: 'var(--surbee-border-primary)' }}
                     aria-valuemax={100}
                     aria-valuemin={0}
                     aria-valuenow={percentUsed}
@@ -1082,31 +1082,22 @@ export default function DashboardSidebar({ isCollapsed = false, onToggleCollapse
                 {/* Footer */}
                 <div className="user-menu-footer">
                   <button
-                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/privacy'); }}
+                    onClick={() => { setIsUserMenuOpen(false); window.open('https://surbee.dev/privacy', '_blank'); }}
                     className="user-menu-footer-link"
                   >
                     Privacy
                   </button>
                   <button
-                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/terms'); }}
+                    onClick={() => { setIsUserMenuOpen(false); window.open('https://surbee.dev/terms', '_blank'); }}
                     className="user-menu-footer-link"
                   >
                     Terms
                   </button>
                   <button
-                    onClick={() => { setIsUserMenuOpen(false); handleNavigation('/copyright'); }}
+                    onClick={() => { setIsUserMenuOpen(false); window.open('https://surbee.dev/refundpolicy', '_blank'); }}
                     className="user-menu-footer-link"
                   >
-                    Copyright
-                  </button>
-                  <button
-                    onClick={() => { setIsUserMenuOpen(false); window.open('https://x.com/surbee', '_blank'); }}
-                    className="user-menu-footer-link"
-                    aria-label="X (Twitter)"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                    </svg>
+                    Refund Policy
                   </button>
                 </div>
               </motion.div>

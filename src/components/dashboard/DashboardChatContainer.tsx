@@ -32,6 +32,7 @@ import { DefaultChatTransport } from 'ai';
 import { ChartLoadingSpinner } from "@/components/ui/chart-loading-animation";
 import { ThinkingDisplay } from "../../../components/ThinkingUi/components/thinking-display";
 import { ReasoningDisplay, convertToReasoningSteps } from "@/components/ai-elements/reasoning-display";
+import { AgentWorkflow, type WorkflowBlock } from "@/components/agent/AgentWorkflow";
 
 interface ThinkingStep {
   id: string;
@@ -90,6 +91,7 @@ interface MemoizedMessageRowProps {
   isLoading: boolean;
   isGeneratingChart: boolean;
   currentIsThinking: boolean;
+  currentThinkingSteps: ThinkingStep[];
   memoizedStreamingSteps: import("@/components/ai-elements/reasoning-display").ReasoningStep[];
   thinkingDuration: number;
   effectfulMessages: Record<string, boolean>;
@@ -108,6 +110,7 @@ const MemoizedMessageRow = memo<MemoizedMessageRowProps>(({
   isLoading,
   isGeneratingChart,
   currentIsThinking,
+  currentThinkingSteps,
   memoizedStreamingSteps,
   thinkingDuration,
   effectfulMessages,
@@ -166,24 +169,29 @@ const MemoizedMessageRow = memo<MemoizedMessageRowProps>(({
   return (
     <div className="space-y-2 group/message">
       <div className="w-full space-y-3">
-        {/* For streaming message: show thinking steps */}
-        {isLastMessage && isLoading && !isGeneratingChart && (
+        {/* For streaming message: show thinking workflow */}
+        {isLastMessage && isLoading && !isGeneratingChart && currentThinkingSteps.length > 0 && (
           <div className="mb-3">
-            <ReasoningDisplay
-              steps={memoizedStreamingSteps}
-              duration={thinkingDuration}
-              isThinking={currentIsThinking || !msg.content}
-              defaultOpen={true}
+            <AgentWorkflow
+              blocks={currentThinkingSteps.map((step, i) => ({
+                type: 'reasoning' as const,
+                content: step.content,
+                isStreaming: step.status === 'thinking' && i === currentThinkingSteps.length - 1,
+              }))}
+              isStreaming={currentIsThinking || !msg.content}
             />
           </div>
         )}
         {/* For completed messages: show msg.reasoning */}
-        {completedReasoningSteps && !(isLastMessage && isLoading) && (
+        {msg.reasoning && msg.reasoning.length > 0 && !(isLastMessage && isLoading) && (
           <div className="mb-3">
-            <ReasoningDisplay
-              steps={completedReasoningSteps}
-              duration={msg.reasoningDuration || 0}
-              isThinking={false}
+            <AgentWorkflow
+              blocks={msg.reasoning.map((step: any) => ({
+                type: 'reasoning' as const,
+                content: step.content,
+                isStreaming: false,
+              }))}
+              isStreaming={false}
             />
           </div>
         )}
@@ -274,6 +282,7 @@ const MemoizedMessageRow = memo<MemoizedMessageRowProps>(({
     if (prev.isGeneratingChart !== next.isGeneratingChart) return false;
     if (prev.currentIsThinking !== next.currentIsThinking) return false;
     if (prev.memoizedStreamingSteps !== next.memoizedStreamingSteps) return false;
+    if (prev.currentThinkingSteps !== next.currentThinkingSteps) return false;
     if (prev.thinkingDuration !== next.thinkingDuration) return false;
   }
   if (prev.isLastMessage !== next.isLastMessage) return false;
@@ -925,6 +934,22 @@ export function DashboardChatContainer({
   useEffect(() => {
     // Use initialChatId (from route) or fall back to query param (legacy)
     const effectiveChatId = initialChatId || searchParams.get('chatId');
+
+    // Need userId to load from DB
+    if (!userId || !effectiveChatId) {
+      // If no chatId, reset to fresh state
+      if (!effectiveChatId && prevChatIdRef.current) {
+        prevChatIdRef.current = null;
+        setMessages([]);
+        setChatSessionId(null);
+        setHasStartedChat(false);
+        setGeneratedTitle(null);
+        titleGeneratedRef.current = false;
+        chatSessionSavedRef.current = false;
+      }
+      return;
+    }
+
     const prevChatId = prevChatIdRef.current;
 
     // Skip if chatId hasn't changed
@@ -935,20 +960,6 @@ export function DashboardChatContainer({
     // Skip if we already have this session active with messages (don't reset active chats)
     if (effectiveChatId && chatSessionId === effectiveChatId && messages.length > 0) {
       prevChatIdRef.current = effectiveChatId;
-      return;
-    }
-
-    // Update ref for next comparison
-    prevChatIdRef.current = effectiveChatId || null;
-
-    // If no chatId, reset to fresh state
-    if (!effectiveChatId) {
-      setMessages([]);
-      setChatSessionId(null);
-      setHasStartedChat(false);
-      setGeneratedTitle(null);
-      titleGeneratedRef.current = false;
-      chatSessionSavedRef.current = false;
       return;
     }
 
@@ -989,11 +1000,12 @@ export function DashboardChatContainer({
         setChatSessionId(effectiveChatId);
         setHasStartedChat(true);
       }
+
+      // Only update ref after successful load attempt (when userId was available)
+      prevChatIdRef.current = effectiveChatId;
     };
 
-    if (userId && effectiveChatId) {
-      loadChatSession();
-    }
+    loadChatSession();
   }, [initialChatId, searchParams, userId, setMessages, chatSessionId, messages.length]);
 
   // Handle adding a reference from SearchModal
@@ -1336,6 +1348,7 @@ Analyze the survey structure, questions, and design. Then help me build a simila
                   isLoading={isLoading}
                   isGeneratingChart={isGeneratingChart}
                   currentIsThinking={currentIsThinking}
+                  currentThinkingSteps={currentThinkingSteps}
                   memoizedStreamingSteps={memoizedStreamingSteps}
                   thinkingDuration={thinkingDuration}
                   effectfulMessages={effectfulMessages}
